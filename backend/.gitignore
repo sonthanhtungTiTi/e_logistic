@@ -1,0 +1,35 @@
+# Dependency directories
+node_modules/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Environment variable files (Security)
+.env
+.env.test
+.env.production
+.env.local
+
+# Prisma generated files
+*.db
+*.db-journal
+
+# Compiled binary addons
+build/Release
+
+# Optional npm cache directory
+.npm
+
+# Mac OS DS_Store
+.DS_Store
+
+# Editor directories and files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
