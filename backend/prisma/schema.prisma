@@ -1,0 +1,63 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --------------------------------------------------------------------
+// 1. MODULE: AUTH & USER (RBAC)
+// --------------------------------------------------------------------
+
+enum Role {
+  ADMIN
+  DISPATCHER
+  DRIVER
+  SELLER
+  WAREHOUSE_STAFF
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  fullName  String
+  phone     String?  @unique
+  role      Role     @default(SELLER)
+  isActive  Boolean  @default(true)
+  
+  // Quan hệ: Một User (Nhân viên, Tài xế) thuộc về 1 Hub. Seller thì có thể null.
+  hubId     String?
+  hub       Hub?     @relation(fields: [hubId], references: [id])
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// --------------------------------------------------------------------
+// 2. BƯU CỤC & CHI NHÁNH (HUB / BRANCH)
+// --------------------------------------------------------------------
+
+model Hub {
+  id            String   @id @default(uuid())
+  code          String   @unique // Mã bưu cục, vd: HUB-HN-001
+  name          String
+  address       String
+  
+  // Toạ độ phục vụ cho PostGIS và điều phối VRP
+  latitude      Float?
+  longitude     Float?
+  
+  capacity      Int      @default(0) // Sức chứa tối đa (dùng cho Cảnh báo quá tải)
+  
+  // Quan hệ
+  staffs        User[]
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
