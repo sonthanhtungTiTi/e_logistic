@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { errorMiddleware } = require('./middlewares/error.middleware');
+const { errorMiddleware } = require('./middleware/error.middleware');
 
 const app = express();
 
@@ -18,9 +18,12 @@ app.get('/', (req, res) => {
   });
 });
 
-// Tương lai sẽ import các Route ở đây
-// const routes = require('./routes/index');
-// app.use('/api/v1', routes);
+// Routes
+app.use('/api/auth', require('./routes/auth.routes'));
+app.use('/api/orders', require('./routes/order.routes'));
+app.use('/api/admin', require('./routes/admin.routes')); // UC Quản lý người dùng
+
+
 
 // Error Handling Middleware (luôn phải nằm cuối cùng)
 app.use(errorMiddleware);

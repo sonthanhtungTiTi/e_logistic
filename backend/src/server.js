@@ -1,12 +1,21 @@
 require('dotenv').config();
 const app = require('./app');
 
-// Port được lấy từ biến môi trường, mặc định 5000
+const connectDB = require('./config/db');
+
+// Kiểm tra cấu hình bảo mật trước khi chạy server
+if (!process.env.JWT_SECRET) {
+  console.error('❌ LỖI NGHIÊM TRỌNG: Thiếu JWT_SECRET trong biến môi trường (.env)');
+  process.exit(1);
+}
+
 const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
   try {
-    // Tương lai sẽ thêm hàm connect Database (Prisma) ở đây
+    // Kết nối Database
+    await connectDB();
+
     
     app.listen(PORT, () => {
       console.log(`🚀 E-Logistics Server is running on http://localhost:${PORT}`);
