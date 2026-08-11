@@ -1,36 +1,23 @@
 # Dependency directories
 node_modules/
-docs/
 
-# Logs
-logs
-*.log
-npm-debug.log*
+# Build outputs
+dist/
+build/
+frontend_web/dist/
+frontend_admin/dist/
+*.tsbuildinfo
 
-# Environment variable files (Security)
+# Environment files
 .env
-.env.test
-.env.production
 .env.local
+.env.development
+.env.production
 
-# Prisma generated files
-*.db
-*.db-journal
-
-# Compiled binary addons
-build/Release
-
-# Optional npm cache directory
-.npm
-
-# Mac OS DS_Store
+# Logs & OS files
+*.log
 .DS_Store
+Thumbs.db
 
-# Editor directories and files
-.vscode/
-.idea/
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+# Documentation
+docs/
