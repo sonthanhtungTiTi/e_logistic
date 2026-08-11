@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { loginUser, registerUser, getUserProfile, updateUserProfile, createStaffUser, logoutUser, refreshAccessToken, forgotPassword, verifyOtp, resetPassword, changePassword } = require('../controllers/auth.controller');
+const { loginUser, registerUser, getUserProfile, updateUserProfile, logoutUser, refreshAccessToken, forgotPassword, verifyOtp, resetPassword, changePassword, sendRegisterOtp, verifyRegisterOtp } = require('../controllers/auth.controller');
 const { protect, authorize } = require('../middleware/auth.middleware');
 const rateLimit = require('express-rate-limit');
 
@@ -29,8 +29,9 @@ const otpLimiter = rateLimit({
 });
 
 router.post('/register', registerLimiter, registerUser);
+router.post('/send-register-otp', otpLimiter, sendRegisterOtp);
+router.post('/verify-register-otp', verifyRegisterOtp);
 router.post('/login', loginLimiter, loginUser);
-router.post('/staff', protect, authorize('ADMIN'), createStaffUser);
 router.get('/profile', protect, getUserProfile);
 router.put('/profile', protect, updateUserProfile); // UC Cập nhật hồ sơ cá nhân
 router.post('/logout', protect, logoutUser);

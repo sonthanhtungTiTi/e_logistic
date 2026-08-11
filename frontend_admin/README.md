@@ -1,32 +1,7 @@
-# React + TypeScript + Vite
+# Frontend Admin System (Operations & Management)
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+## 📌 Single Source of Truth Note
+Tất cả các định nghĩa kiểu dữ liệu Đơn hàng & Vận chuyển trong `src/types/dispatch.types.ts` được sao chép thủ công từ nguồn gốc duy nhất:
+👉 `frontend_web/src/types/order.types.ts`
 
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
-```
-
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Vui lòng cập nhật các thay đổi tại file gốc `frontend_web` trước khi đồng bộ sang dự án `frontend_admin`.

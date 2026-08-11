@@ -1,7 +1,9 @@
 require('dotenv').config();
+const http = require('http');
+const { Server } = require('socket.io');
 const app = require('./app');
-
 const connectDB = require('./config/db');
+const { initTrackingGateway } = require('./websocket/tracking.gateway');
 
 // Kiểm tra cấu hình bảo mật trước khi chạy server
 if (!process.env.JWT_SECRET) {
@@ -16,9 +18,20 @@ const startServer = async () => {
     // Kết nối Database
     await connectDB();
 
-    
-    app.listen(PORT, () => {
-      console.log(`🚀 E-Logistics Server is running on http://localhost:${PORT}`);
+    // Khởi tạo HTTP Server & WebSocket Server (Socket.io)
+    const server = http.createServer(app);
+    const io = new Server(server, {
+      cors: {
+        origin: '*',
+        methods: ['GET', 'POST']
+      }
+    });
+
+    // Khởi tạo WebSocket Room Gateway cho Live GPS Tracking
+    initTrackingGateway(io);
+
+    server.listen(PORT, () => {
+      console.log(`🚀 E-Logistics Server & WebSocket Gateway running on http://localhost:${PORT}`);
     });
   } catch (error) {
     console.error('❌ Failed to start the server:', error.message);

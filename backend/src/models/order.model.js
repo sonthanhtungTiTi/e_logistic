@@ -8,13 +8,19 @@ const orderSchema = new mongoose.Schema(
       unique: true,
       index: true,
     },
-    // Mã đơn hàng từ sàn TMĐT (nếu có, không bắt buộc vì Seller có thể tạo tay)
+    // Mã đơn hàng từ sàn TMĐT (nếu có, không bắt buộc)
     orderIdSan: {
       type: String,
       unique: true,
-      sparse: true, // Cho phép null/undefined nhưng vẫn giữ unique cho những đơn có mã
+      sparse: true,
     },
-    // Chống trùng lặp request (Idempotency)
+    // Chuỗi Idempotency Key gửi từ Header/Body
+    idempotencyKey: {
+      type: String,
+      unique: true,
+      sparse: true,
+    },
+    // Hash SHA-256 của Payload để đối soát lặp request
     payloadHash: {
       type: String,
     },
@@ -24,6 +30,7 @@ const orderSchema = new mongoose.Schema(
       enum: [
         'DRAFT',
         'CREATED',
+        'PENDING_VERIFICATION',
         'READY_TO_PICK',
         'PICKING',
         'PICKED',
@@ -33,12 +40,14 @@ const orderSchema = new mongoose.Schema(
         'IN_TRANSIT',
         'INBOUND_HUB_DEST',
         'OUT_FOR_DELIVERY',
+        'DELIVERING',
         'DELIVERED',
         'FAILED',
         'RETURNING',
         'RETURNED',
+        'CANCELLED',
       ],
-      default: 'DRAFT',
+      default: 'CREATED',
     },
     // Liên kết với Seller
     sellerId: {
@@ -48,12 +57,12 @@ const orderSchema = new mongoose.Schema(
     },
     // Thông tin lấy hàng (Pickup)
     pickupAddress: {
-      fullName: String,
-      phone: String,
-      address: String,
-      ward: String,
-      district: String,
-      province: String,
+      fullName: { type: String, required: true },
+      phone: { type: String, required: true },
+      address: { type: String, required: true },
+      ward: { type: String, required: true },
+      district: { type: String, required: true },
+      province: { type: String, required: true },
       coordinates: {
         lat: Number,
         lng: Number,
@@ -61,12 +70,12 @@ const orderSchema = new mongoose.Schema(
     },
     // Thông tin người nhận (Delivery)
     deliveryAddress: {
-      fullName: String,
-      phone: String,
-      address: String,
-      ward: String,
-      district: String,
-      province: String,
+      fullName: { type: String, required: true },
+      phone: { type: String, required: true },
+      address: { type: String, required: true },
+      ward: { type: String, required: true },
+      district: { type: String, required: true },
+      province: { type: String, required: true },
       coordinates: {
         lat: Number,
         lng: Number,
@@ -75,20 +84,26 @@ const orderSchema = new mongoose.Schema(
     // Thông tin hàng hóa
     items: [
       {
-        name: String,
-        quantity: Number,
-        weight: Number, // Gram
+        name: { type: String, required: true },
+        quantity: { type: Number, required: true, min: 1 },
+        weight: { type: Number, required: true, min: 0.01 }, // kg
       },
     ],
+    // Kích thước kiện hàng (cm)
+    dimensions: {
+      length: { type: Number, default: 0, min: [0, 'Kích thước chiều dài không được âm'] },
+      width: { type: Number, default: 0, min: [0, 'Kích thước chiều rộng không được âm'] },
+      height: { type: Number, default: 0, min: [0, 'Kích thước chiều cao không được âm'] },
+    },
     // Trọng lượng và Cước phí
-    actualWeight: Number, // Trọng lượng thực tế (Gram)
-    volumetricWeight: Number, // Trọng lượng quy đổi thể tích
-    chargeableWeight: Number, // Trọng lượng tính cước
-    shippingFee: {
-      type: Number, // Đơn vị VND Integer để tránh lỗi số thập phân
-      default: 0,
-      min: [0, 'Cước phí không được âm'],
-      validate: { validator: Number.isInteger, message: 'Số tiền phải là số nguyên (đơn vị Đồng)' }
+    actualWeight: { type: Number, required: true, min: [0.01, 'Khối lượng phải lớn hơn 0'] }, // kg
+    volumetricWeight: { type: Number, default: 0 }, // kg
+    chargeableWeight: { type: Number, required: true }, // kg
+
+    // COD & Giá trị khai báo (Integer Đồng)
+    isCod: {
+      type: Boolean,
+      default: false,
     },
     codAmount: {
       type: Number,
@@ -102,28 +117,73 @@ const orderSchema = new mongoose.Schema(
       min: [0, 'Giá trị hàng hóa không được âm'],
       validate: { validator: Number.isInteger, message: 'Số tiền phải là số nguyên (đơn vị Đồng)' }
     },
-    // Lịch sử thất bại
-    failedAttempts: {
+
+    // Phân rã Cước phí (Integer Đồng)
+    baseFee: {
       type: Number,
       default: 0,
+      validate: { validator: Number.isInteger, message: 'Số tiền phải là số nguyên (đơn vị Đồng)' }
     },
-    // Tài xế phụ trách hiện tại
-    currentDriverId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+    insuranceFee: {
+      type: Number,
+      default: 0,
+      validate: { validator: Number.isInteger, message: 'Số tiền phải là số nguyên (đơn vị Đồng)' }
     },
-    // Ghi chú ngoại lệ (cờ rủi ro)
-    flagRisk: {
-      type: Boolean,
-      default: false,
+    discountAmount: {
+      type: Number,
+      default: 0,
+      validate: { validator: Number.isInteger, message: 'Số tiền phải là số nguyên (đơn vị Đồng)' }
     },
+    discountCode: {
+      type: String,
+      default: null
+    },
+    shippingFee: {
+      type: Number,
+      required: true,
+      min: [0, 'Cước phí không được âm'],
+      validate: { validator: Number.isInteger, message: 'Số tiền phải là số nguyên (đơn vị Đồng)' }
+    },
+
+    // Bưu cục phục vụ
+    pickupHub: { type: String, default: null },
+    deliveryHub: { type: String, default: null },
+
+    // Các cờ rủi ro & điều phối
+    flagFeeWarning: { type: Boolean, default: false },
+    flagCodAnomaly: { type: Boolean, default: false },
+    needsManualRouting: { type: Boolean, default: false },
+
+    // Thông tin hủy đơn
+    cancelReason: { type: String, default: null },
+    cancelNote: { type: String, default: null },
+    cancelledBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+    cancelledAt: { type: Date, default: null },
+
+    // Thất bại / Tài xế & Live Tracking
+    failedAttempts: { type: Number, default: 0 },
+    currentDriverId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    driver: {
+      fullName: { type: String, default: 'Nguyễn Văn Nam (Shipper)' },
+      phone: { type: String, default: '0988776655' }
+    },
+    driverLastLocation: {
+      lat: { type: Number, default: 10.776889 },
+      lng: { type: Number, default: 106.700806 },
+      updatedAt: { type: Date, default: Date.now }
+    },
+    destinationLocation: {
+      lat: { type: Number, default: 10.769012 },
+      lng: { type: Number, default: 106.695123 }
+    },
+    calculatedEta: { type: Number, default: 15 }
   },
   {
     timestamps: true,
   }
 );
 
-// Tạo index hỗ trợ truy vấn địa lý và trạng thái
+// Indexes
 orderSchema.index({ status: 1 });
 orderSchema.index({ sellerId: 1, createdAt: -1 });
 

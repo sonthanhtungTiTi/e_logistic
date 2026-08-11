@@ -5,7 +5,7 @@ const bcrypt = require('bcryptjs');
 
 const AuthLog = require('../models/authLog.model');
 const PasswordResetOtp = require('../models/passwordResetOtp.model');
-const { sendPasswordResetEmail, sendPasswordResetSms } = require('../services/notification.service');
+const { sendPasswordResetEmail, sendRegistrationOtpEmail, sendPasswordResetSms } = require('../services/notification.service');
 
 // Hàm tạo Access Token
 const generateAccessToken = (id) => {
@@ -169,6 +169,17 @@ const registerUser = async (req, res) => {
       return res.status(400).json({ message: 'Email hoặc số điện thoại đã tồn tại' });
     }
 
+    // Kiểm tra xem email này đã xác thực OTP thành công (isUsed: true) trong 10 phút gần nhất hay chưa
+    const verifiedOtp = await PasswordResetOtp.findOne({
+      sentTo: email,
+      isUsed: true,
+      expiresAt: { $gt: new Date() },
+    });
+
+    if (!verifiedOtp) {
+      return res.status(400).json({ message: 'Email chưa được xác thực OTP hoặc phiên xác thực đã hết hạn. Vui lòng thực hiện lại từ đầu.' });
+    }
+
     const user = await User.create({
       fullName,
       email,
@@ -178,6 +189,9 @@ const registerUser = async (req, res) => {
     });
 
     if (user) {
+      // Dọn dẹp mã OTP đã dùng để tránh tái sử dụng
+      await PasswordResetOtp.deleteMany({ sentTo: email });
+
       const accessToken = generateAccessToken(user._id);
       const refreshToken = generateRefreshToken(user._id);
       user.refreshToken = refreshToken;
@@ -352,32 +366,6 @@ const updateUserProfile = async (req, res) => {
   }
 };
 
-// @desc    Tạo tài khoản nội bộ (Dành cho Admin)
-// @route   POST /api/auth/staff
-// @access  Private/Admin
-const createStaffUser = async (req, res) => {
-  try {
-    const schema = Joi.object({
-      fullName: Joi.string().required(),
-      email: Joi.string().email().required(),
-      phoneNumber: Joi.string().pattern(/^[0-9]{10,11}$/).required(),
-      password: Joi.string().min(6).required(),
-      role: Joi.string().valid('ADMIN', 'HUB_MANAGER', 'DISPATCHER', 'DRIVER', 'WAREHOUSE_STAFF', 'CUSTOMER_SERVICE', 'ACCOUNTANT', 'MANAGER').required()
-    });
-
-    const { error } = schema.validate(req.body);
-    if (error) return res.status(400).json({ message: error.details[0].message });
-
-    const { fullName, email, phoneNumber, password, role } = req.body;
-    const userExists = await User.findOne({ $or: [{ email }, { phoneNumber }] });
-    if (userExists) return res.status(400).json({ message: 'Email hoặc số điện thoại đã tồn tại' });
-
-    const user = await User.create({ fullName, email, phoneNumber, password, role });
-    res.status(201).json({ _id: user._id, fullName: user.fullName, role: user.role });
-  } catch (error) {
-    res.status(500).json({ message: 'Lỗi máy chủ nội bộ' });
-  }
-};
 
 // @desc    Cấp lại Access Token bằng Refresh Token (UC01 - Session Management)
 // @route   POST /api/auth/refresh
@@ -811,17 +799,117 @@ const changePassword = async (req, res) => {
   }
 };
 
+// ============================================================
+// @desc    Gửi mã OTP xác thực Email khi Đăng ký tài khoản (Google Mail SMTP)
+// @route   POST /api/auth/send-register-otp
+// @access  Public
+// ============================================================
+const sendRegisterOtp = async (req, res) => {
+  try {
+    const schema = Joi.object({
+      email: Joi.string().email().required().messages({
+        'string.email': 'Email không đúng định dạng',
+        'any.required': 'Vui lòng nhập Email xác thực'
+      })
+    });
+    const { error } = schema.validate(req.body);
+    if (error) return res.status(400).json({ message: error.details[0].message });
+
+    const { email } = req.body;
+
+    // Kiểm tra trùng lặp email
+    const userExists = await User.findOne({ email });
+    if (userExists) {
+      return res.status(400).json({ message: 'Email này đã được sử dụng bởi tài khoản khác' });
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const OTP_EXPIRE_MINUTES = 10;
+    const otpHash = await bcrypt.hash(otp, 10);
+
+    // Lưu OTP tạm cho registration
+    await PasswordResetOtp.deleteMany({ sentTo: email });
+    await PasswordResetOtp.create({
+      otpHash,
+      expiresAt: new Date(Date.now() + OTP_EXPIRE_MINUTES * 60 * 1000),
+      channel: 'email',
+      sentTo: email,
+    });
+
+    await sendRegistrationOtpEmail(email, otp);
+
+    res.status(200).json({
+      message: `Mã xác thực OTP đã được gửi về Google Email ${email}. Hiệu lực trong 10 phút.`,
+      email,
+    });
+  } catch (error) {
+    console.error(`Lỗi gửi Register OTP: ${error.stack}`);
+    res.status(503).json({ message: 'Không thể gửi email xác thực OTP. Vui lòng kiểm tra lại địa chỉ email hoặc thử lại sau.' });
+  }
+};
+
+// ============================================================
+// @desc    Xác thực mã OTP Đăng ký
+// @route   POST /api/auth/verify-register-otp
+// @access  Public
+// ============================================================
+const verifyRegisterOtp = async (req, res) => {
+  try {
+    const schema = Joi.object({
+      email: Joi.string().email().required(),
+      otp: Joi.string().length(6).required().messages({
+        'string.length': 'Mã OTP gồm 6 chữ số',
+        'any.required': 'Vui lòng nhập mã OTP'
+      })
+    });
+    const { error } = schema.validate(req.body);
+    if (error) return res.status(400).json({ message: error.details[0].message });
+
+    const { email, otp } = req.body;
+
+    const otpRecord = await PasswordResetOtp.findOne({
+      sentTo: email,
+      isUsed: false,
+    }).select('+otpHash');
+
+    if (!otpRecord) {
+      return res.status(400).json({ message: 'Yêu cầu xác thực OTP không tồn tại hoặc đã được sử dụng.' });
+    }
+
+    if (otpRecord.expiresAt < new Date()) {
+      return res.status(400).json({ message: 'Mã xác thực OTP đã hết hạn. Vui lòng gửi lại mã mới.' });
+    }
+
+    const isOtpValid = await bcrypt.compare(otp, otpRecord.otpHash);
+    if (!isOtpValid) {
+      otpRecord.failedAttempts += 1;
+      await otpRecord.save();
+      return res.status(400).json({ message: 'Mã OTP xác thực không chính xác.' });
+    }
+
+    otpRecord.isUsed = true;
+    await otpRecord.save();
+
+    res.status(200).json({ message: 'Xác thực Email thành công!' });
+  } catch (error) {
+    console.error(`Lỗi xác thực Register OTP: ${error.stack}`);
+    res.status(500).json({ message: 'Lỗi máy chủ nội bộ, vui lòng thử lại sau.' });
+  }
+};
+
 
 module.exports = {
   loginUser,
   registerUser,
   getUserProfile,
   updateUserProfile,
-  createStaffUser,
   logoutUser,
   refreshAccessToken,
   forgotPassword,
   verifyOtp,
   resetPassword,
   changePassword,
+  sendRegisterOtp,
+  verifyRegisterOtp,
 };
+
