@@ -9,15 +9,15 @@ frontend_admin/dist/
 *.tsbuildinfo
 
 # Environment files
-.env
-.env.local
-.env.development
-.env.production
+# .env
+# .env.local
+# .env.development
+# .env.production
 
 # Logs & OS files
-*.log
-.DS_Store
-Thumbs.db
+# *.log
+# .DS_Store
+# Thumbs.db
 
 # Documentation
 docs/
