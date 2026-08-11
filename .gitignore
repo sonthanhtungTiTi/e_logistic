@@ -13,11 +13,10 @@ frontend_admin/dist/
 # .env.local
 # .env.development
 # .env.production
-
 # Logs & OS files
 # *.log
 # .DS_Store
 # Thumbs.db
-
 # Documentation
+
 docs/

@@ -18,7 +18,11 @@ import {
   Key,
   Check,
   Briefcase,
-  Building2
+  Building2,
+  Navigation,
+  LocateFixed,
+  Map,
+  Search
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { authApi } from '../../api/auth.api';
@@ -55,6 +59,45 @@ export const ProfilePage: React.FC = () => {
   });
   const [warehouseContact, setWarehouseContact] = useState('Nguyễn Văn An (Quản lý kho)');
   const [pickupTimeSlot, setPickupTimeSlot] = useState('MORNING');
+
+  // Tab 2 (GPS & Google Maps Integration State)
+  const [latitude, setLatitude] = useState('10.812569');
+  const [longitude, setLongitude] = useState('106.668425');
+  const [placesSearch, setPlacesSearch] = useState('');
+  const [isLocating, setIsLocating] = useState(false);
+
+  // Handle Geolocation API
+  const handleGetCurrentLocation = () => {
+    if (navigator.geolocation) {
+      setIsLocating(true);
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const lat = position.coords.latitude.toFixed(6);
+          const lng = position.coords.longitude.toFixed(6);
+          setLatitude(lat);
+          setLongitude(lng);
+          setIsLocating(false);
+          showNotification(`Đã tự động lấy vị trí hiện tại: Lat ${lat}, Lng ${lng}`);
+        },
+        (_err) => {
+          setIsLocating(false);
+          showNotification('', 'Không thể lấy vị trí hiện tại. Vui lòng bật quyền vị trí trên trình duyệt.');
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    } else {
+      showNotification('', 'Trình duyệt của bạn không hỗ trợ lấy vị trí Geolocation.');
+    }
+  };
+
+  // Open Google Maps in new tab
+  const handleOpenGoogleMaps = () => {
+    if (latitude && longitude) {
+      window.open(`https://www.google.com/maps?q=${latitude},${longitude}`, '_blank');
+    } else {
+      window.open('https://www.google.com/maps', '_blank');
+    }
+  };
 
   // Tab 3: Bank Details State
   const [bankName, setBankName] = useState(user?.bankName || 'Vietcombank');
@@ -465,7 +508,7 @@ export const ProfilePage: React.FC = () => {
                 <MapPin className="w-5 h-5 text-cyan-400" />
                 Cấu Hình Đích Lấy Hàng & Kho Mặc Định
               </h3>
-              <p className="text-xs text-slate-400">Địa chỉ để tài xế hoặc bưu tá đến trực tiếp lấy hàng khi khởi tạo đơn</p>
+              <p className="text-xs text-slate-400">Địa chỉ và tọa độ GPS để tài xế hoặc bưu tá đến trực tiếp lấy hàng khi khởi tạo đơn</p>
             </div>
           </div>
 
@@ -493,6 +536,97 @@ export const ProfilePage: React.FC = () => {
                   <option value="AFTERNOON" className="bg-slate-900">Buổi chiều (13:00 - 17:30)</option>
                   <option value="ALL_DAY" className="bg-slate-900">Cả ngày (Giờ hành chính)</option>
                 </select>
+              </div>
+            </div>
+
+            {/* GPS Google Maps Integration Block */}
+            <div className="p-5 rounded-2xl bg-slate-900/80 border border-cyan-500/30 space-y-4">
+              {/* Header Khung GPS & Action Buttons */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+                <div>
+                  <h4 className="text-xs font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-2">
+                    <Navigation className="w-4 h-4" />
+                    Tích Hợp Tọa Độ GPS & Google Maps
+                  </h4>
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    Xác định tọa độ kho chính xác để hệ thống tính cước vận chuyển và tối ưu tuyến đường
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={handleGetCurrentLocation}
+                    disabled={isLocating}
+                    className="px-3 py-1.5 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 text-[11px] font-semibold flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50"
+                  >
+                    <LocateFixed className={`w-3.5 h-3.5 ${isLocating ? 'animate-spin' : ''}`} />
+                    {isLocating ? 'Đang xác định...' : 'Lấy vị trí hiện tại'}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleOpenGoogleMaps}
+                    className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-[11px] font-semibold flex items-center gap-1.5 transition cursor-pointer"
+                  >
+                    <Map className="w-3.5 h-3.5 text-cyan-400" />
+                    Xem Trên Bản Đồ
+                  </button>
+                </div>
+              </div>
+
+              {/* Ô Tìm Kiếm Địa Điểm */}
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1">
+                  Tìm vị trí kho nhanh qua Google Maps Places
+                </label>
+                <div className="relative">
+                  <Search className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
+                  <input
+                    type="text"
+                    value={placesSearch}
+                    onChange={(e) => setPlacesSearch(e.target.value)}
+                    placeholder="Nhập tên tòa nhà, địa điểm hoặc địa chỉ kho..."
+                    className="w-full bg-slate-950 border border-slate-700 text-white rounded-xl pl-9 pr-3 py-2.5 text-xs focus:outline-none focus:border-cyan-400 transition"
+                  />
+                </div>
+              </div>
+
+              {/* Bộ 2 Ô Tọa Độ WGS84 (Chỉ đọc - Readonly) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-bold text-slate-300">
+                      Vĩ Độ (Latitude - Lat) *
+                    </label>
+                    <span className="text-[10px] text-cyan-400 font-mono">WGS84 Auto-generated</span>
+                  </div>
+                  <input
+                    type="text"
+                    required
+                    readOnly
+                    value={latitude}
+                    placeholder="VD: 10.762622"
+                    className="w-full bg-slate-950/70 border border-slate-800 text-cyan-400 font-mono rounded-xl px-3 py-2 text-xs focus:outline-none cursor-not-allowed"
+                  />
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-bold text-slate-300">
+                      Kinh Độ (Longitude - Lng) *
+                    </label>
+                    <span className="text-[10px] text-cyan-400 font-mono">WGS84 Auto-generated</span>
+                  </div>
+                  <input
+                    type="text"
+                    required
+                    readOnly
+                    value={longitude}
+                    placeholder="VD: 106.682029"
+                    className="w-full bg-slate-950/70 border border-slate-800 text-cyan-400 font-mono rounded-xl px-3 py-2 text-xs focus:outline-none cursor-not-allowed"
+                  />
+                </div>
               </div>
             </div>
 
