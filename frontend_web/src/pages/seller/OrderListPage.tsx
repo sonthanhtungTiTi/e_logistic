@@ -1,16 +1,17 @@
-import React, { useState } from 'react';
-import { Package, Plus, Ban, Search, CheckCircle2, AlertCircle, Eye, Edit3, Filter, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Package, Plus, Ban, Search, CheckCircle2, AlertCircle, Eye, Edit3, Filter, RefreshCw, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router';
-import { INITIAL_ORDERS } from '../../mockData';
 import type { Order } from '../../types/order.types';
 import { CancelOrderModal } from '../../components/orders/CancelOrderModal';
 import { OrderDetailModal } from '../../components/orders/OrderDetailModal';
 import { EditOrderModal } from '../../components/orders/EditOrderModal';
 import { OrderSubNav } from '../../components/orders/OrderSubNav';
+import { orderApi } from '../../api/order.api';
 
 export const OrderListPage: React.FC = () => {
   const navigate = useNavigate();
-  const [orders, setOrders] = useState<Order[]>(INITIAL_ORDERS);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
   const [selectedOrderToCancel, setSelectedOrderToCancel] = useState<Order | null>(null);
   const [selectedOrderView, setSelectedOrderView] = useState<Order | null>(null);
   const [selectedOrderToEdit, setSelectedOrderToEdit] = useState<Order | null>(null);
@@ -27,11 +28,45 @@ export const OrderListPage: React.FC = () => {
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const itemsPerPage = 5;
+  const [totalOrders, setTotalOrders] = useState<number>(0);
+  const [totalPages, setTotalPages] = useState<number>(1);
+  const itemsPerPage = 10;
 
   const formatCurrency = (val: number) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
   };
+
+  // Fetch real orders from MongoDB
+  const fetchOrders = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await orderApi.searchOrders({
+        search: searchTerm.trim() || undefined,
+        status: statusFilter !== 'ALL' ? statusFilter : undefined,
+        fromDate: fromDate || undefined,
+        toDate: toDate || undefined,
+        sortBy: sortBy,
+        page: currentPage,
+        limit: itemsPerPage,
+      });
+
+      if (response.data?.success) {
+        setOrders(response.data.data || []);
+        if (response.data.pagination) {
+          setTotalOrders(response.data.pagination.total || 0);
+          setTotalPages(response.data.pagination.totalPages || 1);
+        }
+      }
+    } catch (err: any) {
+      console.error('Lỗi lấy danh sách đơn hàng từ MongoDB:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [searchTerm, statusFilter, fromDate, toDate, sortBy, currentPage]);
+
+  useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
 
   const handleDateChange = (type: 'from' | 'to', val: string) => {
     setDateError(null);
@@ -49,6 +84,7 @@ export const OrderListPage: React.FC = () => {
     if (newFrom && newTo && new Date(newFrom) > new Date(newTo)) {
       setDateError('Khoảng thời gian không hợp lệ: Từ ngày không được lớn hơn Đến ngày!');
     }
+    setCurrentPage(1);
   };
 
   const handleResetFilters = () => {
@@ -63,19 +99,11 @@ export const OrderListPage: React.FC = () => {
 
   const handleOrderCancelledSuccess = (reasonStr?: string) => {
     if (!selectedOrderToCancel) return;
-
     const targetCode = selectedOrderToCancel.trackingCode || selectedOrderToCancel.trackingNumber;
-
-    setOrders((prev) =>
-      prev.map((o) =>
-        (o._id === selectedOrderToCancel._id || o.trackingCode === targetCode)
-          ? { ...o, status: 'CANCELLED' }
-          : o
-      )
-    );
 
     setToastMessage(`Đã hủy thành công đơn hàng ${targetCode}.${reasonStr ? ` Lý do: ${reasonStr}` : ''}`);
     setSelectedOrderToCancel(null);
+    fetchOrders();
 
     setTimeout(() => {
       setToastMessage(null);
@@ -84,56 +112,14 @@ export const OrderListPage: React.FC = () => {
 
   const handleOrderUpdatedSuccess = (updatedOrder: Order, feeMsg?: string) => {
     const targetCode = updatedOrder.trackingCode || updatedOrder.trackingNumber;
-
-    setOrders((prev) =>
-      prev.map((o) =>
-        (o._id === updatedOrder._id || o.trackingCode === targetCode)
-          ? { ...o, ...updatedOrder }
-          : o
-      )
-    );
-
     setToastMessage(`Đã cập nhật thành công thông tin đơn hàng ${targetCode}!${feeMsg || ''}`);
     setSelectedOrderToEdit(null);
+    fetchOrders();
 
     setTimeout(() => {
       setToastMessage(null);
     }, 5000);
   };
-
-  // Filter & Search Logic
-  const filteredOrders = orders.filter((o) => {
-    const matchSearch =
-      (o.trackingCode || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (o.deliveryAddress?.fullName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (o.deliveryAddress?.phone || '').includes(searchTerm);
-    
-    const matchStatus = statusFilter === 'ALL' || o.status === statusFilter;
-
-    let matchDate = true;
-    if (fromDate) {
-      matchDate = matchDate && new Date(o.createdAt || Date.now()) >= new Date(fromDate);
-    }
-    if (toDate) {
-      const endOfDay = new Date(toDate);
-      endOfDay.setHours(23, 59, 59, 999);
-      matchDate = matchDate && new Date(o.createdAt || Date.now()) <= endOfDay;
-    }
-
-    return matchSearch && matchStatus && matchDate;
-  });
-
-  // Sorting
-  const sortedOrders = [...filteredOrders].sort((a, b) => {
-    if (sortBy === 'shippingFee_desc') return (b.shippingFee || 0) - (a.shippingFee || 0);
-    if (sortBy === 'shippingFee_asc') return (a.shippingFee || 0) - (b.shippingFee || 0);
-    if (sortBy === 'createdAt_asc') return new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
-    return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
-  });
-
-  // Pagination Slice
-  const totalPages = Math.ceil(sortedOrders.length / itemsPerPage) || 1;
-  const paginatedOrders = sortedOrders.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
@@ -164,7 +150,7 @@ export const OrderListPage: React.FC = () => {
           <h3 className="text-2xl font-black text-white flex items-center gap-2">
             <Package className="w-6 h-6 text-blue-400" /> Tra Cứu & Quản Lý Đơn Hàng
           </h3>
-          <p className="text-xs text-slate-400">Tìm kiếm, lọc chi tiết theo mã vận đơn, người nhận, chỉnh sửa & quản lý bưu gửi</p>
+          <p className="text-xs text-slate-400">Tìm kiếm, lọc chi tiết theo mã vận đơn, người nhận, chỉnh sửa & quản lý bưu gửi từ MongoDB</p>
         </div>
 
         <OrderSubNav activeTab="list" />
@@ -211,6 +197,8 @@ export const OrderListPage: React.FC = () => {
             >
               <option value="ALL">Tất cả trạng thái</option>
               <option value="CREATED">Mới khởi tạo (CREATED)</option>
+              <option value="PENDING_VERIFICATION">Chờ xác minh (PENDING_VERIFICATION)</option>
+              <option value="READY_TO_PICK">Sẵn sàng lấy (READY_TO_PICK)</option>
               <option value="IN_TRANSIT">Đang vận chuyển (IN_TRANSIT)</option>
               <option value="OUT_FOR_DELIVERY">Đang giao hàng (OUT_FOR_DELIVERY)</option>
               <option value="DELIVERED">Giao thành công (DELIVERED)</option>
@@ -244,7 +232,7 @@ export const OrderListPage: React.FC = () => {
 
         <div className="flex items-center justify-between pt-2 border-t border-slate-800/80 text-xs text-slate-400">
           <div>
-            Tìm thấy <strong className="text-blue-400">{sortedOrders.length}</strong> đơn hàng phù hợp
+            Tìm thấy <strong className="text-blue-400">{totalOrders}</strong> đơn hàng phù hợp
           </div>
           <div className="flex items-center gap-2">
             <span>Sắp xếp:</span>
@@ -277,8 +265,15 @@ export const OrderListPage: React.FC = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800/60">
-            {paginatedOrders.length > 0 ? (
-              paginatedOrders.map((o) => {
+            {loading ? (
+              <tr>
+                <td colSpan={7} className="p-12 text-center text-slate-400">
+                  <Loader2 className="w-8 h-8 text-blue-500 animate-spin mx-auto mb-2" />
+                  <p className="font-semibold text-xs text-slate-300">Đang tải danh sách đơn hàng thực từ MongoDB...</p>
+                </td>
+              </tr>
+            ) : orders.length > 0 ? (
+              orders.map((o) => {
                 const canCancel = ['CREATED', 'PENDING_VERIFICATION', 'READY_TO_PICK'].includes(o.status);
                 const canEdit = ['CREATED', 'PENDING_VERIFICATION', 'READY_TO_PICK'].includes(o.status);
 
@@ -296,8 +291,8 @@ export const OrderListPage: React.FC = () => {
                       <span className="font-bold block">{o.deliveryAddress?.fullName}</span>
                       <span className="text-[10px] text-slate-400 block font-mono">{o.deliveryAddress?.phone}</span>
                     </td>
-                    <td className="p-3.5 text-slate-300 font-mono">{o.chargeableWeight} kg</td>
-                    <td className="p-3.5 font-mono text-emerald-400">{formatCurrency(o.shippingFee)}</td>
+                    <td className="p-3.5 text-slate-300 font-mono">{o.chargeableWeight || o.actualWeight || 0} kg</td>
+                    <td className="p-3.5 font-mono text-emerald-400">{formatCurrency(o.shippingFee || 0)}</td>
                     <td className="p-3.5 font-mono text-amber-400">{formatCurrency(o.codAmount || 0)}</td>
                     <td className="p-3.5">
                       <span className={`px-2.5 py-1 rounded-full font-bold text-[10px] uppercase border inline-flex items-center gap-1 ${
@@ -349,10 +344,18 @@ export const OrderListPage: React.FC = () => {
               })
             ) : (
               <tr>
-                <td colSpan={7} className="p-12 text-center text-slate-400 space-y-2">
-                  <Package className="w-10 h-10 text-slate-600 mx-auto" />
-                  <p className="font-bold text-sm text-slate-300">Không tìm thấy đơn hàng phù hợp.</p>
-                  <p className="text-xs text-slate-500">Vui lòng điều chỉnh điều kiện lọc hoặc từ khóa tìm kiếm</p>
+                <td colSpan={7} className="p-12 text-center text-slate-400 space-y-3">
+                  <Package className="w-12 h-12 text-slate-600 mx-auto" />
+                  <div>
+                    <p className="font-bold text-sm text-slate-200">Chưa có đơn hàng nào trong MongoDB</p>
+                    <p className="text-xs text-slate-500 mt-1">Các đơn hàng mới khởi tạo sẽ hiển thị tại đây theo dữ liệu thật của tài khoản này.</p>
+                  </div>
+                  <button
+                    onClick={() => navigate('/seller/create-order')}
+                    className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs inline-flex items-center gap-1.5 shadow-md cursor-pointer transition"
+                  >
+                    <Plus className="w-4 h-4" /> Tạo Đơn Hàng Mới
+                  </button>
                 </td>
               </tr>
             )}
@@ -362,7 +365,7 @@ export const OrderListPage: React.FC = () => {
         {/* Pagination Footer */}
         {totalPages > 1 && (
           <div className="p-3.5 bg-slate-900/90 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
-            <span>Trang {currentPage} / {totalPages}</span>
+            <span>Trang {currentPage} / {totalPages} (Tổng {totalOrders} đơn hàng)</span>
             <div className="flex items-center gap-2">
               <button
                 disabled={currentPage === 1}
