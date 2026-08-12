@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router';
 import {
   Package,
@@ -26,6 +26,7 @@ import {
   FileSpreadsheet,
   RotateCcw,
   Wallet,
+  Zap,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { orderApi } from '../../api/order.api';
@@ -248,18 +249,47 @@ export const CreateOrderPage: React.FC = () => {
     );
   };
 
-  // Calculated totals
+  // Calculated totals & dynamic estimated shipping fee
   const totalActualWeight = products.reduce(
     (sum, p) => sum + (Number(p.weight) || 0) * (Number(p.quantity) || 1),
     0
   );
-  const activeShippingFee = quoteResult
-    ? quoteResult.shippingFee
-    : totalActualWeight > 0
-    ? deliveryMode === 'express'
-      ? 22000
-      : 35000
-    : 0;
+
+  // Dynamic estimated fee formula (runs automatically whenever options/weight change)
+  const estimatedShippingFee = useMemo(() => {
+    const weight = Math.max(0.5, totalActualWeight || 0.5);
+    let base = 0;
+
+    if (deliveryMode === 'express') {
+      base = 22000;
+      if (weight > 1) {
+        const extraWeight = weight - 1;
+        const extraUnits = Math.ceil(extraWeight / 0.5);
+        base += extraUnits * 5000;
+      }
+    } else {
+      base = 35000;
+      if (weight > 2) {
+        const extraWeight = weight - 2;
+        const extraUnits = Math.ceil(extraWeight / 1);
+        base += extraUnits * 10000;
+      }
+    }
+
+    if (transportType === 'fly') {
+      base += 15000;
+    }
+
+    if (isHighValue || (Number(goodsValue) || 0) > 1000000) {
+      const insurance = Math.round((Number(goodsValue) || 0) * 0.005);
+      base += insurance;
+    }
+
+    return base;
+  }, [totalActualWeight, deliveryMode, transportType, goodsValue, isHighValue]);
+
+  // Use official API quote fee if present, otherwise fallback to dynamic estimated fee
+  const activeShippingFee = quoteResult ? quoteResult.shippingFee : estimatedShippingFee;
 
   // 1. Total amount shipper collects from buyer at doorstep
   const totalCollectFromBuyer =
@@ -272,6 +302,60 @@ export const CreateOrderPage: React.FC = () => {
     shippingPayer === 'seller'
       ? Math.max(0, Number(codAmount) - activeShippingFee)
       : Number(codAmount);
+
+  // Background auto-quote effect (runs silently when address info is entered)
+  useEffect(() => {
+    if (!receiverPhone.trim() || !receiverName.trim() || !detailAddress.trim()) {
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      orderApi
+        .getQuote({
+          pickupAddress: {
+            province: 'TP Hồ Chí Minh',
+            district: 'Quận 5',
+            ward: 'Phường 1',
+            address: user?.address || '123 Nguyễn Văn Cừ',
+          },
+          deliveryAddress: {
+            province: province || 'TP Hồ Chí Minh',
+            district: street || 'Quận 1',
+            ward: ward || 'Phường 1',
+            address: detailAddress,
+          },
+          items: products.map((p) => ({
+            name: p.name || 'Sản phẩm',
+            quantity: Number(p.quantity) || 1,
+            weight: Number(p.weight) || 0.5,
+          })),
+          dimensions: { length: 20, width: 15, height: 10 },
+          goodsValue: Number(goodsValue) || 0,
+          discountCode: customOrderCode || undefined,
+        })
+        .then((response) => {
+          if (response.data?.success) {
+            setQuoteResult(response.data.data);
+          }
+        })
+        .catch(() => {
+          // Silently retain estimatedShippingFee if API fails
+        });
+    }, 600);
+
+    return () => clearTimeout(timer);
+  }, [
+    receiverPhone,
+    receiverName,
+    detailAddress,
+    province,
+    ward,
+    street,
+    products,
+    goodsValue,
+    customOrderCode,
+    user?.address,
+  ]);
 
   // UC-06 Step 1: Handle Get Quote
   const handleGetQuote = async () => {
@@ -924,12 +1008,12 @@ export const CreateOrderPage: React.FC = () => {
               </div>
             </div>
 
-            {/* AI Quote Breakdown Box */}
-            {quoteResult && (
+            {/* AI Quote Breakdown Box (Always visible: Official or Auto Estimated) */}
+            {quoteResult ? (
               <div className="p-4 rounded-2xl bg-emerald-950/40 border border-emerald-500/30 text-xs space-y-2 text-slate-200 shadow-xl animate-in fade-in duration-300">
                 <div className="flex items-center justify-between font-bold text-emerald-400 border-b border-emerald-500/20 pb-2">
                   <span className="flex items-center gap-1.5">
-                    <ShieldCheck className="w-4 h-4 text-emerald-400" /> Báo Giá Cước Chi Tiết Từ Hệ Thống
+                    <ShieldCheck className="w-4 h-4 text-emerald-400" /> Báo Giá Cước Chi Tiết (Chính Thức)
                   </span>
                   <span className="text-[10px] font-mono bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/30 uppercase">
                     {quoteResult.pickupHub || 'HUB_SG'} → {quoteResult.deliveryHub || 'HUB_DEST'}
@@ -964,6 +1048,41 @@ export const CreateOrderPage: React.FC = () => {
                   <span>Tổng Phí Vận Chuyển:</span>
                   <span className="font-mono text-base text-emerald-400">
                     {formatNumberWithDots(quoteResult.shippingFee)} đ
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="p-4 rounded-2xl bg-cyan-950/40 border border-cyan-500/30 text-xs space-y-2 text-slate-200 shadow-xl animate-in fade-in duration-300">
+                <div className="flex items-center justify-between font-bold text-cyan-400 border-b border-cyan-500/20 pb-2">
+                  <span className="flex items-center gap-1.5">
+                    <Zap className="w-4 h-4 text-cyan-400" /> Báo Giá Cước Tự Động (Tạm Tính)
+                  </span>
+                  <span className="text-[10px] font-mono bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded-full border border-cyan-500/30 uppercase">
+                    TỰ ĐỘNG CẬP NHẬT
+                  </span>
+                </div>
+
+                <div className="flex justify-between text-slate-300">
+                  <span>Tổng trọng lượng thực:</span>
+                  <span className="font-mono font-bold text-white">{totalActualWeight.toFixed(1)} kg</span>
+                </div>
+                <div className="flex justify-between text-slate-300">
+                  <span>Gói cước & Phương thức:</span>
+                  <span className="font-semibold text-cyan-300">
+                    {deliveryMode === 'express' ? 'Hỏa Tốc Express (22k)' : 'Cồng Kềnh Bigsize (35k)'} • {transportType === 'road' ? 'Đường Bộ' : 'Đường Bay (+15k)'}
+                  </span>
+                </div>
+                {(isHighValue || Number(goodsValue) > 1000000) && (
+                  <div className="flex justify-between text-slate-300">
+                    <span>Phí bảo hiểm khai giá (0.5%):</span>
+                    <span className="font-mono text-amber-400">{formatNumberWithDots(Math.round(Number(goodsValue) * 0.005))} đ</span>
+                  </div>
+                )}
+
+                <div className="flex justify-between items-center font-black text-sm text-white pt-2 border-t border-cyan-500/20">
+                  <span>Tạm Tính Phí Vận Chuyển:</span>
+                  <span className="font-mono text-base text-cyan-400">
+                    {formatNumberWithDots(estimatedShippingFee)} đ
                   </span>
                 </div>
               </div>
