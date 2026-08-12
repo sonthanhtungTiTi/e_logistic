@@ -51,6 +51,7 @@ const quoteSchema = Joi.object({
 const createOrderSchema = Joi.object({
   orderIdSan: Joi.string().allow('', null).optional(),
   idempotencyKey: Joi.string().allow('', null).optional(),
+  confirmProceedWithoutDiscount: Joi.boolean().optional().default(false),
   pickupAddress: Joi.object({
     fullName: Joi.string().required(),
     phone: Joi.string().pattern(VN_PHONE_REGEX).required().messages({
@@ -204,6 +205,14 @@ const createNewOrder = async (sellerId, body, headerIdempotencyKey) => {
     goodsValue: orderData.goodsValue,
     discountCode: orderData.discountCode
   });
+
+  // Alt Flow 6.2: Check if discount code has error and Seller has not confirmed proceeding without discount
+  if (feeData.discountError && !orderData.confirmProceedWithoutDiscount) {
+    const err = new Error(feeData.discountError + '. Bạn có muốn tiếp tục tạo đơn hàng với cước phí gốc không?');
+    err.statusCode = 422;
+    err.code = 'DISCOUNT_INVALID_NEEDS_CONFIRM';
+    throw err;
+  }
 
   const codAmountInt = Math.floor(orderData.codAmount || 0);
   const isCod = codAmountInt > 0;

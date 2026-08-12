@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { orderApi } from '../../api/order.api';
-import type { CreateOrderPayload, Order } from '../../types/order.types';
+import type { CreateOrderPayload, Order, QuoteResponseData } from '../../types/order.types';
 import { CompleteShopInfoModal } from '../../components/orders/CompleteShopInfoModal';
 import { OrderSuccessModal } from '../../components/orders/OrderSuccessModal';
 import { PrintWaybillModal } from '../../components/orders/PrintWaybillModal';
@@ -57,8 +57,8 @@ export const CreateOrderPage: React.FC = () => {
 
   // 4-level Address Grid
   const [province, setProvince] = useState<string>('TP Hồ Chí Minh');
-  const [ward, setWard] = useState<string>('Xã Long Hòa');
-  const [street, setStreet] = useState<string>('Đường số 1');
+  const [ward, setWard] = useState<string>('Phường 1');
+  const [street, setStreet] = useState<string>('Quận 5');
   const [specialAddress, setSpecialAddress] = useState<string>('');
 
   // Transport & Delivery Options
@@ -68,7 +68,7 @@ export const CreateOrderPage: React.FC = () => {
   const [deliveryTimeSlot, setDeliveryTimeSlot] = useState<string>('Hẹn giao');
   const [pickupType, setPickupType] = useState<'cod' | 'post'>('cod');
   const [warehouseAddress] = useState<string>(
-    user?.address || ', Xã Long Hòa, Xã Long Hòa, TP Hồ Chí Minh'
+    user?.address || '123 Nguyễn Văn Cừ, Phường 1, Quận 5, TP Hồ Chí Minh'
   );
 
   // Product List
@@ -95,6 +95,11 @@ export const CreateOrderPage: React.FC = () => {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [createdOrder, setCreatedOrder] = useState<Order | null>(null);
   const [showPrintModal, setShowPrintModal] = useState<boolean>(false);
+
+  // 2-Step Order Flow & Quote States (UC-06)
+  const [quoteResult, setQuoteResult] = useState<QuoteResponseData | null>(null);
+  const [quoting, setQuoting] = useState<boolean>(false);
+  const [confirmDiscountModal, setConfirmDiscountModal] = useState<string | null>(null);
 
   // Automatically open modal on load if shop info is incomplete
   useEffect(() => {
@@ -131,12 +136,61 @@ export const CreateOrderPage: React.FC = () => {
     (sum, p) => sum + (Number(p.weight) || 0) * (Number(p.quantity) || 1),
     0
   );
-  const calculatedShippingFee = totalActualWeight > 0 ? (deliveryMode === 'express' ? 22000 : 35000) : 0;
-  const grandTotal = (shippingPayer === 'buyer' ? Number(codAmount) : Math.max(0, Number(codAmount) - calculatedShippingFee));
+  const activeShippingFee = quoteResult ? quoteResult.shippingFee : (totalActualWeight > 0 ? (deliveryMode === 'express' ? 22000 : 35000) : 0);
+  const grandTotal = (shippingPayer === 'buyer' ? Number(codAmount) : Math.max(0, Number(codAmount) - activeShippingFee));
 
-  // Submit Order Form
-  const handleSubmitOrder = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
+  // UC-06 Step 1: Handle Get Quote
+  const handleGetQuote = async () => {
+    setSubmitError(null);
+
+    if (!receiverPhone.trim() || !receiverName.trim()) {
+      setSubmitError('Vui lòng nhập đầy đủ số điện thoại và tên người nhận.');
+      return;
+    }
+
+    if (!detailAddress.trim()) {
+      setSubmitError('Vui lòng nhập địa chỉ giao hàng chi tiết.');
+      return;
+    }
+
+    setQuoting(true);
+    try {
+      const response = await orderApi.getQuote({
+        pickupAddress: {
+          province: 'TP Hồ Chí Minh',
+          district: 'Quận 5',
+          ward: 'Phường 1',
+          address: user?.address || '123 Nguyễn Văn Cừ',
+        },
+        deliveryAddress: {
+          province: province || 'TP Hồ Chí Minh',
+          district: street || 'Quận 1',
+          ward: ward || 'Phường 1',
+          address: detailAddress,
+        },
+        items: products.map((p) => ({
+          name: p.name || 'Sản phẩm',
+          quantity: Number(p.quantity) || 1,
+          weight: Number(p.weight) || 0.5,
+        })),
+        dimensions: { length: 20, width: 15, height: 10 },
+        goodsValue: Number(goodsValue) || 0,
+        discountCode: customOrderCode || undefined,
+      });
+
+      if (response.data?.success) {
+        setQuoteResult(response.data.data);
+      }
+    } catch (err: any) {
+      const resMsg = err.response?.data?.message || err.message || 'Không thể lấy báo giá cước phí.';
+      setSubmitError(resMsg);
+    } finally {
+      setQuoting(false);
+    }
+  };
+
+  // UC-06 Step 2: Submit Order Form
+  const handleSubmitOrder = async (confirmWithoutDiscount: boolean = false) => {
     setSubmitError(null);
 
     // Guard: Shop profile check
@@ -159,13 +213,14 @@ export const CreateOrderPage: React.FC = () => {
     setSubmitting(true);
     try {
       const payload: CreateOrderPayload = {
+        confirmProceedWithoutDiscount: confirmWithoutDiscount,
         pickupAddress: {
           fullName: user?.fullName || 'Shop An Bình',
           phone: user?.phoneNumber || '0901234567',
           address: user?.address || '123 Nguyễn Văn Cừ',
           ward: 'Phường 1',
           district: 'Quận 5',
-          province: 'Thành phố Hồ Chí Minh',
+          province: 'TP Hồ Chí Minh',
         },
         deliveryAddress: {
           fullName: receiverName,
@@ -192,52 +247,42 @@ export const CreateOrderPage: React.FC = () => {
       if (response.data?.success) {
         setCreatedOrder(response.data.data);
       } else {
-        // Fallback for demo
+        // Demo fallback
         setCreatedOrder({
           _id: 'ORD-' + Math.floor(100000 + Math.random() * 900000),
-          trackingNumber: 'EL' + Math.floor(10000000 + Math.random() * 90000000),
-          sender: {
-            fullName: user?.fullName || 'Shop An Bình',
-            phone: user?.phoneNumber || '0901234567',
-            address: user?.address || '123 Nguyễn Văn Cừ, Q5, TP.HCM',
-          },
-          receiver: {
-            fullName: receiverName,
-            phone: receiverPhone,
-            address: `${detailAddress}, ${ward}, ${province}`,
-          },
-          items: products.map((p) => ({ name: p.name || 'Sản phẩm', quantity: p.quantity, weight: p.weight })),
-          packageDetails: { weight: totalActualWeight || 0.5 },
-          pricing: { totalFee: calculatedShippingFee, codFee: 0, insuranceFee: 0 },
+          trackingCode: response.data?.trackingCode || 'ELG-' + Math.floor(10000000 + Math.random() * 90000000),
+          trackingNumber: 'ELG-' + Math.floor(10000000 + Math.random() * 90000000),
+          pickupAddress: payload.pickupAddress,
+          deliveryAddress: payload.deliveryAddress,
+          items: payload.items,
+          dimensions: payload.dimensions || { length: 20, width: 15, height: 10 },
+          actualWeight: totalActualWeight || 0.5,
+          volumetricWeight: 0.6,
+          chargeableWeight: totalActualWeight || 0.5,
+          isCod: Boolean(payload.isCod),
           codAmount: Number(codAmount) || 0,
           goodsValue: Number(goodsValue) || 0,
+          baseFee: activeShippingFee,
+          insuranceFee: 0,
+          discountAmount: 0,
+          shippingFee: activeShippingFee,
           status: 'CREATED',
+          flagFeeWarning: false,
+          flagCodAnomaly: false,
+          needsManualRouting: false,
+          sellerId: user?._id || 'seller_default',
           createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
         } as Order);
       }
     } catch (err: any) {
-      // Create order fallback preview
-      setCreatedOrder({
-        _id: 'ORD-' + Math.floor(100000 + Math.random() * 900000),
-        trackingNumber: 'EL' + Math.floor(10000000 + Math.random() * 90000000),
-        sender: {
-          fullName: user?.fullName || 'Shop An Bình',
-          phone: user?.phoneNumber || '0901234567',
-          address: user?.address || '123 Nguyễn Văn Cừ, Q5, TP.HCM',
-        },
-        receiver: {
-          fullName: receiverName,
-          phone: receiverPhone,
-          address: `${detailAddress}, ${ward}, ${province}`,
-        },
-        items: products.map((p) => ({ name: p.name || 'Sản phẩm', quantity: p.quantity, weight: p.weight })),
-        packageDetails: { weight: totalActualWeight || 0.5 },
-        pricing: { totalFee: calculatedShippingFee, codFee: 0, insuranceFee: 0 },
-        codAmount: Number(codAmount) || 0,
-        goodsValue: Number(goodsValue) || 0,
-        status: 'CREATED',
-        createdAt: new Date().toISOString(),
-      } as Order);
+      const resData = err.response?.data;
+      if (resData?.code === 'DISCOUNT_INVALID_NEEDS_CONFIRM') {
+        setConfirmDiscountModal(resData.message);
+        return;
+      }
+      const resMsg = resData?.message || err.message || 'Không thể khởi tạo đơn hàng.';
+      setSubmitError(resMsg);
     } finally {
       setSubmitting(false);
     }
@@ -844,11 +889,50 @@ export const CreateOrderPage: React.FC = () => {
                   </span>
                 </div>
 
+                {/* Quote Breakdown Card when available */}
+                {quoteResult && (
+                  <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl space-y-1.5 text-xs text-slate-800 animate-in fade-in duration-300">
+                    <div className="font-bold text-emerald-800 flex items-center justify-between">
+                      <span>Báo giá chi tiết từ hệ thống:</span>
+                      <span className="text-[10px] bg-emerald-200 text-emerald-900 px-1.5 py-0.5 rounded font-mono">
+                        {quoteResult.pickupHub || 'HUB_ORIG'} → {quoteResult.deliveryHub || 'HUB_DEST'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-slate-600">
+                      <span>Khối lượng tính cước:</span>
+                      <span className="font-bold text-slate-900">{quoteResult.chargeableWeight} kg</span>
+                    </div>
+                    <div className="flex justify-between text-slate-600">
+                      <span>Cước cơ bản:</span>
+                      <span className="font-mono">{quoteResult.baseFee.toLocaleString('vi-VN')} đ</span>
+                    </div>
+                    <div className="flex justify-between text-slate-600">
+                      <span>Phí khai giá (bảo hiểm):</span>
+                      <span className="font-mono">{quoteResult.insuranceFee.toLocaleString('vi-VN')} đ</span>
+                    </div>
+                    {quoteResult.discountAmount > 0 && (
+                      <div className="flex justify-between text-emerald-700 font-semibold">
+                        <span>Giảm giá (Voucher):</span>
+                        <span className="font-mono">-{quoteResult.discountAmount.toLocaleString('vi-VN')} đ</span>
+                      </div>
+                    )}
+                    {quoteResult.discountError && (
+                      <div className="text-[11px] text-amber-700 font-medium">
+                        ⚠️ {quoteResult.discountError}
+                      </div>
+                    )}
+                    <div className="flex justify-between font-bold text-sm text-emerald-900 pt-1 border-t border-emerald-200">
+                      <span>Tổng cước vận chuyển:</span>
+                      <span className="font-mono text-base">{quoteResult.shippingFee.toLocaleString('vi-VN')} đ</span>
+                    </div>
+                  </div>
+                )}
+
                 {/* Shipping Fee & Payer */}
                 <div className="flex items-center justify-between pt-1">
                   <span className="text-slate-700 font-semibold">Phí ship</span>
                   <div className="flex items-center gap-3">
-                    <span className="font-bold text-slate-900">{calculatedShippingFee.toLocaleString('vi-VN')}đ</span>
+                    <span className="font-bold text-slate-900">{activeShippingFee.toLocaleString('vi-VN')}đ</span>
                     <select
                       value={shippingPayer}
                       onChange={(e) => setShippingPayer(e.target.value as any)}
@@ -862,7 +946,7 @@ export const CreateOrderPage: React.FC = () => {
 
                 {/* Grand Total */}
                 <div className="flex items-center justify-between pt-2 border-t border-[#eee] text-sm">
-                  <span className="font-bold text-slate-900">Tổng tiền</span>
+                  <span className="font-bold text-slate-900">Tổng thu người nhận</span>
                   <span className="font-extrabold text-[#158C4D] font-mono text-base">
                     {grandTotal.toLocaleString('vi-VN')}đ
                   </span>
@@ -882,13 +966,13 @@ export const CreateOrderPage: React.FC = () => {
 
                 {/* Custom Order Code */}
                 <div className="flex items-center justify-between gap-4 pt-1">
-                  <span className="text-slate-700 font-semibold min-w-[90px]">Mã ĐH riêng</span>
+                  <span className="text-slate-700 font-semibold min-w-[90px]">Mã ĐH / Mã KM</span>
                   <input
                     type="text"
                     value={customOrderCode}
                     onChange={(e) => setCustomOrderCode(e.target.value)}
-                    placeholder="Nhập mã đơn hàng riêng của shop"
-                    className="w-full border-b border-[#eee] outline-none text-xs py-1 font-mono"
+                    placeholder="Nhập mã đơn hàng hoặc Mã khuyến mãi (VD: FREESHIP15)"
+                    className="w-full border-b border-[#eee] outline-none text-xs py-1 font-mono uppercase"
                   />
                 </div>
               </section>
@@ -951,10 +1035,9 @@ export const CreateOrderPage: React.FC = () => {
         </main>
       </div>
 
-      {/* 3. STICKY BOTTOM BAR matching image requirements */}
+      {/* 3. STICKY BOTTOM BAR supporting 2-step flow: 1. Xem Báo Giá -> 2. Xác Nhận Tạo Đơn */}
       <footer className="fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-[#eee] px-5 py-3 shadow-lg flex items-center justify-center">
         {!isShopInfoComplete ? (
-          /* Red Warning Text matching user prompt requirement: "khi tạo đơn hàng cần hiển thị cửa sổ ảnh 1 nếu chưa có thông tin đầy đủ của shop" */
           <div
             onClick={() => setShowInfoModal(true)}
             className="text-[#EB5757] text-xl sm:text-2xl font-bold text-center cursor-pointer hover:underline animate-pulse flex items-center justify-center gap-2"
@@ -963,25 +1046,79 @@ export const CreateOrderPage: React.FC = () => {
             <span>Vui lòng xác thực email và liên kết ngân hàng</span>
           </div>
         ) : (
-          /* Green Submit Button when shop info is fully complete */
-          <button
-            type="button"
-            onClick={() => handleSubmitOrder()}
-            disabled={submitting}
-            className="bg-[#158C4D] hover:bg-[#0f6f3c] text-white px-10 py-3 rounded-md font-bold text-base flex items-center justify-center gap-2 cursor-pointer shadow-md transition"
-          >
-            {submitting ? (
-              <>
-                <Loader2 className="w-5 h-5 animate-spin" /> Đang Tạo Đơn Hàng...
-              </>
-            ) : (
-              <>
-                <CheckCircle2 className="w-5 h-5" /> Tạo Đơn Hàng Mới
-              </>
-            )}
-          </button>
+          <div className="flex items-center gap-4">
+            {/* Step 1: Get Quote */}
+            <button
+              type="button"
+              onClick={handleGetQuote}
+              disabled={quoting || submitting}
+              className="bg-slate-800 hover:bg-slate-700 text-white px-6 py-3 rounded-md font-bold text-sm flex items-center justify-center gap-2 cursor-pointer shadow-md transition border border-slate-700"
+            >
+              {quoting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" /> Đang Tính Cước...
+                </>
+              ) : (
+                <>
+                  <CreditCard className="w-4 h-4 text-amber-400" /> Xem Báo Giá Trước
+                </>
+              )}
+            </button>
+
+            {/* Step 2: Confirm Order */}
+            <button
+              type="button"
+              onClick={() => handleSubmitOrder(false)}
+              disabled={submitting || quoting}
+              className="bg-[#158C4D] hover:bg-[#0f6f3c] text-white px-8 py-3 rounded-md font-bold text-base flex items-center justify-center gap-2 cursor-pointer shadow-md transition"
+            >
+              {submitting ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" /> Đang Tạo Đơn Hàng...
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="w-5 h-5" /> Xác Nhận Tạo Đơn Hàng
+                </>
+              )}
+            </button>
+          </div>
         )}
       </footer>
+
+      {/* DISCOUNT ERROR CONFIRMATION MODAL (Alt Flow 6.2) */}
+      {confirmDiscountModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+          <div className="relative w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4 text-white shadow-2xl">
+            <div className="flex items-center gap-3 text-amber-400">
+              <AlertTriangle className="w-6 h-6 shrink-0" />
+              <h3 className="text-lg font-bold">Thông báo Mã Khuyến Mãi</h3>
+            </div>
+            <p className="text-sm text-slate-300 leading-relaxed">
+              {confirmDiscountModal}
+            </p>
+            <div className="flex items-center justify-end gap-3 pt-2 border-t border-slate-800">
+              <button
+                type="button"
+                onClick={() => setConfirmDiscountModal(null)}
+                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setConfirmDiscountModal(null);
+                  handleSubmitOrder(true);
+                }}
+                className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold"
+              >
+                Tiếp tục tạo đơn giá gốc
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* SHOP VERIFICATION MODAL (Image 1) */}
       <CompleteShopInfoModal

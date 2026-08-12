@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router';
 import { Package, Plus, Search, Filter, DollarSign, CheckCircle2, Truck, X } from 'lucide-react';
 import type { Order } from '../types/order.types';
 
@@ -13,6 +14,7 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
   onCreateOrder,
   onOpenOrderDetails,
 }) => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -160,7 +162,7 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
         </div>
 
         <button
-          onClick={() => setShowCreateModal(true)}
+          onClick={() => navigate('/seller/orders/create')}
           className="px-5 py-3 rounded-2xl shimmer-btn text-white text-xs font-bold shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 cursor-pointer transition"
         >
           <Plus className="w-4 h-4" />
