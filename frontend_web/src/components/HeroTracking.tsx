@@ -7,11 +7,15 @@ import { orderApi } from '../api/order.api';
 interface HeroTrackingProps {
   orders: Order[];
   onOpenOrderDetails: (order: Order) => void;
+  onEditOrder?: (order: Order) => void;
+  onCancelOrder?: (order: Order) => void;
 }
 
 export const HeroTracking: React.FC<HeroTrackingProps> = ({
   orders,
   onOpenOrderDetails,
+  onEditOrder,
+  onCancelOrder,
 }) => {
   const [searchInput, setSearchInput] = useState('');
   const [searchError, setSearchError] = useState('');
@@ -223,52 +227,77 @@ export const HeroTracking: React.FC<HeroTrackingProps> = ({
               const recipientName = ord.deliveryAddress?.fullName || ord.recipientName || 'Người nhận';
               const weight = ord.chargeableWeight || ord.chargeableWeightKg || ord.actualWeight || 0;
 
-              return (
-                <div
-                  key={ord._id || ord.id}
-                  onClick={() => onOpenOrderDetails(ord)}
-                  className="glass-card rounded-2xl p-5 cursor-pointer space-y-4 border border-slate-800 hover:border-blue-500/40 transition group"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-xs font-bold text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded-md border border-blue-500/20">
-                      {code}
-                    </span>
-                    <span
-                      className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase ${ord.status === 'DELIVERED'
-                          ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                          : ord.status === 'IN_TRANSIT' || ord.status === 'OUT_FOR_DELIVERY'
-                            ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                            : 'bg-slate-700/50 text-slate-300'
-                        }`}
+                  const isEditable = ['CREATED', 'PENDING_VERIFICATION', 'READY_TO_PICK', 'PENDING'].includes(ord.status);
+
+                  return (
+                    <div
+                      key={ord._id || ord.id}
+                      onClick={() => onOpenOrderDetails(ord)}
+                      className="glass-card rounded-2xl p-5 cursor-pointer space-y-4 border border-slate-800 hover:border-blue-500/40 transition group"
                     >
-                      {ord.status === 'IN_TRANSIT'
-                        ? 'Đang vận chuyển'
-                        : ord.status === 'OUT_FOR_DELIVERY'
-                          ? 'Đang phát hàng'
-                          : ord.status === 'DELIVERED'
-                            ? 'Đã giao'
-                            : 'Chờ xử lý'}
-                    </span>
-                  </div>
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono text-xs font-bold text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded-md border border-blue-500/20">
+                          {code}
+                        </span>
+                        <span
+                          className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase ${ord.status === 'DELIVERED'
+                              ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                              : ord.status === 'IN_TRANSIT' || ord.status === 'OUT_FOR_DELIVERY'
+                                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                                : 'bg-slate-700/50 text-slate-300'
+                            }`}
+                        >
+                          {ord.status === 'IN_TRANSIT'
+                            ? 'Đang vận chuyển'
+                            : ord.status === 'OUT_FOR_DELIVERY'
+                              ? 'Đang phát hàng'
+                              : ord.status === 'DELIVERED'
+                                ? 'Đã giao'
+                                : 'Chờ xử lý'}
+                        </span>
+                      </div>
 
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-1.5 text-xs text-slate-300 font-semibold truncate">
-                      <MapPin className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-                      {origin} ➔ {dest}
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-1.5 text-xs text-slate-300 font-semibold truncate">
+                          <MapPin className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                          {origin} ➔ {dest}
+                        </div>
+                        <p className="text-xs text-slate-400 truncate">
+                          Người nhận: <span className="text-slate-200">{recipientName}</span>
+                        </p>
+                      </div>
+
+                      <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+                        <span>TL Quy Đổi: <strong className="text-white">{weight} kg</strong></span>
+                        <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                          {isEditable && onEditOrder && (
+                            <button
+                              onClick={() => onEditOrder(ord)}
+                              className="px-2 py-0.5 rounded-lg bg-amber-500/20 hover:bg-amber-600 text-amber-300 hover:text-white border border-amber-500/30 text-[10px] font-bold transition cursor-pointer"
+                              title="Chỉnh sửa đơn hàng"
+                            >
+                              Sửa
+                            </button>
+                          )}
+                          {isEditable && onCancelOrder && (
+                            <button
+                              onClick={() => onCancelOrder(ord)}
+                              className="px-2 py-0.5 rounded-lg bg-rose-500/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 text-[10px] font-bold transition cursor-pointer"
+                              title="Hủy đơn hàng"
+                            >
+                              Hủy
+                            </button>
+                          )}
+                          <button
+                            onClick={() => onOpenOrderDetails(ord)}
+                            className="text-blue-400 group-hover:translate-x-0.5 transition-transform flex items-center gap-1 font-semibold text-xs cursor-pointer ml-1"
+                          >
+                            Chi tiết <ArrowRight className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                    <p className="text-xs text-slate-400 truncate">
-                      Người nhận: <span className="text-slate-200">{recipientName}</span>
-                    </p>
-                  </div>
-
-                  <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
-                    <span>TL Quy Đổi: <strong className="text-white">{weight} kg</strong></span>
-                    <span className="text-blue-400 group-hover:translate-x-1 transition-transform flex items-center gap-1 font-semibold">
-                      Chi tiết <ArrowRight className="w-3 h-3" />
-                    </span>
-                  </div>
-                </div>
-              );
+                  );
             })}
           </div>
         ) : (
