@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Package, X, MapPin, User, Edit3, Printer } from 'lucide-react';
 import type { Order } from '../../types/order.types';
+import { PrintWaybillModal } from './PrintWaybillModal';
 
 interface OrderDetailModalProps {
   order: Order;
@@ -9,6 +10,8 @@ interface OrderDetailModalProps {
 }
 
 export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, onClose, onEdit }) => {
+  const [showPrintModal, setShowPrintModal] = useState(false);
+
   const formatCurrency = (val?: number) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val || 0);
   };
@@ -177,7 +180,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, onClo
 
           <div className="flex items-center gap-2">
             <button
-              onClick={() => window.open(`/api/orders/${order._id || order.id}/label`, '_blank')}
+              onClick={() => setShowPrintModal(true)}
               className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs flex items-center gap-1.5 cursor-pointer border border-slate-700 transition"
             >
               <Printer className="w-4 h-4 text-blue-400" /> In Vận Đơn PDF
@@ -192,6 +195,10 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, onClo
         </div>
 
       </div>
+
+      {showPrintModal && (
+        <PrintWaybillModal order={order} onClose={() => setShowPrintModal(false)} />
+      )}
     </div>
   );
 };

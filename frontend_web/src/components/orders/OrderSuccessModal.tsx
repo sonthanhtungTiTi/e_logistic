@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { CheckCircle, Copy, Printer, PlusCircle, ListFilter, Check, X } from 'lucide-react';
 import type { Order } from '../../types/order.types';
 import { PrintWaybillModal } from './PrintWaybillModal';
