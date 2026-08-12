@@ -8,11 +8,15 @@ const {
   bulkCancelOrders,
   searchOrders,
   trackOrderPublic,
+  getPublicRecentOrders,
   getOrderById,
   getPrintLabel
 } = require('../controllers/order.controller');
 const { protect, authorize } = require('../middleware/auth.middleware');
 const { createOrderRateLimiter, trackingRateLimiter } = require('../middleware/rateLimit.middleware');
+
+// GET /api/orders/public-recent - Danh sách vận đơn hiển thị công khai trên LandingPage
+router.get('/public-recent', getPublicRecentOrders);
 
 // GET /api/orders/track/:trackingCode - Tra cứu công khai cho Khách mua (Public Buyer Tracking - Rate Limited 10 req/min, PII Masked)
 router.get('/track/:trackingCode', trackingRateLimiter, trackOrderPublic);

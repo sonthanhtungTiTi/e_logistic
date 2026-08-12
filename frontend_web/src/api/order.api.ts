@@ -44,9 +44,13 @@ export interface PublicTrackingResponse {
 }
 
 export const orderApi = {
+  // Public Recent Orders for LandingPage
+  getPublicRecentOrders: () =>
+    axiosClient.get<{ success: boolean; data: Order[] }>('/orders/public-recent'),
+
   // Public Guest Tracking by Tracking Code (Masked PII)
   trackOrderPublic: (trackingCode: string) =>
-    axiosClient.get<{ success: boolean; message: string; data: PublicTrackingResponse }>(`/orders/track/${trackingCode}`),
+    axiosClient.get<{ success: boolean; message: string; data: any }>(`/orders/track/${trackingCode}`),
 
   // Private Seller Search & Filter Orders
   searchOrders: (params?: OrderSearchParams) =>

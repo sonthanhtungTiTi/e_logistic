@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Search, ShieldCheck, Zap, Thermometer, ArrowRight, CheckCircle2, Sparkles, Navigation, MapPin } from 'lucide-react';
+import { Search, ShieldCheck, Zap, Thermometer, ArrowRight, CheckCircle2, Sparkles, Navigation, MapPin, Loader2, Package } from 'lucide-react';
 import type { Order } from '../types/order.types';
 import heroBg from '../assets/hero_bg.png';
+import { orderApi } from '../api/order.api';
 
 interface HeroTrackingProps {
   orders: Order[];
@@ -14,32 +15,55 @@ export const HeroTracking: React.FC<HeroTrackingProps> = ({
 }) => {
   const [searchInput, setSearchInput] = useState('');
   const [searchError, setSearchError] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+
+  const performSearch = async (codeToSearch: string) => {
+    const cleanCode = codeToSearch.trim();
+    if (!cleanCode) {
+      setSearchError('Vui lòng nhập mã vận đơn (VD: ELG559535153VN hoặc ELG-123456)');
+      return;
+    }
+
+    // First, check loaded orders list
+    const foundLocal = orders.find((o) => {
+      const c = o.trackingCode || o.trackingNumber || '';
+      return c.toLowerCase() === cleanCode.toLowerCase() || (o._id && o._id === cleanCode);
+    });
+
+    if (foundLocal) {
+      setSearchError('');
+      onOpenOrderDetails(foundLocal);
+      return;
+    }
+
+    // If not found locally, query MongoDB public tracking API directly
+    setIsSearching(true);
+    setSearchError('');
+
+    try {
+      const response = await orderApi.trackOrderPublic(cleanCode);
+      if (response.data?.success && response.data.data) {
+        setSearchError('');
+        onOpenOrderDetails(response.data.data);
+      } else {
+        setSearchError(`Không tìm thấy mã vận đơn "${cleanCode}". Vui lòng kiểm tra lại.`);
+      }
+    } catch (err: any) {
+      const msg = err.response?.data?.message || `Không tìm thấy mã vận đơn "${cleanCode}". Vui lòng kiểm tra lại.`;
+      setSearchError(msg);
+    } finally {
+      setIsSearching(false);
+    }
+  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!searchInput.trim()) {
-      setSearchError('Vui lòng nhập mã vận đơn (VD: VN-LOG-889421)');
-      return;
-    }
-    const found = orders.find((o) => {
-      const code = o.trackingCode || o.trackingNumber || '';
-      return code.toLowerCase() === searchInput.trim().toLowerCase();
-    });
-    if (!found) {
-      setSearchError(`Không tìm thấy mã vận đơn "${searchInput}". Thử mã demo bên dưới.`);
-      return;
-    }
-    setSearchError('');
-    onOpenOrderDetails(found);
+    performSearch(searchInput);
   };
 
   const handleQuickClick = (code: string) => {
     setSearchInput(code);
-    const found = orders.find((o) => (o.trackingCode || o.trackingNumber) === code);
-    if (found) {
-      setSearchError('');
-      onOpenOrderDetails(found);
-    }
+    performSearch(code);
   };
 
   return (
@@ -84,16 +108,26 @@ export const HeroTracking: React.FC<HeroTrackingProps> = ({
                     type="text"
                     value={searchInput}
                     onChange={(e) => setSearchInput(e.target.value)}
-                    placeholder="Nhập mã vận đơn (VD: VN-LOG-889421)..."
+                    placeholder="Nhập mã vận đơn (VD: ELG559535153VN)..."
                     className="w-full bg-transparent text-white placeholder-slate-500 text-sm font-medium focus:outline-none"
                   />
                 </div>
                 <button
                   type="submit"
-                  className="px-6 py-3.5 rounded-xl shimmer-btn text-white font-bold text-sm shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 hover:opacity-95 transition cursor-pointer"
+                  disabled={isSearching}
+                  className="px-6 py-3.5 rounded-xl shimmer-btn text-white font-bold text-sm shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 hover:opacity-95 transition cursor-pointer disabled:opacity-50"
                 >
-                  Tra Cứu Ngay
-                  <ArrowRight className="w-4 h-4" />
+                  {isSearching ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Đang tra cứu...
+                    </>
+                  ) : (
+                    <>
+                      Tra Cứu Ngay
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
                 </button>
               </div>
             </form>
@@ -105,21 +139,23 @@ export const HeroTracking: React.FC<HeroTrackingProps> = ({
             )}
 
             {/* Demo tracking pills */}
-            <div className="flex flex-wrap items-center gap-2 mt-4 text-xs">
-              <span className="text-slate-400 font-semibold">Thử mã demo:</span>
-              {orders.map((o) => {
-                const code = o.trackingCode || o.trackingNumber || '';
-                return (
-                  <button
-                    key={o._id || o.id}
-                    onClick={() => handleQuickClick(code)}
-                    className="px-3 py-1 rounded-lg bg-slate-800/80 hover:bg-blue-600/30 text-blue-300 hover:text-white border border-slate-700/60 font-mono transition cursor-pointer"
-                  >
-                    {code} ({o.serviceType || 'EXPRESS'})
-                  </button>
-                );
-              })}
-            </div>
+            {orders.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2 mt-4 text-xs">
+                <span className="text-slate-400 font-semibold">Vận đơn mới nhất:</span>
+                {orders.slice(0, 4).map((o) => {
+                  const code = o.trackingCode || o.trackingNumber || '';
+                  return (
+                    <button
+                      key={o._id || o.id}
+                      onClick={() => handleQuickClick(code)}
+                      className="px-3 py-1 rounded-lg bg-slate-800/80 hover:bg-blue-600/30 text-blue-300 hover:text-white border border-slate-700/60 font-mono transition cursor-pointer"
+                    >
+                      {code} ({o.serviceType || 'EXPRESS'})
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
 
@@ -178,62 +214,70 @@ export const HeroTracking: React.FC<HeroTrackingProps> = ({
           <span className="text-xs text-slate-400">Nhấn vào đơn để xem dòng thời gian chi tiết</span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {orders.map((ord) => {
-            const code = ord.trackingCode || ord.trackingNumber || '';
-            const origin = ord.pickupAddress?.province || ord.originCity || 'N/A';
-            const dest = ord.deliveryAddress?.province || ord.destinationCity || 'N/A';
-            const recipientName = ord.deliveryAddress?.fullName || ord.recipientName || 'N/A';
-            const weight = ord.chargeableWeight || ord.chargeableWeightKg || 0;
+        {orders.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {orders.map((ord) => {
+              const code = ord.trackingCode || ord.trackingNumber || '';
+              const origin = ord.pickupAddress?.province || ord.originCity || 'TP.HCM';
+              const dest = ord.deliveryAddress?.province || ord.destinationCity || 'Hà Nội';
+              const recipientName = ord.deliveryAddress?.fullName || ord.recipientName || 'Người nhận';
+              const weight = ord.chargeableWeight || ord.chargeableWeightKg || ord.actualWeight || 0;
 
-            return (
-              <div
-                key={ord._id || ord.id}
-                onClick={() => onOpenOrderDetails(ord)}
-                className="glass-card rounded-2xl p-5 cursor-pointer space-y-4 border border-slate-800 hover:border-blue-500/40 transition group"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="font-mono text-xs font-bold text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded-md border border-blue-500/20">
-                    {code}
-                  </span>
-                  <span
-                    className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase ${ord.status === 'DELIVERED'
-                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                        : ord.status === 'IN_TRANSIT' || ord.status === 'OUT_FOR_DELIVERY'
-                          ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                          : 'bg-slate-700/50 text-slate-300'
-                      }`}
-                  >
-                    {ord.status === 'IN_TRANSIT'
-                      ? 'Đang vận chuyển'
-                      : ord.status === 'OUT_FOR_DELIVERY'
-                        ? 'Đang phát hàng'
-                        : ord.status === 'DELIVERED'
-                          ? 'Đã giao'
-                          : 'Chờ xử lý'}
-                  </span>
-                </div>
-
-                <div className="space-y-1">
-                  <div className="flex items-center gap-1.5 text-xs text-slate-300 font-semibold truncate">
-                    <MapPin className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-                    {origin} ➔ {dest}
+              return (
+                <div
+                  key={ord._id || ord.id}
+                  onClick={() => onOpenOrderDetails(ord)}
+                  className="glass-card rounded-2xl p-5 cursor-pointer space-y-4 border border-slate-800 hover:border-blue-500/40 transition group"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-xs font-bold text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded-md border border-blue-500/20">
+                      {code}
+                    </span>
+                    <span
+                      className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase ${ord.status === 'DELIVERED'
+                          ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                          : ord.status === 'IN_TRANSIT' || ord.status === 'OUT_FOR_DELIVERY'
+                            ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                            : 'bg-slate-700/50 text-slate-300'
+                        }`}
+                    >
+                      {ord.status === 'IN_TRANSIT'
+                        ? 'Đang vận chuyển'
+                        : ord.status === 'OUT_FOR_DELIVERY'
+                          ? 'Đang phát hàng'
+                          : ord.status === 'DELIVERED'
+                            ? 'Đã giao'
+                            : 'Chờ xử lý'}
+                    </span>
                   </div>
-                  <p className="text-xs text-slate-400 truncate">
-                    Người nhận: <span className="text-slate-200">{recipientName}</span>
-                  </p>
-                </div>
 
-                <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
-                  <span>TL Quy Đổi: <strong className="text-white">{weight} kg</strong></span>
-                  <span className="text-blue-400 group-hover:translate-x-1 transition-transform flex items-center gap-1 font-semibold">
-                    Chi tiết <ArrowRight className="w-3 h-3" />
-                  </span>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1.5 text-xs text-slate-300 font-semibold truncate">
+                      <MapPin className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                      {origin} ➔ {dest}
+                    </div>
+                    <p className="text-xs text-slate-400 truncate">
+                      Người nhận: <span className="text-slate-200">{recipientName}</span>
+                    </p>
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+                    <span>TL Quy Đổi: <strong className="text-white">{weight} kg</strong></span>
+                    <span className="text-blue-400 group-hover:translate-x-1 transition-transform flex items-center gap-1 font-semibold">
+                      Chi tiết <ArrowRight className="w-3 h-3" />
+                    </span>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="p-8 rounded-2xl bg-slate-900/60 border border-slate-800 text-center space-y-2">
+            <Package className="w-8 h-8 text-slate-600 mx-auto" />
+            <p className="text-sm font-bold text-slate-300">Chưa có vận đơn nào trong CSDL MongoDB</p>
+            <p className="text-xs text-slate-500">Các vận đơn vừa khởi tạo sẽ xuất hiện tại đây theo thời gian thực.</p>
+          </div>
+        )}
       </div>
 
       {/* System Core Architecture Features */}

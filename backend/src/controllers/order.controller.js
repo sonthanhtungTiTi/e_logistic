@@ -235,6 +235,26 @@ const trackOrderPublic = async (req, res, next) => {
 };
 
 /**
+ * @desc    Lấy danh sách đơn hàng gần đây nhất hiển thị công khai trên trang chủ LandingPage
+ * @route   GET /api/orders/public-recent
+ * @access  Public
+ */
+const getPublicRecentOrders = async (req, res, next) => {
+  try {
+    const orders = await Order.find()
+      .sort({ createdAt: -1 })
+      .limit(8);
+
+    return res.status(200).json({
+      success: true,
+      data: orders
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
  * @desc    Lấy chi tiết đơn hàng riêng tư theo ID hoặc Tracking Code (Dành cho Seller/Admin)
  * @route   GET /api/orders/:id
  * @access  Private (Seller/Admin)
@@ -336,6 +356,7 @@ module.exports = {
   bulkCancelOrders,
   searchOrders,
   trackOrderPublic,
+  getPublicRecentOrders,
   getOrderById,
   getPrintLabel,
   notifyDispatcherOrderRemoved

@@ -964,11 +964,17 @@ const getPublicOrderTracking = async (trackingCode) => {
     throw err;
   }
 
-  const cleanCode = trackingCode.trim().toUpperCase();
-  const order = await Order.findOne({ trackingCode: cleanCode });
+  const cleanCode = trackingCode.trim();
+  const order = await Order.findOne({
+    $or: [
+      { trackingCode: { $regex: `^${cleanCode}$`, $options: 'i' } },
+      { orderIdSan: cleanCode },
+      ...(mongoose.Types.ObjectId.isValid(cleanCode) ? [{ _id: cleanCode }] : [])
+    ]
+  });
 
   if (!order) {
-    const err = new Error('Không tìm thấy đơn hàng với mã vận đơn này.');
+    const err = new Error(`Không tìm thấy đơn hàng với mã vận đơn "${cleanCode}".`);
     err.statusCode = 404;
     throw err;
   }
@@ -1027,6 +1033,7 @@ const getPublicOrderTracking = async (trackingCode) => {
   };
 
   return {
+    ...order.toObject(),
     tracking_number: order.trackingCode,
     trackingCode: order.trackingCode,
     status: order.status,
