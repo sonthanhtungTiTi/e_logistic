@@ -35,16 +35,18 @@ export const PrintWaybillModal: React.FC<PrintWaybillModalProps> = ({ order, onC
         {/* PRINTABLE STICKER AREA (A6 proportions 100mm x 150mm) */}
         <div className="border-2 border-slate-900 p-4 space-y-3 font-sans text-xs bg-white text-black">
           {/* Header */}
-          <div className="flex items-center justify-between border-b-2 border-slate-900 pb-2">
-            <div>
-              <h1 className="font-black text-lg tracking-wider">E-LOGISTIC</h1>
-              <span className="text-[10px] font-bold block uppercase">Pharma Cold-Chain Express</span>
+          <div className="flex items-center justify-between border-b-2 border-slate-900 pb-2 gap-2">
+            <div className="shrink-0">
+              <h1 className="font-black text-base tracking-wider text-black whitespace-nowrap leading-none">E-LOGISTIC</h1>
+              <span className="text-[9px] font-bold block uppercase text-slate-700 whitespace-nowrap mt-0.5">Pharma Cold-Chain Express</span>
             </div>
-            <div className="text-right">
-              <span className="text-[10px] font-bold block">HUB PHỤC VỤ</span>
-              <span className="font-mono font-black text-sm bg-slate-100 px-2 py-0.5 border border-slate-400 rounded">
-                {order.pickupHub || 'HUB_SGN_01'} ➔ {order.deliveryHub || 'HUB_VTH_01'}
-              </span>
+            <div className="text-right flex flex-col items-end min-w-0">
+              <span className="text-[9px] font-bold block uppercase text-slate-600">HUB PHỤC VỤ</span>
+              <div className="flex items-center gap-1 font-mono font-bold text-[10px] bg-slate-100 px-2 py-0.5 border border-slate-400 rounded text-slate-900 mt-0.5 max-w-full truncate">
+                <span className="truncate max-w-[110px]">{order.pickupHub || 'HUB_SGN_01'}</span>
+                <span className="shrink-0">➔</span>
+                <span className="truncate max-w-[110px]">{order.deliveryHub || 'HUB_VTH_01'}</span>
+              </div>
             </div>
           </div>
 

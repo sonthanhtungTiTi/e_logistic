@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { CheckCircle, Copy, Printer, PlusCircle, ListFilter, Check, X } from 'lucide-react';
 import type { Order } from '../../types/order.types';
 import { PrintWaybillModal } from './PrintWaybillModal';
@@ -18,6 +19,7 @@ export const OrderSuccessModal: React.FC<OrderSuccessModalProps> = ({
   onViewList,
   onPrintWaybill
 }) => {
+  const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
   const [showPrintModal, setShowPrintModal] = useState(false);
 
@@ -27,6 +29,22 @@ export const OrderSuccessModal: React.FC<OrderSuccessModalProps> = ({
     navigator.clipboard.writeText(trackingCode);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleViewListClick = () => {
+    if (onViewList) {
+      onViewList();
+    } else {
+      navigate('/seller/orders');
+    }
+  };
+
+  const handleCreateNextClick = () => {
+    if (onCreateNext) {
+      onCreateNext();
+    } else if (onClose) {
+      onClose();
+    }
   };
 
   const formatCurrency = (val: number) => {
@@ -114,14 +132,14 @@ export const OrderSuccessModal: React.FC<OrderSuccessModalProps> = ({
 
             <div className="grid grid-cols-2 gap-2">
               <button
-                onClick={onCreateNext}
+                onClick={handleCreateNextClick}
                 className="py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs flex items-center justify-center gap-1.5 border border-slate-700 transition cursor-pointer"
               >
                 <PlusCircle className="w-4 h-4 text-emerald-400" /> Tạo Đơn Tiếp Theo
               </button>
 
               <button
-                onClick={onViewList}
+                onClick={handleViewListClick}
                 className="py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs flex items-center justify-center gap-1.5 border border-slate-700 transition cursor-pointer"
               >
                 <ListFilter className="w-4 h-4 text-blue-400" /> Xem Danh Sách Đơn

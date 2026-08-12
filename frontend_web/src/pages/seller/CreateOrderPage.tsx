@@ -1158,6 +1158,27 @@ export const CreateOrderPage: React.FC = () => {
             setCreatedOrder(null);
             navigate('/seller/orders');
           }}
+          onCreateNext={() => {
+            setReceiverPhone('');
+            setReceiverName('');
+            setDetailAddress('');
+            setProducts([{ id: Date.now(), name: '', price: 0, weight: 0.5, quantity: 1 }]);
+            setCodAmount(0);
+            setGoodsValue(0);
+            setOrderNote('');
+            setCustomOrderCode('');
+            setQuoteResult(null);
+            setSubmitError(null);
+            setConfirmDiscountModal(null);
+            localStorage.removeItem(DRAFT_KEY);
+            setHasDraftRestored(false);
+            setCreatedOrder(null);
+            setShowPrintModal(false);
+          }}
+          onViewList={() => {
+            setCreatedOrder(null);
+            navigate('/seller/orders');
+          }}
           onPrintWaybill={() => setShowPrintModal(true)}
         />
       )}
