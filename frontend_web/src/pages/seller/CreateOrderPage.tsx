@@ -25,6 +25,7 @@ import {
   ChevronRight,
   FileSpreadsheet,
   RotateCcw,
+  Wallet,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { orderApi } from '../../api/order.api';
@@ -33,6 +34,7 @@ import { CompleteShopInfoModal } from '../../components/orders/CompleteShopInfoM
 import { OrderSuccessModal } from '../../components/orders/OrderSuccessModal';
 import { PrintWaybillModal } from '../../components/orders/PrintWaybillModal';
 import { OrderSubNav } from '../../components/orders/OrderSubNav';
+import { formatNumberWithDots, parseDotsToNumber } from '../../lib/formatters';
 
 interface ProductItem {
   id: number;
@@ -258,10 +260,18 @@ export const CreateOrderPage: React.FC = () => {
       ? 22000
       : 35000
     : 0;
-  const grandTotal =
+
+  // 1. Total amount shipper collects from buyer at doorstep
+  const totalCollectFromBuyer =
     shippingPayer === 'buyer'
-      ? Number(codAmount)
-      : Math.max(0, Number(codAmount) - activeShippingFee);
+      ? Number(codAmount) + activeShippingFee
+      : Number(codAmount);
+
+  // 2. Net amount seller receives after deducting shipping fee if seller pays
+  const netSellerReceive =
+    shippingPayer === 'seller'
+      ? Math.max(0, Number(codAmount) - activeShippingFee)
+      : Number(codAmount);
 
   // UC-06 Step 1: Handle Get Quote
   const handleGetQuote = async () => {
@@ -822,10 +832,10 @@ export const CreateOrderPage: React.FC = () => {
                     <div>
                       <label className="block text-[11px] text-slate-400 mb-1">Giá bán (VNĐ)</label>
                       <input
-                        type="number"
-                        value={product.price || ''}
+                        type="text"
+                        value={formatNumberWithDots(product.price)}
                         onChange={(e) =>
-                          handleProductChange(product.id, 'price', parseFloat(e.target.value) || 0)
+                          handleProductChange(product.id, 'price', parseDotsToNumber(e.target.value))
                         }
                         placeholder="0"
                         className="w-full glass-input rounded-xl px-3 py-2 text-xs text-white font-mono placeholder:text-slate-600 bg-slate-950 border border-slate-800 outline-none text-right"
@@ -892,9 +902,9 @@ export const CreateOrderPage: React.FC = () => {
                   Tiền thu hộ COD (VNĐ)
                 </label>
                 <input
-                  type="number"
-                  value={codAmount || ''}
-                  onChange={(e) => setCodAmount(parseInt(e.target.value) || 0)}
+                  type="text"
+                  value={formatNumberWithDots(codAmount)}
+                  onChange={(e) => setCodAmount(parseDotsToNumber(e.target.value))}
                   placeholder="0"
                   className="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-amber-400 font-mono font-bold bg-slate-900 border border-slate-800 outline-none text-right"
                 />
@@ -905,9 +915,9 @@ export const CreateOrderPage: React.FC = () => {
                   Giá trị hàng hóa (Bảo hiểm)
                 </label>
                 <input
-                  type="number"
-                  value={goodsValue || ''}
-                  onChange={(e) => setGoodsValue(parseInt(e.target.value) || 0)}
+                  type="text"
+                  value={formatNumberWithDots(goodsValue)}
+                  onChange={(e) => setGoodsValue(parseDotsToNumber(e.target.value))}
                   placeholder="0"
                   className="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-white font-mono font-bold bg-slate-900 border border-slate-800 outline-none text-right"
                 />
@@ -932,16 +942,16 @@ export const CreateOrderPage: React.FC = () => {
                 </div>
                 <div className="flex justify-between text-slate-300">
                   <span>Cước vận chuyển cơ bản:</span>
-                  <span className="font-mono">{quoteResult.baseFee.toLocaleString('vi-VN')} đ</span>
+                  <span className="font-mono">{formatNumberWithDots(quoteResult.baseFee)} đ</span>
                 </div>
                 <div className="flex justify-between text-slate-300">
                   <span>Phí bảo hiểm khai giá:</span>
-                  <span className="font-mono">{quoteResult.insuranceFee.toLocaleString('vi-VN')} đ</span>
+                  <span className="font-mono">{formatNumberWithDots(quoteResult.insuranceFee)} đ</span>
                 </div>
                 {quoteResult.discountAmount > 0 && (
                   <div className="flex justify-between text-emerald-400 font-bold">
                     <span>Mã giảm giá (Voucher):</span>
-                    <span className="font-mono">-{quoteResult.discountAmount.toLocaleString('vi-VN')} đ</span>
+                    <span className="font-mono">-{formatNumberWithDots(quoteResult.discountAmount)} đ</span>
                   </div>
                 )}
                 {quoteResult.discountError && (
@@ -953,7 +963,7 @@ export const CreateOrderPage: React.FC = () => {
                 <div className="flex justify-between items-center font-black text-sm text-white pt-2 border-t border-emerald-500/20">
                   <span>Tổng Phí Vận Chuyển:</span>
                   <span className="font-mono text-base text-emerald-400">
-                    {quoteResult.shippingFee.toLocaleString('vi-VN')} đ
+                    {formatNumberWithDots(quoteResult.shippingFee)} đ
                   </span>
                 </div>
               </div>
@@ -984,25 +994,56 @@ export const CreateOrderPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Grand Total Summary Box */}
-            <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 flex items-center justify-between text-xs">
-              <div>
-                <span className="text-slate-400 block font-medium">Tổng Thu Người Nhận (COD + Ship)</span>
-                <span className="text-[11px] text-slate-500">Phí ship: {activeShippingFee.toLocaleString('vi-VN')}đ</span>
+            {/* Grand Total Summary & Payer Logic Box */}
+            <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3 shadow-xl">
+              <div className="flex items-center justify-between text-xs">
+                <div>
+                  <span className="text-slate-300 block font-bold text-xs">
+                    {shippingPayer === 'buyer' ? 'Tổng Thu Người Nhận (COD + Ship)' : 'Tổng Thu Người Nhận (Chỉ COD)'}
+                  </span>
+                  <span className="text-[11px] text-slate-400">
+                    Phí ship: {formatNumberWithDots(activeShippingFee)} đ
+                  </span>
+                </div>
+                <div className="text-right">
+                  <span className="text-xl font-black text-emerald-400 font-mono block">
+                    {formatNumberWithDots(totalCollectFromBuyer)} đ
+                  </span>
+                  <select
+                    value={shippingPayer}
+                    onChange={(e) => setShippingPayer(e.target.value as any)}
+                    className="bg-slate-800 text-[11px] font-bold text-blue-400 px-2.5 py-1 rounded-lg border border-slate-700 outline-none cursor-pointer text-right transition hover:border-blue-500"
+                  >
+                    <option value="buyer" className="bg-slate-900 text-white">Khách trả ship</option>
+                    <option value="seller" className="bg-slate-900 text-white">Shop trả ship</option>
+                  </select>
+                </div>
               </div>
-              <div className="text-right">
-                <span className="text-xl font-black text-emerald-400 font-mono block">
-                  {grandTotal.toLocaleString('vi-VN')} đ
-                </span>
-                <select
-                  value={shippingPayer}
-                  onChange={(e) => setShippingPayer(e.target.value as any)}
-                  className="bg-transparent text-[11px] font-semibold text-blue-400 outline-none cursor-pointer text-right"
-                >
-                  <option value="buyer" className="bg-slate-900 text-white">Khách trả ship</option>
-                  <option value="seller" className="bg-slate-900 text-white">Shop trả ship</option>
-                </select>
-              </div>
+
+              {/* Dynamic Payer Breakdown Note */}
+              {shippingPayer === 'seller' ? (
+                <div className="p-3 rounded-xl bg-purple-950/40 border border-purple-500/30 text-[11px] text-purple-200 flex items-start gap-2.5 animate-in fade-in">
+                  <Wallet className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-bold text-purple-300">💳 Shop chọn trả cước vận chuyển ({formatNumberWithDots(activeShippingFee)} đ):</p>
+                    <p className="text-[11px] text-slate-300 mt-0.5">
+                      • Phí ship sẽ được <strong>trừ trực tiếp vào Tài khoản / Ví Shop</strong> (hoặc trừ khi đối soát COD).<br />
+                      • Tiền Shop thực nhận từ COD: <strong className="text-emerald-400 font-mono">{formatNumberWithDots(netSellerReceive)} đ</strong>.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-3 rounded-xl bg-blue-950/40 border border-blue-500/30 text-[11px] text-blue-200 flex items-start gap-2.5 animate-in fade-in">
+                  <Truck className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-bold text-blue-300">📦 Khách hàng (Người nhận) trả cước vận chuyển:</p>
+                    <p className="text-[11px] text-slate-300 mt-0.5">
+                      • Shipper sẽ thu tổng cộng <strong className="text-emerald-400 font-mono">{formatNumberWithDots(totalCollectFromBuyer)} đ</strong> ({formatNumberWithDots(codAmount)}đ COD + {formatNumberWithDots(activeShippingFee)}đ ship) khi giao hàng.<br />
+                      • Shop sẽ nhận đủ 100% tiền hàng COD: <strong className="text-emerald-400 font-mono">{formatNumberWithDots(codAmount)} đ</strong>.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

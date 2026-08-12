@@ -33,6 +33,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { orderApi } from '../../api/order.api';
 import type { CreateOrderPayload, Order } from '../../types/order.types';
 import { OrderSubNav } from '../../components/orders/OrderSubNav';
+import { formatNumberWithDots, parseDotsToNumber } from '../../lib/formatters';
 
 export interface ParsedBatchItem {
   id: string;
@@ -1320,12 +1321,12 @@ export const BatchOrderPage: React.FC = () => {
                 <div>
                   <label className="block text-slate-400 mb-1 font-semibold">Tiền COD (VNĐ)</label>
                   <input
-                    type="number"
-                    value={selectedItemForEdit.codAmount}
+                    type="text"
+                    value={formatNumberWithDots(selectedItemForEdit.codAmount)}
                     onChange={(e) =>
                       setSelectedItemForEdit({
                         ...selectedItemForEdit,
-                        codAmount: parseInt(e.target.value) || 0,
+                        codAmount: parseDotsToNumber(e.target.value),
                       })
                     }
                     className="w-full glass-input rounded-xl px-3 py-2 text-xs text-amber-400 font-mono bg-slate-950 border border-slate-800 outline-none text-right font-bold"
@@ -1335,12 +1336,12 @@ export const BatchOrderPage: React.FC = () => {
                 <div>
                   <label className="block text-slate-400 mb-1 font-semibold">Giá trị hàng (VNĐ)</label>
                   <input
-                    type="number"
-                    value={selectedItemForEdit.goodsValue}
+                    type="text"
+                    value={formatNumberWithDots(selectedItemForEdit.goodsValue)}
                     onChange={(e) =>
                       setSelectedItemForEdit({
                         ...selectedItemForEdit,
-                        goodsValue: parseInt(e.target.value) || 0,
+                        goodsValue: parseDotsToNumber(e.target.value),
                       })
                     }
                     className="w-full glass-input rounded-xl px-3 py-2 text-xs text-white font-mono bg-slate-950 border border-slate-800 outline-none text-right"
