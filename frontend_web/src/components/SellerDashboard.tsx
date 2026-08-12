@@ -284,13 +284,12 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
                     </td>
                     <td className="py-4 px-4">
                       <span
-                        className={`inline-block text-[10px] font-bold px-2.5 py-1 rounded-full uppercase ${
-                          ord.status === 'DELIVERED'
+                        className={`inline-block text-[10px] font-bold px-2.5 py-1 rounded-full uppercase ${ord.status === 'DELIVERED'
                             ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
                             : ord.status === 'IN_TRANSIT' || ord.status === 'OUT_FOR_DELIVERY'
-                            ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                            : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
-                        }`}
+                              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                              : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                          }`}
                       >
                         {ord.status}
                       </span>
@@ -380,7 +379,7 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
               {/* Package Specs */}
               <div className="space-y-3 pt-2">
                 <h4 className="text-xs font-bold text-slate-300 uppercase">Kích Thước & Trọng Lượng (Tính cước tự động)</h4>
-                
+
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   <div>
                     <label className="block text-[10px] text-slate-400">TL Thực (kg)</label>

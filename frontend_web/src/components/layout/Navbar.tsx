@@ -28,7 +28,7 @@ export const Navbar: React.FC = () => {
   return (
     <header className="sticky top-0 z-40 w-full glass-panel border-b border-slate-800/80 transition-all backdrop-blur-xl bg-[#090d16]/80">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
-        
+
         {/* Brand Logo */}
         <Link to="/" className="flex items-center gap-3 cursor-pointer group">
           <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-blue-600 via-cyan-500 to-indigo-500 flex items-center justify-center shadow-lg shadow-blue-500/25 group-hover:scale-105 transition-transform duration-200">
@@ -51,11 +51,10 @@ export const Navbar: React.FC = () => {
         <nav className="hidden lg:flex items-center gap-1 bg-slate-900/60 p-1.5 rounded-2xl border border-slate-800">
           <Link
             to="/"
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
-              location.pathname === '/'
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${location.pathname === '/'
                 ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
                 : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
-            }`}
+              }`}
           >
             <Search className="w-4 h-4" />
             Tra Cứu & Trang Chủ
@@ -63,11 +62,10 @@ export const Navbar: React.FC = () => {
 
           <Link
             to="/pricing"
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
-              location.pathname === '/pricing'
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${location.pathname === '/pricing'
                 ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
                 : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
-            }`}
+              }`}
           >
             <Calculator className="w-4 h-4" />
             Bảng Giá & Tính Cước
@@ -75,11 +73,10 @@ export const Navbar: React.FC = () => {
 
           <Link
             to="/seller/dashboard"
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
-              location.pathname.startsWith('/seller')
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${location.pathname.startsWith('/seller')
                 ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
                 : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
-            }`}
+              }`}
           >
             <Package className="w-4 h-4" />
             Kênh Chủ Hàng / Seller

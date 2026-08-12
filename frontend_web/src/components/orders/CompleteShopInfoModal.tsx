@@ -89,7 +89,7 @@ export const CompleteShopInfoModal: React.FC<CompleteShopInfoModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
       <div className="w-full max-w-lg bg-white rounded-xl shadow-2xl overflow-hidden border border-slate-200 text-slate-800">
-        
+
         {/* Header Bar matching Image 1 */}
         <div className="bg-[#00904A] text-white py-3.5 px-5 flex items-center justify-between relative">
           <div className="w-full text-center font-bold text-lg tracking-wide">
@@ -106,7 +106,7 @@ export const CompleteShopInfoModal: React.FC<CompleteShopInfoModalProps> = ({
 
         {/* Modal Content Body */}
         <div className="p-6 space-y-6 max-h-[82vh] overflow-y-auto text-sm">
-          
+
           {/* SECTION 1: EMAIL VERIFICATION */}
           <div className="space-y-3 pb-5 border-b border-slate-200">
             <div className="flex items-center justify-between">
@@ -158,11 +158,10 @@ export const CompleteShopInfoModal: React.FC<CompleteShopInfoModalProps> = ({
                   type="button"
                   onClick={handleVerifyEmail}
                   disabled={!otpCode.trim()}
-                  className={`text-xs font-bold px-5 py-2.5 rounded-lg shrink-0 transition whitespace-nowrap ${
-                    otpCode.trim()
+                  className={`text-xs font-bold px-5 py-2.5 rounded-lg shrink-0 transition whitespace-nowrap ${otpCode.trim()
                       ? 'bg-[#00904A] hover:bg-[#007a3e] text-white cursor-pointer'
                       : 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                  }`}
+                    }`}
                 >
                   Xác thực
                 </button>
@@ -171,11 +170,10 @@ export const CompleteShopInfoModal: React.FC<CompleteShopInfoModalProps> = ({
 
             {emailMsg && (
               <div
-                className={`text-xs p-2.5 rounded-lg flex items-center gap-2 ${
-                  emailMsg.type === 'success'
+                className={`text-xs p-2.5 rounded-lg flex items-center gap-2 ${emailMsg.type === 'success'
                     ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                     : 'bg-rose-50 text-rose-700 border border-rose-200'
-                }`}
+                  }`}
               >
                 {emailMsg.type === 'success' ? (
                   <CheckCircle2 className="w-4 h-4 shrink-0" />
@@ -272,11 +270,10 @@ export const CompleteShopInfoModal: React.FC<CompleteShopInfoModalProps> = ({
 
             {bankMsg && (
               <div
-                className={`text-xs p-2.5 rounded-lg flex items-center gap-2 ${
-                  bankMsg.type === 'success'
+                className={`text-xs p-2.5 rounded-lg flex items-center gap-2 ${bankMsg.type === 'success'
                     ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                     : 'bg-rose-50 text-rose-700 border border-rose-200'
-                }`}
+                  }`}
               >
                 {bankMsg.type === 'success' ? (
                   <CheckCircle2 className="w-4 h-4 shrink-0" />
@@ -291,11 +288,10 @@ export const CompleteShopInfoModal: React.FC<CompleteShopInfoModalProps> = ({
             <button
               type="submit"
               disabled={!isBankFormValid}
-              className={`w-full py-3 rounded-lg text-xs font-bold transition shadow-md ${
-                isBankFormValid
+              className={`w-full py-3 rounded-lg text-xs font-bold transition shadow-md ${isBankFormValid
                   ? 'bg-[#00904A] hover:bg-[#007a3e] text-white cursor-pointer'
                   : 'bg-slate-300 text-slate-500 cursor-not-allowed'
-              }`}
+                }`}
             >
               Lưu thông tin
             </button>
