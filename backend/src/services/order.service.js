@@ -41,9 +41,12 @@ const quoteSchema = Joi.object({
     width: Joi.number().min(0).optional(),
     height: Joi.number().min(0).optional(),
   }).optional(),
+  isCod: Joi.boolean().optional(),
+  codAmount: Joi.number().min(0).optional(),
   goodsValue: Joi.number().min(0).optional().default(0),
-  discountCode: Joi.string().allow('', null).optional()
-});
+  discountCode: Joi.string().allow('', null).optional(),
+  shippingPayer: Joi.string().valid('buyer', 'seller').optional()
+}).unknown(true);
 
 /**
  * Joi Schema for Order Creation
@@ -92,11 +95,13 @@ const createOrderSchema = Joi.object({
     width: Joi.number().min(0).default(0),
     height: Joi.number().min(0).default(0),
   }).optional().default({ length: 0, width: 0, height: 0 }),
+  isCod: Joi.boolean().optional().default(false),
   codAmount: Joi.number().min(0).default(0),
   goodsValue: Joi.number().min(0).default(0),
   discountCode: Joi.string().allow('', null).optional(),
-  deliveryNote: Joi.string().allow('', null).optional()
-});
+  deliveryNote: Joi.string().allow('', null).optional(),
+  shippingPayer: Joi.string().valid('buyer', 'seller').optional().default('buyer')
+}).unknown(true);
 
 /**
  * Joi Schema for Order Cancellation (UC-08)
@@ -385,6 +390,10 @@ const sanitizeAndValidateUpdateBody = (body) => {
     allowed.actualWeight = w;
   }
 
+  if (body.isCod !== undefined) {
+    allowed.isCod = Boolean(body.isCod);
+  }
+
   // COD Amount Validation & Sanitization (Integer Đồng)
   if (body.codAmount !== undefined) {
     const cod = Number(body.codAmount);
@@ -394,6 +403,9 @@ const sanitizeAndValidateUpdateBody = (body) => {
       throw err;
     }
     allowed.codAmount = Math.floor(cod);
+    if (allowed.isCod === undefined) {
+      allowed.isCod = allowed.codAmount > 0;
+    }
   }
 
   // Goods Value Validation & Sanitization (Integer Đồng)
@@ -413,6 +425,10 @@ const sanitizeAndValidateUpdateBody = (body) => {
 
   if (body.deliveryNote !== undefined) {
     allowed.deliveryNote = body.deliveryNote ? String(body.deliveryNote).trim() : '';
+  }
+
+  if (body.shippingPayer !== undefined && ['buyer', 'seller'].includes(body.shippingPayer)) {
+    allowed.shippingPayer = body.shippingPayer;
   }
 
   return allowed;
