@@ -24,6 +24,7 @@ import {
   Map,
   Search
 } from 'lucide-react';
+import { useLocation } from 'react-router';
 import { useAuth } from '../../hooks/useAuth';
 import { authApi } from '../../api/auth.api';
 import { VietnamAddressSelector } from '../../components/shared/VietnamAddressSelector';
@@ -34,7 +35,31 @@ type TabType = 'PROFILE' | 'ADDRESS' | 'BANK' | 'SECURITY';
 
 export const ProfilePage: React.FC = () => {
   const { user, updateUser } = useAuth();
-  const [activeTab, setActiveTab] = useState<TabType>('PROFILE');
+  const location = useLocation();
+
+  const getInitialTab = (): TabType => {
+    if (location.state?.tab === 'SECURITY') return 'SECURITY';
+    const params = new URLSearchParams(location.search);
+    if (params.get('tab') === 'security') return 'SECURITY';
+    if (location.state?.tab === 'ADDRESS' || params.get('tab') === 'address') return 'ADDRESS';
+    if (location.state?.tab === 'BANK' || params.get('tab') === 'bank') return 'BANK';
+    return 'PROFILE';
+  };
+
+  const [activeTab, setActiveTab] = useState<TabType>(getInitialTab);
+
+  React.useEffect(() => {
+    if (location.state?.tab) {
+      setActiveTab(location.state.tab as TabType);
+    } else {
+      const params = new URLSearchParams(location.search);
+      const tabParam = params.get('tab');
+      if (tabParam === 'security') setActiveTab('SECURITY');
+      else if (tabParam === 'address') setActiveTab('ADDRESS');
+      else if (tabParam === 'bank') setActiveTab('BANK');
+      else if (tabParam === 'profile') setActiveTab('PROFILE');
+    }
+  }, [location.state, location.search]);
 
   // Loading & Notification state
   const [isLoading, setIsLoading] = useState(false);
