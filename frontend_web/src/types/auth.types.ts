@@ -14,6 +14,9 @@ export interface AuthUser {
   bankName?: string;
   bankAccount?: string;
   bankAccountName?: string;
+  bankBranch?: string;
+  isEmailVerified?: boolean;
+  isBankLinked?: boolean;
 }
 
 export interface LoginResponse {

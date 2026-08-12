@@ -28,6 +28,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { authApi } from '../../api/auth.api';
 import { VietnamAddressSelector } from '../../components/shared/VietnamAddressSelector';
 import type { VietnamAddressData } from '../../components/shared/VietnamAddressSelector';
+import { WarehouseMapPicker } from '../../components/shared/WarehouseMapPicker';
 
 type TabType = 'PROFILE' | 'ADDRESS' | 'BANK' | 'SECURITY';
 
@@ -54,17 +55,48 @@ export const ProfilePage: React.FC = () => {
     province: 'Thành phố Hồ Chí Minh',
     district: 'Quận 5',
     ward: 'Phường 1',
-    address: '123 Nguyễn Văn Cừ',
+    address: user?.address || '123 Nguyễn Văn Cừ',
     note: 'Kho dược phẩm An Bình, giao giờ hành chính (8h - 17h)',
   });
   const [warehouseContact, setWarehouseContact] = useState('Nguyễn Văn An (Quản lý kho)');
   const [pickupTimeSlot, setPickupTimeSlot] = useState('MORNING');
 
   // Tab 2 (GPS & Google Maps Integration State)
-  const [latitude, setLatitude] = useState('10.812569');
-  const [longitude, setLongitude] = useState('106.668425');
+  const [latitude, setLatitude] = useState(user?.latitude || '10.812569');
+  const [longitude, setLongitude] = useState(user?.longitude || '106.668425');
   const [placesSearch, setPlacesSearch] = useState('');
   const [isLocating, setIsLocating] = useState(false);
+
+  // Synchronize fresh user profile from backend on mount
+  React.useEffect(() => {
+    const fetchFreshProfile = async () => {
+      try {
+        const res = await authApi.getProfile();
+        if (res.data) {
+          const u = res.data;
+          updateUser(u);
+          if (u.fullName) setFullName(u.fullName);
+          if (u.phoneNumber) setPhone(u.phoneNumber);
+          if (u.companyName) setCompanyName(u.companyName);
+          if (u.taxCode) setTaxCode(u.taxCode);
+          if (u.latitude) setLatitude(u.latitude);
+          if (u.longitude) setLongitude(u.longitude);
+          if (u.address) {
+            setAddressData((prev) => ({
+              ...prev,
+              address: u.address,
+            }));
+          }
+          if (u.bankName) setBankName(u.bankName);
+          if (u.bankAccount) setBankAccount(u.bankAccount);
+          if (u.bankAccountName) setBankAccountName(u.bankAccountName);
+        }
+      } catch (err) {
+        console.warn('Could not fetch profile on mount:', err);
+      }
+    };
+    fetchFreshProfile();
+  }, []);
 
   // Handle Geolocation API
   const handleGetCurrentLocation = () => {
@@ -122,12 +154,14 @@ export const ProfilePage: React.FC = () => {
     if (success) {
       setSuccessMsg(success);
       setErrorMsg('');
-      setTimeout(() => setSuccessMsg(''), 4000);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      setTimeout(() => setSuccessMsg(''), 5000);
     }
     if (error) {
       setErrorMsg(error);
       setSuccessMsg('');
-      setTimeout(() => setErrorMsg(''), 5000);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      setTimeout(() => setErrorMsg(''), 6000);
     }
   };
 
@@ -139,30 +173,34 @@ export const ProfilePage: React.FC = () => {
     setSuccessMsg('');
 
     try {
-      // API payload
+      const fullAddr = `${addressData.address || ''}, ${addressData.ward || ''}, ${addressData.district || ''}, ${addressData.province || ''}`.replace(/^,\s*/, '');
       const payload = {
         fullName,
         phoneNumber: phone,
         companyName,
         taxCode,
         avatarUrl,
-        address: `${addressData.address}, ${addressData.ward}, ${addressData.district}, ${addressData.province}`,
+        address: fullAddr,
+        latitude,
+        longitude,
+        bankName,
+        bankAccount,
+        bankAccountName,
       };
 
-      // Call API
-      await authApi.updateProfile(payload);
+      const res = await authApi.updateProfile(payload);
+      const updatedUser = res.data?.user || payload;
+      updateUser(updatedUser);
 
-      // Update AuthContext state locally
-      updateUser({
-        fullName,
-        phoneNumber: phone,
-        companyName,
-        taxCode,
-        avatarUrl,
-        address: payload.address,
-      });
+      // Cập nhật ngay lập tức giao diện mà không cần load lại trang
+      if (updatedUser.latitude) setLatitude(updatedUser.latitude);
+      if (updatedUser.longitude) setLongitude(updatedUser.longitude);
+      if (updatedUser.fullName) setFullName(updatedUser.fullName);
+      if (updatedUser.phoneNumber) setPhone(updatedUser.phoneNumber);
+      if (updatedUser.companyName) setCompanyName(updatedUser.companyName);
+      if (updatedUser.taxCode) setTaxCode(updatedUser.taxCode);
 
-      showNotification('Đã cập nhật thông tin cá nhân và doanh nghiệp thành công!');
+      showNotification('Cập nhật thành công thông tin kho và tọa độ GPS!');
     } catch (err: any) {
       console.warn('API update failed, updating local state fallback:', err);
       updateUser({
@@ -171,6 +209,9 @@ export const ProfilePage: React.FC = () => {
         companyName,
         taxCode,
         avatarUrl,
+        address: `${addressData.address || ''}, ${addressData.ward || ''}, ${addressData.district || ''}, ${addressData.province || ''}`.replace(/^,\s*/, ''),
+        latitude,
+        longitude,
       });
       showNotification('Đã lưu thông tin cấu hình tài khoản cá nhân!');
     } finally {
@@ -179,14 +220,28 @@ export const ProfilePage: React.FC = () => {
   };
 
   // Submit Bank & COD Settings
-  const handleSaveBank = (e: React.FormEvent) => {
+  const handleSaveBank = async (e: React.FormEvent) => {
     e.preventDefault();
-    updateUser({
-      bankName,
-      bankAccount,
-      bankAccountName,
-    });
-    showNotification('Đã cập nhật tài khoản ngân hàng đối soát COD thành công!');
+    setIsLoading(true);
+    try {
+      const payload = {
+        bankName,
+        bankAccount,
+        bankAccountName,
+      };
+      await authApi.updateProfile(payload);
+      updateUser(payload);
+      showNotification('Đã cập nhật tài khoản ngân hàng đối soát COD thành công!');
+    } catch (err: any) {
+      updateUser({
+        bankName,
+        bankAccount,
+        bankAccountName,
+      });
+      showNotification('Đã cập nhật tài khoản ngân hàng!');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Submit Password Change
@@ -539,65 +594,55 @@ export const ProfilePage: React.FC = () => {
               </div>
             </div>
 
-            {/* GPS Google Maps Integration Block */}
+            {/* GPS Interactive Map Integration Block */}
             <div className="p-5 rounded-2xl bg-slate-900/80 border border-cyan-500/30 space-y-4">
               {/* Header Khung GPS & Action Buttons */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
                 <div>
                   <h4 className="text-xs font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-2">
                     <Navigation className="w-4 h-4" />
-                    Tích Hợp Tọa Độ GPS & Google Maps
+                    Bản Đồ Định Vị GPS Trực Quan (Chấm Vị Trí Kho)
                   </h4>
                   <p className="text-[11px] text-slate-400 mt-0.5">
-                    Xác định tọa độ kho chính xác để hệ thống tính cước vận chuyển và tối ưu tuyến đường
+                    Nhấp chuột chấm vị trí kho trực tiếp trên bản đồ để hệ thống tự động trích xuất vĩ độ/kinh độ tối ưu hóa lộ trình
                   </p>
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
                   <button
                     type="button"
-                    onClick={handleGetCurrentLocation}
-                    disabled={isLocating}
-                    className="px-3 py-1.5 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 text-[11px] font-semibold flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50"
-                  >
-                    <LocateFixed className={`w-3.5 h-3.5 ${isLocating ? 'animate-spin' : ''}`} />
-                    {isLocating ? 'Đang xác định...' : 'Lấy vị trí hiện tại'}
-                  </button>
-
-                  <button
-                    type="button"
                     onClick={handleOpenGoogleMaps}
                     className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-[11px] font-semibold flex items-center gap-1.5 transition cursor-pointer"
                   >
                     <Map className="w-3.5 h-3.5 text-cyan-400" />
-                    Xem Trên Bản Đồ
+                    Mở Google Maps Tab Mới
                   </button>
                 </div>
               </div>
 
-              {/* Ô Tìm Kiếm Địa Điểm */}
-              <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">
-                  Tìm vị trí kho nhanh qua Google Maps Places
-                </label>
-                <div className="relative">
-                  <Search className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
-                  <input
-                    type="text"
-                    value={placesSearch}
-                    onChange={(e) => setPlacesSearch(e.target.value)}
-                    placeholder="Nhập tên tòa nhà, địa điểm hoặc địa chỉ kho..."
-                    className="w-full bg-slate-950 border border-slate-700 text-white rounded-xl pl-9 pr-3 py-2.5 text-xs focus:outline-none focus:border-cyan-400 transition"
-                  />
-                </div>
-              </div>
+              {/* Component Bản Đồ Interactive Leaflet / OpenStreetMap */}
+              <WarehouseMapPicker
+                latitude={latitude}
+                longitude={longitude}
+                initialAddressQuery={`${addressData.address || ''}, ${addressData.district || ''}, ${addressData.province || ''}`.replace(/^,\s*/, '')}
+                onChange={(newLat, newLng, addressHint) => {
+                  setLatitude(newLat);
+                  setLongitude(newLng);
+                  if (addressHint) {
+                    setAddressData((prev) => ({
+                      ...prev,
+                      address: addressHint,
+                    }));
+                  }
+                }}
+              />
 
               {/* Bộ 2 Ô Tọa Độ WGS84 (Chỉ đọc - Readonly) */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-800/80">
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className="block text-xs font-bold text-slate-300">
-                      Vĩ Độ (Latitude - Lat) *
+                      Vĩ Độ Kho (Latitude - Lat) *
                     </label>
                     <span className="text-[10px] text-cyan-400 font-mono">WGS84 Auto-generated</span>
                   </div>
@@ -606,15 +651,15 @@ export const ProfilePage: React.FC = () => {
                     required
                     readOnly
                     value={latitude}
-                    placeholder="VD: 10.762622"
-                    className="w-full bg-slate-950/70 border border-slate-800 text-cyan-400 font-mono rounded-xl px-3 py-2 text-xs focus:outline-none cursor-not-allowed"
+                    placeholder="VD: 10.812569"
+                    className="w-full bg-slate-950/80 border border-slate-800 text-cyan-400 font-mono font-bold rounded-xl px-3 py-2 text-xs focus:outline-none cursor-not-allowed"
                   />
                 </div>
 
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className="block text-xs font-bold text-slate-300">
-                      Kinh Độ (Longitude - Lng) *
+                      Kinh Độ Kho (Longitude - Lng) *
                     </label>
                     <span className="text-[10px] text-cyan-400 font-mono">WGS84 Auto-generated</span>
                   </div>
@@ -623,8 +668,8 @@ export const ProfilePage: React.FC = () => {
                     required
                     readOnly
                     value={longitude}
-                    placeholder="VD: 106.682029"
-                    className="w-full bg-slate-950/70 border border-slate-800 text-cyan-400 font-mono rounded-xl px-3 py-2 text-xs focus:outline-none cursor-not-allowed"
+                    placeholder="VD: 106.668425"
+                    className="w-full bg-slate-950/80 border border-slate-800 text-cyan-400 font-mono font-bold rounded-xl px-3 py-2 text-xs focus:outline-none cursor-not-allowed"
                   />
                 </div>
               </div>

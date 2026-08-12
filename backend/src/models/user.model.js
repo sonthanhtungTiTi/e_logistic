@@ -51,7 +51,16 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    // Dành cho Seller
+    // Dành cho Seller & Hồ sơ cá nhân
+    companyName: String,
+    taxCode: String,
+    avatarUrl: String,
+    address: String,
+    latitude: String,
+    longitude: String,
+    bankName: String,
+    bankAccount: String,
+    bankAccountName: String,
     walletBalance: {
       type: Number,
       default: 0, // Lưu bằng đơn vị Đồng (VND)

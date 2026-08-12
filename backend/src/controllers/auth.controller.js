@@ -235,6 +235,9 @@ const registerUser = async (req, res) => {
 // @desc    Lấy thông tin hồ sơ cá nhân
 // @route   GET /api/auth/profile
 // @access  Private
+// @desc    Lấy thông tin hồ sơ cá nhân
+// @route   GET /api/auth/profile
+// @access  Private
 const getUserProfile = async (req, res) => {
   try {
     // Bước 2 ĐT: Hiển thị thông tin hồ sơ của chính người dùng đang đăng nhập
@@ -251,6 +254,15 @@ const getUserProfile = async (req, res) => {
       phoneNumber: user.phoneNumber,
       role: user.role,
       isActive: user.isActive,
+      companyName: user.companyName || '',
+      taxCode: user.taxCode || '',
+      avatarUrl: user.avatarUrl || '',
+      address: user.address || '',
+      latitude: user.latitude || '',
+      longitude: user.longitude || '',
+      bankName: user.bankName || '',
+      bankAccount: user.bankAccount || '',
+      bankAccountName: user.bankAccountName || '',
       createdAt: user.createdAt,
     });
   } catch (error) {
@@ -267,8 +279,6 @@ const getUserProfile = async (req, res) => {
 // ============================================================
 const updateUserProfile = async (req, res) => {
   try {
-    // Bước 5 ĐT: WHITELIST — chỉ chấp nhận đúng những trường này
-    // Không bao giờ nhận: role, isActive, refreshToken, failedLoginAttempts, lockUntil
     const schema = Joi.object({
       fullName: Joi.string().min(2).optional().messages({
         'string.min': 'Họ tên phải từ 2 ký tự'
@@ -279,30 +289,48 @@ const updateUserProfile = async (req, res) => {
       email: Joi.string().email().optional().messages({
         'string.email': 'Email không đúng định dạng'
       }),
-      // Mật khẩu mới (tùy chọn — nếu có mới xử lý ở bước 7)
       newPassword: Joi.string().min(6).optional().messages({
         'string.min': 'Mật khẩu mới phải từ 6 ký tự'
       }),
+      companyName: Joi.string().allow('', null).optional(),
+      taxCode: Joi.string().allow('', null).optional(),
+      avatarUrl: Joi.string().allow('', null).optional(),
+      address: Joi.string().allow('', null).optional(),
+      latitude: Joi.string().allow('', null).optional(),
+      longitude: Joi.string().allow('', null).optional(),
+      bankName: Joi.string().allow('', null).optional(),
+      bankAccount: Joi.string().allow('', null).optional(),
+      bankAccountName: Joi.string().allow('', null).optional(),
     });
 
-    // Alt 5.1 ĐT: Dữ liệu sai định dạng
     const { error } = schema.validate(req.body);
     if (error) return res.status(400).json({ message: error.details[0].message });
 
-    // Không có gì để cập nhật
     if (Object.keys(req.body).length === 0) {
       return res.status(400).json({ message: 'Vui lòng cung cấp ít nhất một trường cần cập nhật.' });
     }
 
-    const { fullName, phoneNumber, email, newPassword } = req.body;
+    const {
+      fullName,
+      phoneNumber,
+      email,
+      newPassword,
+      companyName,
+      taxCode,
+      avatarUrl,
+      address,
+      latitude,
+      longitude,
+      bankName,
+      bankAccount,
+      bankAccountName,
+    } = req.body;
 
-    // Lấy user kèm password (để so sánh mật khẩu ở bước 7 nếu cần)
     const user = await User.findById(req.user._id).select('+password');
     if (!user) {
       return res.status(404).json({ message: 'Không tìm thấy tài khoản.' });
     }
 
-    // Bước 6 ĐT: Kiểm tra trùng lặp Email/SĐT với tài khoản khác
     if (email && email !== user.email) {
       const emailExists = await User.findOne({ email, _id: { $ne: req.user._id } });
       if (emailExists) {
@@ -317,29 +345,31 @@ const updateUserProfile = async (req, res) => {
       }
     }
 
-    // Bước 7 ĐT: Nếu có đổi mật khẩu — kiểm tra mật khẩu mới không trùng mật khẩu hiện tại
     if (newPassword) {
       const isSame = await user.matchPassword(newPassword);
       if (isSame) {
-        // Alt 7.1 ĐT: Mật khẩu mới trùng mật khẩu hiện tại
         return res.status(400).json({ message: 'Mật khẩu không hợp lệ, không được trùng với mật khẩu hiện tại.' });
       }
-      // pre-save hook sẽ tự động hash nếu isModified('password')
       user.password = newPassword;
     }
 
-    // Bước 8 ĐT: Áp dụng các thay đổi được phép
-    if (fullName) user.fullName = fullName;
-    if (email) user.email = email;
-    if (phoneNumber) user.phoneNumber = phoneNumber;
+    if (fullName !== undefined) user.fullName = fullName;
+    if (email !== undefined) user.email = email;
+    if (phoneNumber !== undefined) user.phoneNumber = phoneNumber;
+    if (companyName !== undefined) user.companyName = companyName;
+    if (taxCode !== undefined) user.taxCode = taxCode;
+    if (avatarUrl !== undefined) user.avatarUrl = avatarUrl;
+    if (address !== undefined) user.address = address;
+    if (latitude !== undefined) user.latitude = latitude;
+    if (longitude !== undefined) user.longitude = longitude;
+    if (bankName !== undefined) user.bankName = bankName;
+    if (bankAccount !== undefined) user.bankAccount = bankAccount;
+    if (bankAccountName !== undefined) user.bankAccountName = bankAccountName;
 
-    // Ex 8.1 ĐT: Lỗi lưu vào CSDL
-    // Ex 8.2 ĐT: Race Condition — E11000
     try {
       await user.save();
     } catch (saveError) {
       if (saveError.code === 11000) {
-        // Phân tích trường bị trùng để thông báo đúng (Alt 6.1)
         const duplicatedField = Object.keys(saveError.keyPattern)[0];
         const fieldName = duplicatedField === 'email' ? 'Email' : 'Số điện thoại';
         return res.status(400).json({ message: `${fieldName} này đã được sử dụng bởi tài khoản khác.` });
@@ -348,7 +378,6 @@ const updateUserProfile = async (req, res) => {
       return res.status(500).json({ message: 'Cập nhật hồ sơ thất bại. Vui lòng thử lại sau.' });
     }
 
-    // Bước 9 ĐT: Thông báo thành công + trả dữ liệu mới
     res.status(200).json({
       message: 'Cập nhật hồ sơ thành công.',
       user: {
@@ -357,6 +386,15 @@ const updateUserProfile = async (req, res) => {
         email: user.email,
         phoneNumber: user.phoneNumber,
         role: user.role,
+        companyName: user.companyName,
+        taxCode: user.taxCode,
+        avatarUrl: user.avatarUrl,
+        address: user.address,
+        latitude: user.latitude,
+        longitude: user.longitude,
+        bankName: user.bankName,
+        bankAccount: user.bankAccount,
+        bankAccountName: user.bankAccountName,
       },
     });
 

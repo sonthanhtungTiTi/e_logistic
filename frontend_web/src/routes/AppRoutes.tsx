@@ -59,6 +59,22 @@ export const AppRoutes: React.FC = () => {
         }
       />
       <Route
+        path="/web/tao-don-hang"
+        element={
+          <ProtectedRoute>
+            <CreateOrderPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/web/tao-don-hang/don-le"
+        element={
+          <ProtectedRoute>
+            <CreateOrderPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/seller/orders/batch"
         element={
           <ProtectedRoute>
