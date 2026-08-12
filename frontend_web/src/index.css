@@ -129,68 +129,6 @@ body {
 }
 
 @keyframes float-gentle {
-
-  0%,
-  100% {
-    transform: translateY(0px);
-  }
-
-  50% {
-    transform: translateY(-8px);
-  }
-}
-
-.animate-float {
-  animation: float-gentle 4s ease-in-out infinite;
-}
-
-@keyframes shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-
-  100% {
-    background-position: 200% 0;
-  }
-}
-
-.shimmer-btn {
-  background: linear-gradient(90deg, #2563eb 0%, #3b82f6 25%, #60a5fa 50%, #3b82f6 75%, #2563eb 100%);
-  background-size: 200% 100%;
-  animation: shimmer 4s infinite linear;
-}
-
-box-shadow: 0 0 30px rgba(59, 130, 246, 0.35);
-}
-
-.glow-box-emerald {
-  box-shadow: 0 0 30px rgba(16, 185, 129, 0.35);
-}
-
-/* Radar & Pulse Animations */
-@keyframes pulse-ring {
-  0% {
-    transform: scale(0.95);
-    opacity: 0.8;
-  }
-
-  50% {
-    transform: scale(1.08);
-    opacity: 0.4;
-  }
-
-  100% {
-    transform: scale(0.95);
-    opacity: 0.8;
-  }
-}
-
-.animate-pulse-ring {
-  animation: pulse-ring 3s infinite ease-in-out;
-}
-
-@keyframes float-gentle {
-
   0%,
   100% {
     transform: translateY(0px);
