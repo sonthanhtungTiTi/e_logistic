@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, ShieldCheck, Zap, Thermometer, ArrowRight, CheckCircle2, Sparkles, Navigation, MapPin, Loader2, Package, LayoutList, Grid } from 'lucide-react';
+import { Search, ShieldCheck, Zap, Thermometer, ArrowRight, CheckCircle2, Sparkles, Navigation, MapPin, Loader2, Package, LayoutList, AlignJustify } from 'lucide-react';
 import type { Order } from '../types/order.types';
 import heroBg from '../assets/hero_bg.png';
 import { orderApi } from '../api/order.api';
@@ -20,7 +20,7 @@ export const HeroTracking: React.FC<HeroTrackingProps> = ({
   const [searchInput, setSearchInput] = useState('');
   const [searchError, setSearchError] = useState('');
   const [isSearching, setIsSearching] = useState(false);
-  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
+  const [viewMode, setViewMode] = useState<'table' | 'bar'>('table');
 
   const performSearch = async (codeToSearch: string) => {
     const cleanCode = codeToSearch.trim();
@@ -190,7 +190,7 @@ export const HeroTracking: React.FC<HeroTrackingProps> = ({
 
       </div>
 
-      {/* Recent Live Trackings Section */}
+      {/* Recent Live Trackings Horizontal List Section */}
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2">
@@ -200,36 +200,36 @@ export const HeroTracking: React.FC<HeroTrackingProps> = ({
 
           <div className="flex items-center gap-3">
             <span className="text-xs text-slate-400 hidden md:inline">
-              Hiển thị danh sách vận đơn thực từ cơ sở dữ liệu
+              Nhấn Chi Tiết / Sửa / Hủy để quản lý vận đơn
             </span>
             <div className="flex items-center bg-slate-900/80 border border-slate-800 rounded-xl p-1">
               <button
-                onClick={() => setViewMode('list')}
+                onClick={() => setViewMode('table')}
                 className={`p-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
-                  viewMode === 'list' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'
+                  viewMode === 'table' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'
                 }`}
-                title="Hiển thị Dạng List Dọc"
+                title="Bảng Ngang Đầy Đủ"
               >
                 <LayoutList className="w-4 h-4" />
-                <span className="text-xs">Danh Sách Dọc</span>
+                <span className="text-xs">Bảng Ngang</span>
               </button>
               <button
-                onClick={() => setViewMode('grid')}
+                onClick={() => setViewMode('bar')}
                 className={`p-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
-                  viewMode === 'grid' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'
+                  viewMode === 'bar' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'
                 }`}
-                title="Hiển thị Dạng Lưới Khung"
+                title="Thẻ Ngang Rộng"
               >
-                <Grid className="w-4 h-4" />
-                <span className="text-xs">Lưới Khung</span>
+                <AlignJustify className="w-4 h-4" />
+                <span className="text-xs">Thẻ Ngang</span>
               </button>
             </div>
           </div>
         </div>
 
         {orders.length > 0 ? (
-          viewMode === 'list' ? (
-            /* VERTICAL LIST TABLE (Dạng List Dọc như trong ảnh thiết kế) */
+          viewMode === 'table' ? (
+            /* FULL HORIZONTAL TABLE (DẠNG BẢNG NGANG ĐẦY ĐỦ NHƯ ẢNH THIẾT KẾ) */
             <div className="glass-panel rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
@@ -339,33 +339,34 @@ export const HeroTracking: React.FC<HeroTrackingProps> = ({
               </div>
             </div>
           ) : (
-            /* GRID VIEW CARD LAYOUT */
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            /* HORIZONTAL BAR CARDS (DẠNG THẺ THUÔN NGANG RỘNG) */
+            <div className="space-y-3">
               {orders.map((ord) => {
                 const code = ord.trackingCode || ord.trackingNumber || '';
                 const origin = ord.pickupAddress?.province || ord.originCity || 'TP.HCM';
                 const dest = ord.deliveryAddress?.province || ord.destinationCity || 'Hà Nội';
                 const recipientName = ord.deliveryAddress?.fullName || ord.recipientName || 'Người nhận';
                 const weight = ord.chargeableWeight || ord.chargeableWeightKg || ord.actualWeight || 0;
+                const fee = ord.shippingFee || ord.cost || 0;
                 const isEditable = ['CREATED', 'PENDING_VERIFICATION', 'READY_TO_PICK', 'PENDING'].includes(ord.status);
 
                 return (
                   <div
                     key={ord._id || ord.id}
-                    onClick={() => onOpenOrderDetails(ord)}
-                    className="glass-card rounded-2xl p-5 cursor-pointer space-y-4 border border-slate-800 hover:border-blue-500/40 transition group"
+                    className="glass-card rounded-2xl p-4 border border-slate-800 hover:border-blue-500/40 transition group flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-lg"
                   >
-                    <div className="flex items-center justify-between">
-                      <span className="font-mono text-xs font-bold text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded-md border border-blue-500/20">
+                    {/* Left: Code & Service */}
+                    <div className="flex items-center gap-3 min-w-[200px]">
+                      <span className="font-mono text-xs font-bold text-blue-400 bg-blue-500/10 px-3 py-1.5 rounded-lg border border-blue-500/20">
                         {code}
                       </span>
                       <span
-                        className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase ${
+                        className={`text-[10px] font-extrabold px-2.5 py-1 rounded-full uppercase border ${
                           ord.status === 'DELIVERED'
-                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                            ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
                             : ord.status === 'IN_TRANSIT' || ord.status === 'OUT_FOR_DELIVERY'
-                            ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                            : 'bg-slate-700/50 text-slate-300'
+                            ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                            : 'bg-blue-500/20 text-blue-300 border-blue-500/30'
                         }`}
                       >
                         {ord.status === 'IN_TRANSIT'
@@ -378,24 +379,35 @@ export const HeroTracking: React.FC<HeroTrackingProps> = ({
                       </span>
                     </div>
 
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-1.5 text-xs text-slate-300 font-semibold truncate">
+                    {/* Middle: Route & Recipient */}
+                    <div className="flex-1 space-y-1">
+                      <div className="flex items-center gap-1.5 text-xs text-slate-200 font-bold">
                         <MapPin className="w-3.5 h-3.5 text-blue-400 shrink-0" />
                         {origin} ➔ {dest}
                       </div>
                       <p className="text-xs text-slate-400 truncate">
-                        Người nhận: <span className="text-slate-200">{recipientName}</span>
+                        Người nhận: <span className="text-slate-200 font-semibold">{recipientName}</span>
                       </p>
                     </div>
 
-                    <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
-                      <span>TL Quy Đổi: <strong className="text-white">{weight} kg</strong></span>
-                      <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                    {/* Right: Weight, Fee & Actions */}
+                    <div className="flex items-center justify-between md:justify-end gap-4 shrink-0 border-t md:border-t-0 pt-3 md:pt-0 border-slate-800">
+                      <div className="text-left md:text-right text-xs">
+                        <div className="text-slate-400">TL: <strong className="text-white">{weight} kg</strong></div>
+                        {fee > 0 && <div className="text-emerald-400 font-mono font-bold">{fee.toLocaleString('vi-VN')} đ</div>}
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => onOpenOrderDetails(ord)}
+                          className="px-3 py-1.5 rounded-xl bg-blue-600/20 hover:bg-blue-600 text-blue-300 hover:text-white border border-blue-500/30 text-xs font-bold transition cursor-pointer flex items-center gap-1"
+                        >
+                          Chi Tiết <ArrowRight className="w-3 h-3" />
+                        </button>
                         {isEditable && onEditOrder && (
                           <button
                             onClick={() => onEditOrder(ord)}
-                            className="px-2 py-0.5 rounded-lg bg-amber-500/20 hover:bg-amber-600 text-amber-300 hover:text-white border border-amber-500/30 text-[10px] font-bold transition cursor-pointer"
-                            title="Chỉnh sửa đơn hàng"
+                            className="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-600 text-amber-300 hover:text-white border border-amber-500/30 text-xs font-bold transition cursor-pointer"
                           >
                             Sửa
                           </button>
@@ -403,18 +415,11 @@ export const HeroTracking: React.FC<HeroTrackingProps> = ({
                         {isEditable && onCancelOrder && (
                           <button
                             onClick={() => onCancelOrder(ord)}
-                            className="px-2 py-0.5 rounded-lg bg-rose-500/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 text-[10px] font-bold transition cursor-pointer"
-                            title="Hủy đơn hàng"
+                            className="px-3 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 text-xs font-bold transition cursor-pointer"
                           >
                             Hủy
                           </button>
                         )}
-                        <button
-                          onClick={() => onOpenOrderDetails(ord)}
-                          className="text-blue-400 group-hover:translate-x-0.5 transition-transform flex items-center gap-1 font-semibold text-xs cursor-pointer ml-1"
-                        >
-                          Chi tiết <ArrowRight className="w-3 h-3" />
-                        </button>
                       </div>
                     </div>
                   </div>
