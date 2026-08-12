@@ -123,7 +123,7 @@ export const WarehouseMapPicker: React.FC<WarehouseMapPickerProps> = ({
       marker.setLatLng([lat, lng]);
       const addr = await reverseGeocode(lat, lng);
       marker.setPopupContent(`<b>Kho Hàng Chấm Vị Trí</b><br/>${newLat}, ${newLng}`).openPopup();
-      
+
       map.panTo([lat, lng], { animate: true });
       onChange(newLat, newLng, addr);
     });

@@ -283,7 +283,7 @@ export const ProfilePage: React.FC = () => {
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 animate-in fade-in duration-300">
-      
+
       {/* Toast Feedback */}
       {successMsg && (
         <div className="p-4 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-sm font-bold flex items-center justify-between shadow-lg shadow-emerald-500/10">
@@ -390,11 +390,10 @@ export const ProfilePage: React.FC = () => {
       <div className="flex items-center gap-2 border-b border-slate-800 pb-1 overflow-x-auto">
         <button
           onClick={() => setActiveTab('PROFILE')}
-          className={`flex items-center gap-2 px-5 py-3 rounded-2xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
-            activeTab === 'PROFILE'
+          className={`flex items-center gap-2 px-5 py-3 rounded-2xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${activeTab === 'PROFILE'
               ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'
               : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-          }`}
+            }`}
         >
           <User className="w-4 h-4" />
           Hồ Sơ & Doanh Nghiệp
@@ -402,11 +401,10 @@ export const ProfilePage: React.FC = () => {
 
         <button
           onClick={() => setActiveTab('ADDRESS')}
-          className={`flex items-center gap-2 px-5 py-3 rounded-2xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
-            activeTab === 'ADDRESS'
+          className={`flex items-center gap-2 px-5 py-3 rounded-2xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${activeTab === 'ADDRESS'
               ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'
               : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-          }`}
+            }`}
         >
           <MapPin className="w-4 h-4" />
           Địa Chỉ Kho Lấy Hàng
@@ -414,11 +412,10 @@ export const ProfilePage: React.FC = () => {
 
         <button
           onClick={() => setActiveTab('BANK')}
-          className={`flex items-center gap-2 px-5 py-3 rounded-2xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
-            activeTab === 'BANK'
+          className={`flex items-center gap-2 px-5 py-3 rounded-2xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${activeTab === 'BANK'
               ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'
               : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-          }`}
+            }`}
         >
           <CreditCard className="w-4 h-4" />
           Ngân Hàng & Đối Soát COD
@@ -426,11 +423,10 @@ export const ProfilePage: React.FC = () => {
 
         <button
           onClick={() => setActiveTab('SECURITY')}
-          className={`flex items-center gap-2 px-5 py-3 rounded-2xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
-            activeTab === 'SECURITY'
+          className={`flex items-center gap-2 px-5 py-3 rounded-2xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${activeTab === 'SECURITY'
               ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'
               : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-          }`}
+            }`}
         >
           <Lock className="w-4 h-4" />
           Mật Khẩu & Bảo Mật

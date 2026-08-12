@@ -46,12 +46,12 @@ export const HeroTracking: React.FC<HeroTrackingProps> = ({
     <div className="space-y-16">
       {/* Hero Header Section */}
       <div className="relative min-h-[580px] rounded-3xl overflow-hidden glass-panel border border-slate-800 p-8 sm:p-12 lg:p-16 flex flex-col justify-between">
-        
+
         {/* Background Image with Dark Glow Overlay */}
         <div className="absolute inset-0 z-0">
-          <img 
-            src={heroBg} 
-            alt="E-Logistic Global Network" 
+          <img
+            src={heroBg}
+            alt="E-Logistic Global Network"
             className="w-full h-full object-cover opacity-25 mix-blend-luminosity scale-105 transition-transform duration-1000 hover:scale-100"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/90 to-blue-950/60"></div>
@@ -197,21 +197,20 @@ export const HeroTracking: React.FC<HeroTrackingProps> = ({
                     {code}
                   </span>
                   <span
-                    className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase ${
-                      ord.status === 'DELIVERED'
+                    className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase ${ord.status === 'DELIVERED'
                         ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
                         : ord.status === 'IN_TRANSIT' || ord.status === 'OUT_FOR_DELIVERY'
-                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                        : 'bg-slate-700/50 text-slate-300'
-                    }`}
+                          ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                          : 'bg-slate-700/50 text-slate-300'
+                      }`}
                   >
                     {ord.status === 'IN_TRANSIT'
                       ? 'Đang vận chuyển'
                       : ord.status === 'OUT_FOR_DELIVERY'
-                      ? 'Đang phát hàng'
-                      : ord.status === 'DELIVERED'
-                      ? 'Đã giao'
-                      : 'Chờ xử lý'}
+                        ? 'Đang phát hàng'
+                        : ord.status === 'DELIVERED'
+                          ? 'Đã giao'
+                          : 'Chờ xử lý'}
                   </span>
                 </div>
 

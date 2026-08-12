@@ -249,10 +249,10 @@ export const CreateOrderPage: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-40 bg-[#f6f6f6] text-black overflow-hidden flex flex-col font-sans select-none">
-      
+
       {/* 1. TOP HEADER BAR matching Provided HTML Code & Image 2 */}
       <header className="h-[64px] border-b border-[#eee] bg-white flex items-center px-4 shrink-0 shadow-xs">
-        
+
         {/* Shop Avatar */}
         <div
           onClick={() => navigate('/seller/profile')}
@@ -267,7 +267,7 @@ export const CreateOrderPage: React.FC = () => {
         {/* Page Title & Navigation Tabs */}
         <div className="flex items-center ml-2">
           <div className="font-medium text-2xl text-slate-900 truncate">Tạo đơn hàng</div>
-          
+
           <div className="ml-7 space-x-1 shrink-0 flex items-center">
             <button
               type="button"
@@ -321,10 +321,10 @@ export const CreateOrderPage: React.FC = () => {
 
       {/* 2. BODY WORKSPACE: LEFT SIDEBAR + MAIN CONTENT */}
       <div className="flex h-[calc(100vh-64px)] w-full overflow-hidden">
-        
+
         {/* LEFT NARROW SIDEBAR */}
         <aside className="w-[68px] h-full shrink-0 border-r border-[#eee] bg-white flex flex-col justify-between items-center py-3">
-          
+
           {/* Top Nav Icons */}
           <div className="flex flex-col gap-3 w-full px-3">
             <button
@@ -382,7 +382,7 @@ export const CreateOrderPage: React.FC = () => {
             >
               <HelpCircle className="w-5 h-5" />
             </button>
-            
+
             {/* E-Logistic Green Logo */}
             <div
               onClick={() => navigate('/seller/dashboard')}
@@ -396,7 +396,7 @@ export const CreateOrderPage: React.FC = () => {
 
         {/* MAIN FORM GRID CONTAINER */}
         <main className="flex-1 h-full overflow-y-auto bg-[#f6f6f6] px-6 pt-6 pb-24 flex flex-col">
-          
+
           {submitError && (
             <div className="mb-4 p-3 rounded-md bg-rose-100 border border-rose-300 text-rose-700 text-xs font-bold flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 shrink-0" />
@@ -406,10 +406,10 @@ export const CreateOrderPage: React.FC = () => {
 
           {/* 2-COLUMN MAIN CONTENT CARD */}
           <div className="w-full max-w-7xl mx-auto bg-white rounded-t-md border border-[#eee] flex flex-col lg:flex-row divide-y lg:divide-y-0 lg:divide-x divide-[#eee]">
-            
+
             {/* LEFT COLUMN: Người Nhận & Các Tùy Chọn Lấy Giao */}
             <div className="lg:w-1/2 p-6 space-y-6">
-              
+
               {/* SECTION: Người Nhận */}
               <section className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -637,7 +637,7 @@ export const CreateOrderPage: React.FC = () => {
                   <div className="relative flex items-center w-full">
                     <select
                       value={warehouseAddress}
-                      onChange={() => {}}
+                      onChange={() => { }}
                       className="w-full border border-slate-200 rounded-md px-3 py-2 text-xs bg-white text-slate-800 pr-10 outline-none truncate"
                     >
                       <option value={warehouseAddress}>{warehouseAddress}</option>
@@ -677,7 +677,7 @@ export const CreateOrderPage: React.FC = () => {
 
             {/* RIGHT COLUMN: Sản Phẩm, Chi Phí & Giải Pháp */}
             <div className="lg:w-1/2 p-6 space-y-6">
-              
+
               {/* SECTION: Sản Phẩm */}
               <section className="space-y-4">
                 <div className="flex justify-between items-center">
@@ -695,7 +695,7 @@ export const CreateOrderPage: React.FC = () => {
                 <div className="space-y-3">
                   {products.map((product, index) => (
                     <div key={product.id} className="flex gap-2 min-w-0 items-start">
-                      
+
                       {/* Product Image Upload Box */}
                       <label className="w-20 h-20 bg-[#f6f6f6] rounded-md border border-dashed border-slate-300 flex flex-col items-center justify-center shrink-0 cursor-pointer hover:bg-slate-100 transition relative">
                         <Upload className="w-6 h-6 text-slate-400" />
@@ -785,7 +785,7 @@ export const CreateOrderPage: React.FC = () => {
 
               {/* SECTION: Thông Tin Đơn Hàng (orderInfo) */}
               <section className="pt-4 border-t border-[#eee] space-y-3 text-xs">
-                
+
                 {/* Total Weight Select */}
                 <div className="flex items-center justify-between">
                   <span className="text-slate-700 font-medium">Tổng KL</span>
