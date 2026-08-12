@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, ShieldCheck, Zap, Thermometer, ArrowRight, CheckCircle2, Sparkles, Navigation, MapPin, Loader2, Package } from 'lucide-react';
+import { Search, ShieldCheck, Zap, Thermometer, ArrowRight, CheckCircle2, Sparkles, Navigation, MapPin, Loader2, Package, LayoutList, Grid } from 'lucide-react';
 import type { Order } from '../types/order.types';
 import heroBg from '../assets/hero_bg.png';
 import { orderApi } from '../api/order.api';
@@ -20,6 +20,7 @@ export const HeroTracking: React.FC<HeroTrackingProps> = ({
   const [searchInput, setSearchInput] = useState('');
   const [searchError, setSearchError] = useState('');
   const [isSearching, setIsSearching] = useState(false);
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
 
   const performSearch = async (codeToSearch: string) => {
     const cleanCode = codeToSearch.trim();
@@ -40,147 +41,128 @@ export const HeroTracking: React.FC<HeroTrackingProps> = ({
       return;
     }
 
-    // If not found locally, query MongoDB public tracking API directly
+    // Otherwise fetch directly from backend API
     setIsSearching(true);
     setSearchError('');
-
     try {
       const response = await orderApi.trackOrderPublic(cleanCode);
       if (response.data?.success && response.data.data) {
-        setSearchError('');
         onOpenOrderDetails(response.data.data);
       } else {
-        setSearchError(`Không tìm thấy mã vận đơn "${cleanCode}". Vui lòng kiểm tra lại.`);
+        setSearchError(`Không tìm thấy vận đơn nào có mã "${cleanCode}" trong hệ thống MongoDB.`);
       }
     } catch (err: any) {
-      const msg = err.response?.data?.message || `Không tìm thấy mã vận đơn "${cleanCode}". Vui lòng kiểm tra lại.`;
-      setSearchError(msg);
+      console.error('Lỗi tra cứu vận đơn:', err);
+      setSearchError(`Không tìm thấy thông tin vận đơn "${cleanCode}". Vui lòng kiểm tra lại.`);
     } finally {
       setIsSearching(false);
     }
   };
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     performSearch(searchInput);
   };
 
-  const handleQuickClick = (code: string) => {
-    setSearchInput(code);
-    performSearch(code);
-  };
-
   return (
-    <div className="space-y-16">
-      {/* Hero Header Section */}
-      <div className="relative min-h-[580px] rounded-3xl overflow-hidden glass-panel border border-slate-800 p-8 sm:p-12 lg:p-16 flex flex-col justify-between">
-
-        {/* Background Image with Dark Glow Overlay */}
-        <div className="absolute inset-0 z-0">
-          <img
-            src={heroBg}
-            alt="E-Logistic Global Network"
-            className="w-full h-full object-cover opacity-25 mix-blend-luminosity scale-105 transition-transform duration-1000 hover:scale-100"
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/90 to-blue-950/60"></div>
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-cyan-500/20 via-transparent to-transparent"></div>
+    <div className="space-y-8">
+      {/* Hero Search Section */}
+      <div className="relative rounded-3xl overflow-hidden border border-slate-800 shadow-2xl bg-slate-950 p-6 sm:p-12">
+        <div className="absolute inset-0 opacity-20 pointer-events-none">
+          <img src={heroBg} alt="Background" className="w-full h-full object-cover" />
         </div>
 
-        {/* Hero Top Content */}
         <div className="relative z-10 max-w-3xl space-y-6">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-bold tracking-wide uppercase shadow-inner">
-            <Sparkles className="w-4 h-4 text-cyan-400 animate-pulse" />
-            Nền Tảng Vận Tải Chuỗi Cung Ứng Thông Minh
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold">
+            <Sparkles className="w-3.5 h-3.5 animate-pulse" />
+            Hệ Thống Logistics Dược Phẩm Sinh Học Thông Minh
           </div>
 
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-tight">
-            Vận Chuyển Hỏa Tốc & <br />
-            <span className="glow-gradient-text">Tối Ưu Hóa Tuyến Đường AI</span>
+          <h1 className="text-3xl sm:text-5xl font-black text-white leading-tight tracking-tight">
+            Tra Cứu & Quản Lý <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-cyan-300 to-indigo-400">
+              Vận Đơn Theo Thời Gian Thực
+            </span>
           </h1>
 
-          <p className="text-slate-300 text-base sm:text-lg font-normal leading-relaxed">
-            Hệ thống quản trị Logistics & Vận chuyển dược phẩm, hàng hóa tiêu chuẩn cao. Tính toán trọng lượng quy đổi tự động, theo dõi GPS thời gian thực và quản trị bảo mật 24/7.
+          <p className="text-sm sm:text-base text-slate-300 font-medium max-w-2xl leading-relaxed">
+            Giám sát lộ trình giao hàng cold-chain, kiểm soát nhiệt độ từ 2°C - 8°C và quản lý trạng thái đơn hàng tức thì từ cơ sở dữ liệu MongoDB.
           </p>
 
-          {/* Interactive Search Bar */}
-          <div className="pt-2">
-            <form onSubmit={handleSearch} className="relative max-w-2xl">
-              <div className="flex flex-col sm:flex-row items-stretch gap-2 p-2 rounded-2xl bg-slate-900/90 border border-blue-500/30 shadow-2xl backdrop-blur-md">
-                <div className="flex-1 flex items-center gap-3 px-4 py-2">
-                  <Search className="w-5 h-5 text-blue-400 shrink-0" />
-                  <input
-                    type="text"
-                    value={searchInput}
-                    onChange={(e) => setSearchInput(e.target.value)}
-                    placeholder="Nhập mã vận đơn (VD: ELG559535153VN)..."
-                    className="w-full bg-transparent text-white placeholder-slate-500 text-sm font-medium focus:outline-none"
-                  />
-                </div>
-                <button
-                  type="submit"
-                  disabled={isSearching}
-                  className="px-6 py-3.5 rounded-xl shimmer-btn text-white font-bold text-sm shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 hover:opacity-95 transition cursor-pointer disabled:opacity-50"
-                >
-                  {isSearching ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Đang tra cứu...
-                    </>
-                  ) : (
-                    <>
-                      Tra Cứu Ngay
-                      <ArrowRight className="w-4 h-4" />
-                    </>
-                  )}
-                </button>
+          {/* Search Box */}
+          <form onSubmit={handleSearchSubmit} className="space-y-2">
+            <div className="relative flex flex-col sm:flex-row items-center gap-2 p-2 rounded-2xl bg-slate-900/90 border border-slate-700/80 shadow-2xl backdrop-blur-xl">
+              <div className="flex items-center gap-3 px-3 py-2 w-full">
+                <Search className="w-5 h-5 text-blue-400 shrink-0" />
+                <input
+                  type="text"
+                  value={searchInput}
+                  onChange={(e) => {
+                    setSearchInput(e.target.value);
+                    if (searchError) setSearchError('');
+                  }}
+                  placeholder="Nhập mã vận đơn (VD: ELG559535153VN, ELG747262514VN...)"
+                  className="w-full bg-transparent text-white placeholder-slate-400 text-sm outline-none font-mono"
+                />
               </div>
-            </form>
+
+              <button
+                type="submit"
+                disabled={isSearching}
+                className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold text-sm shadow-lg shadow-blue-600/30 transition flex items-center justify-center gap-2 shrink-0 cursor-pointer disabled:opacity-50"
+              >
+                {isSearching ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Đang Tra Cứu...
+                  </>
+                ) : (
+                  <>
+                    <Navigation className="w-4 h-4" />
+                    Tra Cứu Đơn
+                  </>
+                )}
+              </button>
+            </div>
 
             {searchError && (
-              <p className="text-rose-400 text-xs font-semibold mt-2 pl-2">
+              <p className="text-xs font-semibold text-rose-400 px-2 animate-in fade-in duration-200">
                 ⚠️ {searchError}
               </p>
             )}
+          </form>
 
-            {/* Demo tracking pills */}
-            {orders.length > 0 && (
-              <div className="flex flex-wrap items-center gap-2 mt-4 text-xs">
-                <span className="text-slate-400 font-semibold">Vận đơn mới nhất:</span>
-                {orders.slice(0, 4).map((o) => {
-                  const code = o.trackingCode || o.trackingNumber || '';
-                  return (
-                    <button
-                      key={o._id || o.id}
-                      onClick={() => handleQuickClick(code)}
-                      className="px-3 py-1 rounded-lg bg-slate-800/80 hover:bg-blue-600/30 text-blue-300 hover:text-white border border-slate-700/60 font-mono transition cursor-pointer"
-                    >
-                      {code} ({o.serviceType || 'EXPRESS'})
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+          {/* Quick Tracking Tags */}
+          <div className="flex flex-wrap items-center gap-2 pt-2 text-xs">
+            <span className="text-slate-400 font-medium">Mẫu tra cứu nhanh:</span>
+            {orders.slice(0, 3).map((ord) => {
+              const code = ord.trackingCode || ord.trackingNumber;
+              if (!code) return null;
+              return (
+                <button
+                  key={code}
+                  type="button"
+                  onClick={() => {
+                    setSearchInput(code);
+                    performSearch(code);
+                  }}
+                  className="px-2.5 py-1 rounded-lg bg-slate-800/80 hover:bg-blue-600/30 border border-slate-700 text-blue-300 font-mono font-bold transition cursor-pointer"
+                >
+                  {code}
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        {/* Hero Bottom Stats Banner */}
-        <div className="relative z-10 pt-10 border-t border-slate-800/80 grid grid-cols-2 md:grid-cols-4 gap-6">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-              <CheckCircle2 className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="text-xl font-bold text-white">99.4%</div>
-              <div className="text-xs text-slate-400">Tỷ Lệ Giao Đúng Giờ</div>
-            </div>
-          </div>
-
+        {/* Feature Highlights Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-8 mt-8 border-t border-slate-800/80 relative z-10">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
               <Zap className="w-5 h-5" />
             </div>
             <div>
-              <div className="text-xl font-bold text-white">&lt; 0.4 giây</div>
+              <div className="text-xl font-bold text-white">&lt; 3 Sec</div>
               <div className="text-xs text-slate-400">Thời Gian Lập Route AI</div>
             </div>
           </div>
@@ -208,98 +190,238 @@ export const HeroTracking: React.FC<HeroTrackingProps> = ({
 
       </div>
 
-      {/* Recent Live Trackings Quick Cards */}
+      {/* Recent Live Trackings Section */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></div>
             <h2 className="text-xl font-extrabold text-white">Vận Đơn Đang Chuyển Động Hàng Ngày</h2>
           </div>
-          <span className="text-xs text-slate-400">Nhấn vào đơn để xem dòng thời gian chi tiết</span>
+
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-slate-400 hidden md:inline">
+              Hiển thị danh sách vận đơn thực từ cơ sở dữ liệu
+            </span>
+            <div className="flex items-center bg-slate-900/80 border border-slate-800 rounded-xl p-1">
+              <button
+                onClick={() => setViewMode('list')}
+                className={`p-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
+                  viewMode === 'list' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'
+                }`}
+                title="Hiển thị Dạng List Dọc"
+              >
+                <LayoutList className="w-4 h-4" />
+                <span className="text-xs">Danh Sách Dọc</span>
+              </button>
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`p-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
+                  viewMode === 'grid' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'
+                }`}
+                title="Hiển thị Dạng Lưới Khung"
+              >
+                <Grid className="w-4 h-4" />
+                <span className="text-xs">Lưới Khung</span>
+              </button>
+            </div>
+          </div>
         </div>
 
         {orders.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {orders.map((ord) => {
-              const code = ord.trackingCode || ord.trackingNumber || '';
-              const origin = ord.pickupAddress?.province || ord.originCity || 'TP.HCM';
-              const dest = ord.deliveryAddress?.province || ord.destinationCity || 'Hà Nội';
-              const recipientName = ord.deliveryAddress?.fullName || ord.recipientName || 'Người nhận';
-              const weight = ord.chargeableWeight || ord.chargeableWeightKg || ord.actualWeight || 0;
+          viewMode === 'list' ? (
+            /* VERTICAL LIST TABLE (Dạng List Dọc như trong ảnh thiết kế) */
+            <div className="glass-panel rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-800 bg-slate-900/80 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                      <th className="py-3.5 px-4">MÃ VẬN ĐƠN</th>
+                      <th className="py-3.5 px-4">NGƯỜI NHẬN & NƠI GIAO</th>
+                      <th className="py-3.5 px-4">TRỌNG LƯỢNG (THỰC / DIM)</th>
+                      <th className="py-3.5 px-4">CƯỚC PHÍ</th>
+                      <th className="py-3.5 px-4">TRẠNG THÁI</th>
+                      <th className="py-3.5 px-4 text-right">THAO TÁC</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/60 text-xs">
+                    {orders.map((ord) => {
+                      const code = ord.trackingCode || ord.trackingNumber || '';
+                      const recipientName = ord.deliveryAddress?.fullName || ord.recipientName || 'Người nhận';
+                      const recipientAddress = [
+                        ord.deliveryAddress?.address,
+                        ord.deliveryAddress?.district,
+                        ord.deliveryAddress?.province
+                      ].filter(Boolean).join(', ') || ord.recipientAddress || 'Địa chỉ N/A';
 
-                  const isEditable = ['CREATED', 'PENDING_VERIFICATION', 'READY_TO_PICK', 'PENDING'].includes(ord.status);
+                      const actualWeight = ord.actualWeight || ord.weightKg || 0;
+                      const chargeableWeightVal = ord.chargeableWeight || ord.chargeableWeightKg || actualWeight;
+                      const fee = ord.shippingFee || ord.cost || 0;
+                      const isEditable = ['CREATED', 'PENDING_VERIFICATION', 'READY_TO_PICK', 'PENDING'].includes(ord.status);
 
-                  return (
-                    <div
-                      key={ord._id || ord.id}
-                      onClick={() => onOpenOrderDetails(ord)}
-                      className="glass-card rounded-2xl p-5 cursor-pointer space-y-4 border border-slate-800 hover:border-blue-500/40 transition group"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="font-mono text-xs font-bold text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded-md border border-blue-500/20">
-                          {code}
-                        </span>
-                        <span
-                          className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase ${ord.status === 'DELIVERED'
-                              ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                              : ord.status === 'IN_TRANSIT' || ord.status === 'OUT_FOR_DELIVERY'
-                                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                                : 'bg-slate-700/50 text-slate-300'
-                            }`}
-                        >
-                          {ord.status === 'IN_TRANSIT'
-                            ? 'Đang vận chuyển'
-                            : ord.status === 'OUT_FOR_DELIVERY'
-                              ? 'Đang phát hàng'
-                              : ord.status === 'DELIVERED'
-                                ? 'Đã giao'
-                                : 'Chờ xử lý'}
-                        </span>
-                      </div>
-
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-1.5 text-xs text-slate-300 font-semibold truncate">
-                          <MapPin className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-                          {origin} ➔ {dest}
-                        </div>
-                        <p className="text-xs text-slate-400 truncate">
-                          Người nhận: <span className="text-slate-200">{recipientName}</span>
-                        </p>
-                      </div>
-
-                      <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
-                        <span>TL Quy Đổi: <strong className="text-white">{weight} kg</strong></span>
-                        <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-                          {isEditable && onEditOrder && (
+                      return (
+                        <tr key={ord._id || ord.id} className="hover:bg-slate-800/40 transition">
+                          <td className="py-4 px-4 font-mono font-bold text-blue-400">
                             <button
-                              onClick={() => onEditOrder(ord)}
-                              className="px-2 py-0.5 rounded-lg bg-amber-500/20 hover:bg-amber-600 text-amber-300 hover:text-white border border-amber-500/30 text-[10px] font-bold transition cursor-pointer"
-                              title="Chỉnh sửa đơn hàng"
+                              onClick={() => onOpenOrderDetails(ord)}
+                              className="hover:underline cursor-pointer text-left"
                             >
-                              Sửa
+                              {code}
                             </button>
-                          )}
-                          {isEditable && onCancelOrder && (
-                            <button
-                              onClick={() => onCancelOrder(ord)}
-                              className="px-2 py-0.5 rounded-lg bg-rose-500/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 text-[10px] font-bold transition cursor-pointer"
-                              title="Hủy đơn hàng"
+                            <span className="block text-[10px] font-normal text-slate-500">{ord.serviceType || 'EXPRESS'}</span>
+                          </td>
+
+                          <td className="py-4 px-4">
+                            <div className="font-bold text-white">{recipientName}</div>
+                            <div className="text-[11px] text-slate-400 truncate max-w-xs">{recipientAddress}</div>
+                          </td>
+
+                          <td className="py-4 px-4">
+                            <div className="text-slate-200 font-mono">{actualWeight} kg (Thực)</div>
+                            <div className="text-cyan-400 text-[11px] font-mono">➡ {chargeableWeightVal} kg (Tính cước)</div>
+                          </td>
+
+                          <td className="py-4 px-4 font-mono font-bold text-emerald-400">
+                            {fee.toLocaleString('vi-VN')} đ
+                          </td>
+
+                          <td className="py-4 px-4">
+                            <span
+                              className={`inline-block text-[10px] font-bold px-2.5 py-1 rounded-full uppercase border ${
+                                ord.status === 'CANCELLED'
+                                  ? 'bg-rose-500/20 text-rose-400 border-rose-500/30'
+                                  : ord.status === 'DELIVERED'
+                                  ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                                  : ord.status === 'IN_TRANSIT' || ord.status === 'OUT_FOR_DELIVERY'
+                                  ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                                  : 'bg-blue-500/20 text-blue-300 border-blue-500/30'
+                              }`}
                             >
-                              Hủy
-                            </button>
-                          )}
+                              {ord.status}
+                            </span>
+                          </td>
+
+                          <td className="py-4 px-4 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                onClick={() => onOpenOrderDetails(ord)}
+                                className="px-2.5 py-1 rounded-lg bg-blue-600/20 hover:bg-blue-600 text-blue-300 hover:text-white border border-blue-500/30 text-xs font-semibold transition cursor-pointer"
+                                title="Xem chi tiết vận đơn"
+                              >
+                                Chi Tiết
+                              </button>
+
+                              {isEditable && onEditOrder && (
+                                <button
+                                  onClick={() => onEditOrder(ord)}
+                                  className="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-600 text-amber-300 hover:text-white border border-amber-500/30 text-xs font-semibold transition cursor-pointer"
+                                  title="Chỉnh sửa đơn hàng"
+                                >
+                                  Sửa
+                                </button>
+                              )}
+
+                              {isEditable && onCancelOrder && (
+                                <button
+                                  onClick={() => onCancelOrder(ord)}
+                                  className="px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 text-xs font-semibold transition cursor-pointer"
+                                  title="Hủy đơn hàng"
+                                >
+                                  Hủy
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : (
+            /* GRID VIEW CARD LAYOUT */
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {orders.map((ord) => {
+                const code = ord.trackingCode || ord.trackingNumber || '';
+                const origin = ord.pickupAddress?.province || ord.originCity || 'TP.HCM';
+                const dest = ord.deliveryAddress?.province || ord.destinationCity || 'Hà Nội';
+                const recipientName = ord.deliveryAddress?.fullName || ord.recipientName || 'Người nhận';
+                const weight = ord.chargeableWeight || ord.chargeableWeightKg || ord.actualWeight || 0;
+                const isEditable = ['CREATED', 'PENDING_VERIFICATION', 'READY_TO_PICK', 'PENDING'].includes(ord.status);
+
+                return (
+                  <div
+                    key={ord._id || ord.id}
+                    onClick={() => onOpenOrderDetails(ord)}
+                    className="glass-card rounded-2xl p-5 cursor-pointer space-y-4 border border-slate-800 hover:border-blue-500/40 transition group"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono text-xs font-bold text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded-md border border-blue-500/20">
+                        {code}
+                      </span>
+                      <span
+                        className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase ${
+                          ord.status === 'DELIVERED'
+                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                            : ord.status === 'IN_TRANSIT' || ord.status === 'OUT_FOR_DELIVERY'
+                            ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                            : 'bg-slate-700/50 text-slate-300'
+                        }`}
+                      >
+                        {ord.status === 'IN_TRANSIT'
+                          ? 'Đang vận chuyển'
+                          : ord.status === 'OUT_FOR_DELIVERY'
+                            ? 'Đang phát hàng'
+                            : ord.status === 'DELIVERED'
+                              ? 'Đã giao'
+                              : 'Chờ xử lý'}
+                      </span>
+                    </div>
+
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-1.5 text-xs text-slate-300 font-semibold truncate">
+                        <MapPin className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                        {origin} ➔ {dest}
+                      </div>
+                      <p className="text-xs text-slate-400 truncate">
+                        Người nhận: <span className="text-slate-200">{recipientName}</span>
+                      </p>
+                    </div>
+
+                    <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+                      <span>TL Quy Đổi: <strong className="text-white">{weight} kg</strong></span>
+                      <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                        {isEditable && onEditOrder && (
                           <button
-                            onClick={() => onOpenOrderDetails(ord)}
-                            className="text-blue-400 group-hover:translate-x-0.5 transition-transform flex items-center gap-1 font-semibold text-xs cursor-pointer ml-1"
+                            onClick={() => onEditOrder(ord)}
+                            className="px-2 py-0.5 rounded-lg bg-amber-500/20 hover:bg-amber-600 text-amber-300 hover:text-white border border-amber-500/30 text-[10px] font-bold transition cursor-pointer"
+                            title="Chỉnh sửa đơn hàng"
                           >
-                            Chi tiết <ArrowRight className="w-3 h-3" />
+                            Sửa
                           </button>
-                        </div>
+                        )}
+                        {isEditable && onCancelOrder && (
+                          <button
+                            onClick={() => onCancelOrder(ord)}
+                            className="px-2 py-0.5 rounded-lg bg-rose-500/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 text-[10px] font-bold transition cursor-pointer"
+                            title="Hủy đơn hàng"
+                          >
+                            Hủy
+                          </button>
+                        )}
+                        <button
+                          onClick={() => onOpenOrderDetails(ord)}
+                          className="text-blue-400 group-hover:translate-x-0.5 transition-transform flex items-center gap-1 font-semibold text-xs cursor-pointer ml-1"
+                        >
+                          Chi tiết <ArrowRight className="w-3 h-3" />
+                        </button>
                       </div>
                     </div>
-                  );
-            })}
-          </div>
+                  </div>
+                );
+              })}
+            </div>
+          )
         ) : (
           <div className="p-8 rounded-2xl bg-slate-900/60 border border-slate-800 text-center space-y-2">
             <Package className="w-8 h-8 text-slate-600 mx-auto" />
@@ -308,40 +430,6 @@ export const HeroTracking: React.FC<HeroTrackingProps> = ({
           </div>
         )}
       </div>
-
-      {/* System Core Architecture Features */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
-        <div className="glass-panel p-8 rounded-3xl border border-slate-800 space-y-4">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
-            <Zap className="w-6 h-6" />
-          </div>
-          <h3 className="text-lg font-bold text-white">Tính Cước Trọng Lượng Quy Đổi</h3>
-          <p className="text-sm text-slate-400 leading-relaxed">
-            Áp dụng chính xác công thức Logistics chuẩn quốc tế $V = (L \times W \times H) / 5000$. Tự động so sánh với trọng lượng thực tế để lấy giá trị lớn nhất.
-          </p>
-        </div>
-
-        <div className="glass-panel p-8 rounded-3xl border border-slate-800 space-y-4">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-500 to-teal-600 flex items-center justify-center text-white shadow-lg shadow-cyan-500/20">
-            <Navigation className="w-6 h-6" />
-          </div>
-          <h3 className="text-lg font-bold text-white">Tối Ưu Hóa Tuyến Đường AI</h3>
-          <p className="text-sm text-slate-400 leading-relaxed">
-            Thuật toán phân tuyến thông minh giúp tài xế giảm 28% thời gian di chuyển, tự động gợi ý thứ tự bưu kiện cần giao và theo dõi tọa độ GPS 24/7.
-          </p>
-        </div>
-
-        <div className="glass-panel p-8 rounded-3xl border border-slate-800 space-y-4">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center text-white shadow-lg shadow-purple-500/20">
-            <ShieldCheck className="w-6 h-6" />
-          </div>
-          <h3 className="text-lg font-bold text-white">Bảo Mật & Audit Log 2-Lớp</h3>
-          <p className="text-sm text-slate-400 leading-relaxed">
-            Tự động tạm khóa tài khoản khi nhập sai 5 lần. Ghi nhận toàn bộ thao tác hệ thống (Audit Log) theo thời gian thực để ngăn ngừa gian lận dữ liệu.
-          </p>
-        </div>
-      </div>
-
     </div>
   );
 };
