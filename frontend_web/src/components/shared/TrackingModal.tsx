@@ -85,6 +85,38 @@ export const TrackingModal: React.FC<TrackingModalProps> = ({ order, onClose, on
           </div>
         )}
 
+        {/* Telematics GPS Live Tracking Banner & Edge Case Signal Warnings */}
+        {(order as any).live_tracking && (
+          <div className={`p-4 rounded-2xl border text-xs font-medium space-y-2 ${
+            (order as any).live_tracking.status === 'LOST_SIGNAL'
+              ? 'bg-rose-500/10 border-rose-500/30 text-rose-300'
+              : (order as any).live_tracking.status === 'DEGRADED_SIGNAL'
+              ? 'bg-amber-500/10 border-amber-500/30 text-amber-300'
+              : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+          }`}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 font-bold">
+                <div className={`w-2.5 h-2.5 rounded-full ${
+                  (order as any).live_tracking.status === 'LIVE' ? 'bg-emerald-400 animate-ping' : 'bg-amber-400'
+                }`} />
+                <span>
+                  {(order as any).live_tracking.status === 'LIVE' && '📡 Đang phát vị trí GPS trực tiếp của Tài xế'}
+                  {(order as any).live_tracking.status === 'DEGRADED_SIGNAL' && '⚠️ Tín hiệu GPS không ổn định'}
+                  {(order as any).live_tracking.status === 'LOST_SIGNAL' && '⚠️ Tạm thời mất kết nối GPS với giao viên'}
+                </span>
+              </div>
+              <span className="font-mono text-[11px] opacity-80">
+                Tài xế: {(order as any).live_tracking.driver_name || 'Nguyễn ***'} (SĐT: {(order as any).live_tracking.driver_phone || '*******998'})
+              </span>
+            </div>
+            {(order as any).live_tracking.stale_warning && (
+              <p className="text-[11px] opacity-90 pl-4 border-l-2 border-current">
+                {(order as any).live_tracking.stale_warning}
+              </p>
+            )}
+          </div>
+        )}
+
         {/* Visual Timeline Bar */}
         {!isCancelled && (
           <div className="bg-slate-900/80 p-5 rounded-2xl border border-slate-800 space-y-4">
@@ -133,15 +165,15 @@ export const TrackingModal: React.FC<TrackingModalProps> = ({ order, onClose, on
             <div className="text-xs text-slate-500 font-mono">SĐT: {order.pickupAddress?.phone}</div>
           </div>
 
-          {/* Receiver */}
+          {/* Receiver (Supports Masked PII) */}
           <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-1.5">
             <div className="text-[11px] font-bold text-slate-400 uppercase flex items-center gap-1.5">
               <MapPin className="w-3.5 h-3.5 text-emerald-400" />
-              Nơi Nhận ({order.deliveryAddress?.province || order.destinationCity || 'Hà Nội'})
+              Nơi Nhận ({(order as any).recipient?.addressMasked || order.deliveryAddress?.province || order.destinationCity || 'Hà Nội'})
             </div>
-            <div className="text-sm font-bold text-white">{order.deliveryAddress?.fullName || order.recipientName}</div>
-            <div className="text-xs text-slate-400">{order.deliveryAddress?.address || order.recipientAddress}, {order.deliveryAddress?.district}</div>
-            <div className="text-xs text-slate-500 font-mono">SĐT: {order.deliveryAddress?.phone}</div>
+            <div className="text-sm font-bold text-white">{(order as any).recipient?.fullName || order.deliveryAddress?.fullName || order.recipientName}</div>
+            <div className="text-xs text-slate-400">{(order as any).recipient?.addressMasked || order.deliveryAddress?.address || order.recipientAddress}</div>
+            <div className="text-xs text-slate-500 font-mono">SĐT: {(order as any).recipient?.phone || order.deliveryAddress?.phone}</div>
           </div>
         </div>
 

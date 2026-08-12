@@ -944,20 +944,27 @@ const searchSellerOrders = async (sellerId, isAdmin, queryParams) => {
 };
 
 /**
- * Helper function Masking PII Data
+ * Helper function Masking PII Data theo chuẩn đặc tả Use Case
  */
-const maskString = (str, visibleStart = 1, visibleEnd = 1) => {
-  if (!str) return '';
-  const s = String(str).trim();
-  if (s.length <= visibleStart + visibleEnd) return s;
-  return s.substring(0, visibleStart) + '***' + s.substring(s.length - visibleEnd);
+const maskPII = (name, phone, address) => {
+  const maskedName = name ? name.split(' ').map((word, idx) => (idx === 0 ? word : '***')).join(' ') : 'Khách ***';
+  const phoneStr = String(phone || '');
+  const maskedPhone = phoneStr.length >= 3 ? '*******' + phoneStr.slice(-3) : '*******888';
+  
+  const addressStr = String(address || '');
+  const addressParts = addressStr.split(',');
+  const maskedAddress = addressParts.length >= 3 
+    ? '***, ' + addressParts.slice(-3).join(',').trim()
+    : '***, ' + addressStr;
+
+  return { maskedName, maskedPhone, maskedAddress };
 };
 
 /**
- * Service function: Tra cứu công khai dành cho Khách mua / Người nhận qua Mã vận đơn (Public Buyer Tracking)
- * Áp dụng cơ chế Masking PII & Tích hợp Live Tracking (WebSocket Room Pattern)
+ * Service function: Tra cứu công khai dành cho Khách mua / Người nhận qua Mã vận đơn & 4 số cuối SĐT (Public Buyer Tracking)
+ * Áp dụng cơ chế Masking PII, State Machine Timeline & Tích hợp Telematics Live Tracking (SSE/WebSocket Pattern)
  */
-const getPublicOrderTracking = async (trackingCode) => {
+const getPublicOrderTracking = async (trackingCode, phoneLast4) => {
   if (!trackingCode || typeof trackingCode !== 'string' || trackingCode.trim() === '') {
     const err = new Error('Mã vận đơn tra cứu không được để trống.');
     err.statusCode = 400;
@@ -974,75 +981,120 @@ const getPublicOrderTracking = async (trackingCode) => {
   });
 
   if (!order) {
-    const err = new Error(`Không tìm thấy đơn hàng với mã vận đơn "${cleanCode}".`);
+    const err = new Error(`Không tìm thấy thông tin vận đơn phù hợp.`);
     err.statusCode = 404;
     throw err;
+  }
+
+  // Nếu người dùng cung cấp 4 số cuối SĐT, kiểm tra đối soát 2 lớp
+  if (phoneLast4 && typeof phoneLast4 === 'string') {
+    const cleanPhone4 = phoneLast4.trim();
+    const recipientPhone = String(order.deliveryAddress?.phone || order.recipientPhone || '');
+    if (!recipientPhone.endsWith(cleanPhone4)) {
+      const err = new Error(`Thông tin tra cứu (Mã vận đơn & 4 số cuối SĐT) không chính xác.`);
+      err.statusCode = 404;
+      throw err;
+    }
   }
 
   const logs = await OrderLog.find({ orderId: order._id }).sort({ timestamp: 1 });
 
   // 1. PII Masking
-  const receiverData = {
-    name: maskString(order.deliveryAddress?.fullName || 'Khách Hàng', 2, 1),
-    phone: maskString(order.deliveryAddress?.phone || '0900000000', 3, 2),
-    address: `*** ${order.deliveryAddress?.ward || ''}, ${order.deliveryAddress?.district || ''}, ${order.deliveryAddress?.province || ''}`
-  };
+  const rawAddress = [
+    order.deliveryAddress?.address,
+    order.deliveryAddress?.ward,
+    order.deliveryAddress?.district,
+    order.deliveryAddress?.province
+  ].filter(Boolean).join(', ');
 
-  // 2. Status Mapping
-  let statusText = 'Đang xử lý';
-  if (order.status === 'CREATED') statusText = 'Đơn hàng đã được tạo';
-  if (order.status === 'IN_TRANSIT') statusText = 'Đang luôn chuyển bưu cục';
-  if (['OUT_FOR_DELIVERY', 'DELIVERING'].includes(order.status)) statusText = 'Đang giao hàng chặng cuối';
-  if (order.status === 'DELIVERED') statusText = 'Giao hàng thành công';
-  if (order.status === 'CANCELLED') statusText = 'Đã hủy đơn hàng';
+  const { maskedName, maskedPhone, maskedAddress } = maskPII(
+    order.deliveryAddress?.fullName || order.recipientName || 'Khách Hàng',
+    order.deliveryAddress?.phone || order.recipientPhone || '0900000000',
+    rawAddress || 'Phường Bến Nghé, Quận 1, TP.Hồ Chí Minh'
+  );
 
-  // 3. Timeline Mapping
-  const defaultTimeline = [
-    { status: 'CREATED', title: 'Đơn hàng đã được tạo', time: order.createdAt },
-    { status: 'PICKED', title: 'Đã lấy hàng tại Bưu cục', time: order.createdAt },
-    ...(['OUT_FOR_DELIVERY', 'DELIVERING', 'DELIVERED'].includes(order.status)
-      ? [{ status: order.status, title: statusText, time: order.updatedAt }]
-      : [])
+  // 2. State Machine Timeline Milestone Mapping
+  const MILESTONE_ORDER = [
+    'CREATED',
+    'PICKING',
+    'PICKED_UP',
+    'IN_TRANSIT',
+    'LAST_MILE_DELIVERING',
+    'DELIVERED'
   ];
 
-  const timeline = logs && logs.length > 0
-    ? logs.map(l => ({
-        status: l.postStatus || l.actionType,
-        title: l.note || `Trạng thái: ${l.postStatus || l.actionType}`,
-        time: l.timestamp
-      }))
-    : defaultTimeline;
+  const logStatusSet = new Set(logs.map(l => l.postStatus || l.actionType));
+  logStatusSet.add(order.status);
 
-  // 4. Real-time Live Tracking Status & Graceful Degradation (8.2)
-  const isLastMile = ['OUT_FOR_DELIVERY', 'DELIVERING'].includes(order.status);
+  const timeline = MILESTONE_ORDER.map((statusKey) => {
+    const logItem = logs.find(l => (l.postStatus || l.actionType) === statusKey);
+    const isCompleted = logStatusSet.has(statusKey) || (statusKey === 'CREATED');
+    const isCurrent = order.status === statusKey || (order.status === 'OUT_FOR_DELIVERY' && statusKey === 'LAST_MILE_DELIVERING');
+
+    let title = 'Chờ xử lý';
+    if (statusKey === 'CREATED') title = 'Khởi tạo đơn hàng thành công';
+    if (statusKey === 'PICKING') title = 'Tài xế đang di chuyển lấy hàng';
+    if (statusKey === 'PICKED_UP') title = 'Đã lấy hàng thành công tại bưu cục';
+    if (statusKey === 'IN_TRANSIT') title = 'Đang luôn chuyển trung chuyển';
+    if (statusKey === 'LAST_MILE_DELIVERING') title = 'Tài xế đang giao hàng chặng cuối';
+    if (statusKey === 'DELIVERED') title = 'Giao hàng thành công - Đã ký nhận';
+
+    return {
+      status: statusKey,
+      title: logItem?.note || title,
+      isCompleted,
+      isCurrent,
+      timestamp: logItem?.timestamp || (statusKey === 'CREATED' ? order.createdAt : null)
+    };
+  });
+
+  // 3. Real-Time Telematics & Signal Degradation Handling (Edge Cases)
+  const isLastMile = ['OUT_FOR_DELIVERY', 'DELIVERING', 'LAST_MILE_DELIVERING'].includes(order.status);
   const driverLastLoc = order.driverLastLocation || { lat: 10.776889, lng: 106.700806, updatedAt: new Date() };
   const gpsUpdatedAt = driverLastLoc.updatedAt ? new Date(driverLastLoc.updatedAt) : new Date();
   const now = new Date();
-  const diffMinutes = Math.floor((now.getTime() - gpsUpdatedAt.getTime()) / 60000);
-  const isGpsStale = diffMinutes >= 3;
+  const diffSeconds = Math.floor((now.getTime() - gpsUpdatedAt.getTime()) / 1000);
+  const diffMinutes = Math.floor(diffSeconds / 60);
+
+  let gpsSignalStatus = 'LIVE';
+  let hideMap = !isLastMile;
+  let staleWarning = null;
+
+  if (isLastMile) {
+    if (diffSeconds > 1800) {
+      // > 30 phút -> Ẩn bản đồ hoàn toàn
+      gpsSignalStatus = 'LOST_SIGNAL';
+      hideMap = true;
+      staleWarning = 'Tạm thời mất kết nối GPS với giao viên. Tiến trình đơn hàng vẫn đang được ghi nhận.';
+    } else if (diffSeconds > 180) {
+      // 3 đến 30 phút -> Cảnh báo tín hiệu GPS kém
+      gpsSignalStatus = 'DEGRADED_SIGNAL';
+      hideMap = false;
+      staleWarning = `Tín hiệu GPS không ổn định. Vị trí cập nhật ${diffMinutes} phút trước.`;
+    }
+  }
 
   const liveTracking = {
-    is_active: isLastMile,
-    is_gps_stale: isGpsStale,
-    stale_warning: isGpsStale ? `Vị trí cập nhật ${diffMinutes} phút trước` : null,
-    driver_name: order.driver ? maskString(order.driver.fullName, 2, 1) : 'Nguy*** B**',
-    driver_phone: order.driver ? maskString(order.driver.phone, 3, 2) : '098*****88',
+    is_active: isLastMile && !hideMap,
+    status: gpsSignalStatus,
+    hideMap,
+    stale_warning: staleWarning,
+    driver_name: order.driver ? maskPII(order.driver.fullName, '', '').maskedName : 'Nguyên ***',
+    driver_phone: order.driver ? maskPII('', order.driver.phone, '').maskedPhone : '*******998',
     current_location: { lat: driverLastLoc.lat, lng: driverLastLoc.lng },
     destination_location: order.destinationLocation || { lat: 10.769012, lng: 106.695123 },
-    eta_minutes: isGpsStale ? null : (order.calculatedEta || 12)
+    last_updated_sec_ago: diffSeconds
   };
 
   return {
     ...order.toObject(),
-    tracking_number: order.trackingCode,
+    trackingNumber: order.trackingCode,
     trackingCode: order.trackingCode,
     status: order.status,
-    status_text: statusText,
-    receiver: receiverData,
     recipient: {
-      fullName: receiverData.name,
-      phone: receiverData.phone,
-      addressMasked: receiverData.address
+      fullName: maskedName,
+      phone: maskedPhone,
+      addressMasked: maskedAddress
     },
     timeline,
     live_tracking: liveTracking,

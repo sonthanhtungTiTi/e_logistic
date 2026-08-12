@@ -216,7 +216,8 @@ const searchOrders = async (req, res, next) => {
 const trackOrderPublic = async (req, res, next) => {
   try {
     const { trackingCode } = req.params;
-    const trackingData = await orderService.getPublicOrderTracking(trackingCode);
+    const { phoneLast4 } = req.query;
+    const trackingData = await orderService.getPublicOrderTracking(trackingCode, phoneLast4);
 
     return res.status(200).json({
       success: true,

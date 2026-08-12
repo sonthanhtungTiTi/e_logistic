@@ -22,12 +22,17 @@ export const HeroTracking: React.FC<HeroTrackingProps> = ({
   const [isSearching, setIsSearching] = useState(false);
   const [viewMode, setViewMode] = useState<'table' | 'bar'>('table');
 
-  const performSearch = async (codeToSearch: string) => {
-    const cleanCode = codeToSearch.trim();
-    if (!cleanCode) {
-      setSearchError('Vui lòng nhập mã vận đơn (VD: ELG559535153VN hoặc ELG-123456)');
+  const performSearch = async (rawInput: string) => {
+    const trimmed = rawInput.trim();
+    if (!trimmed) {
+      setSearchError('Vui lòng nhập mã vận đơn (VD: ELG559535153VN hoặc kèm 4 số SĐT: ELG559535153VN 153)');
       return;
     }
+
+    // Parse trackingCode and optional 4-digit phone if user typed e.g. "ELG559535153VN 0153" or "ELG559535153VN, 153"
+    const parts = trimmed.split(/[\s,]+/);
+    const cleanCode = parts[0];
+    const phoneLast4 = parts.length > 1 && /^\d{3,4}$/.test(parts[1]) ? parts[1] : undefined;
 
     // First, check loaded orders list
     const foundLocal = orders.find((o) => {
@@ -41,19 +46,20 @@ export const HeroTracking: React.FC<HeroTrackingProps> = ({
       return;
     }
 
-    // Otherwise fetch directly from backend API
+    // Otherwise fetch directly from backend API with Rate Limiting & PII Masking
     setIsSearching(true);
     setSearchError('');
     try {
-      const response = await orderApi.trackOrderPublic(cleanCode);
+      const response = await orderApi.trackOrderPublic(cleanCode, phoneLast4);
       if (response.data?.success && response.data.data) {
         onOpenOrderDetails(response.data.data);
       } else {
-        setSearchError(`Không tìm thấy vận đơn nào có mã "${cleanCode}" trong hệ thống MongoDB.`);
+        setSearchError(`Không tìm thấy vận đơn nào khớp với thông tin tra cứu.`);
       }
     } catch (err: any) {
       console.error('Lỗi tra cứu vận đơn:', err);
-      setSearchError(`Không tìm thấy thông tin vận đơn "${cleanCode}". Vui lòng kiểm tra lại.`);
+      const msg = err.response?.data?.message || `Không tìm thấy thông tin vận đơn "${cleanCode}". Vui lòng kiểm tra lại.`;
+      setSearchError(msg);
     } finally {
       setIsSearching(false);
     }
