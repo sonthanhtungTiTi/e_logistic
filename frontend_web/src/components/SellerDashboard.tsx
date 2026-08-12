@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Package, Plus, Search, Filter, DollarSign, CheckCircle2, Truck, X } from 'lucide-react';
 import type { Order } from '../types/order.types';
+import { orderApi } from '../api/order.api';
 
 interface SellerDashboardProps {
   orders: Order[];
@@ -64,7 +65,7 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
   const chargeableWeight = Math.max(formData.weightKg, volWeight);
   const calculatedCost = Math.round(chargeableWeight * (formData.serviceType === 'EXPRESS' ? 38000 : 22000) * (formData.originCity !== formData.destinationCity ? 1.5 : 1));
 
-  const handleCreateSubmit = (e: React.FormEvent) => {
+  const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.recipientName.trim()) {
       setFormError('Vui lòng nhập tên người nhận');
@@ -79,75 +80,55 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
       return;
     }
 
-    const randomCode = `ELG-${Math.floor(100000 + Math.random() * 900000)}`;
-    const newOrd: Order = {
-      _id: `ORD-${Date.now()}`,
-      trackingCode: randomCode,
-      sellerId: 'SELLER-DEMO-01',
-      pickupAddress: {
-        fullName: formData.senderName,
-        phone: formData.senderPhone,
-        address: formData.senderAddress,
-        ward: 'Phường 1',
-        district: 'Quận 5',
-        province: formData.originCity,
-      },
-      deliveryAddress: {
-        fullName: formData.recipientName,
-        phone: formData.recipientPhone,
-        address: formData.recipientAddress,
-        ward: 'Phường Hàng Bạc',
-        district: 'Quận Hoàn Kiếm',
-        province: formData.destinationCity,
-      },
-      items: [
-        {
-          name: 'Hàng hóa dược phẩm / Thiết bị y tế',
-          quantity: 1,
-          weight: formData.weightKg,
+    try {
+      const response = await orderApi.createOrder({
+        pickupAddress: {
+          fullName: formData.senderName,
+          phone: formData.senderPhone,
+          address: formData.senderAddress,
+          ward: 'Phường 1',
+          district: 'Quận 5',
+          province: formData.originCity,
         },
-      ],
-      dimensions: {
-        length: formData.lengthCm,
-        width: formData.widthCm,
-        height: formData.heightCm,
-      },
-      actualWeight: formData.weightKg,
-      volumetricWeight: volWeight,
-      chargeableWeight: chargeableWeight,
-      isCod: false,
-      codAmount: 0,
-      goodsValue: 500000,
-      baseFee: calculatedCost,
-      insuranceFee: 0,
-      discountAmount: 0,
-      shippingFee: calculatedCost,
-      flagFeeWarning: false,
-      flagCodAnomaly: false,
-      needsManualRouting: false,
-      status: 'CREATED',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      // Legacy compatibility
-      id: `ORD-${Date.now()}`,
-      trackingNumber: randomCode,
-      cost: calculatedCost,
-      weightKg: formData.weightKg,
-      chargeableWeightKg: chargeableWeight,
-      recipientName: formData.recipientName,
-      recipientAddress: formData.recipientAddress,
-      destinationCity: formData.destinationCity,
-    };
+        deliveryAddress: {
+          fullName: formData.recipientName,
+          phone: formData.recipientPhone,
+          address: formData.recipientAddress,
+          ward: 'Phường Hàng Bạc',
+          district: 'Quận Hoàn Kiếm',
+          province: formData.destinationCity,
+        },
+        items: [
+          {
+            name: 'Hàng hóa bưu gửi',
+            quantity: 1,
+            weight: formData.weightKg,
+          },
+        ],
+        dimensions: {
+          length: formData.lengthCm,
+          width: formData.widthCm,
+          height: formData.heightCm,
+        },
+        isCod: false,
+        codAmount: 0,
+        goodsValue: 500000,
+      });
 
-    onCreateOrder(newOrd);
-    setShowCreateModal(false);
-    setFormError('');
-    setFormData({
-      ...formData,
-      recipientName: '',
-      recipientPhone: '',
-      recipientAddress: '',
-    });
+      if (response.data?.success && response.data.data) {
+        onCreateOrder(response.data.data);
+        setShowCreateModal(false);
+        setFormError('');
+        setFormData({
+          ...formData,
+          recipientName: '',
+          recipientPhone: '',
+          recipientAddress: '',
+        });
+      }
+    } catch (err: any) {
+      setFormError(err.response?.data?.message || 'Không thể tạo đơn hàng trên hệ thống');
+    }
   };
 
   return (
@@ -259,54 +240,64 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60 text-xs">
-              {filteredOrders.map((ord) => {
-                const code = ord.trackingCode || ord.trackingNumber || '';
-                const recipientName = ord.deliveryAddress?.fullName || ord.recipientName || '';
-                const recipientAddress = ord.deliveryAddress?.address || ord.recipientAddress || '';
-                const actualWeight = ord.actualWeight || ord.weightKg || 0;
-                const chargeableWeightVal = ord.chargeableWeight || ord.chargeableWeightKg || 0;
-                const fee = ord.shippingFee || ord.cost || 0;
+              {filteredOrders.length > 0 ? (
+                filteredOrders.map((ord) => {
+                  const code = ord.trackingCode || ord.trackingNumber || '';
+                  const recipientName = ord.deliveryAddress?.fullName || ord.recipientName || '';
+                  const recipientAddress = ord.deliveryAddress?.address || ord.recipientAddress || '';
+                  const actualWeight = ord.actualWeight || ord.weightKg || 0;
+                  const chargeableWeightVal = ord.chargeableWeight || ord.chargeableWeightKg || 0;
+                  const fee = ord.shippingFee || ord.cost || 0;
 
-                return (
-                  <tr key={ord._id || ord.id} className="hover:bg-slate-800/40 transition">
-                    <td className="py-4 px-4 font-mono font-bold text-blue-400">
-                      {code}
-                      <span className="block text-[10px] font-normal text-slate-500">{ord.serviceType || 'EXPRESS'}</span>
-                    </td>
-                    <td className="py-4 px-4">
-                      <div className="font-bold text-white">{recipientName}</div>
-                      <div className="text-[11px] text-slate-400 truncate max-w-xs">{recipientAddress}</div>
-                    </td>
-                    <td className="py-4 px-4">
-                      <div className="text-slate-200 font-mono">{actualWeight} kg (Thực)</div>
-                      <div className="text-cyan-400 text-[11px] font-mono">➡ {chargeableWeightVal} kg (Tính cước)</div>
-                    </td>
-                    <td className="py-4 px-4 font-mono font-bold text-emerald-400">
-                      {fee.toLocaleString('vi-VN')} đ
-                    </td>
-                    <td className="py-4 px-4">
-                      <span
-                        className={`inline-block text-[10px] font-bold px-2.5 py-1 rounded-full uppercase ${ord.status === 'DELIVERED'
-                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                            : ord.status === 'IN_TRANSIT' || ord.status === 'OUT_FOR_DELIVERY'
-                              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                              : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
-                          }`}
-                      >
-                        {ord.status}
-                      </span>
-                    </td>
-                    <td className="py-4 px-4 text-right">
-                      <button
-                        onClick={() => onOpenOrderDetails(ord)}
-                        className="px-3 py-1.5 rounded-lg bg-blue-600/20 hover:bg-blue-600 text-blue-300 hover:text-white border border-blue-500/30 text-xs font-semibold transition cursor-pointer"
-                      >
-                        Chi Tiết
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
+                  return (
+                    <tr key={ord._id || ord.id} className="hover:bg-slate-800/40 transition">
+                      <td className="py-4 px-4 font-mono font-bold text-blue-400">
+                        {code}
+                        <span className="block text-[10px] font-normal text-slate-500">{ord.serviceType || 'EXPRESS'}</span>
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="font-bold text-white">{recipientName}</div>
+                        <div className="text-[11px] text-slate-400 truncate max-w-xs">{recipientAddress}</div>
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="text-slate-200 font-mono">{actualWeight} kg (Thực)</div>
+                        <div className="text-cyan-400 text-[11px] font-mono">➡ {chargeableWeightVal} kg (Tính cước)</div>
+                      </td>
+                      <td className="py-4 px-4 font-mono font-bold text-emerald-400">
+                        {fee.toLocaleString('vi-VN')} đ
+                      </td>
+                      <td className="py-4 px-4">
+                        <span
+                          className={`inline-block text-[10px] font-bold px-2.5 py-1 rounded-full uppercase ${ord.status === 'DELIVERED'
+                              ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                              : ord.status === 'IN_TRANSIT' || ord.status === 'OUT_FOR_DELIVERY'
+                                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                                : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                            }`}
+                        >
+                          {ord.status}
+                        </span>
+                      </td>
+                      <td className="py-4 px-4 text-right">
+                        <button
+                          onClick={() => onOpenOrderDetails(ord)}
+                          className="px-3 py-1.5 rounded-lg bg-blue-600/20 hover:bg-blue-600 text-blue-300 hover:text-white border border-blue-500/30 text-xs font-semibold transition cursor-pointer"
+                        >
+                          Chi Tiết
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan={6} className="py-12 px-4 text-center text-slate-400 space-y-2">
+                    <Package className="w-10 h-10 text-slate-600 mx-auto" />
+                    <p className="font-bold text-sm text-slate-200">Chưa có đơn hàng nào trong MongoDB</p>
+                    <p className="text-xs text-slate-500">Bấm "Tạo Đơn Hàng Mới" hoặc "Đăng Đơn Lẻ" để khởi tạo đơn hàng đầu tiên.</p>
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
