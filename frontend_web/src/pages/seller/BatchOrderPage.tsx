@@ -31,6 +31,7 @@ import {
 import { useAuth } from '../../hooks/useAuth';
 import { orderApi } from '../../api/order.api';
 import type { CreateOrderPayload, Order } from '../../types/order.types';
+import { OrderSubNav } from '../../components/orders/OrderSubNav';
 
 export interface ParsedBatchItem {
   id: string;
@@ -627,7 +628,9 @@ export const BatchOrderPage: React.FC = () => {
         </div>
 
         {/* Action Buttons Header */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-3">
+          <OrderSubNav activeTab="batch" />
+
           <button
             type="button"
             onClick={handleDownloadTemplate}

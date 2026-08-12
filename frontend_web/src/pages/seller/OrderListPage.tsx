@@ -6,6 +6,7 @@ import type { Order } from '../../types/order.types';
 import { CancelOrderModal } from '../../components/orders/CancelOrderModal';
 import { OrderDetailModal } from '../../components/orders/OrderDetailModal';
 import { EditOrderModal } from '../../components/orders/EditOrderModal';
+import { OrderSubNav } from '../../components/orders/OrderSubNav';
 
 export const OrderListPage: React.FC = () => {
   const navigate = useNavigate();
@@ -158,19 +159,15 @@ export const OrderListPage: React.FC = () => {
       )}
 
       {/* Header Bar */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-slate-800 pb-4">
         <div>
           <h3 className="text-2xl font-black text-white flex items-center gap-2">
             <Package className="w-6 h-6 text-blue-400" /> Tra Cứu & Quản Lý Đơn Hàng
           </h3>
           <p className="text-xs text-slate-400">Tìm kiếm, lọc chi tiết theo mã vận đơn, người nhận, chỉnh sửa & quản lý bưu gửi</p>
         </div>
-        <button
-          onClick={() => navigate('/seller/orders/create')}
-          className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-blue-600/30 transition cursor-pointer"
-        >
-          <Plus className="w-4 h-4" /> Tạo Đơn Hàng Mới
-        </button>
+
+        <OrderSubNav activeTab="list" />
       </div>
 
       {/* Advanced Filter Control Panel */}

@@ -31,6 +31,7 @@ import type { CreateOrderPayload, Order, QuoteResponseData } from '../../types/o
 import { CompleteShopInfoModal } from '../../components/orders/CompleteShopInfoModal';
 import { OrderSuccessModal } from '../../components/orders/OrderSuccessModal';
 import { PrintWaybillModal } from '../../components/orders/PrintWaybillModal';
+import { OrderSubNav } from '../../components/orders/OrderSubNav';
 
 interface ProductItem {
   id: number;
@@ -321,28 +322,7 @@ export const CreateOrderPage: React.FC = () => {
         </div>
 
         {/* Quick Action Tabs */}
-        <div className="flex items-center gap-2 bg-slate-900/80 p-1.5 rounded-2xl border border-slate-800 self-start md:self-auto">
-          <button
-            type="button"
-            className="bg-blue-600 text-white font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-md shadow-blue-600/30"
-          >
-            <Package className="w-4 h-4" /> Đăng Đơn Lẻ
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate('/seller/orders/batch')}
-            className="text-slate-300 hover:text-white hover:bg-slate-800/60 font-semibold px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer"
-          >
-            <FileSpreadsheet className="w-4 h-4 text-emerald-400" /> Đăng Đơn Excel
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate('/seller/orders')}
-            className="text-slate-300 hover:text-white hover:bg-slate-800/60 font-semibold px-4 py-2 rounded-xl text-xs transition cursor-pointer"
-          >
-            Quản Lý Đơn
-          </button>
-        </div>
+        <OrderSubNav activeTab="single" />
       </div>
 
       {/* Global Submit Error Notification */}
