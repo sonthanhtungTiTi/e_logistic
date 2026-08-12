@@ -1,6 +1,7 @@
-import React from 'react';
-import { X, MapPin, Truck, FileText, Edit3, Trash2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, MapPin, Truck, FileText, Edit3, Trash2, Printer } from 'lucide-react';
 import type { Order } from '../../types/order.types';
+import { PrintWaybillModal } from '../orders/PrintWaybillModal';
 
 interface TrackingModalProps {
   order: Order | null;
@@ -11,9 +12,10 @@ interface TrackingModalProps {
 }
 
 export const TrackingModal: React.FC<TrackingModalProps> = ({ order, onClose, onEditOrder, onCancelOrder }) => {
+  const [showPrintModal, setShowPrintModal] = useState(false);
   if (!order) return null;
 
-  const isEditable = order.status === 'CREATED' || order.status === 'READY_TO_PICK' || order.status === 'PENDING';
+  const isEditable = ['CREATED', 'PENDING_VERIFICATION', 'READY_TO_PICK', 'PENDING'].includes(order.status);
   const isCancelled = order.status === 'CANCELLED';
 
   const steps = [
@@ -26,7 +28,10 @@ export const TrackingModal: React.FC<TrackingModalProps> = ({ order, onClose, on
 
   const getStepStatusIndex = (status: string) => {
     switch (status) {
-      case 'CREATED': return 0;
+      case 'CREATED':
+      case 'PENDING_VERIFICATION':
+      case 'PENDING':
+        return 0;
       case 'READY_TO_PICK': return 1;
       case 'PICKED': return 2;
       case 'IN_TRANSIT': return 3;
@@ -186,10 +191,10 @@ export const TrackingModal: React.FC<TrackingModalProps> = ({ order, onClose, on
 
           <div className="flex items-center gap-2 ml-auto">
             <button
-              onClick={() => alert(`Đã tải Vận Đơn Điện Tử ${order.trackingCode || order.trackingNumber}.pdf`)}
+              onClick={() => setShowPrintModal(true)}
               className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold border border-slate-700 flex items-center gap-1.5 transition cursor-pointer"
             >
-              <FileText className="w-4 h-4 text-blue-400" />
+              <Printer className="w-4 h-4 text-blue-400" />
               In Vận Đơn PDF
             </button>
 
@@ -203,6 +208,10 @@ export const TrackingModal: React.FC<TrackingModalProps> = ({ order, onClose, on
         </div>
 
       </div>
+
+      {showPrintModal && (
+        <PrintWaybillModal order={order} onClose={() => setShowPrintModal(false)} />
+      )}
     </div>
   );
 };

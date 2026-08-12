@@ -160,6 +160,7 @@ export interface QuoteResponseData {
 export interface CreateOrderPayload {
   orderIdSan?: string;
   idempotencyKey?: string;
+  confirmProceedWithoutDiscount?: boolean;
   pickupAddress: Address;
   deliveryAddress: Address;
   items: OrderItem[];

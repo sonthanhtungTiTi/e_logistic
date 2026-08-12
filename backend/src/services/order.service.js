@@ -41,9 +41,12 @@ const quoteSchema = Joi.object({
     width: Joi.number().min(0).optional(),
     height: Joi.number().min(0).optional(),
   }).optional(),
+  isCod: Joi.boolean().optional(),
+  codAmount: Joi.number().min(0).optional(),
   goodsValue: Joi.number().min(0).optional().default(0),
-  discountCode: Joi.string().allow('', null).optional()
-});
+  discountCode: Joi.string().allow('', null).optional(),
+  shippingPayer: Joi.string().valid('buyer', 'seller').optional()
+}).unknown(true);
 
 /**
  * Joi Schema for Order Creation
@@ -51,6 +54,7 @@ const quoteSchema = Joi.object({
 const createOrderSchema = Joi.object({
   orderIdSan: Joi.string().allow('', null).optional(),
   idempotencyKey: Joi.string().allow('', null).optional(),
+  confirmProceedWithoutDiscount: Joi.boolean().optional().default(false),
   pickupAddress: Joi.object({
     fullName: Joi.string().required(),
     phone: Joi.string().pattern(VN_PHONE_REGEX).required().messages({
@@ -91,11 +95,13 @@ const createOrderSchema = Joi.object({
     width: Joi.number().min(0).default(0),
     height: Joi.number().min(0).default(0),
   }).optional().default({ length: 0, width: 0, height: 0 }),
+  isCod: Joi.boolean().optional().default(false),
   codAmount: Joi.number().min(0).default(0),
   goodsValue: Joi.number().min(0).default(0),
   discountCode: Joi.string().allow('', null).optional(),
-  deliveryNote: Joi.string().allow('', null).optional()
-});
+  deliveryNote: Joi.string().allow('', null).optional(),
+  shippingPayer: Joi.string().valid('buyer', 'seller').optional().default('buyer')
+}).unknown(true);
 
 /**
  * Joi Schema for Order Cancellation (UC-08)
@@ -204,6 +210,14 @@ const createNewOrder = async (sellerId, body, headerIdempotencyKey) => {
     goodsValue: orderData.goodsValue,
     discountCode: orderData.discountCode
   });
+
+  // Alt Flow 6.2: Check if discount code has error and Seller has not confirmed proceeding without discount
+  if (feeData.discountError && !orderData.confirmProceedWithoutDiscount) {
+    const err = new Error(feeData.discountError + '. Bạn có muốn tiếp tục tạo đơn hàng với cước phí gốc không?');
+    err.statusCode = 422;
+    err.code = 'DISCOUNT_INVALID_NEEDS_CONFIRM';
+    throw err;
+  }
 
   const codAmountInt = Math.floor(orderData.codAmount || 0);
   const isCod = codAmountInt > 0;
@@ -376,6 +390,10 @@ const sanitizeAndValidateUpdateBody = (body) => {
     allowed.actualWeight = w;
   }
 
+  if (body.isCod !== undefined) {
+    allowed.isCod = Boolean(body.isCod);
+  }
+
   // COD Amount Validation & Sanitization (Integer Đồng)
   if (body.codAmount !== undefined) {
     const cod = Number(body.codAmount);
@@ -385,6 +403,9 @@ const sanitizeAndValidateUpdateBody = (body) => {
       throw err;
     }
     allowed.codAmount = Math.floor(cod);
+    if (allowed.isCod === undefined) {
+      allowed.isCod = allowed.codAmount > 0;
+    }
   }
 
   // Goods Value Validation & Sanitization (Integer Đồng)
@@ -404,6 +425,10 @@ const sanitizeAndValidateUpdateBody = (body) => {
 
   if (body.deliveryNote !== undefined) {
     allowed.deliveryNote = body.deliveryNote ? String(body.deliveryNote).trim() : '';
+  }
+
+  if (body.shippingPayer !== undefined && ['buyer', 'seller'].includes(body.shippingPayer)) {
+    allowed.shippingPayer = body.shippingPayer;
   }
 
   return allowed;
@@ -939,11 +964,17 @@ const getPublicOrderTracking = async (trackingCode) => {
     throw err;
   }
 
-  const cleanCode = trackingCode.trim().toUpperCase();
-  const order = await Order.findOne({ trackingCode: cleanCode });
+  const cleanCode = trackingCode.trim();
+  const order = await Order.findOne({
+    $or: [
+      { trackingCode: { $regex: `^${cleanCode}$`, $options: 'i' } },
+      { orderIdSan: cleanCode },
+      ...(mongoose.Types.ObjectId.isValid(cleanCode) ? [{ _id: cleanCode }] : [])
+    ]
+  });
 
   if (!order) {
-    const err = new Error('Không tìm thấy đơn hàng với mã vận đơn này.');
+    const err = new Error(`Không tìm thấy đơn hàng với mã vận đơn "${cleanCode}".`);
     err.statusCode = 404;
     throw err;
   }
@@ -1002,6 +1033,7 @@ const getPublicOrderTracking = async (trackingCode) => {
   };
 
   return {
+    ...order.toObject(),
     tracking_number: order.trackingCode,
     trackingCode: order.trackingCode,
     status: order.status,

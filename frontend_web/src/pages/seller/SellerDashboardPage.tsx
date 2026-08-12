@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { SellerDashboard } from '../../components/SellerDashboard';
 import { TrackingModal } from '../../components/shared/TrackingModal';
 import { EditOrderModal } from '../../components/orders/EditOrderModal';
 import { CancelOrderModal } from '../../components/orders/CancelOrderModal';
-import { INITIAL_ORDERS } from '../../mockData';
 import type { Order } from '../../types';
+import { orderApi } from '../../api/order.api';
 
 export const SellerDashboardPage: React.FC = () => {
-  const [orders, setOrders] = useState<Order[]>(INITIAL_ORDERS);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
   const [cancelingOrder, setCancelingOrder] = useState<Order | null>(null);
@@ -18,32 +19,38 @@ export const SellerDashboardPage: React.FC = () => {
     setTimeout(() => setToastMessage(null), 4000);
   };
 
+  const fetchOrders = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await orderApi.searchOrders({ limit: 50, sortBy: 'createdAt_desc' });
+      if (response.data?.success) {
+        setOrders(response.data.data || []);
+      }
+    } catch (err: any) {
+      console.error('Lỗi tải danh sách đơn hàng từ MongoDB:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
+
   const handleUpdateOrderSuccess = (updatedOrder: Order, feeMsg?: string) => {
-    setOrders((prev) =>
-      prev.map((o) =>
-        (o._id === updatedOrder._id || o.id === updatedOrder.id || o.trackingCode === updatedOrder.trackingCode)
-          ? { ...o, ...updatedOrder }
-          : o
-      )
-    );
     setEditingOrder(null);
     setSelectedOrder(null);
     showToast(`Cập nhật đơn hàng ${updatedOrder.trackingCode || updatedOrder.trackingNumber} thành công!${feeMsg || ''}`);
+    fetchOrders();
   };
 
   const handleCancelOrderSuccess = (reasonText?: string) => {
     if (!cancelingOrder) return;
-
-    setOrders((prev) =>
-      prev.map((o) =>
-        (o._id === cancelingOrder._id || o.id === cancelingOrder.id || o.trackingCode === cancelingOrder.trackingCode)
-          ? { ...o, status: 'CANCELLED' }
-          : o
-      )
-    );
+    const targetCode = cancelingOrder.trackingCode || cancelingOrder.trackingNumber;
     setCancelingOrder(null);
     setSelectedOrder(null);
-    showToast(`Đã hủy đơn hàng ${cancelingOrder.trackingCode || cancelingOrder.trackingNumber}. Lý do: ${reasonText || 'Seller hủy đơn'}`);
+    showToast(`Đã hủy đơn hàng ${targetCode}.${reasonText ? ` Lý do: ${reasonText}` : ''}`);
+    fetchOrders();
   };
 
   return (
@@ -57,10 +64,12 @@ export const SellerDashboardPage: React.FC = () => {
       <SellerDashboard
         orders={orders}
         onCreateOrder={(newOrd: Order) => {
-          setOrders([newOrd, ...orders]);
           showToast(`Khởi tạo đơn hàng ${newOrd.trackingCode} thành công!`);
+          fetchOrders();
         }}
         onOpenOrderDetails={(order: Order) => setSelectedOrder(order)}
+        onEditOrder={(order: Order) => setEditingOrder(order)}
+        onCancelOrder={(order: Order) => setCancelingOrder(order)}
       />
 
       {selectedOrder && (
@@ -97,4 +106,3 @@ export const SellerDashboardPage: React.FC = () => {
     </div>
   );
 };
-

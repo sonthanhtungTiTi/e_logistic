@@ -4,6 +4,7 @@ import type { Order, CreateOrderPayload } from '../../types/order.types';
 import { VietnamAddressSelector } from '../shared/VietnamAddressSelector';
 import type { VietnamAddressData } from '../shared/VietnamAddressSelector';
 import { orderApi } from '../../api/order.api';
+import { formatNumberWithDots, parseDotsToNumber } from '../../lib/formatters';
 
 interface EditOrderModalProps {
   order: Order;
@@ -201,9 +202,9 @@ export const EditOrderModal: React.FC<EditOrderModalProps> = ({ order, onClose, 
                 {isCod && (
                   <div className="relative">
                     <input
-                      type="number"
-                      value={codAmount}
-                      onChange={(e) => setCodAmount(parseInt(e.target.value) || 0)}
+                      type="text"
+                      value={formatNumberWithDots(codAmount)}
+                      onChange={(e) => setCodAmount(parseDotsToNumber(e.target.value))}
                       className="w-full glass-input rounded-xl px-3 py-2 text-xs font-mono text-white text-right pr-8"
                     />
                     <span className="absolute right-3 top-2.5 text-xs text-slate-400">đ</span>
@@ -215,9 +216,9 @@ export const EditOrderModal: React.FC<EditOrderModalProps> = ({ order, onClose, 
                 <label className="block text-xs font-bold text-slate-300 mb-1">Giá Trị Khai Giá (VND)</label>
                 <div className="relative">
                   <input
-                    type="number"
-                    value={goodsValue}
-                    onChange={(e) => setGoodsValue(parseInt(e.target.value) || 0)}
+                    type="text"
+                    value={formatNumberWithDots(goodsValue)}
+                    onChange={(e) => setGoodsValue(parseDotsToNumber(e.target.value))}
                     className="w-full glass-input rounded-xl px-3 py-2 text-xs font-mono text-white text-right pr-8"
                   />
                   <span className="absolute right-3 top-2.5 text-xs text-slate-400">đ</span>

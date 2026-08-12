@@ -181,12 +181,12 @@ export const Navbar: React.FC = () => {
                     <button
                       onClick={() => {
                         setDropdownOpen(false);
-                        navigate('/seller/profile');
+                        navigate('/seller/profile', { state: { tab: 'SECURITY' } });
                       }}
                       className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-200 hover:text-white hover:bg-slate-800/80 transition cursor-pointer font-medium"
                     >
                       <Settings className="w-4 h-4 text-purple-400" />
-                      <span>Đổi Mật Khẩu & Bảo Mặt</span>
+                      <span>Đổi Mật Khẩu & Bảo Mật</span>
                     </button>
                   </div>
 
