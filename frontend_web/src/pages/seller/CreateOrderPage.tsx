@@ -24,6 +24,7 @@ import {
   Info,
   ChevronRight,
   FileSpreadsheet,
+  RotateCcw,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { orderApi } from '../../api/order.api';
@@ -103,6 +104,117 @@ export const CreateOrderPage: React.FC = () => {
   const [quoteResult, setQuoteResult] = useState<QuoteResponseData | null>(null);
   const [quoting, setQuoting] = useState<boolean>(false);
   const [confirmDiscountModal, setConfirmDiscountModal] = useState<string | null>(null);
+
+  // Key for localStorage auto-drafting
+  const DRAFT_KEY = 'elogistic_create_order_draft';
+  const [hasDraftRestored, setHasDraftRestored] = useState<boolean>(false);
+
+  // 1. Restore draft from localStorage on initial load
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(DRAFT_KEY);
+      if (saved) {
+        const draft = JSON.parse(saved);
+        if (draft.receiverPhone) setReceiverPhone(draft.receiverPhone);
+        if (draft.receiverName) setReceiverName(draft.receiverName);
+        if (draft.detailAddress) setDetailAddress(draft.detailAddress);
+        if (draft.province) setProvince(draft.province);
+        if (draft.ward) setWard(draft.ward);
+        if (draft.street) setStreet(draft.street);
+        if (draft.specialAddress) setSpecialAddress(draft.specialAddress);
+        if (draft.deliveryMode) setDeliveryMode(draft.deliveryMode);
+        if (draft.transportType) setTransportType(draft.transportType);
+        if (draft.products && Array.isArray(draft.products) && draft.products.length > 0) {
+          setProducts(draft.products);
+        }
+        if (draft.codAmount !== undefined) setCodAmount(draft.codAmount);
+        if (draft.goodsValue !== undefined) setGoodsValue(draft.goodsValue);
+        if (draft.shippingPayer) setShippingPayer(draft.shippingPayer);
+        if (draft.orderNote) setOrderNote(draft.orderNote);
+        if (draft.customOrderCode) setCustomOrderCode(draft.customOrderCode);
+        if (draft.isHighValue !== undefined) setIsHighValue(draft.isHighValue);
+
+        setHasDraftRestored(true);
+      }
+    } catch (err) {
+      console.error('Failed to parse order draft from localStorage', err);
+    }
+  }, []);
+
+  // 2. Auto-save draft when form values change
+  useEffect(() => {
+    const hasMeaningfulData =
+      receiverPhone.trim() ||
+      receiverName.trim() ||
+      detailAddress.trim() ||
+      products.some((p) => p.name.trim().length > 0) ||
+      Number(codAmount) > 0 ||
+      Number(goodsValue) > 0 ||
+      orderNote.trim();
+
+    if (hasMeaningfulData) {
+      const draftData = {
+        receiverPhone,
+        receiverName,
+        detailAddress,
+        province,
+        ward,
+        street,
+        specialAddress,
+        deliveryMode,
+        transportType,
+        products,
+        codAmount,
+        goodsValue,
+        shippingPayer,
+        orderNote,
+        customOrderCode,
+        isHighValue,
+        savedAt: new Date().toISOString(),
+      };
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(draftData));
+    }
+  }, [
+    receiverPhone,
+    receiverName,
+    detailAddress,
+    province,
+    ward,
+    street,
+    specialAddress,
+    deliveryMode,
+    transportType,
+    products,
+    codAmount,
+    goodsValue,
+    shippingPayer,
+    orderNote,
+    customOrderCode,
+    isHighValue,
+  ]);
+
+  // 3. Clear draft function
+  const handleClearDraft = () => {
+    localStorage.removeItem(DRAFT_KEY);
+    setReceiverPhone('');
+    setReceiverName('');
+    setDetailAddress('');
+    setProvince('TP Hồ Chí Minh');
+    setWard('Phường 1');
+    setStreet('Quận 5');
+    setSpecialAddress('');
+    setDeliveryMode('express');
+    setTransportType('road');
+    setProducts([{ id: 1, name: '', price: 0, weight: 0.5, quantity: 1 }]);
+    setCodAmount(0);
+    setGoodsValue(0);
+    setShippingPayer('buyer');
+    setOrderNote('');
+    setCustomOrderCode('');
+    setIsHighValue(false);
+    setHasDraftRestored(false);
+    setQuoteResult(null);
+  };
 
   // Automatically open modal on load if shop info is incomplete
   useEffect(() => {
@@ -288,6 +400,10 @@ export const CreateOrderPage: React.FC = () => {
           updatedAt: new Date().toISOString(),
         } as Order);
       }
+
+      // Clear local storage draft after successful order creation
+      localStorage.removeItem(DRAFT_KEY);
+      setHasDraftRestored(false);
     } catch (err: any) {
       const resData = err.response?.data;
       if (resData?.code === 'DISCOUNT_INVALID_NEEDS_CONFIRM') {
@@ -324,6 +440,30 @@ export const CreateOrderPage: React.FC = () => {
         {/* Quick Action Tabs */}
         <OrderSubNav activeTab="single" />
       </div>
+
+      {/* Auto-Restored Draft Notification Banner */}
+      {hasDraftRestored && (
+        <div className="p-4 rounded-2xl bg-cyan-950/70 border border-cyan-500/40 text-cyan-300 text-xs font-semibold flex items-center justify-between shadow-xl gap-3 animate-in fade-in">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-cyan-500/20 flex items-center justify-center text-cyan-400 shrink-0">
+              <RotateCcw className="w-4 h-4 animate-spin-once" />
+            </div>
+            <div>
+              <p className="font-bold text-white">Đã tự động khôi phục dữ liệu nháp!</p>
+              <p className="text-[11px] text-cyan-200/80">
+                Các thông tin bạn nhập dở trước khi tải lại trang đã được bảo toàn từ localStorage.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={handleClearDraft}
+            className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-rose-950/80 text-rose-300 hover:text-rose-200 border border-rose-500/30 font-bold text-xs transition cursor-pointer shrink-0"
+          >
+            Xóa Nháp & Nhập Mới
+          </button>
+        </div>
+      )}
 
       {/* Global Submit Error Notification */}
       {submitError && (

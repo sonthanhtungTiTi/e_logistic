@@ -27,6 +27,7 @@ import {
   HelpCircle,
   FileCheck,
   Maximize2,
+  RotateCcw,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { orderApi } from '../../api/order.api';
@@ -80,6 +81,42 @@ export const BatchOrderPage: React.FC = () => {
   const [creationProgress, setCreationProgress] = useState<number>(0);
   const [createdOrdersResult, setCreatedOrdersResult] = useState<Order[] | null>(null);
   const [creationError, setCreationError] = useState<string | null>(null);
+
+  // LocalStorage Batch Draft Key
+  const BATCH_DRAFT_KEY = 'elogistic_batch_order_draft';
+  const [hasBatchDraftRestored, setHasBatchDraftRestored] = useState<boolean>(false);
+
+  // Restore Batch Draft on Mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(BATCH_DRAFT_KEY);
+      if (saved) {
+        const data = JSON.parse(saved);
+        if (data.fileName) setFileName(data.fileName);
+        if (data.batchItems && Array.isArray(data.batchItems) && data.batchItems.length > 0) {
+          setBatchItems(data.batchItems);
+          setHasBatchDraftRestored(true);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to parse batch draft from localStorage', err);
+    }
+  }, []);
+
+  // Save Batch Draft when batchItems changes
+  useEffect(() => {
+    if (batchItems.length > 0) {
+      localStorage.setItem(BATCH_DRAFT_KEY, JSON.stringify({ fileName, batchItems }));
+    }
+  }, [batchItems, fileName]);
+
+  // Clear Batch Draft
+  const handleClearBatchDraft = () => {
+    localStorage.removeItem(BATCH_DRAFT_KEY);
+    setBatchItems([]);
+    setFileName(null);
+    setHasBatchDraftRestored(false);
+  };
 
   // Helper validation function
   const validateItem = (item: Partial<ParsedBatchItem>): { isValid: boolean; errors: string[] } => {
@@ -600,6 +637,8 @@ export const BatchOrderPage: React.FC = () => {
       }
 
       setCreatedOrdersResult(created);
+      localStorage.removeItem(BATCH_DRAFT_KEY);
+      setHasBatchDraftRestored(false);
     } catch (err: any) {
       setCreationError(err.message || 'Lỗi xử lý tạo đơn hàng hàng loạt');
     } finally {
@@ -647,6 +686,30 @@ export const BatchOrderPage: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Auto-Restored Batch Draft Notification Banner */}
+      {hasBatchDraftRestored && (
+        <div className="p-4 rounded-2xl bg-cyan-950/70 border border-cyan-500/40 text-cyan-300 text-xs font-semibold flex items-center justify-between shadow-xl gap-3 animate-in fade-in">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-cyan-500/20 flex items-center justify-center text-cyan-400 shrink-0">
+              <RotateCcw className="w-4 h-4 animate-spin-once" />
+            </div>
+            <div>
+              <p className="font-bold text-white">Đã tự động khôi phục danh sách đơn Excel nháp!</p>
+              <p className="text-[11px] text-cyan-200/80">
+                File <span className="font-bold text-cyan-300">"{fileName}"</span> với {batchItems.length} đơn hàng chưa tạo đã được giữ lại trong bộ nhớ tạm localStorage.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={handleClearBatchDraft}
+            className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-rose-950/80 text-rose-300 hover:text-rose-200 border border-rose-500/30 font-bold text-xs transition cursor-pointer shrink-0"
+          >
+            Hủy & Nhập File Khác
+          </button>
+        </div>
+      )}
 
       {/* VIEW 1: UPLOAD AREA */}
       {batchItems.length === 0 && !parsing && (
