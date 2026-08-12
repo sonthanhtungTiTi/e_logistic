@@ -26,6 +26,7 @@ import {
   DollarSign,
   HelpCircle,
   FileCheck,
+  Maximize2,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { orderApi } from '../../api/order.api';
@@ -44,6 +45,9 @@ export interface ParsedBatchItem {
   productName: string;
   quantity: number;
   weight: number;
+  length: number;
+  width: number;
+  height: number;
   codAmount: number;
   goodsValue: number;
   deliveryNote?: string;
@@ -130,6 +134,9 @@ export const BatchOrderPage: React.FC = () => {
       'Tên Sản Phẩm',
       'Số Lượng',
       'Trọng Lượng (kg)',
+      'Chiều Dài (cm)',
+      'Chiều Rộng (cm)',
+      'Chiều Cao (cm)',
       'Tiền Thu Hộ COD (VNĐ)',
       'Giá Trị Hàng (VNĐ)',
       'Ghi Chú Giao Hàng',
@@ -148,6 +155,9 @@ export const BatchOrderPage: React.FC = () => {
         'Áo thun Nam Premium',
         '2',
         '0.5',
+        '20',
+        '15',
+        '10',
         '350000',
         '350000',
         'Cho xem hàng trước khi nhận',
@@ -164,6 +174,9 @@ export const BatchOrderPage: React.FC = () => {
         'Giày Sneakers Sport',
         '1',
         '1.2',
+        '30',
+        '20',
+        '12',
         '500000',
         '500000',
         'Gọi trước khi giao 15 phút',
@@ -180,6 +193,9 @@ export const BatchOrderPage: React.FC = () => {
         'Balo Laptop Chống Nước',
         '1',
         '0.8',
+        '40',
+        '30',
+        '15',
         '420000',
         '420000',
         'Giao giờ hành chính',
@@ -196,6 +212,9 @@ export const BatchOrderPage: React.FC = () => {
         'Tai nghe Bluetooth',
         '1',
         '0.3',
+        '15',
+        '10',
+        '5',
         '250000',
         '250000',
         '',
@@ -229,7 +248,6 @@ export const BatchOrderPage: React.FC = () => {
     // Skip header line 0
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i];
-      // Regex split by comma taking quotes into account
       const cols = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || line.split(',');
       const cleanCols = cols.map((c) => c.replace(/^"|"$/g, '').trim());
 
@@ -244,10 +262,13 @@ export const BatchOrderPage: React.FC = () => {
         productName: cleanCols[7] || 'Sản phẩm',
         quantity: parseInt(cleanCols[8]) || 1,
         weight: parseFloat(cleanCols[9]) || 0.5,
-        codAmount: parseInt(cleanCols[10]) || 0,
-        goodsValue: parseInt(cleanCols[11]) || 0,
-        deliveryNote: cleanCols[12] || '',
-        discountCode: cleanCols[13] || '',
+        length: parseFloat(cleanCols[10]) || 20,
+        width: parseFloat(cleanCols[11]) || 15,
+        height: parseFloat(cleanCols[12]) || 10,
+        codAmount: parseInt(cleanCols[13]) || 0,
+        goodsValue: parseInt(cleanCols[14]) || 0,
+        deliveryNote: cleanCols[15] || '',
+        discountCode: cleanCols[16] || '',
       };
 
       const val = validateItem(rawItem);
@@ -264,6 +285,9 @@ export const BatchOrderPage: React.FC = () => {
         productName: rawItem.productName || '',
         quantity: rawItem.quantity || 1,
         weight: rawItem.weight || 0.5,
+        length: rawItem.length || 20,
+        width: rawItem.width || 15,
+        height: rawItem.height || 10,
         codAmount: rawItem.codAmount || 0,
         goodsValue: rawItem.goodsValue || 0,
         deliveryNote: rawItem.deliveryNote,
@@ -289,7 +313,6 @@ export const BatchOrderPage: React.FC = () => {
       if (parsed.length > 0) {
         setBatchItems(parsed);
       } else {
-        // Fallback demo parsed data if file format wasn't standard text
         loadDemoBatchData(file.name);
       }
       setParsing(false);
@@ -318,6 +341,9 @@ export const BatchOrderPage: React.FC = () => {
         productName: 'Váy Nữ Thiết Kế Floral',
         quantity: 1,
         weight: 0.4,
+        length: 25,
+        width: 20,
+        height: 5,
         codAmount: 450000,
         goodsValue: 450000,
         deliveryNote: 'Cho thử hàng',
@@ -337,6 +363,9 @@ export const BatchOrderPage: React.FC = () => {
         productName: 'Đồng Hồ Nam Chronograph',
         quantity: 1,
         weight: 0.6,
+        length: 15,
+        width: 12,
+        height: 8,
         codAmount: 1200000,
         goodsValue: 1200000,
         deliveryNote: 'Hàng dễ vỡ, gọi trước',
@@ -348,7 +377,7 @@ export const BatchOrderPage: React.FC = () => {
         rowIndex: 3,
         shopOrderCode: 'SHOP-8803 (Lỗi SĐT)',
         receiverName: 'Hoàng Quốc Việt',
-        receiverPhone: '09123', // Error SĐT
+        receiverPhone: '09123',
         detailAddress: '12 Hoàng Hoa Thám',
         ward: 'Phường 7',
         district: 'Quận Bình Thạnh',
@@ -356,6 +385,9 @@ export const BatchOrderPage: React.FC = () => {
         productName: 'Bộ Tai Nghe Wireless',
         quantity: 2,
         weight: 0.5,
+        length: 18,
+        width: 14,
+        height: 10,
         codAmount: 650000,
         goodsValue: 650000,
         isValid: false,
@@ -367,13 +399,16 @@ export const BatchOrderPage: React.FC = () => {
         shopOrderCode: 'SHOP-8804 (Lỗi Địa Chỉ)',
         receiverName: 'Phạm Thu Hương',
         receiverPhone: '0981122334',
-        detailAddress: '', // Error Address
+        detailAddress: '',
         ward: 'Phường 12',
         district: 'Quận 10',
         province: 'TP Hồ Chí Minh',
         productName: 'Túi Xách Da Cao Cấp',
         quantity: 1,
         weight: 0.8,
+        length: 30,
+        width: 22,
+        height: 12,
         codAmount: 890000,
         goodsValue: 890000,
         isValid: false,
@@ -392,6 +427,9 @@ export const BatchOrderPage: React.FC = () => {
         productName: 'Giày Thể Thao RunX',
         quantity: 1,
         weight: 1.1,
+        length: 32,
+        width: 20,
+        height: 14,
         codAmount: 780000,
         goodsValue: 780000,
         deliveryNote: 'Giao sau 17h',
@@ -431,7 +469,6 @@ export const BatchOrderPage: React.FC = () => {
   const invalidCount = invalidItems.length;
 
   const totalCodSum = validItems.reduce((sum, item) => sum + item.codAmount, 0);
-  const totalEstimatedFreight = validCount * 22000;
 
   // Filtered List
   const filteredItems = batchItems.filter((item) => {
@@ -487,7 +524,11 @@ export const BatchOrderPage: React.FC = () => {
               weight: item.weight,
             },
           ],
-          dimensions: { length: 20, width: 15, height: 10 },
+          dimensions: {
+            length: item.length || 20,
+            width: item.width || 15,
+            height: item.height || 10,
+          },
           isCod: item.codAmount > 0,
           codAmount: item.codAmount,
           goodsValue: item.goodsValue,
@@ -500,7 +541,6 @@ export const BatchOrderPage: React.FC = () => {
           if (res.data?.success) {
             created.push(res.data.data);
           } else {
-            // Mock fallback order
             created.push({
               _id: `ORD-BATCH-${Date.now()}-${i}`,
               trackingCode: `ELG-${Math.floor(10000000 + Math.random() * 90000000)}`,
@@ -508,10 +548,10 @@ export const BatchOrderPage: React.FC = () => {
               pickupAddress: payload.pickupAddress,
               deliveryAddress: payload.deliveryAddress,
               items: payload.items,
-              dimensions: payload.dimensions || { length: 20, width: 15, height: 10 },
+              dimensions: payload.dimensions,
               actualWeight: item.weight,
-              volumetricWeight: 0.5,
-              chargeableWeight: item.weight,
+              volumetricWeight: Number(((payload.dimensions.length * payload.dimensions.width * payload.dimensions.height) / 5000).toFixed(2)),
+              chargeableWeight: Math.max(item.weight, (payload.dimensions.length * payload.dimensions.width * payload.dimensions.height) / 5000),
               isCod: item.codAmount > 0,
               codAmount: item.codAmount,
               goodsValue: item.goodsValue,
@@ -529,7 +569,6 @@ export const BatchOrderPage: React.FC = () => {
             } as Order);
           }
         } catch (e) {
-          // Mock fallback order on API error
           created.push({
             _id: `ORD-BATCH-${Date.now()}-${i}`,
             trackingCode: `ELG-${Math.floor(10000000 + Math.random() * 90000000)}`,
@@ -537,10 +576,10 @@ export const BatchOrderPage: React.FC = () => {
             pickupAddress: payload.pickupAddress,
             deliveryAddress: payload.deliveryAddress,
             items: payload.items,
-            dimensions: payload.dimensions || { length: 20, width: 15, height: 10 },
+            dimensions: payload.dimensions,
             actualWeight: item.weight,
-            volumetricWeight: 0.5,
-            chargeableWeight: item.weight,
+            volumetricWeight: Number(((payload.dimensions.length * payload.dimensions.width * payload.dimensions.height) / 5000).toFixed(2)),
+            chargeableWeight: Math.max(item.weight, (payload.dimensions.length * payload.dimensions.width * payload.dimensions.height) / 5000),
             isCod: item.codAmount > 0,
             codAmount: item.codAmount,
             goodsValue: item.goodsValue,
@@ -606,7 +645,7 @@ export const BatchOrderPage: React.FC = () => {
         </div>
       </div>
 
-      {/* VIEW 1: UPLOAD AREA (If no batch loaded yet) */}
+      {/* VIEW 1: UPLOAD AREA */}
       {batchItems.length === 0 && !parsing && (
         <div className="space-y-6">
           <div
@@ -679,19 +718,19 @@ export const BatchOrderPage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="glass-panel p-5 rounded-2xl border border-slate-800 space-y-2">
               <div className="flex items-center gap-2 text-cyan-400 font-bold text-xs">
-                <FileSpreadsheet className="w-4 h-4" /> 1. Định Dạng Chuẩn UTF-8
+                <FileSpreadsheet className="w-4 h-4" /> 1. Chuẩn Encode UTF-8
               </div>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Tệp CSV/Excel cần lưu dưới định dạng Encode UTF-8 để đảm bảo tiếng Việt có dấu không bị lỗi font.
+                Tệp CSV/Excel cần lưu dưới dạng UTF-8 để giữ nguyên tiếng Việt có dấu khi hiển thị.
               </p>
             </div>
 
             <div className="glass-panel p-5 rounded-2xl border border-slate-800 space-y-2">
               <div className="flex items-center gap-2 text-amber-400 font-bold text-xs">
-                <AlertTriangle className="w-4 h-4" /> 2. Kiểm Tra Cấu Trúc Đơn
+                <Maximize2 className="w-4 h-4" /> 2. Kích Thước Dài - Rộng - Cao
               </div>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Các cột SĐT người nhận (10 chữ số) và Địa chỉ giao hàng là bắt buộc để tránh tạo đơn hỏng.
+                Tệp mẫu hỗ trợ thêm 3 cột Dài x Rộng x Cao (cm) để tính chính xác trọng lượng thể tích DIM (D x R x C / 5000).
               </p>
             </div>
 
@@ -700,7 +739,7 @@ export const BatchOrderPage: React.FC = () => {
                 <CheckCircle2 className="w-4 h-4" /> 3. Xem & Sửa Trực Tiếp
               </div>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Hệ thống hỗ trợ chỉnh sửa nhanh các dòng bị lỗi thông tin ngay trên màn hình trước khi xác nhận tạo.
+                Chỉnh sửa nhanh các đơn hàng bị thiếu địa chỉ hoặc sai số điện thoại trực tiếp trên giao diện.
               </p>
             </div>
           </div>
@@ -716,7 +755,7 @@ export const BatchOrderPage: React.FC = () => {
         </div>
       )}
 
-      {/* VIEW 2: BATCH PREVIEW TABLE & METRICS SUMMARY */}
+      {/* VIEW 2: BATCH PREVIEW TABLE */}
       {batchItems.length > 0 && !parsing && (
         <div className="space-y-6">
           {/* File & Status Bar */}
@@ -760,9 +799,8 @@ export const BatchOrderPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Metrics Overview Summary Grid */}
+          {/* Metrics Summary Overview */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Metric 1: Total */}
             <div className="glass-panel p-4 rounded-2xl border border-slate-800 space-y-1">
               <span className="text-[11px] font-semibold text-slate-400 block">Tổng số đơn trong file</span>
               <div className="flex items-center justify-between">
@@ -771,7 +809,6 @@ export const BatchOrderPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Metric 2: Valid */}
             <div className="glass-panel p-4 rounded-2xl border border-emerald-500/30 bg-emerald-950/20 space-y-1">
               <span className="text-[11px] font-semibold text-emerald-400 block">Đơn hàng hợp lệ</span>
               <div className="flex items-center justify-between">
@@ -780,12 +817,9 @@ export const BatchOrderPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Metric 3: Invalid */}
             <div
               className={`glass-panel p-4 rounded-2xl border space-y-1 transition ${
-                invalidCount > 0
-                  ? 'border-rose-500/40 bg-rose-950/20'
-                  : 'border-slate-800'
+                invalidCount > 0 ? 'border-rose-500/40 bg-rose-950/20' : 'border-slate-800'
               }`}
             >
               <span className="text-[11px] font-semibold text-rose-400 block">Đơn lỗi cấu trúc</span>
@@ -795,7 +829,6 @@ export const BatchOrderPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Metric 4: Total COD */}
             <div className="glass-panel p-4 rounded-2xl border border-slate-800 space-y-1">
               <span className="text-[11px] font-semibold text-slate-400 block">Tổng COD hợp lệ</span>
               <div className="flex items-center justify-between">
@@ -809,7 +842,6 @@ export const BatchOrderPage: React.FC = () => {
 
           {/* Search & Filter Toolbar */}
           <div className="glass-panel p-4 rounded-2xl border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
-            {/* Status Filter Tabs */}
             <div className="flex items-center gap-2">
               <button
                 type="button"
@@ -848,7 +880,6 @@ export const BatchOrderPage: React.FC = () => {
               </button>
             </div>
 
-            {/* Search Input & Delete All Invalid Action */}
             <div className="flex items-center gap-3">
               <div className="relative flex-1 md:w-64">
                 <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-2.5" />
@@ -867,7 +898,7 @@ export const BatchOrderPage: React.FC = () => {
                   onClick={handleDeleteAllInvalid}
                   className="px-3 py-1.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 text-xs font-bold border border-rose-500/30 flex items-center gap-1 transition cursor-pointer shrink-0"
                 >
-                  <Trash2 className="w-3.5 h-3.5" /> Xóa Các Dòng Lỗi ({invalidCount})
+                  <Trash2 className="w-3.5 h-3.5" /> Xóa Dòng Lỗi ({invalidCount})
                 </button>
               )}
             </div>
@@ -883,7 +914,7 @@ export const BatchOrderPage: React.FC = () => {
                     <th className="py-3 px-4 w-28">Trạng Thái</th>
                     <th className="py-3 px-4">Người Nhận & SĐT</th>
                     <th className="py-3 px-4">Địa Chỉ Giao Hàng</th>
-                    <th className="py-3 px-4">Sản Phẩm & KL</th>
+                    <th className="py-3 px-4">Sản Phẩm & KL / DIM</th>
                     <th className="py-3 px-4 text-right">COD / Giá Trị</th>
                     <th className="py-3 px-4 text-center w-28">Thao Tác</th>
                   </tr>
@@ -903,12 +934,10 @@ export const BatchOrderPage: React.FC = () => {
                           !item.isValid ? 'bg-rose-950/10' : ''
                         }`}
                       >
-                        {/* STT */}
                         <td className="py-3 px-4 text-center font-mono text-slate-400 font-bold">
                           #{item.rowIndex}
                         </td>
 
-                        {/* Status Badge */}
                         <td className="py-3 px-4">
                           {item.isValid ? (
                             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
@@ -919,7 +948,6 @@ export const BatchOrderPage: React.FC = () => {
                               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30 cursor-pointer">
                                 <XCircle className="w-3 h-3" /> Lỗi ({item.errorMessages.length})
                               </span>
-                              {/* Error Tooltip */}
                               <div className="hidden group-hover:block absolute left-0 z-20 bottom-full mb-1 w-48 p-2 rounded-xl bg-slate-900 border border-rose-500/40 text-[11px] text-rose-300 shadow-2xl space-y-1">
                                 {item.errorMessages.map((err, idx) => (
                                   <div key={idx} className="flex items-center gap-1">
@@ -931,13 +959,11 @@ export const BatchOrderPage: React.FC = () => {
                           )}
                         </td>
 
-                        {/* Receiver Info */}
                         <td className="py-3 px-4">
                           <div className="font-bold text-white">{item.receiverName || '—'}</div>
                           <div className="text-[11px] text-slate-400 font-mono">{item.receiverPhone || '—'}</div>
                         </td>
 
-                        {/* Delivery Address */}
                         <td className="py-3 px-4 max-w-xs truncate">
                           <div className="text-slate-200 truncate">{item.detailAddress || '—'}</div>
                           <div className="text-[10px] text-slate-400 truncate">
@@ -945,15 +971,19 @@ export const BatchOrderPage: React.FC = () => {
                           </div>
                         </td>
 
-                        {/* Product & Weight */}
                         <td className="py-3 px-4">
                           <div className="text-slate-200 font-medium truncate max-w-xs">
                             {item.productName} (x{item.quantity})
                           </div>
-                          <div className="text-[10px] text-cyan-400 font-mono">{item.weight} kg</div>
+                          <div className="text-[10px] text-cyan-400 font-mono flex items-center gap-1">
+                            <span>{item.weight} kg</span>
+                            <span className="text-slate-500">•</span>
+                            <span className="text-slate-400">
+                              {item.length || 20}x{item.width || 15}x{item.height || 10} cm
+                            </span>
+                          </div>
                         </td>
 
-                        {/* COD Amount */}
                         <td className="py-3 px-4 text-right font-mono">
                           <div className="font-bold text-amber-400">
                             {item.codAmount.toLocaleString('vi-VN')} đ
@@ -963,10 +993,8 @@ export const BatchOrderPage: React.FC = () => {
                           </div>
                         </td>
 
-                        {/* Row Actions */}
                         <td className="py-3 px-4 text-center">
                           <div className="flex items-center justify-center gap-1.5">
-                            {/* View Detail Button */}
                             <button
                               type="button"
                               onClick={() => setSelectedItemForView(item)}
@@ -976,7 +1004,6 @@ export const BatchOrderPage: React.FC = () => {
                               <Eye className="w-3.5 h-3.5" />
                             </button>
 
-                            {/* Edit Button */}
                             <button
                               type="button"
                               onClick={() => setSelectedItemForEdit(item)}
@@ -986,7 +1013,6 @@ export const BatchOrderPage: React.FC = () => {
                               <Edit3 className="w-3.5 h-3.5" />
                             </button>
 
-                            {/* Delete Button */}
                             <button
                               type="button"
                               onClick={() => handleDeleteItem(item.id)}
@@ -1068,7 +1094,6 @@ export const BatchOrderPage: React.FC = () => {
               </button>
             </div>
 
-            {/* Edit Fields Form */}
             <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-1 text-xs">
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -1158,7 +1183,7 @@ export const BatchOrderPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-slate-400 mb-1 font-semibold">Khối lượng (kg) *</label>
+                  <label className="block text-slate-400 mb-1 font-semibold">Trọng lượng (kg) *</label>
                   <input
                     type="number"
                     step="0.1"
@@ -1171,6 +1196,57 @@ export const BatchOrderPage: React.FC = () => {
                     }
                     className="w-full glass-input rounded-xl px-3 py-2 text-xs text-white font-mono bg-slate-950 border border-slate-800 outline-none text-right"
                   />
+                </div>
+              </div>
+
+              {/* Dimensions Input (Dài x Rộng x Cao) */}
+              <div className="space-y-1">
+                <label className="block text-slate-400 font-semibold flex items-center gap-1">
+                  <Maximize2 className="w-3.5 h-3.5 text-cyan-400" /> Kích thước 3 chiều Dài x Rộng x Cao (cm)
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <span className="text-[10px] text-slate-500 block mb-0.5">Dài (cm)</span>
+                    <input
+                      type="number"
+                      value={selectedItemForEdit.length || 20}
+                      onChange={(e) =>
+                        setSelectedItemForEdit({
+                          ...selectedItemForEdit,
+                          length: parseFloat(e.target.value) || 20,
+                        })
+                      }
+                      className="w-full glass-input rounded-xl px-2.5 py-1.5 text-xs text-white font-mono bg-slate-950 border border-slate-800 outline-none text-center"
+                    />
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-500 block mb-0.5">Rộng (cm)</span>
+                    <input
+                      type="number"
+                      value={selectedItemForEdit.width || 15}
+                      onChange={(e) =>
+                        setSelectedItemForEdit({
+                          ...selectedItemForEdit,
+                          width: parseFloat(e.target.value) || 15,
+                        })
+                      }
+                      className="w-full glass-input rounded-xl px-2.5 py-1.5 text-xs text-white font-mono bg-slate-950 border border-slate-800 outline-none text-center"
+                    />
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-500 block mb-0.5">Cao (cm)</span>
+                    <input
+                      type="number"
+                      value={selectedItemForEdit.height || 10}
+                      onChange={(e) =>
+                        setSelectedItemForEdit({
+                          ...selectedItemForEdit,
+                          height: parseFloat(e.target.value) || 10,
+                        })
+                      }
+                      className="w-full glass-input rounded-xl px-2.5 py-1.5 text-xs text-white font-mono bg-slate-950 border border-slate-800 outline-none text-center"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -1207,7 +1283,6 @@ export const BatchOrderPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Modal Actions */}
             <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
               <button
                 type="button"
@@ -1261,7 +1336,14 @@ export const BatchOrderPage: React.FC = () => {
                 <div className="font-bold text-white">{selectedItemForView.productName}</div>
                 <div className="flex justify-between text-slate-400">
                   <span>Số lượng: {selectedItemForView.quantity}</span>
-                  <span className="font-mono text-white">Khối lượng: {selectedItemForView.weight} kg</span>
+                  <span className="font-mono text-white">Trọng lượng thực: {selectedItemForView.weight} kg</span>
+                </div>
+                <div className="flex justify-between text-slate-400 pt-1 border-t border-slate-900">
+                  <span>Kích thước DIM:</span>
+                  <span className="font-mono text-cyan-400">
+                    {selectedItemForView.length || 20} x {selectedItemForView.width || 15} x{' '}
+                    {selectedItemForView.height || 10} cm
+                  </span>
                 </div>
               </div>
 
@@ -1325,12 +1407,15 @@ export const BatchOrderPage: React.FC = () => {
                 <li><strong className="text-rose-400">Tên Sản Phẩm</strong> (Bắt buộc)</li>
                 <li><strong className="text-white">Số Lượng</strong> (Số nguyên &gt; 0)</li>
                 <li><strong className="text-rose-400">Trọng Lượng (kg)</strong> (Số thực &gt; 0)</li>
+                <li><strong className="text-cyan-400">Chiều Dài (cm)</strong> (Nếu bỏ trống mặc định 20cm)</li>
+                <li><strong className="text-cyan-400">Chiều Rộng (cm)</strong> (Nếu bỏ trống mặc định 15cm)</li>
+                <li><strong className="text-cyan-400">Chiều Cao (cm)</strong> (Nếu bỏ trống mặc định 10cm)</li>
                 <li><strong className="text-white">Tiền Thu Hộ COD (VNĐ)</strong></li>
                 <li><strong className="text-white">Giá Trị Hàng (VNĐ)</strong></li>
               </ol>
 
               <div className="p-3 rounded-2xl bg-cyan-950/40 border border-cyan-500/30 text-cyan-300 text-[11px]">
-                💡 <strong>Mẹo nhỏ:</strong> Khuyên dùng nút <strong>"Tải File Mẫu Excel (.CSV)"</strong> ở góc trên để có bộ khung chuẩn nhất không bị lệch cột.
+                💡 <strong>Mẹo nhỏ:</strong> Thêm thông tin 3 chiều Dài x Rộng x Cao giúp hệ thống quy đổi chính xác trọng lượng thể tích DIM đối với các hàng cồng kềnh.
               </div>
             </div>
 
@@ -1362,7 +1447,6 @@ export const BatchOrderPage: React.FC = () => {
               </p>
             </div>
 
-            {/* Generated Order Tracking Codes List Preview */}
             <div className="max-h-40 overflow-y-auto bg-slate-950 rounded-2xl p-3 border border-slate-800 space-y-1 text-left">
               <span className="text-[11px] font-bold text-slate-400 block mb-1">Mã vận đơn đã sinh:</span>
               {createdOrdersResult.map((ord, idx) => (
@@ -1373,7 +1457,6 @@ export const BatchOrderPage: React.FC = () => {
               ))}
             </div>
 
-            {/* Success Actions */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
               <button
                 type="button"
