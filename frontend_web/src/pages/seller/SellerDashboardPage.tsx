@@ -68,6 +68,8 @@ export const SellerDashboardPage: React.FC = () => {
           fetchOrders();
         }}
         onOpenOrderDetails={(order: Order) => setSelectedOrder(order)}
+        onEditOrder={(order: Order) => setEditingOrder(order)}
+        onCancelOrder={(order: Order) => setCancelingOrder(order)}
       />
 
       {selectedOrder && (

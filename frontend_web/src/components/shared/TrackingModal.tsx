@@ -13,7 +13,7 @@ interface TrackingModalProps {
 export const TrackingModal: React.FC<TrackingModalProps> = ({ order, onClose, onEditOrder, onCancelOrder }) => {
   if (!order) return null;
 
-  const isEditable = order.status === 'CREATED' || order.status === 'READY_TO_PICK' || order.status === 'PENDING';
+  const isEditable = ['CREATED', 'PENDING_VERIFICATION', 'READY_TO_PICK', 'PENDING'].includes(order.status);
   const isCancelled = order.status === 'CANCELLED';
 
   const steps = [
@@ -26,7 +26,10 @@ export const TrackingModal: React.FC<TrackingModalProps> = ({ order, onClose, on
 
   const getStepStatusIndex = (status: string) => {
     switch (status) {
-      case 'CREATED': return 0;
+      case 'CREATED':
+      case 'PENDING_VERIFICATION':
+      case 'PENDING':
+        return 0;
       case 'READY_TO_PICK': return 1;
       case 'PICKED': return 2;
       case 'IN_TRANSIT': return 3;

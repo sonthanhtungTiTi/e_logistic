@@ -8,12 +8,16 @@ interface SellerDashboardProps {
   orders: Order[];
   onCreateOrder: (newOrder: Order) => void;
   onOpenOrderDetails: (order: Order) => void;
+  onEditOrder?: (order: Order) => void;
+  onCancelOrder?: (order: Order) => void;
 }
 
 export const SellerDashboard: React.FC<SellerDashboardProps> = ({
   orders,
   onCreateOrder,
   onOpenOrderDetails,
+  onEditOrder,
+  onCancelOrder,
 }) => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
@@ -249,6 +253,8 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
                   const chargeableWeightVal = ord.chargeableWeight || ord.chargeableWeightKg || 0;
                   const fee = ord.shippingFee || ord.cost || 0;
 
+                  const isEditable = ['CREATED', 'PENDING_VERIFICATION', 'READY_TO_PICK', 'PENDING'].includes(ord.status);
+
                   return (
                     <tr key={ord._id || ord.id} className="hover:bg-slate-800/40 transition">
                       <td className="py-4 px-4 font-mono font-bold text-blue-400">
@@ -279,12 +285,32 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
                         </span>
                       </td>
                       <td className="py-4 px-4 text-right">
-                        <button
-                          onClick={() => onOpenOrderDetails(ord)}
-                          className="px-3 py-1.5 rounded-lg bg-blue-600/20 hover:bg-blue-600 text-blue-300 hover:text-white border border-blue-500/30 text-xs font-semibold transition cursor-pointer"
-                        >
-                          Chi Tiết
-                        </button>
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => onOpenOrderDetails(ord)}
+                            className="px-2.5 py-1 rounded-lg bg-blue-600/20 hover:bg-blue-600 text-blue-300 hover:text-white border border-blue-500/30 text-xs font-semibold transition cursor-pointer"
+                          >
+                            Chi Tiết
+                          </button>
+                          {isEditable && onEditOrder && (
+                            <button
+                              onClick={() => onEditOrder(ord)}
+                              className="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-600 text-amber-300 hover:text-white border border-amber-500/30 text-xs font-semibold transition cursor-pointer"
+                              title="Chỉnh sửa đơn hàng"
+                            >
+                              Sửa
+                            </button>
+                          )}
+                          {isEditable && onCancelOrder && (
+                            <button
+                              onClick={() => onCancelOrder(ord)}
+                              className="px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 text-xs font-semibold transition cursor-pointer"
+                              title="Hủy đơn hàng"
+                            >
+                              Hủy
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
