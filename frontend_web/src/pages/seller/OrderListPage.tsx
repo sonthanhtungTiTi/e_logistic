@@ -121,6 +121,20 @@ export const OrderListPage: React.FC = () => {
     }, 5000);
   };
 
+  const handleReadyToPick = async (order: Order) => {
+    const code = order.trackingCode || order.trackingNumber;
+    try {
+      const response = await orderApi.updateOrderStatus(order._id || (order as any).id, 'READY_TO_PICK');
+      if (response.data?.success) {
+        setToastMessage(`Đã xác nhận đơn hàng ${code} đóng gói xong (READY_TO_PICK)! Hệ thống đã tích hợp vào tuyến đường thu gom.`);
+        fetchOrders();
+        setTimeout(() => setToastMessage(null), 5000);
+      }
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Không thể chuyển trạng thái đơn hàng');
+    }
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       
@@ -274,8 +288,11 @@ export const OrderListPage: React.FC = () => {
               </tr>
             ) : orders.length > 0 ? (
               orders.map((o) => {
-                const canCancel = ['CREATED', 'PENDING_VERIFICATION', 'READY_TO_PICK'].includes(o.status);
-                const canEdit = ['CREATED', 'PENDING_VERIFICATION', 'READY_TO_PICK'].includes(o.status);
+                const readyTime = (o as any).readyToPickAt || o.updatedAt;
+                const elapsedSecs = readyTime ? Math.floor((Date.now() - new Date(readyTime).getTime()) / 1000) : 0;
+                const isWithin5MinWindow = o.status === 'READY_TO_PICK' && elapsedSecs < 300;
+                const canEdit = ['CREATED', 'PENDING_VERIFICATION', 'PENDING'].includes(o.status) || isWithin5MinWindow;
+                const canCancel = ['CREATED', 'PENDING_VERIFICATION', 'PENDING'].includes(o.status) || isWithin5MinWindow;
 
                 return (
                   <tr key={o._id || o.trackingCode} className="hover:bg-slate-800/40 transition">
@@ -317,6 +334,16 @@ export const OrderListPage: React.FC = () => {
                         >
                           <Eye className="w-3.5 h-3.5" /> Chi Tiết
                         </button>
+
+                        {(o.status === 'CREATED' || o.status === 'PENDING_VERIFICATION' || o.status === 'PENDING') && (
+                          <button
+                            onClick={() => handleReadyToPick(o)}
+                            className="px-2.5 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-[11px] font-bold flex items-center gap-1 cursor-pointer transition"
+                            title="Xác nhận đã đóng gói xong, sẵn sàng chờ bưu tá thu gom"
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5 text-cyan-400" /> Chuẩn Bị Xong
+                          </button>
+                        )}
 
                         {canEdit && (
                           <button
@@ -401,6 +428,7 @@ export const OrderListPage: React.FC = () => {
           order={selectedOrderView}
           onClose={() => setSelectedOrderView(null)}
           onEdit={(ord) => setSelectedOrderToEdit(ord)}
+          onReadyToPick={handleReadyToPick}
         />
       )}
 

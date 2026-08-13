@@ -216,7 +216,8 @@ const searchOrders = async (req, res, next) => {
 const trackOrderPublic = async (req, res, next) => {
   try {
     const { trackingCode } = req.params;
-    const trackingData = await orderService.getPublicOrderTracking(trackingCode);
+    const { phoneLast4 } = req.query;
+    const trackingData = await orderService.getPublicOrderTracking(trackingCode, phoneLast4);
 
     return res.status(200).json({
       success: true,
@@ -348,10 +349,66 @@ const getPrintLabel = async (req, res, next) => {
   }
 };
 
+/**
+ * @desc    Cập nhật trạng thái đơn hàng (VD: CREATED / PENDING_VERIFICATION -> READY_TO_PICK)
+ * @route   PATCH /api/orders/:id/status
+ * @access  Private (Seller/Admin)
+ */
+const updateOrderStatus = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { status, note } = req.body;
+    const userId = req.user._id;
+    const isAdmin = req.user.role === 'ADMIN';
+
+    if (!status) {
+      return res.status(400).json({ success: false, message: 'Vui lòng cung cấp trạng thái mới (status)' });
+    }
+
+    const updatedOrder = await orderService.updateOrderStatus(userId, isAdmin, id, status, note);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Cập nhật trạng thái đơn hàng thành công',
+      order: updatedOrder
+    });
+  } catch (err) {
+    if (err.statusCode) {
+      return res.status(err.statusCode).json({
+        success: false,
+        message: err.message,
+        code: err.code || 'BAD_REQUEST'
+      });
+    }
+    next(err);
+  }
+};
+
+/**
+ * @desc    Cập nhật vị trí GPS siêu tốc của Tài xế (Driver Telematics Ingestion API)
+ * @route   POST /api/orders/driver-location
+ * @access  Public / Driver
+ */
+const updateDriverLocation = async (req, res, next) => {
+  try {
+    const telematics = require('../services/telematics.service');
+    const { driverId, lat, lng } = req.body;
+    const targetDriverId = driverId || (req.user ? req.user._id : 'drv_123');
+    if (!lat || !lng) {
+      return res.status(400).json({ success: false, message: 'Thiếu thông tin tọa độ lat, lng' });
+    }
+    const updated = await telematics.updateDriverLocation(targetDriverId, lat, lng);
+    return res.status(200).json({ success: true, message: 'Cập nhật tọa độ GPS tài xế thành công', data: updated });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   getQuote,
   createOrder,
   updateOrder,
+  updateOrderStatus,
   cancelOrder,
   bulkCancelOrders,
   searchOrders,
@@ -359,6 +416,7 @@ module.exports = {
   getPublicRecentOrders,
   getOrderById,
   getPrintLabel,
-  notifyDispatcherOrderRemoved
+  notifyDispatcherOrderRemoved,
+  updateDriverLocation
 };
 

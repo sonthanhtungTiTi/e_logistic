@@ -11,6 +11,8 @@ export interface AuthUser {
   avatarUrl?: string;
   taxCode?: string;
   address?: string;
+  latitude?: string;
+  longitude?: string;
   bankName?: string;
   bankAccount?: string;
   bankAccountName?: string;

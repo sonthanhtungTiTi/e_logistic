@@ -1,13 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Navigation, LocateFixed, MapPin, Search, CheckCircle, RefreshCw, X } from 'lucide-react';
+import { LocateFixed, MapPin, Search, CheckCircle, RefreshCw, X } from 'lucide-react';
 
 interface WarehouseMapPickerProps {
   latitude: string;
   longitude: string;
   onChange: (lat: string, lng: string, addressHint?: string) => void;
-  darkTheme?: boolean;
   initialAddressQuery?: string;
 }
 
@@ -40,7 +39,6 @@ export const WarehouseMapPicker: React.FC<WarehouseMapPickerProps> = ({
   latitude,
   longitude,
   onChange,
-  darkTheme = true,
   initialAddressQuery = '',
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -280,11 +278,6 @@ export const WarehouseMapPicker: React.FC<WarehouseMapPickerProps> = ({
     }
 
     onChange(item.lat, item.lng, item.displayName);
-  };
-
-  const handleFormSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    executeSearch(searchQuery);
   };
 
   return (

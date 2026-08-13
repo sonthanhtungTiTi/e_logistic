@@ -1,6 +1,8 @@
 import React from 'react';
 import { Printer, Download, X, Package } from 'lucide-react';
 import type { Order } from '../../types/order.types';
+import { Barcode128 } from '../shared/Barcode128';
+import { QRCodeSVG } from '../shared/QRCodeSVG';
 
 interface PrintWaybillModalProps {
   order: Order;
@@ -45,6 +47,14 @@ export const PrintWaybillModal: React.FC<PrintWaybillModalProps> = ({ order, onC
       {/* Dynamic CSS injection for clean A6 printing */}
       <style>{`
         @media print {
+          @page {
+            size: A6 portrait;
+            margin: 0;
+          }
+          body {
+            background: #fff !important;
+            color: #000 !important;
+          }
           body * {
             visibility: hidden !important;
           }
@@ -61,6 +71,9 @@ export const PrintWaybillModal: React.FC<PrintWaybillModalProps> = ({ order, onC
             padding: 16px !important;
             box-shadow: none !important;
             border: 2px solid #000 !important;
+            border-radius: 0 !important;
+            background: #fff !important;
+            color: #000 !important;
           }
           .print-hide {
             display: none !important;
@@ -103,24 +116,24 @@ export const PrintWaybillModal: React.FC<PrintWaybillModalProps> = ({ order, onC
             </div>
           </div>
 
-          {/* Barcode & Tracking Code */}
-          <div className="text-center py-2 border-b border-slate-300 space-y-1">
-            <div className="font-mono text-2xl font-black tracking-widest text-slate-950">{trackingCode}</div>
-            
-            {/* Visual Barcode mockup */}
-            <div className="flex justify-center items-center gap-1 h-10 my-1 px-4">
-              <div className="w-1 h-full bg-black"></div>
-              <div className="w-0.5 h-full bg-black"></div>
-              <div className="w-2 h-full bg-black"></div>
-              <div className="w-1 h-full bg-black"></div>
-              <div className="w-3 h-full bg-black"></div>
-              <div className="w-0.5 h-full bg-black"></div>
-              <div className="w-1.5 h-full bg-black"></div>
-              <div className="w-2 h-full bg-black"></div>
-              <div className="w-0.5 h-full bg-black"></div>
-              <div className="w-2.5 h-full bg-black"></div>
-              <div className="w-1 h-full bg-black"></div>
-              <div className="w-3 h-full bg-black"></div>
+          {/* Barcode & Tracking Code Section (Scannable Code 128 + QR Code) */}
+          <div className="text-center py-2.5 border-b border-slate-900 space-y-2 bg-slate-50/50 rounded-lg p-2">
+            <div className="font-mono text-2xl font-black tracking-widest text-black">
+              {trackingCode}
+            </div>
+
+            <div className="flex items-center justify-center gap-4 px-2">
+              {/* High-Resolution Code128 Barcode for Scanners */}
+              <div className="flex-1 min-w-0 max-w-[270px] bg-white p-1 border border-slate-900 rounded">
+                <Barcode128 value={trackingCode} height={55} moduleWidth={2.2} showText={false} />
+              </div>
+
+              {/* QR Code for Mobile App Camera Scanners */}
+              <QRCodeSVG value={trackingCode} size={75} />
+            </div>
+
+            <div className="text-[10px] font-mono font-bold text-slate-700 uppercase tracking-wide">
+              Quét mã vạch Code128 / QR Code để cập nhật trạng thái tự động
             </div>
           </div>
 

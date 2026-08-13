@@ -23,14 +23,14 @@ export const OrderSubNav: React.FC<OrderSubNavProps> = ({ activeTab }) => {
       <button
         type="button"
         onClick={() => navigate('/seller/orders/create')}
-        className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition cursor-pointer ${
+        className={`px-4 py-2 rounded-xl text-xs font-extrabold flex items-center gap-2 transition cursor-pointer ${
           currentTab === 'single'
-            ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
-            : 'text-slate-300 hover:text-white hover:bg-slate-800/70'
+            ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-md shadow-blue-600/30'
+            : 'bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 border border-emerald-500/30'
         }`}
       >
-        <Package className="w-4 h-4 text-blue-400" />
-        <span>Đăng Đơn Lẻ</span>
+        <Package className="w-4 h-4 text-emerald-400" />
+        <span>➕ Tạo Đơn Lẻ</span>
       </button>
 
       <button

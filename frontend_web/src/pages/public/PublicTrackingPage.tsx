@@ -36,7 +36,8 @@ interface PublicTrackingData {
 let socket: Socket | null = null;
 
 export const PublicTrackingPage: React.FC = () => {
-  const [trackingNumber, setTrackingNumber] = useState('EL260810X8F9');
+  const [trackingNumber, setTrackingNumber] = useState('');
+  const [phoneLast4, setPhoneLast4] = useState('');
   const [loading, setLoading] = useState(false);
   const [orderData, setOrderData] = useState<PublicTrackingData | null>(null);
   const [driverGps, setDriverGps] = useState<{ lat: number; lng: number } | null>(null);
@@ -47,14 +48,23 @@ export const PublicTrackingPage: React.FC = () => {
 
   const handleSearch = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!trackingNumber.trim()) return;
+    if (!trackingNumber.trim()) {
+      setErrorMsg('Vui lòng nhập mã vận đơn.');
+      return;
+    }
+
+    if (!phoneLast4.trim() || phoneLast4.trim().length !== 4) {
+      setErrorMsg('Vui lòng nhập chính xác 4 số cuối số điện thoại người nhận để bảo mật tra cứu.');
+      return;
+    }
 
     setErrorMsg(null);
     setLoading(true);
 
     try {
       const cleanCode = trackingNumber.trim().toUpperCase();
-      const res = await axiosClient.get<{ success: boolean; data: PublicTrackingData }>(`/orders/track/${cleanCode}`);
+      const cleanPhone4 = phoneLast4.trim();
+      const res = await axiosClient.get<{ success: boolean; data: PublicTrackingData }>(`/orders/track/${cleanCode}?phoneLast4=${cleanPhone4}`);
       
       const data = res.data.data;
       setOrderData(data);
@@ -78,7 +88,7 @@ export const PublicTrackingPage: React.FC = () => {
       if (err.response?.status === 429) {
         setErrorMsg('Bạn đã thao tác quá nhiều lần (Vượt quá 10 lượt/phút). Vui lòng thử lại sau 1 phút.');
       } else {
-        setErrorMsg(err.response?.data?.message || 'Không tìm thấy đơn hàng với mã vận đơn này. Vui lòng kiểm tra lại.');
+        setErrorMsg(err.response?.data?.message || 'Không tìm thấy thông tin vận đơn. Vui lòng kiểm tra lại Mã vận đơn & 4 số cuối SĐT.');
       }
     } finally {
       setLoading(false);
@@ -134,7 +144,7 @@ export const PublicTrackingPage: React.FC = () => {
         </p>
       </div>
 
-      {/* Search Input Box */}
+      {/* Search Input Box with 2-Factor Lookup (Tracking Code + Phone 4 Digits) */}
       <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="w-5 h-5 text-slate-500 absolute left-4 top-3.5" />
@@ -142,10 +152,23 @@ export const PublicTrackingPage: React.FC = () => {
             type="text"
             value={trackingNumber}
             onChange={(e) => setTrackingNumber(e.target.value)}
-            placeholder="Nhập mã vận đơn (VD: EL260810X8F9 hoặc VN-LOG-554109)..."
+            placeholder="Mã vận đơn (VD: ELG559535153VN)..."
             className="w-full glass-input rounded-2xl pl-12 pr-4 py-3.5 text-sm font-mono text-white placeholder:text-slate-600 focus:border-blue-500"
           />
         </div>
+
+        <div className="relative w-full sm:w-48">
+          <Phone className="w-4 h-4 text-emerald-400 absolute left-4 top-4" />
+          <input
+            type="text"
+            maxLength={4}
+            value={phoneLast4}
+            onChange={(e) => setPhoneLast4(e.target.value.replace(/\D/g, '').slice(0, 4))}
+            placeholder="4 số cuối SĐT nhận"
+            className="w-full glass-input rounded-2xl pl-10 pr-4 py-3.5 text-sm font-mono text-white placeholder:text-slate-600 focus:border-emerald-500"
+          />
+        </div>
+
         <button
           type="submit"
           disabled={loading}

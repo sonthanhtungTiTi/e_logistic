@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
-import { Search, ShieldCheck, Zap, Thermometer, ArrowRight, CheckCircle2, Sparkles, Navigation, MapPin, Loader2, Package, LayoutList, Grid } from 'lucide-react';
+import React, { useState, useContext } from 'react';
+import { useNavigate } from 'react-router';
+import { Search, ShieldCheck, Zap, Thermometer, ArrowRight, Sparkles, Navigation, MapPin, Loader2, Package, LayoutList, AlignJustify, Phone, Lock, PlusCircle } from 'lucide-react';
 import type { Order } from '../types/order.types';
 import heroBg from '../assets/hero_bg.png';
 import { orderApi } from '../api/order.api';
+import { AuthContext } from '../context/AuthContext';
 
 interface HeroTrackingProps {
   orders: Order[];
@@ -17,43 +19,41 @@ export const HeroTracking: React.FC<HeroTrackingProps> = ({
   onEditOrder,
   onCancelOrder,
 }) => {
+  const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
   const [searchInput, setSearchInput] = useState('');
+  const [phoneLast4Input, setPhoneLast4Input] = useState('');
   const [searchError, setSearchError] = useState('');
   const [isSearching, setIsSearching] = useState(false);
-  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
+  const [viewMode, setViewMode] = useState<'table' | 'bar'>('table');
 
-  const performSearch = async (codeToSearch: string) => {
-    const cleanCode = codeToSearch.trim();
+  const performSearch = async (rawCode: string, rawPhone4: string) => {
+    const cleanCode = rawCode.trim();
+    const cleanPhone4 = rawPhone4.trim();
+
     if (!cleanCode) {
-      setSearchError('Vui lòng nhập mã vận đơn (VD: ELG559535153VN hoặc ELG-123456)');
+      setSearchError('Vui lòng nhập mã vận đơn (VD: ELG559535153VN).');
       return;
     }
 
-    // First, check loaded orders list
-    const foundLocal = orders.find((o) => {
-      const c = o.trackingCode || o.trackingNumber || '';
-      return c.toLowerCase() === cleanCode.toLowerCase() || (o._id && o._id === cleanCode);
-    });
-
-    if (foundLocal) {
-      setSearchError('');
-      onOpenOrderDetails(foundLocal);
+    if (!cleanPhone4 || cleanPhone4.length !== 4 || !/^\d{4}$/.test(cleanPhone4)) {
+      setSearchError('Vui lòng nhập 4 số cuối số điện thoại người nhận (VD: 0153) để xác thực tra cứu bảo mật.');
       return;
     }
 
-    // Otherwise fetch directly from backend API
     setIsSearching(true);
     setSearchError('');
     try {
-      const response = await orderApi.trackOrderPublic(cleanCode);
+      const response = await orderApi.trackOrderPublic(cleanCode, cleanPhone4);
       if (response.data?.success && response.data.data) {
         onOpenOrderDetails(response.data.data);
       } else {
-        setSearchError(`Không tìm thấy vận đơn nào có mã "${cleanCode}" trong hệ thống MongoDB.`);
+        setSearchError(`Không tìm thấy vận đơn nào khớp với mã vận đơn và 4 số cuối SĐT đã nhập.`);
       }
     } catch (err: any) {
       console.error('Lỗi tra cứu vận đơn:', err);
-      setSearchError(`Không tìm thấy thông tin vận đơn "${cleanCode}". Vui lòng kiểm tra lại.`);
+      const msg = err.response?.data?.message || `Không tìm thấy thông tin vận đơn "${cleanCode}". Vui lòng kiểm tra lại.`;
+      setSearchError(msg);
     } finally {
       setIsSearching(false);
     }
@@ -61,7 +61,7 @@ export const HeroTracking: React.FC<HeroTrackingProps> = ({
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    performSearch(searchInput);
+    performSearch(searchInput, phoneLast4Input);
   };
 
   return (
@@ -89,10 +89,39 @@ export const HeroTracking: React.FC<HeroTrackingProps> = ({
             Giám sát lộ trình giao hàng cold-chain, kiểm soát nhiệt độ từ 2°C - 8°C và quản lý trạng thái đơn hàng tức thì từ cơ sở dữ liệu MongoDB.
           </p>
 
-          {/* Search Box */}
+          {/* Quick Create Order CTA Banner for Sellers */}
+          <div className="flex flex-wrap items-center gap-3 pt-1">
+            <button
+              type="button"
+              onClick={() => {
+                if (user) {
+                  navigate('/seller/orders/create');
+                } else {
+                  navigate('/auth/login');
+                }
+              }}
+              className="px-6 py-3 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 text-white font-extrabold text-xs sm:text-sm shadow-xl shadow-emerald-600/30 flex items-center gap-2 cursor-pointer transition transform hover:-translate-y-0.5"
+            >
+              <PlusCircle className="w-5 h-5 text-emerald-200" />
+              <span>{user ? '🚀 Tạo Đơn Vận Chuyển Mới Ngay' : '🔑 Đăng Nhập Để Tạo Đơn Hàng'}</span>
+            </button>
+
+            {user && (
+              <button
+                type="button"
+                onClick={() => navigate('/seller/orders/batch')}
+                className="px-5 py-3 rounded-2xl bg-slate-900/90 hover:bg-slate-800 text-cyan-300 border border-cyan-500/30 font-bold text-xs sm:text-sm flex items-center gap-2 cursor-pointer transition"
+              >
+                <span>📦 Tạo Đơn Theo Lô (Excel)</span>
+              </button>
+            )}
+          </div>
+
+          {/* Search Box with 2-Layer Security: Tracking Code + 4 Last Digits of Phone */}
           <form onSubmit={handleSearchSubmit} className="space-y-2">
             <div className="relative flex flex-col sm:flex-row items-center gap-2 p-2 rounded-2xl bg-slate-900/90 border border-slate-700/80 shadow-2xl backdrop-blur-xl">
-              <div className="flex items-center gap-3 px-3 py-2 w-full">
+              {/* Field 1: Tracking Code */}
+              <div className="flex items-center gap-3 px-3 py-2 w-full sm:w-7/12 border-b sm:border-b-0 sm:border-r border-slate-800">
                 <Search className="w-5 h-5 text-blue-400 shrink-0" />
                 <input
                   type="text"
@@ -101,7 +130,24 @@ export const HeroTracking: React.FC<HeroTrackingProps> = ({
                     setSearchInput(e.target.value);
                     if (searchError) setSearchError('');
                   }}
-                  placeholder="Nhập mã vận đơn (VD: ELG559535153VN, ELG747262514VN...)"
+                  placeholder="Mã vận đơn (VD: ELG559535153VN)"
+                  className="w-full bg-transparent text-white placeholder-slate-400 text-sm outline-none font-mono"
+                />
+              </div>
+
+              {/* Field 2: 4 Last Digits of Phone */}
+              <div className="flex items-center gap-2 px-3 py-2 w-full sm:w-5/12">
+                <Phone className="w-4 h-4 text-emerald-400 shrink-0" />
+                <input
+                  type="text"
+                  maxLength={4}
+                  value={phoneLast4Input}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, '').slice(0, 4);
+                    setPhoneLast4Input(val);
+                    if (searchError) setSearchError('');
+                  }}
+                  placeholder="4 số cuối SĐT nhận"
                   className="w-full bg-transparent text-white placeholder-slate-400 text-sm outline-none font-mono"
                 />
               </div>
@@ -132,26 +178,12 @@ export const HeroTracking: React.FC<HeroTrackingProps> = ({
             )}
           </form>
 
-          {/* Quick Tracking Tags */}
+          {/* Quick Tracking Tag Examples */}
           <div className="flex flex-wrap items-center gap-2 pt-2 text-xs">
-            <span className="text-slate-400 font-medium">Mẫu tra cứu nhanh:</span>
-            {orders.slice(0, 3).map((ord) => {
-              const code = ord.trackingCode || ord.trackingNumber;
-              if (!code) return null;
-              return (
-                <button
-                  key={code}
-                  type="button"
-                  onClick={() => {
-                    setSearchInput(code);
-                    performSearch(code);
-                  }}
-                  className="px-2.5 py-1 rounded-lg bg-slate-800/80 hover:bg-blue-600/30 border border-slate-700 text-blue-300 font-mono font-bold transition cursor-pointer"
-                >
-                  {code}
-                </button>
-              );
-            })}
+            <span className="text-slate-400 font-medium flex items-center gap-1">
+              <Lock className="w-3 h-3 text-emerald-400" /> Tra cứu bảo mật PII:
+            </span>
+            <span className="text-slate-500 text-[11px]">Nhập Mã Vận Đơn + 4 số cuối SĐT người nhận để xem hành trình</span>
           </div>
         </div>
 
@@ -190,8 +222,9 @@ export const HeroTracking: React.FC<HeroTrackingProps> = ({
 
       </div>
 
-      {/* Recent Live Trackings Section */}
-      <div className="space-y-4">
+      {/* Recent Live Trackings Horizontal List Section (Chỉ hiển thị danh sách khi ĐÃ ĐĂNG NHẬP) */}
+      {user && (
+        <div className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></div>
@@ -200,36 +233,36 @@ export const HeroTracking: React.FC<HeroTrackingProps> = ({
 
           <div className="flex items-center gap-3">
             <span className="text-xs text-slate-400 hidden md:inline">
-              Hiển thị danh sách vận đơn thực từ cơ sở dữ liệu
+              Nhấn Chi Tiết / Sửa / Hủy để quản lý vận đơn
             </span>
             <div className="flex items-center bg-slate-900/80 border border-slate-800 rounded-xl p-1">
               <button
-                onClick={() => setViewMode('list')}
+                onClick={() => setViewMode('table')}
                 className={`p-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
-                  viewMode === 'list' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'
+                  viewMode === 'table' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'
                 }`}
-                title="Hiển thị Dạng List Dọc"
+                title="Bảng Ngang Đầy Đủ"
               >
                 <LayoutList className="w-4 h-4" />
-                <span className="text-xs">Danh Sách Dọc</span>
+                <span className="text-xs">Bảng Ngang</span>
               </button>
               <button
-                onClick={() => setViewMode('grid')}
+                onClick={() => setViewMode('bar')}
                 className={`p-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
-                  viewMode === 'grid' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'
+                  viewMode === 'bar' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'
                 }`}
-                title="Hiển thị Dạng Lưới Khung"
+                title="Thẻ Ngang Rộng"
               >
-                <Grid className="w-4 h-4" />
-                <span className="text-xs">Lưới Khung</span>
+                <AlignJustify className="w-4 h-4" />
+                <span className="text-xs">Thẻ Ngang</span>
               </button>
             </div>
           </div>
         </div>
 
         {orders.length > 0 ? (
-          viewMode === 'list' ? (
-            /* VERTICAL LIST TABLE (Dạng List Dọc như trong ảnh thiết kế) */
+          viewMode === 'table' ? (
+            /* FULL HORIZONTAL TABLE (DẠNG BẢNG NGANG ĐẦY ĐỦ NHƯ ẢNH THIẾT KẾ) */
             <div className="glass-panel rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
@@ -339,33 +372,34 @@ export const HeroTracking: React.FC<HeroTrackingProps> = ({
               </div>
             </div>
           ) : (
-            /* GRID VIEW CARD LAYOUT */
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            /* HORIZONTAL BAR CARDS (DẠNG THẺ THUÔN NGANG RỘNG) */
+            <div className="space-y-3">
               {orders.map((ord) => {
                 const code = ord.trackingCode || ord.trackingNumber || '';
                 const origin = ord.pickupAddress?.province || ord.originCity || 'TP.HCM';
                 const dest = ord.deliveryAddress?.province || ord.destinationCity || 'Hà Nội';
                 const recipientName = ord.deliveryAddress?.fullName || ord.recipientName || 'Người nhận';
                 const weight = ord.chargeableWeight || ord.chargeableWeightKg || ord.actualWeight || 0;
+                const fee = ord.shippingFee || ord.cost || 0;
                 const isEditable = ['CREATED', 'PENDING_VERIFICATION', 'READY_TO_PICK', 'PENDING'].includes(ord.status);
 
                 return (
                   <div
                     key={ord._id || ord.id}
-                    onClick={() => onOpenOrderDetails(ord)}
-                    className="glass-card rounded-2xl p-5 cursor-pointer space-y-4 border border-slate-800 hover:border-blue-500/40 transition group"
+                    className="glass-card rounded-2xl p-4 border border-slate-800 hover:border-blue-500/40 transition group flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-lg"
                   >
-                    <div className="flex items-center justify-between">
-                      <span className="font-mono text-xs font-bold text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded-md border border-blue-500/20">
+                    {/* Left: Code & Service */}
+                    <div className="flex items-center gap-3 min-w-[200px]">
+                      <span className="font-mono text-xs font-bold text-blue-400 bg-blue-500/10 px-3 py-1.5 rounded-lg border border-blue-500/20">
                         {code}
                       </span>
                       <span
-                        className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase ${
+                        className={`text-[10px] font-extrabold px-2.5 py-1 rounded-full uppercase border ${
                           ord.status === 'DELIVERED'
-                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                            ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
                             : ord.status === 'IN_TRANSIT' || ord.status === 'OUT_FOR_DELIVERY'
-                            ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                            : 'bg-slate-700/50 text-slate-300'
+                            ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                            : 'bg-blue-500/20 text-blue-300 border-blue-500/30'
                         }`}
                       >
                         {ord.status === 'IN_TRANSIT'
@@ -378,24 +412,35 @@ export const HeroTracking: React.FC<HeroTrackingProps> = ({
                       </span>
                     </div>
 
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-1.5 text-xs text-slate-300 font-semibold truncate">
+                    {/* Middle: Route & Recipient */}
+                    <div className="flex-1 space-y-1">
+                      <div className="flex items-center gap-1.5 text-xs text-slate-200 font-bold">
                         <MapPin className="w-3.5 h-3.5 text-blue-400 shrink-0" />
                         {origin} ➔ {dest}
                       </div>
                       <p className="text-xs text-slate-400 truncate">
-                        Người nhận: <span className="text-slate-200">{recipientName}</span>
+                        Người nhận: <span className="text-slate-200 font-semibold">{recipientName}</span>
                       </p>
                     </div>
 
-                    <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
-                      <span>TL Quy Đổi: <strong className="text-white">{weight} kg</strong></span>
-                      <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                    {/* Right: Weight, Fee & Actions */}
+                    <div className="flex items-center justify-between md:justify-end gap-4 shrink-0 border-t md:border-t-0 pt-3 md:pt-0 border-slate-800">
+                      <div className="text-left md:text-right text-xs">
+                        <div className="text-slate-400">TL: <strong className="text-white">{weight} kg</strong></div>
+                        {fee > 0 && <div className="text-emerald-400 font-mono font-bold">{fee.toLocaleString('vi-VN')} đ</div>}
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => onOpenOrderDetails(ord)}
+                          className="px-3 py-1.5 rounded-xl bg-blue-600/20 hover:bg-blue-600 text-blue-300 hover:text-white border border-blue-500/30 text-xs font-bold transition cursor-pointer flex items-center gap-1"
+                        >
+                          Chi Tiết <ArrowRight className="w-3 h-3" />
+                        </button>
                         {isEditable && onEditOrder && (
                           <button
                             onClick={() => onEditOrder(ord)}
-                            className="px-2 py-0.5 rounded-lg bg-amber-500/20 hover:bg-amber-600 text-amber-300 hover:text-white border border-amber-500/30 text-[10px] font-bold transition cursor-pointer"
-                            title="Chỉnh sửa đơn hàng"
+                            className="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-600 text-amber-300 hover:text-white border border-amber-500/30 text-xs font-bold transition cursor-pointer"
                           >
                             Sửa
                           </button>
@@ -403,18 +448,11 @@ export const HeroTracking: React.FC<HeroTrackingProps> = ({
                         {isEditable && onCancelOrder && (
                           <button
                             onClick={() => onCancelOrder(ord)}
-                            className="px-2 py-0.5 rounded-lg bg-rose-500/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 text-[10px] font-bold transition cursor-pointer"
-                            title="Hủy đơn hàng"
+                            className="px-3 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 text-xs font-bold transition cursor-pointer"
                           >
                             Hủy
                           </button>
                         )}
-                        <button
-                          onClick={() => onOpenOrderDetails(ord)}
-                          className="text-blue-400 group-hover:translate-x-0.5 transition-transform flex items-center gap-1 font-semibold text-xs cursor-pointer ml-1"
-                        >
-                          Chi tiết <ArrowRight className="w-3 h-3" />
-                        </button>
                       </div>
                     </div>
                   </div>
@@ -430,6 +468,7 @@ export const HeroTracking: React.FC<HeroTrackingProps> = ({
           </div>
         )}
       </div>
+      )}
     </div>
   );
 };

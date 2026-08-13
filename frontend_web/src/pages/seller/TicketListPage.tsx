@@ -1,5 +1,5 @@
 import React from 'react';
-import { HelpCircle, Plus } from 'lucide-react';
+import { HelpCircle, Plus, Package } from 'lucide-react';
 import { Link } from 'react-router';
 
 export const TicketListPage: React.FC = () => {
@@ -9,16 +9,21 @@ export const TicketListPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
         <div>
           <h3 className="text-2xl font-black text-white flex items-center gap-2">
             <HelpCircle className="w-6 h-6 text-indigo-400" /> Danh Sách Ticket Khiếu Nại & Hỗ Trợ
           </h3>
           <p className="text-xs text-slate-400">Gửi yêu cầu kiểm tra bưu gửi, hoãn giao hoặc xử lý đền bù</p>
         </div>
-        <Link to="/seller/tickets/create" className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-lg">
-          <Plus className="w-4 h-4" /> Tạo Ticket Mới
-        </Link>
+        <div className="flex items-center gap-2 shrink-0">
+          <Link to="/seller/orders/create" className="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-lg">
+            <Package className="w-4 h-4 text-emerald-300" /> Tạo Đơn Hàng
+          </Link>
+          <Link to="/seller/tickets/create" className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs flex items-center gap-1.5 shadow-lg">
+            <Plus className="w-4 h-4 text-indigo-400" /> Tạo Ticket Mới
+          </Link>
+        </div>
       </div>
 
       <div className="glass-panel rounded-2xl border border-slate-800 overflow-hidden">

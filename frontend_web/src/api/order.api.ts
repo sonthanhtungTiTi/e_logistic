@@ -48,9 +48,11 @@ export const orderApi = {
   getPublicRecentOrders: () =>
     axiosClient.get<{ success: boolean; data: Order[] }>('/orders/public-recent'),
 
-  // Public Guest Tracking by Tracking Code (Masked PII)
-  trackOrderPublic: (trackingCode: string) =>
-    axiosClient.get<{ success: boolean; message: string; data: any }>(`/orders/track/${trackingCode}`),
+  // Public Guest Tracking by Tracking Code & 4-digit Phone (Masked PII)
+  trackOrderPublic: (trackingCode: string, phoneLast4?: string) =>
+    axiosClient.get<{ success: boolean; message: string; data: any }>(`/orders/track/${trackingCode}`, {
+      params: phoneLast4 ? { phoneLast4 } : undefined
+    }),
 
   // Private Seller Search & Filter Orders
   searchOrders: (params?: OrderSearchParams) =>
@@ -92,6 +94,13 @@ export const orderApi = {
       new_fee?: number;
       order: Order;
     }>(`/orders/${id}`, payload),
+
+  updateOrderStatus: (id: string, status: string, note?: string) =>
+    axiosClient.patch<{
+      success: boolean;
+      message: string;
+      order: Order;
+    }>(`/orders/${id}/status`, { status, note }),
 
   cancelOrder: (id: string, payload: CancelOrderPayload) =>
     axiosClient.delete<{

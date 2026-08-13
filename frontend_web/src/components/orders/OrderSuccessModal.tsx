@@ -115,34 +115,34 @@ export const OrderSuccessModal: React.FC<OrderSuccessModalProps> = ({
             </div>
           </div>
 
-          {/* Action Buttons (Matching Wireframe 2) */}
+          {/* Action Buttons */}
           <div className="space-y-2.5 pt-2">
             <button
-              onClick={() => {
-                if (onPrintWaybill) {
-                  onPrintWaybill();
-                } else {
-                  setShowPrintModal(true);
-                }
-              }}
-              className="w-full py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-blue-600/30 transition cursor-pointer"
+              onClick={handleCreateNextClick}
+              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/30 transition cursor-pointer"
             >
-              <Printer className="w-4 h-4" /> In Nhãn Vận Đơn A6 (Print Waybill Label)
+              <PlusCircle className="w-5 h-5" /> 🚀 Tạo Đơn Hàng Tiếp Theo Ngay
             </button>
 
             <div className="grid grid-cols-2 gap-2">
               <button
-                onClick={handleCreateNextClick}
-                className="py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs flex items-center justify-center gap-1.5 border border-slate-700 transition cursor-pointer"
+                onClick={() => {
+                  if (onPrintWaybill) {
+                    onPrintWaybill();
+                  } else {
+                    setShowPrintModal(true);
+                  }
+                }}
+                className="py-3 rounded-xl bg-blue-600/20 hover:bg-blue-600 text-blue-300 hover:text-white font-bold text-xs flex items-center justify-center gap-1.5 border border-blue-500/30 transition cursor-pointer"
               >
-                <PlusCircle className="w-4 h-4 text-emerald-400" /> Tạo Đơn Tiếp Theo
+                <Printer className="w-4 h-4" /> In Vận Đơn A6
               </button>
 
               <button
                 onClick={handleViewListClick}
                 className="py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs flex items-center justify-center gap-1.5 border border-slate-700 transition cursor-pointer"
               >
-                <ListFilter className="w-4 h-4 text-blue-400" /> Xem Danh Sách Đơn
+                <ListFilter className="w-4 h-4 text-blue-400" /> Quản Lý Danh Sách
               </button>
             </div>
           </div>

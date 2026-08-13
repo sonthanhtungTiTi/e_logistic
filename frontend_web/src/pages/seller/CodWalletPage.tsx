@@ -1,14 +1,26 @@
 import React from 'react';
-import { Wallet, ArrowDownRight } from 'lucide-react';
+import { useNavigate } from 'react-router';
+import { Wallet, ArrowDownRight, PlusCircle } from 'lucide-react';
 
 export const CodWalletPage: React.FC = () => {
+  const navigate = useNavigate();
+
   return (
     <div className="space-y-6">
-      <div className="border-b border-slate-800 pb-4">
-        <h3 className="text-2xl font-black text-white flex items-center gap-2">
-          <Wallet className="w-6 h-6 text-emerald-400" /> Ví Thu Hộ COD & Công Nợ
-        </h3>
-        <p className="text-xs text-slate-400">Theo dõi số tiền COD tài xế đã thu và yêu cầu rút tiền về tài khoản ngân hàng</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+        <div>
+          <h3 className="text-2xl font-black text-white flex items-center gap-2">
+            <Wallet className="w-6 h-6 text-emerald-400" /> Ví Thu Hộ COD & Công Nợ
+          </h3>
+          <p className="text-xs text-slate-400">Theo dõi số tiền COD tài xế đã thu và yêu cầu rút tiền về tài khoản ngân hàng</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => navigate('/seller/orders/create')}
+          className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold text-xs shadow-lg flex items-center gap-2 cursor-pointer shrink-0 self-start sm:self-auto"
+        >
+          <PlusCircle className="w-4 h-4 text-emerald-300" /> Tạo Đơn Hàng Mới
+        </button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

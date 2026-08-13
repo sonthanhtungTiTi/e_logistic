@@ -9,21 +9,14 @@ import {
   AlertTriangle,
   Loader2,
   CheckCircle2,
-  ChevronDown,
   Phone,
   User,
   Home,
-  FileText,
   CreditCard,
   Plane,
-  Upload,
-  Layers,
-  ArrowRight,
   ShieldCheck,
-  Tag,
   Info,
   ChevronRight,
-  FileSpreadsheet,
   RotateCcw,
   Wallet,
   Zap,
@@ -41,8 +34,8 @@ interface ProductItem {
   id: number;
   name: string;
   price: number;
-  weight: number; // kg
-  quantity: number;
+  weight: number | string; // kg
+  quantity: number | string;
   imageUrl?: string;
 }
 
@@ -51,9 +44,7 @@ export const CreateOrderPage: React.FC = () => {
   const { user } = useAuth();
 
   // Shop Completion Modal state
-  const isShopInfoComplete = Boolean(
-    user?.isEmailVerified && (user?.bankAccount || user?.isBankLinked)
-  );
+  const isShopInfoComplete = Boolean(user?.companyName && user?.phoneNumber && user?.address);
   const [showInfoModal, setShowInfoModal] = useState<boolean>(!isShopInfoComplete);
 
   // Receiver Info
@@ -78,13 +69,33 @@ export const CreateOrderPage: React.FC = () => {
     user?.address || '123 Nguyễn Văn Cừ, Phường 1, Quận 5, TP Hồ Chí Minh'
   );
 
-  // Product List
+  // Receiver Info Touched state for inline validation
+  const [touchedFields, setTouchedFields] = useState<{
+    phone?: boolean;
+    name?: boolean;
+    address?: boolean;
+  }>({});
+
+  const handleFieldBlur = (field: 'phone' | 'name' | 'address') => {
+    setTouchedFields((prev) => ({ ...prev, [field]: true }));
+  };
+
+  // Product List & Touched state for inline validation
   const [products, setProducts] = useState<ProductItem[]>([
     { id: 1, name: '', price: 0, weight: 0.5, quantity: 1 },
   ]);
+  const [touchedProducts, setTouchedProducts] = useState<{
+    [id: number]: { name?: boolean; weight?: boolean; quantity?: boolean };
+  }>({});
+
+  const handleProductBlur = (id: number, field: 'name' | 'weight' | 'quantity') => {
+    setTouchedProducts((prev) => ({
+      ...prev,
+      [id]: { ...prev[id], [field]: true },
+    }));
+  };
 
   // Order Pricing Summary
-  const [totalWeightSelect, setTotalWeightSelect] = useState<number>(0.5);
   const [codAmount, setCodAmount] = useState<number>(0);
   const [goodsValue, setGoodsValue] = useState<number>(0);
   const [shippingPayer, setShippingPayer] = useState<'buyer' | 'seller'>('buyer');
@@ -93,9 +104,6 @@ export const CreateOrderPage: React.FC = () => {
 
   // Solution Services Options
   const [isHighValue, setIsHighValue] = useState<boolean>(false);
-  const [pickupService, setPickupService] = useState<string>('Chưa chọn');
-  const [deliveryService, setDeliveryService] = useState<string>('Chưa chọn');
-  const [returnService] = useState<string>('Đã chọn 1');
 
   // Submit & Modal States
   const [submitting, setSubmitting] = useState<boolean>(false);
@@ -357,19 +365,97 @@ export const CreateOrderPage: React.FC = () => {
     user?.address,
   ]);
 
-  // UC-06 Step 1: Handle Get Quote
-  const handleGetQuote = async () => {
+  // Helper to scroll smoothly and set focus on target element
+  const focusAndScroll = (id: string) => {
+    setTimeout(() => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.focus();
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 50);
+  };
+
+  // Strict form validation helper with auto-focus on first invalid field (Top-to-Bottom, Left-to-Right)
+  const validateForm = (): boolean => {
     setSubmitError(null);
 
-    if (!receiverPhone.trim() || !receiverName.trim()) {
-      setSubmitError('Vui lòng nhập đầy đủ số điện thoại và tên người nhận.');
-      return;
+    // Mark all receiver fields as touched
+    setTouchedFields({ phone: true, name: true, address: true });
+
+    const cleanPhone = receiverPhone.trim().replace(/[^0-9+]/g, '');
+    const isPhoneInvalid = !receiverPhone.trim() || !/^(\+?84|0)[0-9]{9,10}$/.test(cleanPhone);
+    const isNameInvalid = !receiverName.trim();
+    const isAddressInvalid = !detailAddress.trim();
+
+    // 1. Receiver Phone
+    if (isPhoneInvalid) {
+      setSubmitError('Vui lòng nhập số điện thoại người nhận hợp lệ (VD: 0912345678).');
+      focusAndScroll('input-receiver-phone');
+      return false;
     }
 
-    if (!detailAddress.trim()) {
-      setSubmitError('Vui lòng nhập địa chỉ giao hàng chi tiết.');
-      return;
+    // 2. Receiver Name
+    if (isNameInvalid) {
+      setSubmitError('Vui lòng nhập họ & tên người nhận.');
+      focusAndScroll('input-receiver-name');
+      return false;
     }
+
+    // 3. Detail Address
+    if (isAddressInvalid) {
+      setSubmitError('Vui lòng nhập địa chỉ giao hàng chi tiết.');
+      focusAndScroll('input-detail-address');
+      return false;
+    }
+
+    // 4. Products List (Top-to-Bottom, Left-to-Right)
+    const updatedTouched: typeof touchedProducts = { ...touchedProducts };
+    let firstInvalidFieldId: string | null = null;
+    let firstErrorMsg = '';
+
+    for (const p of products) {
+      const isProdNameInvalid = !p.name || !p.name.trim();
+      const isProdWeightInvalid =
+        p.weight === '' || p.weight === undefined || p.weight === null || Number(p.weight) <= 0 || isNaN(Number(p.weight));
+      const isProdQuantityInvalid =
+        p.quantity === '' || p.quantity === undefined || p.quantity === null || Number(p.quantity) < 1 || isNaN(Number(p.quantity));
+
+      if (isProdNameInvalid || isProdWeightInvalid || isProdQuantityInvalid) {
+        updatedTouched[p.id] = {
+          name: true,
+          weight: true,
+          quantity: true,
+        };
+
+        if (!firstInvalidFieldId) {
+          if (isProdNameInvalid) {
+            firstInvalidFieldId = `product-name-${p.id}`;
+            firstErrorMsg = 'Vui lòng nhập tên sản phẩm cho tất cả hàng hóa.';
+          } else if (isProdWeightInvalid) {
+            firstInvalidFieldId = `product-weight-${p.id}`;
+            firstErrorMsg = 'Vui lòng nhập trọng lượng hợp lệ (> 0 kg).';
+          } else if (isProdQuantityInvalid) {
+            firstInvalidFieldId = `product-quantity-${p.id}`;
+            firstErrorMsg = 'Vui lòng nhập số lượng tối thiểu là 1.';
+          }
+        }
+      }
+    }
+
+    if (firstInvalidFieldId) {
+      setTouchedProducts(updatedTouched);
+      setSubmitError(firstErrorMsg || 'Vui lòng điền đầy đủ thông tin hàng hóa, trọng lượng (> 0 kg) và số lượng (≥ 1).');
+      focusAndScroll(firstInvalidFieldId);
+      return false;
+    }
+
+    return true;
+  };
+
+  // UC-06 Step 1: Handle Get Quote
+  const handleGetQuote = async () => {
+    if (!validateForm()) return;
 
     setQuoting(true);
     try {
@@ -387,9 +473,9 @@ export const CreateOrderPage: React.FC = () => {
           address: detailAddress,
         },
         items: products.map((p) => ({
-          name: p.name || 'Sản phẩm',
-          quantity: Number(p.quantity) || 1,
-          weight: Number(p.weight) || 0.5,
+          name: p.name.trim() || 'Sản phẩm',
+          quantity: Number(p.quantity),
+          weight: Number(p.weight),
         })),
         dimensions: { length: 20, width: 15, height: 10 },
         goodsValue: Number(goodsValue) || 0,
@@ -410,32 +496,29 @@ export const CreateOrderPage: React.FC = () => {
 
   // UC-06 Step 2: Submit Order Form
   const handleSubmitOrder = async (confirmWithoutDiscount: boolean = false) => {
-    setSubmitError(null);
-
     // Guard: Shop profile check
     if (!isShopInfoComplete) {
       setShowInfoModal(true);
       return;
     }
 
-    // Guard: Validation
-    if (!receiverPhone.trim() || !receiverName.trim()) {
-      setSubmitError('Vui lòng nhập đầy đủ số điện thoại và tên người nhận.');
-      return;
-    }
-
-    if (!detailAddress.trim()) {
-      setSubmitError('Vui lòng nhập địa chỉ giao hàng chi tiết.');
-      return;
-    }
+    // Guard: Form validation
+    if (!validateForm()) return;
 
     setSubmitting(true);
     try {
+      const rawPickupPhone = (user?.phoneNumber || '0912345678').trim().replace(/[^0-9+]/g, '');
+      const validPickupPhone = /^(\+?84|0)[0-9]{9,10}$/.test(rawPickupPhone)
+        ? rawPickupPhone
+        : '0912345678';
+
+      const cleanReceiverPhone = receiverPhone.trim().replace(/[^0-9+]/g, '');
+
       const payload: CreateOrderPayload = {
         confirmProceedWithoutDiscount: confirmWithoutDiscount,
         pickupAddress: {
           fullName: user?.fullName || 'Shop An Bình',
-          phone: user?.phoneNumber || '0901234567',
+          phone: validPickupPhone,
           address: user?.address || '123 Nguyễn Văn Cừ',
           ward: 'Phường 1',
           district: 'Quận 5',
@@ -443,7 +526,7 @@ export const CreateOrderPage: React.FC = () => {
         },
         deliveryAddress: {
           fullName: receiverName,
-          phone: receiverPhone,
+          phone: cleanReceiverPhone,
           address: detailAddress,
           ward: ward || 'Phường 1',
           district: street || 'Quận 1',
@@ -605,13 +688,28 @@ export const CreateOrderPage: React.FC = () => {
                 <div className="relative">
                   <Phone className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
                   <input
+                    id="input-receiver-phone"
                     type="text"
                     value={receiverPhone}
                     onChange={(e) => setReceiverPhone(e.target.value)}
+                    onBlur={() => handleFieldBlur('phone')}
                     placeholder="VD: 0912345678"
-                    className="w-full glass-input rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder:text-slate-500 bg-slate-900/90 border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                    className={`w-full glass-input rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder:text-slate-500 bg-slate-900/90 border outline-none transition ${
+                      touchedFields.phone &&
+                      (!receiverPhone.trim() ||
+                        !/^(\+?84|0)[0-9]{9,10}$/.test(receiverPhone.trim().replace(/[^0-9+]/g, '')))
+                        ? 'border-rose-500/80 bg-rose-950/20'
+                        : 'border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
+                    }`}
                   />
                 </div>
+                {touchedFields.phone &&
+                  (!receiverPhone.trim() ||
+                    !/^(\+?84|0)[0-9]{9,10}$/.test(receiverPhone.trim().replace(/[^0-9+]/g, ''))) && (
+                    <p className="text-[10px] text-rose-400 font-medium mt-1 animate-in fade-in duration-200">
+                      ⚠️ Vui lòng nhập SĐT người nhận hợp lệ (VD: 0912345678)
+                    </p>
+                  )}
               </div>
 
               {/* Name Input */}
@@ -622,14 +720,25 @@ export const CreateOrderPage: React.FC = () => {
                 <div className="relative">
                   <User className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
                   <input
+                    id="input-receiver-name"
                     type="text"
                     value={receiverName}
                     onChange={(e) => setReceiverName(e.target.value)}
+                    onBlur={() => handleFieldBlur('name')}
                     placeholder="VD: Nguyễn Văn A"
                     maxLength={255}
-                    className="w-full glass-input rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder:text-slate-500 bg-slate-900/90 border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                    className={`w-full glass-input rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder:text-slate-500 bg-slate-900/90 border outline-none transition ${
+                      touchedFields.name && !receiverName.trim()
+                        ? 'border-rose-500/80 bg-rose-950/20'
+                        : 'border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
+                    }`}
                   />
                 </div>
+                {touchedFields.name && !receiverName.trim() && (
+                  <p className="text-[10px] text-rose-400 font-medium mt-1 animate-in fade-in duration-200">
+                    ⚠️ Vui lòng nhập họ & tên người nhận
+                  </p>
+                )}
               </div>
 
               {/* Detail Address Input */}
@@ -640,13 +749,24 @@ export const CreateOrderPage: React.FC = () => {
                 <div className="relative">
                   <Home className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
                   <input
+                    id="input-detail-address"
                     type="text"
                     value={detailAddress}
                     onChange={(e) => setDetailAddress(e.target.value)}
+                    onBlur={() => handleFieldBlur('address')}
                     placeholder="Số nhà, đường, khu phố..."
-                    className="w-full glass-input rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder:text-slate-500 bg-slate-900/90 border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                    className={`w-full glass-input rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder:text-slate-500 bg-slate-900/90 border outline-none transition ${
+                      touchedFields.address && !detailAddress.trim()
+                        ? 'border-rose-500/80 bg-rose-950/20'
+                        : 'border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
+                    }`}
                   />
                 </div>
+                {touchedFields.address && !detailAddress.trim() && (
+                  <p className="text-[10px] text-rose-400 font-medium mt-1 animate-in fade-in duration-200">
+                    ⚠️ Vui lòng nhập địa chỉ giao hàng chi tiết
+                  </p>
+                )}
               </div>
 
               {/* Address 4-Dropdown Grid */}
@@ -903,14 +1023,27 @@ export const CreateOrderPage: React.FC = () => {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                     <div>
-                      <label className="block text-[11px] text-slate-400 mb-1">Tên sản phẩm</label>
+                      <label className="block text-[11px] text-slate-400 mb-1">
+                        Tên sản phẩm <span className="text-rose-400">*</span>
+                      </label>
                       <input
+                        id={`product-name-${product.id}`}
                         type="text"
                         value={product.name}
                         onChange={(e) => handleProductChange(product.id, 'name', e.target.value)}
+                        onBlur={() => handleProductBlur(product.id, 'name')}
                         placeholder="Nhập tên sản phẩm..."
-                        className="w-full glass-input rounded-xl px-3 py-2 text-xs text-white placeholder:text-slate-600 bg-slate-950 border border-slate-800 outline-none"
+                        className={`w-full glass-input rounded-xl px-3 py-2 text-xs text-white placeholder:text-slate-600 bg-slate-950 border outline-none transition ${
+                          touchedProducts[product.id]?.name && !product.name.trim()
+                            ? 'border-rose-500/80 bg-rose-950/20'
+                            : 'border-slate-800'
+                        }`}
                       />
+                      {touchedProducts[product.id]?.name && !product.name.trim() && (
+                        <p className="text-[10px] text-rose-400 font-medium mt-1 animate-in fade-in duration-200">
+                          ⚠️ Vui lòng nhập tên sản phẩm
+                        </p>
+                      )}
                     </div>
 
                     <div>
@@ -930,36 +1063,62 @@ export const CreateOrderPage: React.FC = () => {
                   <div className="grid grid-cols-2 gap-3 text-xs">
                     <div>
                       <label className="block text-[11px] text-slate-400 mb-1">Trọng lượng (kg)</label>
-                      <select
-                        value={product.weight}
-                        onChange={(e) =>
-                          handleProductChange(product.id, 'weight', parseFloat(e.target.value))
-                        }
-                        className="w-full glass-input rounded-xl px-3 py-2 text-xs text-slate-200 bg-slate-950 border border-slate-800 outline-none"
-                      >
-                        <option value="0.2">0.2 kg</option>
-                        <option value="0.5">0.5 kg</option>
-                        <option value="1">1.0 kg</option>
-                        <option value="2">2.0 kg</option>
-                        <option value="5">5.0 kg</option>
-                      </select>
+                      <input
+                        id={`product-weight-${product.id}`}
+                        type="text"
+                        inputMode="decimal"
+                        value={product.weight === undefined || product.weight === null ? '' : product.weight}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                            handleProductChange(product.id, 'weight', val);
+                          }
+                        }}
+                        onBlur={() => handleProductBlur(product.id, 'weight')}
+                        placeholder="VD: 0.5"
+                        className={`w-full glass-input rounded-xl px-3 py-2 text-xs text-white font-mono placeholder:text-slate-600 bg-slate-950 border outline-none transition ${
+                          touchedProducts[product.id]?.weight &&
+                          (product.weight === '' || Number(product.weight) <= 0 || isNaN(Number(product.weight)))
+                            ? 'border-rose-500/80 bg-rose-950/20'
+                            : 'border-slate-800'
+                        }`}
+                      />
+                      {touchedProducts[product.id]?.weight &&
+                        (product.weight === '' || Number(product.weight) <= 0 || isNaN(Number(product.weight))) && (
+                          <p className="text-[10px] text-rose-400 font-medium mt-1 animate-in fade-in duration-200">
+                            ⚠️ Cần nhập trọng lượng &gt; 0 kg
+                          </p>
+                        )}
                     </div>
 
                     <div>
                       <label className="block text-[11px] text-slate-400 mb-1">Số lượng</label>
-                      <select
-                        value={product.quantity}
-                        onChange={(e) =>
-                          handleProductChange(product.id, 'quantity', parseInt(e.target.value) || 1)
-                        }
-                        className="w-full glass-input rounded-xl px-3 py-2 text-xs text-slate-200 bg-slate-950 border border-slate-800 outline-none"
-                      >
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="5">5</option>
-                        <option value="10">10</option>
-                      </select>
+                      <input
+                        id={`product-quantity-${product.id}`}
+                        type="text"
+                        inputMode="numeric"
+                        value={product.quantity === undefined || product.quantity === null ? '' : product.quantity}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val === '' || /^\d*$/.test(val)) {
+                            handleProductChange(product.id, 'quantity', val);
+                          }
+                        }}
+                        onBlur={() => handleProductBlur(product.id, 'quantity')}
+                        placeholder="VD: 1"
+                        className={`w-full glass-input rounded-xl px-3 py-2 text-xs text-white font-mono placeholder:text-slate-600 bg-slate-950 border outline-none transition ${
+                          touchedProducts[product.id]?.quantity &&
+                          (product.quantity === '' || Number(product.quantity) < 1 || isNaN(Number(product.quantity)))
+                            ? 'border-rose-500/80 bg-rose-950/20'
+                            : 'border-slate-800'
+                        }`}
+                      />
+                      {touchedProducts[product.id]?.quantity &&
+                        (product.quantity === '' || Number(product.quantity) < 1 || isNaN(Number(product.quantity))) && (
+                          <p className="text-[10px] text-rose-400 font-medium mt-1 animate-in fade-in duration-200">
+                            ⚠️ Cần nhập số lượng tối thiểu là 1
+                          </p>
+                        )}
                     </div>
                   </div>
                 </div>
@@ -1289,10 +1448,17 @@ export const CreateOrderPage: React.FC = () => {
             setQuoteResult(null);
             setSubmitError(null);
             setConfirmDiscountModal(null);
+            setTouchedFields({});
+            setTouchedProducts({});
             localStorage.removeItem(DRAFT_KEY);
             setHasDraftRestored(false);
             setCreatedOrder(null);
             setShowPrintModal(false);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            setTimeout(() => {
+              const el = document.getElementById('input-receiver-phone');
+              if (el) el.focus();
+            }, 150);
           }}
           onViewList={() => {
             setCreatedOrder(null);

@@ -154,18 +154,31 @@ const orderSchema = new mongoose.Schema(
     flagCodAnomaly: { type: Boolean, default: false },
     needsManualRouting: { type: Boolean, default: false },
 
+    // Thông tin mốc thời gian chuẩn bị hàng
+    readyToPickAt: { type: Date, default: null },
+
     // Thông tin hủy đơn
     cancelReason: { type: String, default: null },
     cancelNote: { type: String, default: null },
     cancelledBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     cancelledAt: { type: Date, default: null },
 
-    // Thất bại / Tài xế & Live Tracking
+    // Bưu cục hiện tại & Tài xế & Live Tracking & POD Image
+    currentHubId: { type: mongoose.Schema.Types.ObjectId, ref: 'Hub', default: null },
+    currentDriver: {
+      driverId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+      name: { type: String, default: 'Phạm Tấn Triệu' },
+      phone: { type: String, default: '0932448711' },
+      avatar: { type: String, default: 'https://cdn.e-logistic.vn/drivers/drv_default.jpg' }
+    },
+    podImageUrl: { type: String, default: null },
+
+    // Thất bại / Live Tracking legacy
     failedAttempts: { type: Number, default: 0 },
     currentDriverId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     driver: {
-      fullName: { type: String, default: 'Nguyễn Văn Nam (Shipper)' },
-      phone: { type: String, default: '0988776655' }
+      fullName: { type: String, default: 'Phạm Tấn Triệu (Shipper)' },
+      phone: { type: String, default: '0932448711' }
     },
     driverLastLocation: {
       lat: { type: Number, default: 10.776889 },
