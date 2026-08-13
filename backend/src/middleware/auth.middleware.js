@@ -9,6 +9,10 @@ const protect = async (req, res, next) => {
     try {
       token = req.headers.authorization.split(' ')[1];
 
+      if (!token || token === 'undefined' || token === 'null' || token.trim() === '') {
+        return res.status(401).json({ message: 'Không được ủy quyền, token không hợp lệ hoặc chưa đăng nhập' });
+      }
+
       if (!process.env.JWT_SECRET) {
         throw new Error('Thiếu cấu hình JWT_SECRET trong biến môi trường');
       }
@@ -34,17 +38,19 @@ const protect = async (req, res, next) => {
         return res.status(403).json({ message: 'Tài khoản đã bị khóa hoặc vô hiệu hóa. Vui lòng liên hệ quản trị viên.' });
       }
 
-      next();
+      return next();
     } catch (error) {
+      if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
+        return res.status(401).json({ message: 'Token không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại.' });
+      }
       console.error('Lỗi xác thực Token:', error);
-      res.status(401).json({ message: 'Không được ủy quyền, token không hợp lệ hoặc đã hết hạn' });
+      return res.status(401).json({ message: 'Không được ủy quyền, token không hợp lệ hoặc đã hết hạn' });
     }
   }
 
   if (!token) {
-    res.status(401).json({ message: 'Không được ủy quyền, không có token' });
+    return res.status(401).json({ message: 'Không được ủy quyền, không có token' });
   }
-
 };
 
 // Middleware kiểm tra quyền (Role-based access control)

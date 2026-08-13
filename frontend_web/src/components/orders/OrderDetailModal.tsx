@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Package, X, MapPin, User, Edit3, Printer } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Package, X, MapPin, User, Edit3, Printer, CheckCircle2, Clock } from 'lucide-react';
 import type { Order } from '../../types/order.types';
 import { PrintWaybillModal } from './PrintWaybillModal';
 
@@ -7,10 +7,43 @@ interface OrderDetailModalProps {
   order: Order;
   onClose: () => void;
   onEdit?: (order: Order) => void;
+  onReadyToPick?: (order: Order) => void;
 }
 
-export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, onClose, onEdit }) => {
+export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, onClose, onEdit, onReadyToPick }) => {
   const [showPrintModal, setShowPrintModal] = useState(false);
+
+  // Đếm ngược 5 phút cho phép Hủy & Sửa đơn ở trạng thái READY_TO_PICK
+  const readyToPickTime = (order as any).readyToPickAt || order.updatedAt;
+  const [secondsRemaining, setSecondsRemaining] = useState<number>(() => {
+    if (order.status !== 'READY_TO_PICK' || !readyToPickTime) return 300;
+    const elapsed = Math.floor((Date.now() - new Date(readyToPickTime).getTime()) / 1000);
+    return Math.max(0, 300 - elapsed);
+  });
+
+  useEffect(() => {
+    if (order.status !== 'READY_TO_PICK' || !readyToPickTime) return;
+    const interval = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - new Date(readyToPickTime).getTime()) / 1000);
+      const remaining = Math.max(0, 300 - elapsed);
+      setSecondsRemaining(remaining);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [order.status, readyToPickTime]);
+
+  const formatCountdown = (secs: number) => {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
+
+  const isCancelled = order.status === 'CANCELLED';
+  const isWithin5MinWindow = order.status === 'READY_TO_PICK' && secondsRemaining > 0;
+  const isEditable = !isCancelled && (
+    ['CREATED', 'PENDING_VERIFICATION', 'PENDING'].includes(order.status) ||
+    isWithin5MinWindow
+  );
+  const canReadyToPick = !isCancelled && ['CREATED', 'PENDING_VERIFICATION', 'PENDING'].includes(order.status);
 
   const formatCurrency = (val?: number) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val || 0);
@@ -20,8 +53,6 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, onClo
     if (!dateStr) return 'N/A';
     return new Date(dateStr).toLocaleString('vi-VN');
   };
-
-  const isEditable = ['CREATED', 'PENDING_VERIFICATION', 'READY_TO_PICK'].includes(order.status);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
@@ -47,6 +78,33 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, onClo
             <X className="w-5 h-5" />
           </button>
         </div>
+
+        {/* READY_TO_PICK Countdown Banner */}
+        {order.status === 'READY_TO_PICK' && (
+          <div className={`p-4 rounded-2xl border text-xs font-semibold flex items-center justify-between gap-3 shadow-lg ${
+            secondsRemaining > 0 
+              ? 'bg-amber-500/10 border-amber-500/30 text-amber-300'
+              : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
+          }`}>
+            <div className="flex items-center gap-2.5">
+              <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
+                secondsRemaining > 0 ? 'bg-amber-500/20 text-amber-400' : 'bg-rose-500/20 text-rose-400'
+              }`}>
+                <Clock className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="font-bold text-white">Đơn hàng ở trạng thái Sẵn Sàng Lấy Hàng (Đang đếm ngược 5 phút)</p>
+                <p className="text-[11px] text-slate-300">
+                  {secondsRemaining > 0 ? (
+                    <span>⏳ Bạn có <strong className="text-amber-400 font-mono font-bold text-sm px-1.5 py-0.5 rounded bg-amber-950/60 border border-amber-500/30">{formatCountdown(secondsRemaining)}</strong> để chỉnh sửa thông tin hoặc hủy đơn trước khi bưu tá ghé lấy.</span>
+                  ) : (
+                    <span className="text-rose-400 font-bold">🔒 Đã HẾT thời hạn 5 phút. Thông tin đơn hàng đã khóa hoàn toàn.</span>
+                  )}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Status & Basic Info Bar */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -173,12 +231,24 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, onClo
                 }}
                 className="px-4 py-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 font-bold text-xs flex items-center gap-2 transition cursor-pointer"
               >
-                <Edit3 className="w-4 h-4" /> Chỉnh Sửa Đơn Hàng
+                <Edit3 className="w-4 h-4" /> Chỉnh Sửa Đơn Hàng {order.status === 'READY_TO_PICK' && secondsRemaining > 0 && `(${formatCountdown(secondsRemaining)})`}
               </button>
             )}
           </div>
 
           <div className="flex items-center gap-2">
+            {canReadyToPick && onReadyToPick && (
+              <button
+                onClick={() => {
+                  onClose();
+                  onReadyToPick(order);
+                }}
+                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-lg shadow-cyan-600/30 transition"
+                title="Xác nhận đóng gói xong để hệ thống đưa vào tuyến thu gom"
+              >
+                <CheckCircle2 className="w-4 h-4 text-cyan-200" /> Chuẩn Bị Xong
+              </button>
+            )}
             <button
               onClick={() => setShowPrintModal(true)}
               className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs flex items-center gap-1.5 cursor-pointer border border-slate-700 transition"

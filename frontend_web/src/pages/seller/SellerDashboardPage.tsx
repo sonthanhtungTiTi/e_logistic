@@ -8,7 +8,7 @@ import { orderApi } from '../../api/order.api';
 
 export const SellerDashboardPage: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [, setLoading] = useState<boolean>(true);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
   const [cancelingOrder, setCancelingOrder] = useState<Order | null>(null);
@@ -53,6 +53,19 @@ export const SellerDashboardPage: React.FC = () => {
     fetchOrders();
   };
 
+  const handleReadyToPick = async (order: Order) => {
+    const code = order.trackingCode || order.trackingNumber;
+    try {
+      const response = await orderApi.updateOrderStatus(order._id || (order as any).id, 'READY_TO_PICK');
+      if (response.data?.success) {
+        showToast(`Đã xác nhận đơn hàng ${code} đóng gói xong (READY_TO_PICK)! Hệ thống đã đưa vào tuyến thu gom.`);
+        fetchOrders();
+      }
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Không thể chuyển trạng thái đơn hàng');
+    }
+  };
+
   return (
     <div className="space-y-6 relative">
       {toastMessage && (
@@ -70,6 +83,7 @@ export const SellerDashboardPage: React.FC = () => {
         onOpenOrderDetails={(order: Order) => setSelectedOrder(order)}
         onEditOrder={(order: Order) => setEditingOrder(order)}
         onCancelOrder={(order: Order) => setCancelingOrder(order)}
+        onReadyToPick={handleReadyToPick}
       />
 
       {selectedOrder && (
@@ -85,6 +99,7 @@ export const SellerDashboardPage: React.FC = () => {
             setSelectedOrder(null);
             setCancelingOrder(ord);
           }}
+          onReadyToPick={handleReadyToPick}
         />
       )}
 

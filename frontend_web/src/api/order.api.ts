@@ -95,6 +95,13 @@ export const orderApi = {
       order: Order;
     }>(`/orders/${id}`, payload),
 
+  updateOrderStatus: (id: string, status: string, note?: string) =>
+    axiosClient.patch<{
+      success: boolean;
+      message: string;
+      order: Order;
+    }>(`/orders/${id}/status`, { status, note }),
+
   cancelOrder: (id: string, payload: CancelOrderPayload) =>
     axiosClient.delete<{
       success: boolean;

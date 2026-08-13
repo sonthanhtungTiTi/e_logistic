@@ -36,9 +36,19 @@ export const EditOrderModal: React.FC<EditOrderModalProps> = ({ order, onClose, 
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
   };
 
+  const readyTime = (order as any).readyToPickAt || order.updatedAt;
+  const elapsedSecs = readyTime ? Math.floor((Date.now() - new Date(readyTime).getTime()) / 1000) : 0;
+  const isWithin5MinWindow = order.status === 'READY_TO_PICK' && elapsedSecs < 300;
+  const isEditableStatus = ['CREATED', 'PENDING_VERIFICATION', 'PENDING'].includes(order.status) || isWithin5MinWindow;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
+
+    if (!isEditableStatus) {
+      setErrorMessage(`Đơn hàng đã chuyển sang trạng thái "${order.status}". Hệ thống không cho phép chỉnh sửa thông tin nữa.`);
+      return;
+    }
 
     if (!deliveryName.trim() || !deliveryPhone.trim()) {
       setErrorMessage('Vui lòng nhập tên và số điện thoại người nhận.');
@@ -122,7 +132,9 @@ export const EditOrderModal: React.FC<EditOrderModalProps> = ({ order, onClose, 
               <h3 className="font-extrabold text-lg text-white flex items-center gap-2">
                 Chỉnh Sửa Đơn Hàng <span className="font-mono text-amber-400">{order.trackingCode || order.trackingNumber}</span>
               </h3>
-              <p className="text-xs text-slate-400">Chỉnh sửa thông tin địa chỉ giao, COD & ghi chú bưu gửi (Trạng thái CREATED)</p>
+              <p className="text-xs text-slate-400">
+                Chỉnh sửa thông tin địa chỉ giao, COD & ghi chú bưu gửi (Chỉ áp dụng khi đơn ở trạng thái CREATED / PENDING_VERIFICATION)
+              </p>
             </div>
           </div>
           <button
@@ -132,6 +144,13 @@ export const EditOrderModal: React.FC<EditOrderModalProps> = ({ order, onClose, 
             <X className="w-5 h-5" />
           </button>
         </div>
+
+        {!isEditableStatus && (
+          <div className="p-4 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-bold flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0 text-amber-400" />
+            <span>Đơn hàng đang ở trạng thái <strong>{order.status}</strong>. Đã khóa chỉnh sửa thông tin!</span>
+          </div>
+        )}
 
         {errorMessage && (
           <div className="p-4 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs font-bold flex items-center gap-2">
@@ -250,7 +269,7 @@ export const EditOrderModal: React.FC<EditOrderModalProps> = ({ order, onClose, 
 
             <button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || !isEditableStatus}
               className="px-6 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs shadow-lg shadow-amber-600/30 flex items-center gap-2 cursor-pointer transition disabled:opacity-50"
             >
               {submitting ? (

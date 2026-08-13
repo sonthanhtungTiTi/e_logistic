@@ -1,12 +1,14 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useContext } from 'react';
 import { HeroTracking } from '../../components/HeroTracking';
 import { TrackingModal } from '../../components/shared/TrackingModal';
 import { EditOrderModal } from '../../components/orders/EditOrderModal';
 import { CancelOrderModal } from '../../components/orders/CancelOrderModal';
 import type { Order } from '../../types';
 import { orderApi } from '../../api/order.api';
+import { AuthContext } from '../../context/AuthContext';
 
 export const LandingPage: React.FC = () => {
+  const { user } = useContext(AuthContext);
   const [orders, setOrders] = useState<Order[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
@@ -19,15 +21,19 @@ export const LandingPage: React.FC = () => {
   };
 
   const fetchRecentOrders = useCallback(async () => {
+    if (!user) {
+      setOrders([]);
+      return;
+    }
     try {
-      const response = await orderApi.getPublicRecentOrders();
+      const response = await orderApi.searchOrders({ limit: 8 });
       if (response.data?.success && Array.isArray(response.data.data)) {
         setOrders(response.data.data);
       }
     } catch (err) {
-      console.error('Lỗi tải vận đơn công khai từ MongoDB:', err);
+      console.error('Lỗi tải vận đơn từ CSDL:', err);
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     fetchRecentOrders();

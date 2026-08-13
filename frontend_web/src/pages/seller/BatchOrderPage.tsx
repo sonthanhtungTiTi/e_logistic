@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router';
 import {
   FileSpreadsheet,
@@ -13,20 +13,13 @@ import {
   Eye,
   Loader2,
   Package,
-  ArrowRight,
-  ShieldAlert,
-  Info,
   RefreshCw,
-  FileText,
-  Printer,
   ChevronRight,
   User,
-  Phone,
-  MapPin,
   DollarSign,
-  HelpCircle,
-  FileCheck,
   Maximize2,
+  FileCheck,
+  HelpCircle,
   RotateCcw,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
@@ -81,7 +74,6 @@ export const BatchOrderPage: React.FC = () => {
   const [creatingBatch, setCreatingBatch] = useState<boolean>(false);
   const [creationProgress, setCreationProgress] = useState<number>(0);
   const [createdOrdersResult, setCreatedOrdersResult] = useState<Order[] | null>(null);
-  const [creationError, setCreationError] = useState<string | null>(null);
 
   // LocalStorage Batch Draft Key
   const BATCH_DRAFT_KEY = 'elogistic_batch_order_draft';
@@ -530,7 +522,6 @@ export const BatchOrderPage: React.FC = () => {
 
     setCreatingBatch(true);
     setCreationProgress(0);
-    setCreationError(null);
 
     const created: Order[] = [];
 
@@ -538,6 +529,12 @@ export const BatchOrderPage: React.FC = () => {
       for (let i = 0; i < validItems.length; i++) {
         const item = validItems[i];
         setCreationProgress(Math.round(((i + 1) / validItems.length) * 100));
+
+        const itemDims = {
+          length: item.length || 20,
+          width: item.width || 15,
+          height: item.height || 10,
+        };
 
         const payload: CreateOrderPayload = {
           pickupAddress: {
@@ -563,11 +560,7 @@ export const BatchOrderPage: React.FC = () => {
               weight: item.weight,
             },
           ],
-          dimensions: {
-            length: item.length || 20,
-            width: item.width || 15,
-            height: item.height || 10,
-          },
+          dimensions: itemDims,
           isCod: item.codAmount > 0,
           codAmount: item.codAmount,
           goodsValue: item.goodsValue,
@@ -587,10 +580,10 @@ export const BatchOrderPage: React.FC = () => {
               pickupAddress: payload.pickupAddress,
               deliveryAddress: payload.deliveryAddress,
               items: payload.items,
-              dimensions: payload.dimensions,
+              dimensions: itemDims,
               actualWeight: item.weight,
-              volumetricWeight: Number(((payload.dimensions.length * payload.dimensions.width * payload.dimensions.height) / 5000).toFixed(2)),
-              chargeableWeight: Math.max(item.weight, (payload.dimensions.length * payload.dimensions.width * payload.dimensions.height) / 5000),
+              volumetricWeight: Number(((itemDims.length * itemDims.width * itemDims.height) / 5000).toFixed(2)),
+              chargeableWeight: Math.max(item.weight, (itemDims.length * itemDims.width * itemDims.height) / 5000),
               isCod: item.codAmount > 0,
               codAmount: item.codAmount,
               goodsValue: item.goodsValue,
@@ -615,10 +608,10 @@ export const BatchOrderPage: React.FC = () => {
             pickupAddress: payload.pickupAddress,
             deliveryAddress: payload.deliveryAddress,
             items: payload.items,
-            dimensions: payload.dimensions,
+            dimensions: itemDims,
             actualWeight: item.weight,
-            volumetricWeight: Number(((payload.dimensions.length * payload.dimensions.width * payload.dimensions.height) / 5000).toFixed(2)),
-            chargeableWeight: Math.max(item.weight, (payload.dimensions.length * payload.dimensions.width * payload.dimensions.height) / 5000),
+            volumetricWeight: Number(((itemDims.length * itemDims.width * itemDims.height) / 5000).toFixed(2)),
+            chargeableWeight: Math.max(item.weight, (itemDims.length * itemDims.width * itemDims.height) / 5000),
             isCod: item.codAmount > 0,
             codAmount: item.codAmount,
             goodsValue: item.goodsValue,
@@ -641,7 +634,7 @@ export const BatchOrderPage: React.FC = () => {
       localStorage.removeItem(BATCH_DRAFT_KEY);
       setHasBatchDraftRestored(false);
     } catch (err: any) {
-      setCreationError(err.message || 'Lỗi xử lý tạo đơn hàng hàng loạt');
+      console.error('Batch creation error:', err);
     } finally {
       setCreatingBatch(false);
     }

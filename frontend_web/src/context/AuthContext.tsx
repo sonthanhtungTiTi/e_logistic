@@ -20,13 +20,31 @@ export const AuthContext = createContext<AuthContextType>({
 });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
+  const [token, setToken] = useState<string | null>(() => {
+    const saved = localStorage.getItem('token');
+    if (!saved || saved === 'undefined' || saved === 'null' || saved.trim() === '') {
+      localStorage.removeItem('token');
+      return null;
+    }
+    return saved;
+  });
+
   const [user, setUser] = useState<AuthUser | null>(() => {
     const saved = localStorage.getItem('user');
-    return saved ? JSON.parse(saved) : null;
+    if (!saved || saved === 'undefined' || saved === 'null') {
+      localStorage.removeItem('user');
+      return null;
+    }
+    try {
+      return JSON.parse(saved);
+    } catch {
+      localStorage.removeItem('user');
+      return null;
+    }
   });
 
   const login = (newToken: string, newUser: AuthUser) => {
+    if (!newToken || newToken === 'undefined' || newToken === 'null') return;
     setToken(newToken);
     setUser(newUser);
     localStorage.setItem('token', newToken);
@@ -50,8 +68,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    if (token) {
+    if (token && token !== 'undefined' && token !== 'null') {
       localStorage.setItem('token', token);
+    } else if (!token) {
+      localStorage.removeItem('token');
     }
   }, [token]);
 

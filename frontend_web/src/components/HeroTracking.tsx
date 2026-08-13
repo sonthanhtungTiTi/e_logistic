@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
-import { Search, ShieldCheck, Zap, Thermometer, ArrowRight, CheckCircle2, Sparkles, Navigation, MapPin, Loader2, Package, LayoutList, AlignJustify } from 'lucide-react';
+import React, { useState, useContext } from 'react';
+import { useNavigate } from 'react-router';
+import { Search, ShieldCheck, Zap, Thermometer, ArrowRight, Sparkles, Navigation, MapPin, Loader2, Package, LayoutList, AlignJustify, Phone, Lock, PlusCircle } from 'lucide-react';
 import type { Order } from '../types/order.types';
 import heroBg from '../assets/hero_bg.png';
 import { orderApi } from '../api/order.api';
+import { AuthContext } from '../context/AuthContext';
 
 interface HeroTrackingProps {
   orders: Order[];
@@ -17,44 +19,36 @@ export const HeroTracking: React.FC<HeroTrackingProps> = ({
   onEditOrder,
   onCancelOrder,
 }) => {
+  const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
   const [searchInput, setSearchInput] = useState('');
+  const [phoneLast4Input, setPhoneLast4Input] = useState('');
   const [searchError, setSearchError] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [viewMode, setViewMode] = useState<'table' | 'bar'>('table');
 
-  const performSearch = async (rawInput: string) => {
-    const trimmed = rawInput.trim();
-    if (!trimmed) {
-      setSearchError('Vui lòng nhập mã vận đơn (VD: ELG559535153VN hoặc kèm 4 số SĐT: ELG559535153VN 153)');
+  const performSearch = async (rawCode: string, rawPhone4: string) => {
+    const cleanCode = rawCode.trim();
+    const cleanPhone4 = rawPhone4.trim();
+
+    if (!cleanCode) {
+      setSearchError('Vui lòng nhập mã vận đơn (VD: ELG559535153VN).');
       return;
     }
 
-    // Parse trackingCode and optional 4-digit phone if user typed e.g. "ELG559535153VN 0153" or "ELG559535153VN, 153"
-    const parts = trimmed.split(/[\s,]+/);
-    const cleanCode = parts[0];
-    const phoneLast4 = parts.length > 1 && /^\d{3,4}$/.test(parts[1]) ? parts[1] : undefined;
-
-    // First, check loaded orders list
-    const foundLocal = orders.find((o) => {
-      const c = o.trackingCode || o.trackingNumber || '';
-      return c.toLowerCase() === cleanCode.toLowerCase() || (o._id && o._id === cleanCode);
-    });
-
-    if (foundLocal) {
-      setSearchError('');
-      onOpenOrderDetails(foundLocal);
+    if (!cleanPhone4 || cleanPhone4.length !== 4 || !/^\d{4}$/.test(cleanPhone4)) {
+      setSearchError('Vui lòng nhập 4 số cuối số điện thoại người nhận (VD: 0153) để xác thực tra cứu bảo mật.');
       return;
     }
 
-    // Otherwise fetch directly from backend API with Rate Limiting & PII Masking
     setIsSearching(true);
     setSearchError('');
     try {
-      const response = await orderApi.trackOrderPublic(cleanCode, phoneLast4);
+      const response = await orderApi.trackOrderPublic(cleanCode, cleanPhone4);
       if (response.data?.success && response.data.data) {
         onOpenOrderDetails(response.data.data);
       } else {
-        setSearchError(`Không tìm thấy vận đơn nào khớp với thông tin tra cứu.`);
+        setSearchError(`Không tìm thấy vận đơn nào khớp với mã vận đơn và 4 số cuối SĐT đã nhập.`);
       }
     } catch (err: any) {
       console.error('Lỗi tra cứu vận đơn:', err);
@@ -67,7 +61,7 @@ export const HeroTracking: React.FC<HeroTrackingProps> = ({
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    performSearch(searchInput);
+    performSearch(searchInput, phoneLast4Input);
   };
 
   return (
@@ -95,10 +89,39 @@ export const HeroTracking: React.FC<HeroTrackingProps> = ({
             Giám sát lộ trình giao hàng cold-chain, kiểm soát nhiệt độ từ 2°C - 8°C và quản lý trạng thái đơn hàng tức thì từ cơ sở dữ liệu MongoDB.
           </p>
 
-          {/* Search Box */}
+          {/* Quick Create Order CTA Banner for Sellers */}
+          <div className="flex flex-wrap items-center gap-3 pt-1">
+            <button
+              type="button"
+              onClick={() => {
+                if (user) {
+                  navigate('/seller/orders/create');
+                } else {
+                  navigate('/auth/login');
+                }
+              }}
+              className="px-6 py-3 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 text-white font-extrabold text-xs sm:text-sm shadow-xl shadow-emerald-600/30 flex items-center gap-2 cursor-pointer transition transform hover:-translate-y-0.5"
+            >
+              <PlusCircle className="w-5 h-5 text-emerald-200" />
+              <span>{user ? '🚀 Tạo Đơn Vận Chuyển Mới Ngay' : '🔑 Đăng Nhập Để Tạo Đơn Hàng'}</span>
+            </button>
+
+            {user && (
+              <button
+                type="button"
+                onClick={() => navigate('/seller/orders/batch')}
+                className="px-5 py-3 rounded-2xl bg-slate-900/90 hover:bg-slate-800 text-cyan-300 border border-cyan-500/30 font-bold text-xs sm:text-sm flex items-center gap-2 cursor-pointer transition"
+              >
+                <span>📦 Tạo Đơn Theo Lô (Excel)</span>
+              </button>
+            )}
+          </div>
+
+          {/* Search Box with 2-Layer Security: Tracking Code + 4 Last Digits of Phone */}
           <form onSubmit={handleSearchSubmit} className="space-y-2">
             <div className="relative flex flex-col sm:flex-row items-center gap-2 p-2 rounded-2xl bg-slate-900/90 border border-slate-700/80 shadow-2xl backdrop-blur-xl">
-              <div className="flex items-center gap-3 px-3 py-2 w-full">
+              {/* Field 1: Tracking Code */}
+              <div className="flex items-center gap-3 px-3 py-2 w-full sm:w-7/12 border-b sm:border-b-0 sm:border-r border-slate-800">
                 <Search className="w-5 h-5 text-blue-400 shrink-0" />
                 <input
                   type="text"
@@ -107,7 +130,24 @@ export const HeroTracking: React.FC<HeroTrackingProps> = ({
                     setSearchInput(e.target.value);
                     if (searchError) setSearchError('');
                   }}
-                  placeholder="Nhập mã vận đơn (VD: ELG559535153VN, ELG747262514VN...)"
+                  placeholder="Mã vận đơn (VD: ELG559535153VN)"
+                  className="w-full bg-transparent text-white placeholder-slate-400 text-sm outline-none font-mono"
+                />
+              </div>
+
+              {/* Field 2: 4 Last Digits of Phone */}
+              <div className="flex items-center gap-2 px-3 py-2 w-full sm:w-5/12">
+                <Phone className="w-4 h-4 text-emerald-400 shrink-0" />
+                <input
+                  type="text"
+                  maxLength={4}
+                  value={phoneLast4Input}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, '').slice(0, 4);
+                    setPhoneLast4Input(val);
+                    if (searchError) setSearchError('');
+                  }}
+                  placeholder="4 số cuối SĐT nhận"
                   className="w-full bg-transparent text-white placeholder-slate-400 text-sm outline-none font-mono"
                 />
               </div>
@@ -138,26 +178,12 @@ export const HeroTracking: React.FC<HeroTrackingProps> = ({
             )}
           </form>
 
-          {/* Quick Tracking Tags */}
+          {/* Quick Tracking Tag Examples */}
           <div className="flex flex-wrap items-center gap-2 pt-2 text-xs">
-            <span className="text-slate-400 font-medium">Mẫu tra cứu nhanh:</span>
-            {orders.slice(0, 3).map((ord) => {
-              const code = ord.trackingCode || ord.trackingNumber;
-              if (!code) return null;
-              return (
-                <button
-                  key={code}
-                  type="button"
-                  onClick={() => {
-                    setSearchInput(code);
-                    performSearch(code);
-                  }}
-                  className="px-2.5 py-1 rounded-lg bg-slate-800/80 hover:bg-blue-600/30 border border-slate-700 text-blue-300 font-mono font-bold transition cursor-pointer"
-                >
-                  {code}
-                </button>
-              );
-            })}
+            <span className="text-slate-400 font-medium flex items-center gap-1">
+              <Lock className="w-3 h-3 text-emerald-400" /> Tra cứu bảo mật PII:
+            </span>
+            <span className="text-slate-500 text-[11px]">Nhập Mã Vận Đơn + 4 số cuối SĐT người nhận để xem hành trình</span>
           </div>
         </div>
 
@@ -196,8 +222,9 @@ export const HeroTracking: React.FC<HeroTrackingProps> = ({
 
       </div>
 
-      {/* Recent Live Trackings Horizontal List Section */}
-      <div className="space-y-4">
+      {/* Recent Live Trackings Horizontal List Section (Chỉ hiển thị danh sách khi ĐÃ ĐĂNG NHẬP) */}
+      {user && (
+        <div className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></div>
@@ -441,6 +468,7 @@ export const HeroTracking: React.FC<HeroTrackingProps> = ({
           </div>
         )}
       </div>
+      )}
     </div>
   );
 };

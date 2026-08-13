@@ -20,9 +20,7 @@ import {
   Briefcase,
   Building2,
   Navigation,
-  LocateFixed,
   Map,
-  Search
 } from 'lucide-react';
 import { useLocation } from 'react-router';
 import { useAuth } from '../../hooks/useAuth';
@@ -89,8 +87,6 @@ export const ProfilePage: React.FC = () => {
   // Tab 2 (GPS & Google Maps Integration State)
   const [latitude, setLatitude] = useState(user?.latitude || '10.812569');
   const [longitude, setLongitude] = useState(user?.longitude || '106.668425');
-  const [placesSearch, setPlacesSearch] = useState('');
-  const [isLocating, setIsLocating] = useState(false);
 
   // Synchronize fresh user profile from backend on mount
   React.useEffect(() => {
@@ -122,30 +118,6 @@ export const ProfilePage: React.FC = () => {
     };
     fetchFreshProfile();
   }, []);
-
-  // Handle Geolocation API
-  const handleGetCurrentLocation = () => {
-    if (navigator.geolocation) {
-      setIsLocating(true);
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const lat = position.coords.latitude.toFixed(6);
-          const lng = position.coords.longitude.toFixed(6);
-          setLatitude(lat);
-          setLongitude(lng);
-          setIsLocating(false);
-          showNotification(`Đã tự động lấy vị trí hiện tại: Lat ${lat}, Lng ${lng}`);
-        },
-        (_err) => {
-          setIsLocating(false);
-          showNotification('', 'Không thể lấy vị trí hiện tại. Vui lòng bật quyền vị trí trên trình duyệt.');
-        },
-        { enableHighAccuracy: true, timeout: 10000 }
-      );
-    } else {
-      showNotification('', 'Trình duyệt của bạn không hỗ trợ lấy vị trí Geolocation.');
-    }
-  };
 
   // Open Google Maps in new tab
   const handleOpenGoogleMaps = () => {

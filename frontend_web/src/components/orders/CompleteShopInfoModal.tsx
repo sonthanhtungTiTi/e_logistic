@@ -18,7 +18,6 @@ export const CompleteShopInfoModal: React.FC<CompleteShopInfoModalProps> = ({
   // Email verification state
   const [email, setEmail] = useState<string>(user?.email || 'shop@anbinhpharm.com');
   const [otpCode, setOtpCode] = useState<string>('');
-  const [isOtpSent, setIsOtpSent] = useState<boolean>(false);
   const [isEmailVerified, setIsEmailVerified] = useState<boolean>(user?.isEmailVerified ?? false);
   const [emailMsg, setEmailMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -40,7 +39,6 @@ export const CompleteShopInfoModal: React.FC<CompleteShopInfoModalProps> = ({
       setEmailMsg({ type: 'error', text: 'Vui lòng nhập địa chỉ email hợp lệ' });
       return;
     }
-    setIsOtpSent(true);
     setEmailMsg({ type: 'success', text: 'Mã OTP (123456) đã được gửi đến email của bạn!' });
   };
 

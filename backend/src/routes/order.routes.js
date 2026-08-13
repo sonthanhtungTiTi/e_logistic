@@ -4,13 +4,15 @@ const {
   getQuote,
   createOrder,
   updateOrder,
+  updateOrderStatus,
   cancelOrder,
   bulkCancelOrders,
   searchOrders,
   trackOrderPublic,
   getPublicRecentOrders,
   getOrderById,
-  getPrintLabel
+  getPrintLabel,
+  updateDriverLocation
 } = require('../controllers/order.controller');
 const { protect, authorize } = require('../middleware/auth.middleware');
 const { createOrderRateLimiter, trackingRateLimiter } = require('../middleware/rateLimit.middleware');
@@ -20,6 +22,9 @@ router.get('/public-recent', getPublicRecentOrders);
 
 // GET /api/orders/track/:trackingCode - Tra cứu công khai cho Khách mua (Public Buyer Tracking - Rate Limited 10 req/min, PII Masked)
 router.get('/track/:trackingCode', trackingRateLimiter, trackOrderPublic);
+
+// POST /api/orders/driver-location - Ingestion API GPS cho tài xế (Telematics)
+router.post('/driver-location', updateDriverLocation);
 
 // GET /api/orders - Tra cứu & Lọc danh sách đơn hàng của Seller (UC Tra Cứu Đơn Hàng)
 router.get('/', protect, authorize('SELLER', 'ADMIN'), searchOrders);
@@ -35,6 +40,9 @@ router.post('/', createOrderRateLimiter, protect, authorize('SELLER', 'ADMIN'), 
 
 // PUT /api/orders/:id - Cập nhật đơn hàng (UC-07)
 router.put('/:id', protect, authorize('SELLER', 'ADMIN'), updateOrder);
+
+// PATCH /api/orders/:id/status - Cập nhật trạng thái đơn hàng (VD: Chuyển sang READY_TO_PICK)
+router.patch('/:id/status', protect, authorize('SELLER', 'ADMIN'), updateOrderStatus);
 
 // DELETE /api/orders/:id/cancel - Hủy 1 đơn hàng (UC-08)
 router.delete('/:id/cancel', protect, authorize('SELLER', 'ADMIN'), cancelOrder);

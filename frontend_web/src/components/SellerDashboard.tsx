@@ -10,6 +10,7 @@ interface SellerDashboardProps {
   onOpenOrderDetails: (order: Order) => void;
   onEditOrder?: (order: Order) => void;
   onCancelOrder?: (order: Order) => void;
+  onReadyToPick?: (order: Order) => void;
 }
 
 export const SellerDashboard: React.FC<SellerDashboardProps> = ({
@@ -18,6 +19,7 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
   onOpenOrderDetails,
   onEditOrder,
   onCancelOrder,
+  onReadyToPick,
 }) => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
@@ -253,7 +255,21 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
                   const chargeableWeightVal = ord.chargeableWeight || ord.chargeableWeightKg || 0;
                   const fee = ord.shippingFee || ord.cost || 0;
 
-                  const isEditable = ['CREATED', 'PENDING_VERIFICATION', 'READY_TO_PICK', 'PENDING'].includes(ord.status);
+                  // 5-minute grace window for READY_TO_PICK status
+                  const readyTime = (ord as any).readyToPickAt || ord.updatedAt;
+                  const elapsedSecs = readyTime ? Math.floor((Date.now() - new Date(readyTime).getTime()) / 1000) : 0;
+                  const remainingSecs = Math.max(0, 300 - elapsedSecs);
+                  const isWithin5MinWindow = ord.status === 'READY_TO_PICK' && remainingSecs > 0;
+
+                  const formatCd = (secs: number) => {
+                    const m = Math.floor(secs / 60);
+                    const s = secs % 60;
+                    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+                  };
+
+                  // Allow edit & cancel during initialization OR within the 5-minute READY_TO_PICK countdown
+                  const isEditable = ['CREATED', 'PENDING_VERIFICATION', 'PENDING'].includes(ord.status) || isWithin5MinWindow;
+                  const canCancel = ['CREATED', 'PENDING_VERIFICATION', 'PENDING'].includes(ord.status) || isWithin5MinWindow;
 
                   return (
                     <tr key={ord._id || ord.id} className="hover:bg-slate-800/40 transition">
@@ -276,12 +292,14 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
                         <span
                           className={`inline-block text-[10px] font-bold px-2.5 py-1 rounded-full uppercase ${ord.status === 'DELIVERED'
                               ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                              : ord.status === 'READY_TO_PICK'
+                              ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
                               : ord.status === 'IN_TRANSIT' || ord.status === 'OUT_FOR_DELIVERY'
                                 ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
                                 : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
                             }`}
                         >
-                          {ord.status}
+                          {ord.status === 'READY_TO_PICK' ? 'READY_TO_PICK' : ord.status}
                         </span>
                       </td>
                       <td className="py-4 px-4 text-right">
@@ -292,22 +310,32 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
                           >
                             Chi Tiết
                           </button>
+                          {(ord.status === 'CREATED' || ord.status === 'PENDING_VERIFICATION' || ord.status === 'PENDING') && onReadyToPick && (
+                            <button
+                              onClick={() => onReadyToPick(ord)}
+                              className="px-2.5 py-1 rounded-lg bg-cyan-600/20 hover:bg-cyan-600 text-cyan-300 hover:text-white border border-cyan-500/30 text-xs font-semibold transition cursor-pointer flex items-center gap-1"
+                              title="Xác nhận đã đóng gói hàng xong, sẵn sàng chờ bưu tá thu gom"
+                            >
+                              <CheckCircle2 className="w-3.5 h-3.5 text-cyan-400" />
+                              Chuẩn Bị Xong
+                            </button>
+                          )}
                           {isEditable && onEditOrder && (
                             <button
                               onClick={() => onEditOrder(ord)}
                               className="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-600 text-amber-300 hover:text-white border border-amber-500/30 text-xs font-semibold transition cursor-pointer"
-                              title="Chỉnh sửa đơn hàng"
+                              title={ord.status === 'READY_TO_PICK' ? `Sửa đơn trong thời hạn 5 phút (Còn ${formatCd(remainingSecs)})` : "Chỉnh sửa đơn hàng"}
                             >
-                              Sửa
+                              Sửa {ord.status === 'READY_TO_PICK' && remainingSecs > 0 && `(${formatCd(remainingSecs)})`}
                             </button>
                           )}
-                          {isEditable && onCancelOrder && (
+                          {canCancel && onCancelOrder && (
                             <button
                               onClick={() => onCancelOrder(ord)}
                               className="px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 text-xs font-semibold transition cursor-pointer"
-                              title="Hủy đơn hàng"
+                              title={ord.status === 'READY_TO_PICK' ? `Hủy đơn trong thời hạn 5 phút (Còn ${formatCd(remainingSecs)})` : "Hủy đơn hàng"}
                             >
-                              Hủy
+                              Hủy {ord.status === 'READY_TO_PICK' && remainingSecs > 0 && `(${formatCd(remainingSecs)})`}
                             </button>
                           )}
                         </div>

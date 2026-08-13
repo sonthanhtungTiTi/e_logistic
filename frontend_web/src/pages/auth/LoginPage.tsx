@@ -1,29 +1,48 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { KeyRound, Mail, Lock, Truck, AlertCircle } from 'lucide-react';
+import { KeyRound, Mail, Lock, Truck, AlertCircle, Loader2 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
+import { authApi } from '../../api/auth.api';
 
 export const LoginPage: React.FC = () => {
-  const [email, setEmail] = useState('seller@anbinhpharm.com');
+  const [email, setEmail] = useState('sont48873@gmail.com');
   const [password, setPassword] = useState('123456');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
       setError('Vui lòng nhập đầy đủ thông tin');
       return;
     }
-    // Simulate auth token
-    login('mock-jwt-token-seller', {
-      id: 'USR-SELLER-01',
-      email,
-      fullName: 'Công Ty Dược An Bình (Seller)',
-      role: 'SELLER',
-    });
-    navigate('/seller/dashboard');
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await authApi.login({ email: email.trim(), password });
+      const data = response.data;
+
+      if (data && data.accessToken) {
+        login(data.accessToken, {
+          id: data._id,
+          email: data.email,
+          fullName: data.fullName || 'Công Ty Dược An Bình (Seller)',
+          role: data.role || 'SELLER',
+        });
+        navigate('/seller/dashboard');
+      } else {
+        setError('Đăng nhập thất bại. Không nhận được Access Token từ hệ thống.');
+      }
+    } catch (err: any) {
+      console.error('Lỗi đăng nhập:', err);
+      const msg = err?.response?.data?.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại Email và Mật khẩu.';
+      setError(msg);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -39,7 +58,7 @@ export const LoginPage: React.FC = () => {
 
         {error && (
           <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-center gap-2">
-            <AlertCircle className="w-4 h-4" /> {error}
+            <AlertCircle className="w-4 h-4 flex-shrink-0" /> <span>{error}</span>
           </div>
         )}
 
@@ -53,7 +72,8 @@ export const LoginPage: React.FC = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full glass-input rounded-xl pl-9 pr-3 py-2.5 text-xs font-mono"
-                placeholder="seller@domain.com"
+                placeholder="sont48873@gmail.com"
+                disabled={loading}
               />
             </div>
           </div>
@@ -70,16 +90,18 @@ export const LoginPage: React.FC = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full glass-input rounded-xl pl-9 pr-3 py-2.5 text-xs font-mono"
+                disabled={loading}
               />
             </div>
           </div>
 
           <button
             type="submit"
-            className="w-full py-3 rounded-xl shimmer-btn text-white text-xs font-bold shadow-lg shadow-blue-600/30 cursor-pointer flex items-center justify-center gap-2"
+            disabled={loading}
+            className="w-full py-3 rounded-xl shimmer-btn text-white text-xs font-bold shadow-lg shadow-blue-600/30 cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
           >
-            <KeyRound className="w-4 h-4" />
-            Đăng Nhập Kênh Seller
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <KeyRound className="w-4 h-4" />}
+            {loading ? 'Đang xác thực...' : 'Đăng Nhập Kênh Seller'}
           </button>
         </form>
 
