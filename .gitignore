@@ -6,7 +6,7 @@ dist/
 # build/
 frontend_web/dist/
 frontend_admin/dist/
-*.tsbuildinfo
+# *.tsbuildinfo
 
 # Environment files
 # .env
@@ -19,4 +19,4 @@ frontend_admin/dist/
 # Thumbs.db
 # Documentation
 
-docs/
+# docs/
