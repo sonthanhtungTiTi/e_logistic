@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { warehouseApi } from '../services/warehouse.api';
-import { InboundLogTable } from '../components/InboundLogTable';
-import type { ScanItemLog } from '../components/InboundLogTable';
+import { warehouseApi } from '@/api/warehouse.api';
+import { InboundLogTable } from '@/components/warehouse/InboundLogTable';
+import type { ScanItemLog } from '@/components/warehouse/InboundLogTable';
 import { Barcode, AlertTriangle, CheckCircle2, XCircle } from 'lucide-react';
 
 export const WarehouseInboundPage: React.FC = () => {

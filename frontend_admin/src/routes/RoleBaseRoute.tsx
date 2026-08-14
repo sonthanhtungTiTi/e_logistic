@@ -1,9 +1,9 @@
 import React from 'react';
-import { Navigate } from 'react-router';
+import { Navigate, Outlet } from 'react-router';
 import { useAdminAuth } from '../hooks/useAdminAuth';
 
 interface RoleBaseRouteProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
   allowedRoles: string[];
 }
 
@@ -27,7 +27,7 @@ export const RoleBaseRoute: React.FC<RoleBaseRouteProps> = ({ children, allowedR
     return <Navigate to="/admin/unauthorized" replace />;
   }
 
-  return <>{children}</>;
+  return children ? <>{children}</> : <Outlet />;
 };
 
 export default RoleBaseRoute;

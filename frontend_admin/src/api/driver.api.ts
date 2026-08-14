@@ -1,5 +1,5 @@
-import axiosClient from '../../../api/axiosClient';
-import type { PickupConfirmRequest, PickupConfirmResponse } from '../../../types/logistics.types';
+import axiosClient from '@/api/axiosClient';
+import type { PickupConfirmRequest, PickupConfirmResponse } from '@/types/logistics.types';
 
 export const driverApi = {
   confirmPickup: async (payload: PickupConfirmRequest): Promise<PickupConfirmResponse> => {

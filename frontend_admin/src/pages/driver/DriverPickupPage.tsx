@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { CameraScanner } from '../components/CameraScanner';
-import { driverApi } from '../services/driver.api';
+import { CameraScanner } from '@/components/driver/CameraScanner';
+import { driverApi } from '@/api/driver.api';
 import { Truck, CheckCircle2, AlertTriangle, Navigation, MapPin, Send, History } from 'lucide-react';
 
 export const DriverPickupPage: React.FC = () => {

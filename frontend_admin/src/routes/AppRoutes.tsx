@@ -1,76 +1,78 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router';
-import { UserRole } from '../types/auth.types';
+import { UserRole } from '@/types/auth.types';
 import { RoleBaseRoute } from './RoleBaseRoute';
-import { AdminLayout } from '../layouts/AdminLayout';
-import { DriverLayout } from '../layouts/DriverLayout';
+import { AdminLayout } from '@/layouts/AdminLayout';
+import { DriverLayout } from '@/layouts/DriverLayout';
 
 // Pages
-import { WarehouseInboundPage } from '../modules/warehouse/pages/WarehouseInboundPage';
-import { DriverPickupPage } from '../modules/driver/pages/DriverPickupPage';
-import { AdminLoginPage } from '../pages/auth/AdminLoginPage';
-import { UnauthorizedPage } from '../pages/auth/UnauthorizedPage';
+import { WarehouseInboundPage } from '@/pages/warehouse/WarehouseInboundPage';
+import { DriverPickupPage } from '@/pages/driver/DriverPickupPage';
+import { AdminLoginPage } from '@/pages/auth/AdminLoginPage';
+import { UnauthorizedPage } from '@/pages/auth/UnauthorizedPage';
 
 // Operations Pages
-import { OperationsDashboardPage } from '../pages/dashboard/OperationsDashboardPage';
-import { GlobalOrderListPage } from '../pages/orders/GlobalOrderListPage';
-import { RiskReviewPage } from '../pages/orders/RiskReviewPage';
-import { DispatchControlPage } from '../pages/dispatch/DispatchControlPage';
-import { UserManagementPage } from '../pages/users/UserManagementPage';
-import { SecurityAuditPage } from '../pages/security/SecurityAuditPage';
-import { SlaReportPage } from '../pages/reports/SlaReportPage';
+import { OperationsDashboardPage } from '@/pages/dashboard/OperationsDashboardPage';
+import { GlobalOrderListPage } from '@/pages/orders/GlobalOrderListPage';
+import { RiskReviewPage } from '@/pages/orders/RiskReviewPage';
+import { DispatchControlPage } from '@/pages/dispatch/DispatchControlPage';
+import { UserManagementPage } from '@/pages/users/UserManagementPage';
+import { SecurityAuditPage } from '@/pages/security/SecurityAuditPage';
+import { SlaReportPage } from '@/pages/reports/SlaReportPage';
 
 export const AppRoutes: React.FC = () => {
   return (
     <Routes>
-      {/* Public Routes */}
+      {/* Public Auth Routes */}
       <Route path="/login" element={<AdminLoginPage />} />
       <Route path="/admin/login" element={<AdminLoginPage />} />
       <Route path="/admin/unauthorized" element={<UnauthorizedPage />} />
+      <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
-      {/* 1. Luồng DESKTOP cho Nhân viên Kho (UC16 Inbound) */}
+      {/* 1. Luồng DESKTOP cho Kho & Operations Admin (Dùng AdminLayout) */}
       <Route
-        path="/warehouse"
         element={
-          <RoleBaseRoute allowedRoles={[UserRole.WAREHOUSE_STAFF, UserRole.WAREHOUSE, UserRole.ADMIN, 'OPERATIONS']}>
-            <AdminLayout />
-          </RoleBaseRoute>
+          <RoleBaseRoute
+            allowedRoles={[
+              UserRole.ADMIN,
+              UserRole.WAREHOUSE_STAFF,
+              UserRole.WAREHOUSE,
+              UserRole.HUB_DISPATCHER,
+              UserRole.REGIONAL_DISPATCHER,
+              UserRole.ACCOUNTANT,
+              UserRole.CUSTOMER_SERVICE,
+              UserRole.OPERATIONS,
+              UserRole.DISPATCHER,
+            ]}
+          />
         }
       >
-        <Route path="inbound" element={<WarehouseInboundPage />} />
-        <Route index element={<Navigate to="inbound" replace />} />
+        <Route element={<AdminLayout />}>
+          <Route path="/warehouse/inbound" element={<WarehouseInboundPage />} />
+          <Route path="/admin/dashboard" element={<OperationsDashboardPage />} />
+          <Route path="/admin/orders" element={<GlobalOrderListPage />} />
+          <Route path="/admin/orders/:id/review" element={<RiskReviewPage />} />
+          <Route path="/admin/dispatch" element={<DispatchControlPage />} />
+          <Route path="/admin/users" element={<UserManagementPage />} />
+          <Route path="/admin/security" element={<SecurityAuditPage />} />
+          <Route path="/admin/reports" element={<SlaReportPage />} />
+          <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+          <Route path="/warehouse" element={<Navigate to="/warehouse/inbound" replace />} />
+        </Route>
       </Route>
 
-      {/* 2. Luồng MOBILE PWA cho Tài xế (UC12 Driver Pickup) */}
+      {/* 2. Luồng MOBILE PWA cho Tài xế (Dùng DriverLayout) */}
       <Route
-        path="/driver"
         element={
-          <RoleBaseRoute allowedRoles={[UserRole.DRIVER, UserRole.ADMIN]}>
-            <DriverLayout />
-          </RoleBaseRoute>
+          <RoleBaseRoute
+            allowedRoles={[UserRole.DRIVER, 'LINEHAUL_DRIVER', UserRole.ADMIN]}
+          />
         }
       >
-        <Route path="pickup" element={<DriverPickupPage />} />
-        <Route index element={<Navigate to="pickup" replace />} />
-      </Route>
-
-      {/* 3. Operations & Admin Management Routes */}
-      <Route
-        path="/admin"
-        element={
-          <RoleBaseRoute allowedRoles={['ADMIN', 'OPERATIONS', 'DISPATCHER']}>
-            <AdminLayout />
-          </RoleBaseRoute>
-        }
-      >
-        <Route path="dashboard" element={<OperationsDashboardPage />} />
-        <Route path="orders" element={<GlobalOrderListPage />} />
-        <Route path="orders/:id/review" element={<RiskReviewPage />} />
-        <Route path="dispatch" element={<DispatchControlPage />} />
-        <Route path="users" element={<UserManagementPage />} />
-        <Route path="security" element={<SecurityAuditPage />} />
-        <Route path="reports" element={<SlaReportPage />} />
-        <Route index element={<Navigate to="dashboard" replace />} />
+        <Route element={<DriverLayout />}>
+          <Route path="/driver/pickup" element={<DriverPickupPage />} />
+          <Route path="/driver" element={<Navigate to="/driver/pickup" replace />} />
+        </Route>
       </Route>
 
       {/* Fallback route */}
