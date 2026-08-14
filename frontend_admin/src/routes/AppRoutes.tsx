@@ -35,11 +35,11 @@ export const AppRoutes: React.FC = () => {
           <RoleBaseRoute
             allowedRoles={[
               UserRole.ADMIN,
+              UserRole.HUB_STAFF,
               UserRole.WAREHOUSE_STAFF,
-              UserRole.WAREHOUSE,
-              UserRole.HUB_DISPATCHER,
-              UserRole.REGIONAL_DISPATCHER,
+              UserRole.HUB_COORDINATOR,
               UserRole.ACCOUNTANT,
+              UserRole.CS,
               UserRole.CUSTOMER_SERVICE,
               UserRole.OPERATIONS,
               UserRole.DISPATCHER,
@@ -65,7 +65,7 @@ export const AppRoutes: React.FC = () => {
       <Route
         element={
           <RoleBaseRoute
-            allowedRoles={[UserRole.DRIVER, 'LINEHAUL_DRIVER', UserRole.ADMIN]}
+            allowedRoles={[UserRole.DRIVER, UserRole.LINE_HAUL_DRIVER, UserRole.ADMIN]}
           />
         }
       >

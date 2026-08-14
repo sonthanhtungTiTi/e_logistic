@@ -1,18 +1,20 @@
 export const UserRole = {
   ADMIN: 'ADMIN',
+  HUB_STAFF: 'HUB_STAFF',
   WAREHOUSE_STAFF: 'WAREHOUSE_STAFF',
-  WAREHOUSE: 'WAREHOUSE',
+  HUB_COORDINATOR: 'HUB_COORDINATOR',
   DRIVER: 'DRIVER',
-  HUB_DISPATCHER: 'HUB_DISPATCHER',
-  REGIONAL_DISPATCHER: 'REGIONAL_DISPATCHER',
+  LINE_HAUL_DRIVER: 'LINE_HAUL_DRIVER',
   ACCOUNTANT: 'ACCOUNTANT',
+  CS: 'CS',
   CUSTOMER_SERVICE: 'CUSTOMER_SERVICE',
+  SELLER: 'SELLER',
+  BUYER: 'BUYER',
   OPERATIONS: 'OPERATIONS',
   DISPATCHER: 'DISPATCHER'
 } as const;
 
 export type UserRole = (typeof UserRole)[keyof typeof UserRole];
-
 export type AdminRole = UserRole | 'SUPPORT' | 'FINANCE';
 
 export interface AuthUser {
@@ -34,7 +36,7 @@ export interface AuthUser {
 export interface AdminUser extends AuthUser {
   id: string;
   fullName: string;
-  role: UserRole | any;
+  role: UserRole | string;
 }
 
 export interface AdminLoginCredentials {

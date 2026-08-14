@@ -9,19 +9,17 @@ interface RoleBaseRouteProps {
 export const RoleBaseRoute: React.FC<RoleBaseRouteProps> = ({ allowedRoles }) => {
   const { user } = useAdminAuth();
 
+  // 1. Kiểm tra trạng thái đăng nhập
   if (!user) {
     return <Navigate to="/admin/login" replace />;
   }
 
   const userRole = (user.role || '').toString();
 
-  // Allow ADMIN role to access all operations by default
-  const isAllowed =
-    userRole === 'ADMIN' ||
-    allowedRoles.includes(userRole) ||
-    (allowedRoles.includes('WAREHOUSE_STAFF') && userRole === 'WAREHOUSE') ||
-    (allowedRoles.includes('WAREHOUSE') && userRole === 'WAREHOUSE_STAFF');
+  // 2. Kiểm tra thẩm quyền (Quyền ADMIN mặc định truy cập toàn quyền)
+  const isAllowed = userRole === 'ADMIN' || allowedRoles.includes(userRole);
 
+  // 3. Nếu không có quyền -> Redirect về trang unauthorized
   if (!isAllowed) {
     return <Navigate to="/admin/unauthorized" replace />;
   }
