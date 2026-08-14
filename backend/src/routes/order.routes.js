@@ -12,7 +12,13 @@ const {
   getPublicRecentOrders,
   getOrderById,
   getPrintLabel,
-  updateDriverLocation
+  updateDriverLocation,
+  verifyPickupScanHandler,
+  confirmPickupHandler,
+  confirmBatchPickupHandler,
+  pickupFailedHandler,
+  processItemScanHandler,
+  completePickupManifestHandler
 } = require('../controllers/order.controller');
 const { protect, authorize } = require('../middleware/auth.middleware');
 const { createOrderRateLimiter, trackingRateLimiter } = require('../middleware/rateLimit.middleware');
@@ -46,6 +52,15 @@ router.patch('/:id/status', protect, authorize('SELLER', 'ADMIN'), updateOrderSt
 
 // DELETE /api/orders/:id/cancel - Hủy 1 đơn hàng (UC-08)
 router.delete('/:id/cancel', protect, authorize('SELLER', 'ADMIN'), cancelOrder);
+
+// UC-12: Shipper Pickup Endpoints (2-Phase Session & Legacy endpoints)
+router.post('/shipper/process-scan', protect, authorize('DRIVER', 'SHIPPER', 'SELLER', 'ADMIN'), processItemScanHandler);
+router.post('/shipper/complete-manifest', protect, authorize('DRIVER', 'SHIPPER', 'SELLER', 'ADMIN'), completePickupManifestHandler);
+router.post('/shipper/batch-pickup', protect, authorize('DRIVER', 'SHIPPER', 'SELLER', 'ADMIN'), confirmBatchPickupHandler);
+router.post('/shipper/:id/verify-scan', protect, authorize('DRIVER', 'SHIPPER', 'SELLER', 'ADMIN'), verifyPickupScanHandler);
+router.post('/shipper/:id/confirm-pickup', protect, authorize('DRIVER', 'SHIPPER', 'SELLER', 'ADMIN'), confirmPickupHandler);
+router.post('/shipper/:id/pickup-failed', protect, authorize('DRIVER', 'SHIPPER', 'SELLER', 'ADMIN'), pickupFailedHandler);
+
 
 // GET /api/orders/:id - Chi tiết đơn hàng (Riêng tư - IDOR Protection)
 router.get('/:id', protect, getOrderById);

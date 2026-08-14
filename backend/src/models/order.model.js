@@ -43,12 +43,15 @@ const orderSchema = new mongoose.Schema(
         'DELIVERING',
         'DELIVERED',
         'FAILED',
+        'PICKUP_FAILED',
         'RETURNING',
         'RETURNED',
         'CANCELLED',
       ],
       default: 'CREATED',
     },
+    pickupFailReason: { type: String, default: null },
+    pickupFailNote: { type: String, default: null },
     // Liên kết với Seller
     sellerId: {
       type: mongoose.Schema.Types.ObjectId,

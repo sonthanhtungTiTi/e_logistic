@@ -404,6 +404,45 @@ const updateDriverLocation = async (req, res, next) => {
   }
 };
 
+/**
+ * UC-12 Shipper Pickup Handlers (Stubs for route registration & mobile sync)
+ */
+const processItemScanHandler = async (req, res, next) => {
+  try {
+    return res.status(200).json({ success: true, message: 'Đã quét đơn hàng vào danh sách lấy hàng thành công' });
+  } catch (err) { next(err); }
+};
+
+const completePickupManifestHandler = async (req, res, next) => {
+  try {
+    return res.status(200).json({ success: true, message: 'Hoàn tất biên bản bàn giao lấy hàng (ePOH)' });
+  } catch (err) { next(err); }
+};
+
+const confirmBatchPickupHandler = async (req, res, next) => {
+  try {
+    return res.status(200).json({ success: true, message: 'Xác nhận lấy hàng hàng loạt thành công' });
+  } catch (err) { next(err); }
+};
+
+const verifyPickupScanHandler = async (req, res, next) => {
+  try {
+    return res.status(200).json({ success: true, message: 'Xác minh quét mã đơn hàng thành công' });
+  } catch (err) { next(err); }
+};
+
+const confirmPickupHandler = async (req, res, next) => {
+  try {
+    return res.status(200).json({ success: true, message: 'Xác nhận lấy đơn hàng thành công' });
+  } catch (err) { next(err); }
+};
+
+const pickupFailedHandler = async (req, res, next) => {
+  try {
+    return res.status(200).json({ success: true, message: 'Ghi nhận lấy hàng thất bại' });
+  } catch (err) { next(err); }
+};
+
 module.exports = {
   getQuote,
   createOrder,
@@ -417,6 +456,12 @@ module.exports = {
   getOrderById,
   getPrintLabel,
   notifyDispatcherOrderRemoved,
-  updateDriverLocation
+  updateDriverLocation,
+  processItemScanHandler,
+  completePickupManifestHandler,
+  confirmBatchPickupHandler,
+  verifyPickupScanHandler,
+  confirmPickupHandler,
+  pickupFailedHandler
 };
 

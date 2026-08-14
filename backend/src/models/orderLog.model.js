@@ -23,7 +23,7 @@ const orderLogSchema = new mongoose.Schema(
     },
     actionType: {
       type: String,
-      enum: ['CREATED', 'STATUS_CHANGED', 'STATUS_UPDATED', 'INFO_UPDATED', 'CANCELLED', 'EXCEPTION'],
+      enum: ['CREATED', 'STATUS_CHANGED', 'STATUS_UPDATED', 'INFO_UPDATED', 'CANCELLED', 'EXCEPTION', 'PICKED_UP', 'PICKUP_FAILED'],
       required: true,
     },
     note: {
