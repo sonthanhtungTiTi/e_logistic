@@ -4,6 +4,7 @@ import { UserRole } from '@/types/auth.types';
 import { RoleBaseRoute } from './RoleBaseRoute';
 import { AdminLayout } from '@/layouts/AdminLayout';
 import { DriverLayout } from '@/layouts/DriverLayout';
+import { useAdminAuth } from '@/hooks/useAdminAuth';
 
 // Pages
 import { WarehouseInboundPage } from '@/pages/warehouse/WarehouseInboundPage';
@@ -20,6 +21,21 @@ import { UserManagementPage } from '@/pages/users/UserManagementPage';
 import { SecurityAuditPage } from '@/pages/security/SecurityAuditPage';
 import { SlaReportPage } from '@/pages/reports/SlaReportPage';
 
+const RootRedirect: React.FC = () => {
+  const { user } = useAdminAuth();
+  if (!user) {
+    return <Navigate to="/admin/login" replace />;
+  }
+  const role = user.role;
+  if (role === UserRole.DRIVER || role === UserRole.LINE_HAUL_DRIVER) {
+    return <Navigate to="/driver/pickup" replace />;
+  }
+  if (role === UserRole.WAREHOUSE_STAFF || role === UserRole.HUB_STAFF) {
+    return <Navigate to="/warehouse/inbound" replace />;
+  }
+  return <Navigate to="/admin/dashboard" replace />;
+};
+
 export const AppRoutes: React.FC = () => {
   return (
     <Routes>
@@ -29,7 +45,7 @@ export const AppRoutes: React.FC = () => {
       <Route path="/admin/unauthorized" element={<UnauthorizedPage />} />
       <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
-      {/* 1. Luồng DESKTOP cho Kho & Operations Admin (Dùng AdminLayout) */}
+      {/* 1. Shared Staff Routes inside AdminLayout (Kho, Global Orders, Operations Dashboard) */}
       <Route
         element={
           <RoleBaseRoute
@@ -49,19 +65,45 @@ export const AppRoutes: React.FC = () => {
       >
         <Route element={<AdminLayout />}>
           <Route path="/warehouse/inbound" element={<WarehouseInboundPage />} />
+          <Route path="/warehouse" element={<Navigate to="/warehouse/inbound" replace />} />
+          
           <Route path="/admin/dashboard" element={<OperationsDashboardPage />} />
           <Route path="/admin/orders" element={<GlobalOrderListPage />} />
           <Route path="/admin/orders/:id/review" element={<RiskReviewPage />} />
-          <Route path="/admin/dispatch" element={<DispatchControlPage />} />
-          <Route path="/admin/users" element={<UserManagementPage />} />
-          <Route path="/admin/security" element={<SecurityAuditPage />} />
-          <Route path="/admin/reports" element={<SlaReportPage />} />
+          
+          {/* Dispatch Control */}
+          <Route
+            element={
+              <RoleBaseRoute
+                allowedRoles={[UserRole.ADMIN, UserRole.DISPATCHER, UserRole.OPERATIONS]}
+              />
+            }
+          >
+            <Route path="/admin/dispatch" element={<DispatchControlPage />} />
+          </Route>
+
+          {/* SLA Reports */}
+          <Route
+            element={
+              <RoleBaseRoute
+                allowedRoles={[UserRole.ADMIN, UserRole.OPERATIONS]}
+              />
+            }
+          >
+            <Route path="/admin/reports" element={<SlaReportPage />} />
+          </Route>
+
+          {/* Strictly ADMIN-ONLY Routes: User Management & Security Audit Logs */}
+          <Route element={<RoleBaseRoute allowedRoles={[UserRole.ADMIN]} />}>
+            <Route path="/admin/users" element={<UserManagementPage />} />
+            <Route path="/admin/security" element={<SecurityAuditPage />} />
+          </Route>
+
           <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
-          <Route path="/warehouse" element={<Navigate to="/warehouse/inbound" replace />} />
         </Route>
       </Route>
 
-      {/* 2. Luồng MOBILE PWA cho Tài xế (Dùng DriverLayout) */}
+      {/* 2. MOBILE PWA for Drivers (DriverLayout) */}
       <Route
         element={
           <RoleBaseRoute
@@ -76,9 +118,10 @@ export const AppRoutes: React.FC = () => {
       </Route>
 
       {/* Fallback route */}
-      <Route path="*" element={<Navigate to="/warehouse/inbound" replace />} />
+      <Route path="*" element={<RootRedirect />} />
     </Routes>
   );
 };
 
 export default AppRoutes;
+

@@ -10,7 +10,7 @@ export const adminAuthApi = {
     await axiosAdminClient.post('/auth/logout');
   },
   getCurrentUser: async () => {
-    const res = await axiosAdminClient.get('/auth/me');
+    const res = await axiosAdminClient.get('/auth/profile');
     return res.data;
   },
 };

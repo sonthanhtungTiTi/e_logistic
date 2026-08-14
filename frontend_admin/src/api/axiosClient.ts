@@ -25,9 +25,10 @@ axiosClient.interceptors.request.use(
 axiosClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    if (error.response?.status === 401 || error.response?.status === 403) {
       localStorage.removeItem('admin_access_token');
       localStorage.removeItem('access_token');
+      localStorage.removeItem('admin_user_profile');
     }
     return Promise.reject(error);
   }
