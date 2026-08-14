@@ -5,17 +5,23 @@ export type OrderStatus =
   | 'READY_TO_PICK'
   | 'PICKING'
   | 'PICKED'
+  | 'PICKED_UP'
   | 'INBOUND_HUB'
+  | 'IN_HUB_ORIGIN'
   | 'SORTING'
+  | 'IN_SORTING_HUB'
   | 'BAGGED_SEALED'
   | 'IN_TRANSIT'
   | 'INBOUND_HUB_DEST'
+  | 'IN_HUB_DEST'
   | 'OUT_FOR_DELIVERY'
   | 'DELIVERED'
   | 'FAILED'
   | 'RETURNING'
   | 'RETURNED'
-  | 'CANCELLED';
+  | 'EXCEPTION_INBOUND'
+  | 'CANCELLED'
+  | string;
 
 export interface Address {
   fullName: string;
@@ -45,7 +51,9 @@ export interface Dimensions {
 
 export interface Order {
   _id: string;
+  id?: string;
   trackingCode: string;
+  trackingNumber?: string;
   orderIdSan?: string;
   idempotencyKey?: string;
   payloadHash?: string;
@@ -56,6 +64,25 @@ export interface Order {
     email?: string;
     phoneNumber?: string;
   } | string;
+  senderName?: string;
+  senderPhone?: string;
+  senderAddress?: string;
+  recipientName?: string;
+  recipientPhone?: string;
+  recipientAddress?: string;
+  originCity?: string;
+  destinationCity?: string;
+  serviceType?: string;
+  weightKg?: number;
+  lengthCm?: number;
+  widthCm?: number;
+  heightCm?: number;
+  chargeableWeightKg?: number;
+  cost?: number;
+  driverName?: string;
+  driverPhone?: string;
+  estimatedDelivery?: string;
+  events?: any[];
   pickupAddress: Address;
   deliveryAddress: Address;
   items: OrderItem[];

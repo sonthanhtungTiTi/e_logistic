@@ -8,20 +8,20 @@ export const DispatchControlPage: React.FC = () => {
 
   const handleUpdateStatus = (orderId: string, newStatus: any) => {
     setOrders((prev) =>
-      prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
+      prev.map((o) => ((o.id || o._id) === orderId ? { ...o, status: newStatus } : o))
     );
   };
 
   const handleAssignDriver = (orderId: string, driverName: string) => {
     setOrders((prev) =>
       prev.map((o) =>
-        o.id === orderId
+        (o.id || o._id) === orderId
           ? {
               ...o,
               driverName,
               status: 'IN_TRANSIT',
               events: [
-                ...o.events,
+                ...(o.events || []),
                 {
                   timestamp: new Date().toISOString().replace('T', ' ').substring(0, 16),
                   location: 'Kho Tổng Trung Chuyển',
@@ -46,3 +46,5 @@ export const DispatchControlPage: React.FC = () => {
     </div>
   );
 };
+
+export default DispatchControlPage;

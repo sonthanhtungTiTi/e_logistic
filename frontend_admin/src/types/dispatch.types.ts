@@ -1,22 +1,16 @@
-export type OrderStatus =
-  | 'PENDING'
-  | 'CONFIRMED'
-  | 'PICKED_UP'
-  | 'IN_TRANSIT'
-  | 'OUT_FOR_DELIVERY'
-  | 'DELIVERED'
-  | 'CANCELLED'
-  | 'MISROUTED';
+import type { OrderStatus as BaseOrderStatus, Order as BaseOrder } from './order.types';
+
+export type DispatchOrderStatus = BaseOrderStatus | 'PENDING' | 'CONFIRMED' | 'MISROUTED';
 
 export interface TrackingEvent {
   timestamp: string;
   location: string;
-  status: OrderStatus;
+  status: string;
   description: string;
   actor?: string;
 }
 
-export interface Order {
+export interface DispatchOrder extends BaseOrder {
   id: string;
   trackingNumber: string;
   senderName: string;
@@ -32,8 +26,8 @@ export interface Order {
   chargeableWeightKg: number;
   serviceType: string;
   cost: number;
-  codAmount?: number;
-  status: OrderStatus;
+  codAmount: number;
+  status: any;
   originCity: string;
   destinationCity: string;
   createdAt: string;

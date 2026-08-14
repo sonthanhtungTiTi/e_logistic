@@ -23,9 +23,22 @@ const orderLogSchema = new mongoose.Schema(
     },
     actionType: {
       type: String,
-      enum: ['CREATED', 'STATUS_CHANGED', 'STATUS_UPDATED', 'INFO_UPDATED', 'CANCELLED', 'EXCEPTION', 'PICKED_UP', 'PICKUP_FAILED'],
+      enum: [
+        'CREATED',
+        'STATUS_CHANGED',
+        'STATUS_UPDATED',
+        'INFO_UPDATED',
+        'CANCELLED',
+        'EXCEPTION',
+        'PICKED_UP',
+        'PICKUP_FAILED',
+        'INBOUND_SCAN'
+      ],
       required: true,
     },
+    trackingCode: { type: String, default: null },
+    hubId: { type: mongoose.Schema.Types.ObjectId, ref: 'Hub', default: null },
+    metadata: { type: mongoose.Schema.Types.Mixed, default: null },
     note: {
       type: String,
     }
