@@ -10,13 +10,13 @@ export const DriverPickupPage: React.FC = () => {
   const [history, setHistory] = useState<any[]>([]);
   const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // Lấy GPS tọa độ thiết bị
-  const getGpsPosition = (): Promise<{ lat?: number; lng?: number }> => {
+  // Lấy GPS tọa độ thiết bị (Trả về undefined nếu thiết bị từ chối hoặc timeout để Backend nhận biết gpsMissing)
+  const getGpsPosition = (): Promise<{ latitude?: number; longitude?: number }> => {
     return new Promise((resolve) => {
-      if (!navigator.geolocation) return resolve({});
+      if (!navigator.geolocation) return resolve({ latitude: undefined, longitude: undefined });
       navigator.geolocation.getCurrentPosition(
-        (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-        () => resolve({}), // Fallback nếu tài xế tắt GPS
+        (pos) => resolve({ latitude: pos.coords.latitude, longitude: pos.coords.longitude }),
+        () => resolve({ latitude: undefined, longitude: undefined }), // Fallback nếu tài xế tắt GPS
         { timeout: 4000, enableHighAccuracy: true }
       );
     });
@@ -33,8 +33,8 @@ export const DriverPickupPage: React.FC = () => {
       const coords = await getGpsPosition();
       const res = await driverApi.confirmPickup({
         tracking_code: cleanCode,
-        latitude: coords.lat,
-        longitude: coords.lng
+        latitude: coords.latitude,
+        longitude: coords.longitude
       });
 
       const responseItem = res.data || {
