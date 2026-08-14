@@ -117,11 +117,10 @@ export const DriverPickupPage: React.FC = () => {
       {/* Thông báo kết quả */}
       {statusMsg && (
         <div
-          className={`p-3 rounded-xl text-xs font-semibold flex items-start gap-2 border shadow-md animate-fade-in ${
-            statusMsg.type === 'success'
+          className={`p-3 rounded-xl text-xs font-semibold flex items-start gap-2 border shadow-md animate-fade-in ${statusMsg.type === 'success'
               ? 'bg-emerald-950/80 text-emerald-300 border-emerald-800'
               : 'bg-rose-950/80 text-rose-300 border-rose-800'
-          }`}
+            }`}
         >
           {statusMsg.type === 'success' ? (
             <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
