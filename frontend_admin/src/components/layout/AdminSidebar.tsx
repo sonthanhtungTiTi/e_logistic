@@ -7,6 +7,8 @@ export const AdminSidebar: React.FC = () => {
   const { user, logout } = useAdminAuth();
 
   const navItems = [
+    { to: '/warehouse/inbound', label: 'Quét Nhập Kho (UC-16)', icon: Package },
+    { to: '/driver/pickup', label: 'Driver Pickup PWA (UC-12)', icon: Truck },
     { to: '/admin/dashboard', label: 'Tổng Quan Operations', icon: LayoutDashboard },
     { to: '/admin/orders', label: 'Global Order List', icon: Package },
     { to: '/admin/dispatch', label: 'Điều Phối Vận Tải (Dispatch)', icon: Truck },
