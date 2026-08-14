@@ -380,6 +380,39 @@ const updateOrderStatus = async (req, res, next) => {
         code: err.code || 'BAD_REQUEST'
       });
     }
+  }
+};
+
+/**
+ * @desc    Admin phê duyệt đơn hàng từ màn hình Risk Review
+ * @route   POST /api/orders/:id/approve
+ * @access  Private (Admin)
+ */
+const approveOrderHandler = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { deliveryHub, overrideNote } = req.body;
+
+    const order = await Order.findById(id);
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Đơn hàng không tồn tại' });
+    }
+
+    order.status = 'READY_TO_PICK';
+    if (deliveryHub) order.deliveryHub = deliveryHub;
+    if (overrideNote) order.cancelNote = overrideNote;
+    order.needsManualRouting = false;
+    order.flagCodAnomaly = false;
+    order.flagFeeWarning = false;
+
+    await order.save();
+
+    return res.status(200).json({
+      success: true,
+      message: 'Phê duyệt đơn hàng và chuyển sang READY_TO_PICK thành công',
+      data: order
+    });
+  } catch (err) {
     next(err);
   }
 };
@@ -462,6 +495,7 @@ module.exports = {
   confirmBatchPickupHandler,
   verifyPickupScanHandler,
   confirmPickupHandler,
-  pickupFailedHandler
+  pickupFailedHandler,
+  approveOrderHandler
 };
 

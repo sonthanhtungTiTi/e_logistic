@@ -40,12 +40,19 @@ export interface AdminUser extends AuthUser {
 }
 
 export interface AdminLoginCredentials {
-  email: string;
-  passwordHash: string;
+  identifier: string;
+  password: string;
 }
 
 export interface AdminAuthResponse {
-  user: AdminUser;
+  _id?: string;
+  id?: string;
+  fullName: string;
+  email: string;
+  role: UserRole | string;
   accessToken: string;
   refreshToken: string;
+  department?: string;
+  user?: AdminUser;
 }
+

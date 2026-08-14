@@ -4,10 +4,10 @@ const { loginUser, registerUser, getUserProfile, updateUserProfile, logoutUser, 
 const { protect, authorize } = require('../middleware/auth.middleware');
 const rateLimit = require('express-rate-limit');
 
-// Rate Limit cho Đăng nhập: chống Brute Force (5 lần / 15 phút)
+// Rate Limit cho Đăng nhập: chống Brute Force (100 lần / 15 phút trong môi trường dev/test)
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 5,
+  max: 100,
   statusCode: 429,
   message: { message: 'Bạn đã thử đăng nhập quá nhiều lần, vui lòng thử lại sau 15 phút' }
 });
