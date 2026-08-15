@@ -7,11 +7,7 @@ import { DriverLayout } from '@/layouts/DriverLayout';
 
 // Pages
 import { WarehouseInboundPage } from '@/pages/warehouse/WarehouseInboundPage';
-import { WarehouseOutboundPage } from '@/pages/warehouse/WarehouseOutboundPage';
-import { WarehouseAuditPage } from '@/pages/warehouse/WarehouseAuditPage';
-import { WarehouseInventoryDashboardPage } from '@/pages/warehouse/WarehouseInventoryDashboardPage';
 import { DriverPickupPage } from '@/pages/driver/DriverPickupPage';
-import { DriverHandoffPage } from '@/pages/driver/DriverHandoffPage';
 import { AdminLoginPage } from '@/pages/auth/AdminLoginPage';
 import { UnauthorizedPage } from '@/pages/auth/UnauthorizedPage';
 
@@ -53,9 +49,6 @@ export const AppRoutes: React.FC = () => {
       >
         <Route element={<AdminLayout />}>
           <Route path="/warehouse/inbound" element={<WarehouseInboundPage />} />
-          <Route path="/warehouse/outbound" element={<WarehouseOutboundPage />} />
-          <Route path="/warehouse/audit" element={<WarehouseAuditPage />} />
-          <Route path="/warehouse/inventory" element={<WarehouseInventoryDashboardPage />} />
           <Route path="/admin/dashboard" element={<OperationsDashboardPage />} />
           <Route path="/admin/orders" element={<GlobalOrderListPage />} />
           <Route path="/admin/orders/:id/review" element={<RiskReviewPage />} />
@@ -78,7 +71,6 @@ export const AppRoutes: React.FC = () => {
       >
         <Route element={<DriverLayout />}>
           <Route path="/driver/pickup" element={<DriverPickupPage />} />
-          <Route path="/driver/handoff" element={<DriverHandoffPage />} />
           <Route path="/driver" element={<Navigate to="/driver/pickup" replace />} />
         </Route>
       </Route>

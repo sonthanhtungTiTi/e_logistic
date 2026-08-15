@@ -32,19 +32,7 @@ const orderLogSchema = new mongoose.Schema(
         'EXCEPTION',
         'PICKED_UP',
         'PICKUP_FAILED',
-        'INBOUND_SCAN',
-        'OUTBOUND_SCAN',
-        'BAG_SEALED',
-        'DRIVER_CONFIRMED',
-        'DRIVER_REJECTED',
-        'AUDIT_SESSION_STARTED',
-        'AUDIT_SCAN',
-        'AUDIT_SESSION_SUBMITTED',
-        'AUDIT_SESSION_APPROVED',
-        'INVENTORY_ACTION',
-        'SURPLUS_FOUND',
-        'LOST_CONFIRMED',
-        'LIQUIDATED'
+        'INBOUND_SCAN'
       ],
       required: true,
     },
@@ -53,9 +41,7 @@ const orderLogSchema = new mongoose.Schema(
     metadata: { type: mongoose.Schema.Types.Mixed, default: null },
     note: {
       type: String,
-    },
-    zoneId: { type: mongoose.Schema.Types.ObjectId, ref: 'Zone', default: null },
-    clientOfflineId: { type: String, unique: true, sparse: true },
+    }
   },
   {
     timestamps: true,
