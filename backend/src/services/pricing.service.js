@@ -29,20 +29,21 @@ const DISCOUNT_CODES = {
  * Rule: Volumetric Weight = (D * R * C) / VOLUMETRIC_DIVISOR (kg)
  * Chargeable Weight = max(actualWeight, volumetricWeight) rounded UP to nearest 0.5 kg
  */
-const calculateChargeableWeight = (actualWeightKg, dimensions) => {
+const calculateChargeableWeight = (actualWeightKg = 0, dimensions) => {
+  const safeActualWeight = Number(actualWeightKg) || 0;
   let volumetricWeight = 0;
   if (dimensions && dimensions.length > 0 && dimensions.width > 0 && dimensions.height > 0) {
     volumetricWeight = (dimensions.length * dimensions.width * dimensions.height) / VOLUMETRIC_DIVISOR;
   }
   
-  const rawMaxWeight = Math.max(actualWeightKg, volumetricWeight);
+  const rawMaxWeight = Math.max(safeActualWeight, volumetricWeight);
   // Math.ceil(weight * 2) / 2 rounds up to nearest 0.5 kg (e.g. 1.2 -> 1.5, 1.6 -> 2.0)
   const chargeableWeight = Math.ceil(rawMaxWeight * 2) / 2;
 
   return {
-    actualWeight: Number(actualWeightKg.toFixed(2)),
-    volumetricWeight: Number(volumetricWeight.toFixed(2)),
-    chargeableWeight: Number(chargeableWeight.toFixed(1))
+    actualWeight: Number(safeActualWeight.toFixed(2)),
+    volumetricWeight: Number((volumetricWeight || 0).toFixed(2)),
+    chargeableWeight: Number((chargeableWeight || 0).toFixed(1))
   };
 };
 
@@ -200,5 +201,6 @@ module.exports = {
   calculateChargeableWeight,
   resolveHubRouting,
   calculateOrderFees,
+  calculateShippingFee: calculateOrderFees,
   evaluateRisk
 };

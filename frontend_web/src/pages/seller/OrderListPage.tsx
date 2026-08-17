@@ -66,6 +66,13 @@ export const OrderListPage: React.FC = () => {
 
   useEffect(() => {
     fetchOrders();
+
+    // Polling tự động làm mới danh sách đơn hàng mỗi 5 giây để đồng bộ trạng thái Realtime giữa Shipper & Seller
+    const intervalId = setInterval(() => {
+      fetchOrders();
+    }, 5000);
+
+    return () => clearInterval(intervalId);
   }, [fetchOrders]);
 
   const handleDateChange = (type: 'from' | 'to', val: string) => {

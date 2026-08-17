@@ -51,6 +51,13 @@ export const GlobalOrderListPage: React.FC = () => {
 
   useEffect(() => {
     fetchOrders();
+
+    // Polling tự động làm mới danh sách đơn hàng mỗi 5 giây để đồng bộ Realtime
+    const intervalId = setInterval(() => {
+      fetchOrders();
+    }, 5000);
+
+    return () => clearInterval(intervalId);
   }, [statusFilter, riskFilter, hubFilter]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
