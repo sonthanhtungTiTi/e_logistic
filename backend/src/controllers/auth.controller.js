@@ -89,6 +89,18 @@ const loginUser = async (req, res) => {
     // Đăng nhập thành công → Reset bộ đếm sai
     user.failedLoginAttempts = 0;
     user.lockUntil = undefined;
+    await user.save();
+
+    // Nếu tài khoản đã BẬT 2FA -> Chặn cấp Access Token ngay, yêu cầu nhập mã TOTP bước 2
+    if (user.twoFactorEnabled) {
+      const tempSecret = process.env.JWT_TEMP_SECRET || process.env.JWT_SECRET || 'temp_secret';
+      const tempToken = jwt.sign({ userId: user._id }, tempSecret, { expiresIn: '5m' });
+      return res.json({
+        requiresTwoFactor: true,
+        tempToken,
+        message: 'Tài khoản của bạn đã bật bảo mật 2FA. Vui lòng nhập mã từ ứng dụng Authenticator.',
+      });
+    }
 
     // Bước 8 ĐT: Tạo Access Token và Refresh Token
     const accessToken = generateAccessToken(user._id);

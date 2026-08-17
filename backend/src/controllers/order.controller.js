@@ -41,7 +41,8 @@ const getQuote = async (req, res, next) => {
 const createOrder = async (req, res, next) => {
   try {
     const headerIdempotencyKey = req.headers['x-idempotency-key'] || req.headers['idempotency-key'];
-    const result = await orderService.createNewOrder(req.user._id, req.body, headerIdempotencyKey);
+    const sellerId = req.effectiveSellerId || req.user._id;
+    const result = await orderService.createNewOrder(sellerId, req.body, headerIdempotencyKey);
 
     return res.status(result.statusCode).json({
       success: true,
@@ -185,7 +186,7 @@ const bulkCancelOrders = async (req, res, next) => {
  */
 const searchOrders = async (req, res, next) => {
   try {
-    const sellerId = req.user._id;
+    const sellerId = req.effectiveSellerId || req.user._id;
     const isAdmin = req.user.role === 'ADMIN';
 
     const searchResult = await orderService.searchSellerOrders(sellerId, isAdmin, req.query);

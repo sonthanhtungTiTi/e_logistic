@@ -109,7 +109,7 @@ export const DriverPickupPage: React.FC = () => {
             longitude: coords.longitude
           });
 
-          const orderObj = res.order || res.data?.order || {};
+          const orderObj = res.order || (res.data as any)?.order || res.data || {};
           const confirmedCode = orderObj.trackingCode || orderObj.tracking_code || code;
 
           successResults.push({

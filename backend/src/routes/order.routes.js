@@ -21,7 +21,7 @@ const {
   completePickupManifestHandler,
   approveOrderHandler
 } = require('../controllers/order.controller');
-const { protect, authorize } = require('../middleware/auth.middleware');
+const { protect, authorize, resolveSellerContext } = require('../middleware/auth.middleware');
 const { createOrderRateLimiter, trackingRateLimiter } = require('../middleware/rateLimit.middleware');
 
 // GET /api/orders/public-recent - Danh sách vận đơn hiển thị công khai trên LandingPage
@@ -34,16 +34,16 @@ router.get('/track/:trackingCode', trackingRateLimiter, trackOrderPublic);
 router.post('/driver-location', updateDriverLocation);
 
 // GET /api/orders - Tra cứu & Lọc danh sách đơn hàng của Seller (UC Tra Cứu Đơn Hàng)
-router.get('/', protect, authorize('SELLER', 'ADMIN'), searchOrders);
+router.get('/', protect, authorize('SELLER', 'ADMIN'), resolveSellerContext, searchOrders);
 
 // POST /api/orders/quote - Lấy báo giá xem trước (chưa lưu DB)
-router.post('/quote', protect, authorize('SELLER', 'ADMIN'), getQuote);
+router.post('/quote', protect, authorize('SELLER', 'ADMIN'), resolveSellerContext, getQuote);
 
 // POST /api/orders/bulk-cancel - Hủy hàng loạt đơn hàng (UC-08 Alt 3.1)
-router.post('/bulk-cancel', protect, authorize('SELLER', 'ADMIN'), bulkCancelOrders);
+router.post('/bulk-cancel', protect, authorize('SELLER', 'ADMIN'), resolveSellerContext, bulkCancelOrders);
 
 // POST /api/orders - Tạo đơn hàng chính thức (UC-06)
-router.post('/', createOrderRateLimiter, protect, authorize('SELLER', 'ADMIN'), createOrder);
+router.post('/', createOrderRateLimiter, protect, authorize('SELLER', 'ADMIN'), resolveSellerContext, createOrder);
 
 // PUT /api/orders/:id - Cập nhật đơn hàng (UC-07)
 router.put('/:id', protect, authorize('SELLER', 'ADMIN'), updateOrder);

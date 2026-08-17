@@ -53,14 +53,26 @@ const protect = async (req, res, next) => {
   }
 };
 
-// Middleware kiểm tra quyền (Role-based access control)
-const authorize = (...roles) => {
+// Middleware xác định Seller ID hiệu lực (cho tài khoản chính lẫn tài khoản phụ sub-account)
+const resolveSellerContext = (req, res, next) => {
+  if (req.user) {
+    req.effectiveSellerId = req.user.parentSellerId || req.user._id;
+  }
+  next();
+};
+
+// Middleware kiểm tra quyền cụ thể của tài khoản phụ
+const requirePermission = (permission) => {
   return (req, res, next) => {
-    if (!roles.includes(req.user.role)) {
-      return res.status(403).json({ message: `Vai trò ${req.user.role} không có quyền truy cập tính năng này` });
+    // Tài khoản Seller gốc (không phải sub-account) luôn có full quyền
+    if (!req.user.parentSellerId) return next();
+
+    if (!req.user.subAccountPermissions || !req.user.subAccountPermissions.includes(permission)) {
+      return res.status(403).json({ message: `Tài khoản phụ không có quyền thực hiện thao tác: ${permission}` });
     }
     next();
   };
 };
 
-module.exports = { protect, authorize };
+module.exports = { protect, authorize, resolveSellerContext, requirePermission };
+

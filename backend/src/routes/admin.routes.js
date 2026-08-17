@@ -4,6 +4,8 @@ const { listUsers, createUser, updateUser, setUserStatus } = require('../control
 const { protect, authorize } = require('../middleware/auth.middleware');
 const rateLimit = require('express-rate-limit');
 
+const { reviewKycDocument } = require('../controllers/kyc.controller');
+
 // Tất cả route Admin đều yêu cầu đăng nhập + role ADMIN
 // Tiền điều kiện ĐT: Middleware protect + authorize('ADMIN') bảo vệ toàn bộ
 router.use(protect, authorize('ADMIN'));
@@ -33,5 +35,9 @@ router.put('/users/:id', updateUser);
 // Alt 3.1 / 3.2 / 3.3 ĐT: Khóa / Mở khóa / Vô hiệu hóa tài khoản
 // PATCH /api/admin/users/:id/status  body: { "action": "lock" | "unlock" | "deactivate" }
 router.patch('/users/:id/status', setUserStatus);
+
+// Admin Duyệt / Từ chối tài liệu KYC của Seller
+// PATCH /api/admin/kyc/review/:docId
+router.patch('/kyc/review/:docId', reviewKycDocument);
 
 module.exports = router;
