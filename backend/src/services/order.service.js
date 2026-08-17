@@ -49,12 +49,56 @@ const orderService = {
 
     const calcFee = await pricingService.calculateShippingFee({ ...data, actualWeight });
 
+    const Hub = mongoose.model('Hub');
+    let originHubId = data.originHubId || null;
+    let destinationHubId = data.destinationHubId || null;
+
+    try {
+      if (!originHubId) {
+        const pickupCode = calcFee.pickupHub || data.pickupHub;
+        const prov = (data.pickupAddress?.province || '').replace(/^(tỉnh|thành phố|tp\.?)\s+/i, '').trim();
+        
+        let originHub = null;
+        if (pickupCode) {
+          originHub = await Hub.findOne({ code: pickupCode });
+        }
+        if (!originHub && prov) {
+          originHub = await Hub.findOne({ province: new RegExp(prov, 'i') });
+        }
+        if (!originHub) {
+          originHub = await Hub.findOne({ code: 'TEST-HCM-01' }) || await Hub.findOne({ isActive: true });
+        }
+        if (originHub) originHubId = originHub._id;
+      }
+
+      if (!destinationHubId) {
+        const deliveryCode = calcFee.deliveryHub || data.deliveryHub;
+        const prov = (data.deliveryAddress?.province || '').replace(/^(tỉnh|thành phố|tp\.?)\s+/i, '').trim();
+        
+        let destHub = null;
+        if (deliveryCode) {
+          destHub = await Hub.findOne({ code: deliveryCode });
+        }
+        if (!destHub && prov) {
+          destHub = await Hub.findOne({ province: new RegExp(prov, 'i') });
+        }
+        if (!destHub) {
+          destHub = await Hub.findOne({ code: 'TEST-HCM-01' }) || await Hub.findOne({ isActive: true });
+        }
+        if (destHub) destinationHubId = destHub._id;
+      }
+    } catch (hubErr) {
+      console.warn('[OrderService] Hub lookup warning:', hubErr.message);
+    }
+
     const newOrder = new Order({
       ...data,
       actualWeight,
       trackingCode,
       sellerId,
       idempotencyKey,
+      originHubId,
+      destinationHubId,
       volumetricWeight: calcFee.volumetricWeight || 0,
       chargeableWeight: calcFee.chargeableWeight || actualWeight,
       baseFee: calcFee.baseFee || 30000,
@@ -64,7 +108,7 @@ const orderService = {
       shippingFee: calcFee.shippingFee || data.shippingFee || 30000,
       pickupHub: calcFee.pickupHub || null,
       deliveryHub: calcFee.deliveryHub || null,
-      status: data.status || 'CREATED'
+      status: data.status || 'READY_TO_PICK'
     });
 
     await newOrder.save();
@@ -311,7 +355,7 @@ const orderService = {
       throw err;
     }
 
-    if (order.status === 'CREATED' || order.status === 'DRAFT' || order.status === 'PENDING_VERIFICATION') {
+    if (order.status === 'DRAFT' || order.status === 'PENDING_VERIFICATION') {
       const err = new Error(`Không thể lấy hàng! Đơn hàng [${order.trackingCode}] mới ở trạng thái "${order.status}" (Chưa chuẩn bị xong). Yêu cầu Seller bấm "Chuẩn Bị Xong" trước.`);
       err.statusCode = 400;
       throw err;
@@ -323,7 +367,7 @@ const orderService = {
       throw err;
     }
 
-    const allowedStatuses = ['READY_TO_PICK', 'PICKING'];
+    const allowedStatuses = ['CREATED', 'READY_TO_PICK', 'PICKING'];
     if (!allowedStatuses.includes(order.status)) {
       const err = new Error(`Đơn hàng [${order.trackingCode}] đang ở trạng thái "${order.status}", không hợp lệ để lấy hàng.`);
       err.statusCode = 400;
@@ -395,7 +439,7 @@ const orderService = {
       throw err;
     }
 
-    if (order.status === 'CREATED' || order.status === 'DRAFT' || order.status === 'PENDING_VERIFICATION') {
+    if (order.status === 'DRAFT' || order.status === 'PENDING_VERIFICATION') {
       const err = new Error(`Không thể lấy hàng! Đơn hàng [${order.trackingCode}] mới ở trạng thái "${order.status}" (Chưa chuẩn bị xong). Yêu cầu Seller bấm "Chuẩn Bị Xong" (READY_TO_PICK) trước.`);
       err.statusCode = 400;
       throw err;
@@ -430,8 +474,8 @@ const orderService = {
       throw err;
     }
 
-    // 5. Kiểm tra trạng thái đơn hợp lệ (Theo UC-12 Pre-condition: Đơn phải ở trạng thái READY_TO_PICK / PICKING)
-    const allowedStatuses = ['READY_TO_PICK', 'PICKING'];
+    // 5. Kiểm tra trạng thái đơn hợp lệ (Theo UC-12 Pre-condition: Đơn phải ở trạng thái CREATED / READY_TO_PICK / PICKING)
+    const allowedStatuses = ['CREATED', 'READY_TO_PICK', 'PICKING'];
     if (!allowedStatuses.includes(order.status)) {
       const err = new Error(`Không thể lấy hàng! Đơn hàng [${order.trackingCode}] đang ở trạng thái "${order.status}", không hợp lệ để lấy hàng.`);
       err.statusCode = 400;
@@ -482,6 +526,9 @@ const orderService = {
     const preStatus = order.status;
     order.status = 'PICKED_UP';
     order.pickedAt = new Date();
+    if (user && user.hubId && !order.originHubId) {
+      order.originHubId = user.hubId;
+    }
     await order.save();
 
     // 9. Lưu ePOH (PickupConfirmation)

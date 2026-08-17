@@ -87,21 +87,22 @@ async function processInboundSingle({
   let nextStatus = null;
   let nextAction = '';
 
-  const hubStr = currentHubId.toString();
-  const isOriginHub = !!(order.originHubId && order.originHubId.toString() === hubStr);
-  const isDestHub   = !!(order.destinationHubId && order.destinationHubId.toString() === hubStr);
-
   // Status Enum Matching Matrix
   const currStatus = order.status;
 
+  const hubStr = currentHubId.toString();
+
+  // Tự động gán Kho gốc nếu đơn hàng mới từ Seller chưa có originHubId
+  if (!order.originHubId && (currStatus === 'PICKED_UP' || currStatus === 'PICKED')) {
+    order.originHubId = currentHubId;
+  }
+
+  const isOriginHub = !!(order.originHubId && order.originHubId.toString() === hubStr);
+  const isDestHub   = !!(order.destinationHubId && order.destinationHubId.toString() === hubStr);
+
   if (currStatus === 'PICKED_UP' || currStatus === 'PICKED') {
-    if (!isOriginHub) {
-      throw {
-        status: 400,
-        message: `Đơn hàng vừa lấy từ Seller phải được nhập tại Kho gốc. Hub hiện tại (${hubStr}) không phải Kho gốc`,
-        code: 'INVALID_STATE_TRANSITION',
-      };
-    }
+    // Kiện hàng vừa lấy từ Seller đưa về Hub lần đầu -> Gán Hub này là Kho gốc tiếp nhận
+    order.originHubId = currentHubId;
     nextStatus = 'IN_HUB_ORIGIN';
     nextAction = 'SORT_FOR_TRANSIT';
   } else if (currStatus === 'IN_TRANSIT') {
@@ -154,6 +155,7 @@ async function processInboundSingle({
   const atomicSet = {
     status: finalStatus,
     currentHubId: currentHubId,
+    originHubId: order.originHubId || currentHubId,
     isFlagged: isDamaged,
     hubInboundAt: new Date(),
     updatedAt: new Date(),
