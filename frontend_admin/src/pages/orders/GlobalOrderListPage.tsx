@@ -35,11 +35,14 @@ export const GlobalOrderListPage: React.FC = () => {
         hub: hubFilter !== 'GLOBAL' ? hubFilter : undefined
       });
 
-      if (response.data.success) {
-        setOrders(response.data.data);
+      if (response.data && response.data.success) {
+        const rawList = response.data.data || (response.data as any).orders || [];
+        setOrders(Array.isArray(rawList) ? rawList : []);
+      } else {
+        setOrders([]);
       }
-    } catch (_err: any) {
-      // Fallback empty if endpoint is loading
+    } catch (err: any) {
+      console.error('[GlobalOrderListPage] Lỗi tải danh sách đơn hàng:', err);
       setOrders([]);
     } finally {
       setLoading(false);
@@ -48,6 +51,13 @@ export const GlobalOrderListPage: React.FC = () => {
 
   useEffect(() => {
     fetchOrders();
+
+    // Polling tự động làm mới danh sách đơn hàng mỗi 5 giây để đồng bộ Realtime
+    const intervalId = setInterval(() => {
+      fetchOrders();
+    }, 5000);
+
+    return () => clearInterval(intervalId);
   }, [statusFilter, riskFilter, hubFilter]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -181,16 +191,17 @@ export const GlobalOrderListPage: React.FC = () => {
                 </tr>
               ) : (
                 orders.map((ord) => {
-                  const sellerName = typeof ord.sellerId === 'object' ? ord.sellerId.fullName || 'Seller' : 'Seller ID: ' + ord.sellerId;
-                  const hasRisk = ord.flagCodAnomaly || ord.flagFeeWarning || ord.needsManualRouting || ord.status === 'PENDING_VERIFICATION';
+                  const sellerObj = ord.sellerId && typeof ord.sellerId === 'object' ? (ord.sellerId as any) : null;
+                  const sellerName = sellerObj ? (sellerObj.fullName || sellerObj.email || 'Seller') : (ord.sellerId ? 'Seller ID: ' + ord.sellerId : 'N/A');
+                  const hasRisk = Boolean(ord.flagCodAnomaly || ord.flagFeeWarning || ord.needsManualRouting || ord.status === 'PENDING_VERIFICATION');
 
                   return (
-                    <tr key={ord._id} className="hover:bg-slate-800/40 transition-colors">
+                    <tr key={ord._id || Math.random()} className="hover:bg-slate-800/40 transition-colors">
                       {/* Tracking / Date */}
                       <td className="py-4 px-4">
                         <span className="font-mono font-black text-blue-400 block">{ord.trackingCode}</span>
                         <span className="text-[10px] text-slate-500 block">
-                          {new Date(ord.createdAt).toLocaleString('vi-VN')}
+                          {ord.createdAt ? new Date(ord.createdAt).toLocaleString('vi-VN') : 'N/A'}
                         </span>
                       </td>
 
@@ -202,22 +213,22 @@ export const GlobalOrderListPage: React.FC = () => {
 
                       {/* Recipient */}
                       <td className="py-4 px-4">
-                        <span className="font-bold text-slate-200 block">{ord.deliveryAddress.fullName}</span>
+                        <span className="font-bold text-slate-200 block">{ord.deliveryAddress?.fullName || 'Khách Nhận'}</span>
                         <span className="text-[10px] text-slate-400 block truncate max-w-[180px]">
-                          {ord.deliveryAddress.district}, {ord.deliveryAddress.province}
+                          {ord.deliveryAddress?.district || ''}, {ord.deliveryAddress?.province || ''}
                         </span>
                       </td>
 
                       {/* Weight (Act/Vol) */}
                       <td className="py-4 px-4 font-mono text-[11px]">
-                        <span className="block text-slate-300 font-bold">{ord.actualWeight} kg</span>
-                        <span className="block text-slate-500 text-[10px]">{ord.volumetricWeight} kg</span>
+                        <span className="block text-slate-300 font-bold">{ord.actualWeight || 0} kg</span>
+                        <span className="block text-slate-500 text-[10px]">{ord.volumetricWeight || 0} kg</span>
                       </td>
 
                       {/* COD / Fees */}
                       <td className="py-4 px-4 font-mono">
                         <span className="block font-black text-amber-400">{formatCurrency(ord.codAmount || 0)}</span>
-                        <span className="block text-[10px] text-slate-400">Fee: {formatCurrency(ord.shippingFee)}</span>
+                        <span className="block text-[10px] text-slate-400">Fee: {formatCurrency(ord.shippingFee || 0)}</span>
                       </td>
 
                       {/* Status & Risk Badges (Matching Wireframe 3) */}

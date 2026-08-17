@@ -18,7 +18,8 @@ const {
   confirmBatchPickupHandler,
   pickupFailedHandler,
   processItemScanHandler,
-  completePickupManifestHandler
+  completePickupManifestHandler,
+  approveOrderHandler
 } = require('../controllers/order.controller');
 const { protect, authorize } = require('../middleware/auth.middleware');
 const { createOrderRateLimiter, trackingRateLimiter } = require('../middleware/rateLimit.middleware');
@@ -46,6 +47,9 @@ router.post('/', createOrderRateLimiter, protect, authorize('SELLER', 'ADMIN'), 
 
 // PUT /api/orders/:id - Cập nhật đơn hàng (UC-07)
 router.put('/:id', protect, authorize('SELLER', 'ADMIN'), updateOrder);
+
+// POST /api/orders/:id/approve - Admin phê duyệt đơn hàng từ Risk Review
+router.post('/:id/approve', protect, authorize('ADMIN'), approveOrderHandler);
 
 // PATCH /api/orders/:id/status - Cập nhật trạng thái đơn hàng (VD: Chuyển sang READY_TO_PICK)
 router.patch('/:id/status', protect, authorize('SELLER', 'ADMIN'), updateOrderStatus);

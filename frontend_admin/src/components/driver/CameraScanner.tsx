@@ -112,6 +112,20 @@ export const CameraScanner: React.FC<CameraScannerProps> = ({
   const startCamera = async () => {
     if (isStarting) return;
     setErrorMsg(null);
+
+    // Kiểm tra bảo mật HTTP (Chrome chặn camera trên HTTP ngoại trừ localhost)
+    const isSecureOrigin =
+      window.location.protocol === 'https:' ||
+      window.location.hostname === 'localhost' ||
+      window.location.hostname === '127.0.0.1';
+
+    if (!isSecureOrigin) {
+      setErrorMsg(
+        '⚠️ Trình duyệt chặn Camera trên kết nối HTTP không bảo mật (IP local). Vui lòng dùng link HTTPS hoặc nhập tay mã vận đơn bên dưới.'
+      );
+      return;
+    }
+
     setIsStarting(true);
 
     // Dọn dẹp phiên trước nếu còn
@@ -146,23 +160,39 @@ export const CameraScanner: React.FC<CameraScannerProps> = ({
 
       html5QrCodeRef.current = scanner;
 
-      await scanner.start(
-        { facingMode: 'environment' },
-        {
-          fps: 15,
-          qrbox: (viewfinderWidth, viewfinderHeight) => {
-            // Tối ưu khung quét cho cả Barcode 1D ngang dài và QR code vuông
-            const w = Math.floor(Math.min(viewfinderWidth * 0.88, 360));
-            const h = Math.floor(Math.min(viewfinderHeight * 0.68, 220));
-            return { width: Math.max(w, 220), height: Math.max(h, 130) };
-          },
-          aspectRatio: 1.777778,
+      const qrConfig = {
+        fps: 15,
+        qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
+          // Tối ưu khung quét cho cả Barcode 1D ngang dài và QR code vuông
+          const w = Math.floor(Math.min(viewfinderWidth * 0.88, 360));
+          const h = Math.floor(Math.min(viewfinderHeight * 0.68, 220));
+          return { width: Math.max(w, 220), height: Math.max(h, 130) };
         },
-        (decodedText) => {
-          handleScanDecoded(decodedText);
-        },
-        () => {} // Bỏ qua frame không chứa mã
-      );
+        aspectRatio: 1.777778,
+      };
+
+      try {
+        await scanner.start(
+          { facingMode: 'environment' },
+          qrConfig,
+          (decodedText) => handleScanDecoded(decodedText),
+          () => {}
+        );
+      } catch (firstErr) {
+        // Fallback: Lấy danh sách camera vật lý của thiết bị
+        const devices = await Html5Qrcode.getCameras();
+        if (devices && devices.length > 0) {
+          const cameraId = devices[devices.length - 1].id;
+          await scanner.start(
+            cameraId,
+            qrConfig,
+            (decodedText) => handleScanDecoded(decodedText),
+            () => {}
+          );
+        } else {
+          throw firstErr;
+        }
+      }
 
       if (isMountedRef.current) {
         onToggleScan?.(true);

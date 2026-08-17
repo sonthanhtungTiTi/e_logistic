@@ -105,8 +105,8 @@ export const WarehouseMapPicker: React.FC<WarehouseMapPickerProps> = ({
     // Sự kiện khi KÉO GHIM (Drag end)
     marker.on('dragend', async () => {
       const pos = marker.getLatLng();
-      const newLat = pos.lat.toFixed(6);
-      const newLng = pos.lng.toFixed(6);
+      const newLat = (Number(pos?.lat) || 0).toFixed(6);
+      const newLng = (Number(pos?.lng) || 0).toFixed(6);
       const addr = await reverseGeocode(pos.lat, pos.lng);
       marker.setPopupContent(`<b>Vị Trí Đã Chọn</b><br/>${newLat}, ${newLng}`).openPopup();
       onChange(newLat, newLng, addr);
@@ -115,8 +115,8 @@ export const WarehouseMapPicker: React.FC<WarehouseMapPickerProps> = ({
     // Sự kiện khi CHẤM VỊ TRÍ TRÊN BẢN ĐỒ (Click event)
     map.on('click', async (e: L.LeafletMouseEvent) => {
       const { lat, lng } = e.latlng;
-      const newLat = lat.toFixed(6);
-      const newLng = lng.toFixed(6);
+      const newLat = (Number(lat) || 0).toFixed(6);
+      const newLng = (Number(lng) || 0).toFixed(6);
 
       marker.setLatLng([lat, lng]);
       const addr = await reverseGeocode(lat, lng);
@@ -158,8 +158,8 @@ export const WarehouseMapPicker: React.FC<WarehouseMapPickerProps> = ({
     setIsLocating(true);
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
-        const lat = pos.coords.latitude.toFixed(6);
-        const lng = pos.coords.longitude.toFixed(6);
+        const lat = (Number(pos?.coords?.latitude) || 0).toFixed(6);
+        const lng = (Number(pos?.coords?.longitude) || 0).toFixed(6);
         setIsLocating(false);
 
         if (mapInstanceRef.current && markerRef.current) {
@@ -232,8 +232,8 @@ export const WarehouseMapPicker: React.FC<WarehouseMapPickerProps> = ({
         if (nomRes.ok) {
           const nomData = await nomRes.json();
           nomData.forEach((item: any, idx: number) => {
-            const latStr = parseFloat(item.lat).toFixed(6);
-            const lngStr = parseFloat(item.lon).toFixed(6);
+            const latStr = (parseFloat(item.lat) || 0).toFixed(6);
+            const lngStr = (parseFloat(item.lon) || 0).toFixed(6);
             // Tránh trùng lắp tọa độ gần
             if (!results.some((r) => Math.abs(parseFloat(r.lat) - parseFloat(latStr)) < 0.001)) {
               results.push({

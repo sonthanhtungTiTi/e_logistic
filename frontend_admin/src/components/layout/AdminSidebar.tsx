@@ -2,22 +2,85 @@ import React from 'react';
 import { NavLink } from 'react-router';
 import { LayoutDashboard, Package, Truck, Users, ShieldAlert, BarChart3, LogOut, ShieldCheck, ClipboardCheck } from 'lucide-react';
 import { useAdminAuth } from '../../hooks/useAdminAuth';
+import { UserRole } from '@/types/auth.types';
 
 export const AdminSidebar: React.FC = () => {
   const { user, logout } = useAdminAuth();
+  const userRole = (user?.role || '').toString();
 
-  const navItems = [
-    { to: '/warehouse/inbound', label: 'Quét Nhập Kho (UC-16)', icon: Package },
-    { to: '/warehouse/outbound', label: 'Quét Xuất Kho (UC-17)', icon: Truck },
-    { to: '/warehouse/audit', label: 'Kiểm Kê Kho (UC-18)', icon: ClipboardCheck },
-    { to: '/driver/pickup', label: 'Driver Pickup PWA (UC-12)', icon: Truck },
-    { to: '/admin/dashboard', label: 'Tổng Quan Operations', icon: LayoutDashboard },
-    { to: '/admin/orders', label: 'Global Order List', icon: Package },
-    { to: '/admin/dispatch', label: 'Điều Phối Vận Tải (Dispatch)', icon: Truck },
-    { to: '/admin/users', label: 'Quản Lý Người Dùng & Khóa', icon: Users },
-    { to: '/admin/security', label: 'Bảo Mật & Audit Log 2-Lớp', icon: ShieldAlert },
-    { to: '/admin/reports', label: 'Báo Cáo Tỷ Lệ SLA & Vận Hành', icon: BarChart3 },
-  ];
+    {
+      to: '/warehouse/inbound',
+      label: 'Quét Nhập Kho (UC-16)',
+      icon: Package,
+      roles: [UserRole.ADMIN, UserRole.WAREHOUSE_STAFF, UserRole.HUB_STAFF, UserRole.HUB_COORDINATOR],
+    },
+    {
+      to: '/warehouse/outbound',
+      label: 'Quét Xuất Kho (UC-17)',
+      icon: Truck,
+      roles: [UserRole.ADMIN, UserRole.WAREHOUSE_STAFF, UserRole.HUB_STAFF, UserRole.HUB_COORDINATOR],
+    },
+    {
+      to: '/warehouse/audit',
+      label: 'Kiểm Kê Kho (UC-18)',
+      icon: ClipboardCheck,
+      roles: [UserRole.ADMIN, UserRole.WAREHOUSE_STAFF, UserRole.HUB_STAFF, UserRole.HUB_COORDINATOR],
+    },
+    {
+      to: '/driver/pickup',
+      label: 'Driver Pickup PWA (UC-12)',
+      icon: Truck,
+      roles: [UserRole.ADMIN, UserRole.DRIVER, UserRole.LINE_HAUL_DRIVER],
+    },
+    {
+      to: '/admin/dashboard',
+      label: 'Tổng Quan Operations',
+      icon: LayoutDashboard,
+      roles: [UserRole.ADMIN, UserRole.OPERATIONS, UserRole.DISPATCHER, UserRole.HUB_COORDINATOR],
+    },
+    {
+      to: '/admin/orders',
+      label: 'Global Order List',
+      icon: Package,
+      roles: [
+        UserRole.ADMIN,
+        UserRole.OPERATIONS,
+        UserRole.DISPATCHER,
+        UserRole.WAREHOUSE_STAFF,
+        UserRole.HUB_STAFF,
+        UserRole.ACCOUNTANT,
+        UserRole.CS,
+        UserRole.CUSTOMER_SERVICE,
+      ],
+    },
+    {
+      to: '/admin/dispatch',
+      label: 'Điều Phối Vận Tải (Dispatch)',
+      icon: Truck,
+      roles: [UserRole.ADMIN, UserRole.OPERATIONS, UserRole.DISPATCHER],
+    },
+    {
+      to: '/admin/users',
+      label: 'Quản Lý Người Dùng & Khóa',
+      icon: Users,
+      roles: [UserRole.ADMIN],
+    },
+    {
+      to: '/admin/security',
+      label: 'Bảo Mật & Audit Log 2-Lớp',
+      icon: ShieldAlert,
+      roles: [UserRole.ADMIN],
+    },
+    {
+      to: '/admin/reports',
+      label: 'Báo Cáo Tỷ Lệ SLA & Vận Hành',
+      icon: BarChart3,
+      roles: [UserRole.ADMIN, UserRole.OPERATIONS],
+    },
+
+  const visibleNavItems = navItems.filter(
+    (item) => (item.roles as string[]).includes(userRole) || userRole === UserRole.ADMIN
+  );
 
   return (
     <aside className="w-64 bg-slate-950/90 border-r border-slate-800 p-4 flex flex-col justify-between hidden md:flex shrink-0">
@@ -33,7 +96,7 @@ export const AdminSidebar: React.FC = () => {
         </div>
 
         <nav className="space-y-1">
-          {navItems.map((item) => {
+          {visibleNavItems.map((item) => {
             const Icon = item.icon;
             return (
               <NavLink
@@ -64,7 +127,9 @@ export const AdminSidebar: React.FC = () => {
                 <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" />
               </span>
             </div>
-            <span className="text-[10px] text-slate-400 block font-mono">{user.role} • {user.department}</span>
+            <span className="text-[10px] text-slate-400 block font-mono">
+              {user.role} • {user.department || 'Bộ phận vận hành'}
+            </span>
           </div>
         )}
 
@@ -78,3 +143,4 @@ export const AdminSidebar: React.FC = () => {
     </aside>
   );
 };
+

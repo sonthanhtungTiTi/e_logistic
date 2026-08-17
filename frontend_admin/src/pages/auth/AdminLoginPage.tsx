@@ -2,49 +2,54 @@ import React, { useState } from 'react';
 import { ShieldCheck, Lock, Mail, ArrowRight, Loader2, Eye, EyeOff } from 'lucide-react';
 import { useAdminAuth } from '../../hooks/useAdminAuth';
 import { useNavigate } from 'react-router';
+import { UserRole } from '../../types';
 
 export const AdminLoginPage: React.FC = () => {
   const [identifier, setIdentifier] = useState('');
-  const [password, setPassword]     = useState('');
-  const [showPw, setShowPw]         = useState(false);
-  const [error, setError]           = useState('');
-  const [loading, setLoading]       = useState(false);
+  const [password, setPassword] = useState('');
+  const [showPw, setShowPw] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const { loginWithCredentials } = useAdminAuth();
   const navigate = useNavigate();
+
+  const redirectByRole = (role: string) => {
+    if (role === UserRole.DRIVER || role === UserRole.LINE_HAUL_DRIVER) {
+      navigate('/driver/pickup');
+    } else if (
+      role === UserRole.WAREHOUSE_STAFF ||
+      role === UserRole.HUB_STAFF ||
+      role === UserRole.HUB_COORDINATOR
+    ) {
+      navigate('/warehouse/inbound');
+    } else {
+      navigate('/admin/dashboard');
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
     if (!identifier.trim()) {
-      setError('Vui lòng nhập email hoặc số điện thoại');
+      setError('Vui lòng nhập Email hoặc Số điện thoại');
       return;
     }
     if (!password) {
-      setError('Vui lòng nhập mật khẩu');
+      setError('Vui lòng nhập Mật khẩu');
       return;
     }
 
     setLoading(true);
     try {
-      // Gọi API backend thật — lưu JWT thật, user thật vào localStorage
       const profile = await loginWithCredentials(identifier.trim(), password);
-      
-      // Chuyển hướng theo đúng vai trò (tránh lỗi 403)
-      if (profile.role === 'DRIVER' || profile.role === 'LINE_HAUL_DRIVER') {
-        navigate('/driver/pickup');
-      } else if (profile.role === 'HUB_STAFF' || profile.role === 'HUB_COORDINATOR') {
-        navigate('/warehouse/inbound');
-      } else {
-        navigate('/admin/dashboard');
-      }
+      redirectByRole((profile.role || '').toString());
     } catch (err: any) {
-      // Hiện đúng thông báo lỗi từ backend (sai mật khẩu, tài khoản khóa, v.v.)
       const msg =
         err?.response?.data?.message ||
         err?.message ||
-        'Đăng nhập thất bại. Vui lòng thử lại.';
+        'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin xác thực.';
       setError(msg);
     } finally {
       setLoading(false);
@@ -64,8 +69,11 @@ export const AdminLoginPage: React.FC = () => {
 
         <form onSubmit={handleLogin} className="space-y-4">
           {error && (
-            <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-semibold">
-              ⚠️ {error}
+            <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-semibold space-y-1">
+              <div className="flex items-center gap-1.5 font-bold">
+                ⚠️ Xác Thực Thất Bại
+              </div>
+              <p className="text-[11px] text-rose-300/90">{error}</p>
             </div>
           )}
 
@@ -140,12 +148,16 @@ export const AdminLoginPage: React.FC = () => {
           {[
             { label: 'HUB_STAFF (nhập kho)', email: 'staff@test.local', pw: 'Test@123456' },
             { label: 'HUB_COORDINATOR (xuất kho)', email: 'coordinator@test.local', pw: 'Test@123456' },
+            { label: 'DRIVER (tài xế)', email: 'driver@test.local', pw: 'Test@123456' },
             { label: 'E2E Staff', email: 'e2e.staff@test.local', pw: 'E2eTest@123' },
           ].map((acc) => (
             <button
               key={acc.email}
               type="button"
-              onClick={() => { setIdentifier(acc.email); setPassword(acc.pw); }}
+              onClick={() => {
+                setIdentifier(acc.email);
+                setPassword(acc.pw);
+              }}
               className="w-full text-left px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-[10px] font-mono text-slate-400 hover:text-slate-200 transition cursor-pointer"
             >
               <span className="text-cyan-500">{acc.email}</span>
@@ -158,3 +170,5 @@ export const AdminLoginPage: React.FC = () => {
     </div>
   );
 };
+
+export default AdminLoginPage;

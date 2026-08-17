@@ -165,6 +165,7 @@ export interface CreateOrderPayload {
   deliveryAddress: Address;
   items: OrderItem[];
   dimensions?: Dimensions;
+  actualWeight?: number;
   isCod?: boolean;
   codAmount?: number;
   goodsValue?: number;

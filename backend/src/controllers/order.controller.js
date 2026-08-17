@@ -380,6 +380,39 @@ const updateOrderStatus = async (req, res, next) => {
         code: err.code || 'BAD_REQUEST'
       });
     }
+  }
+};
+
+/**
+ * @desc    Admin phê duyệt đơn hàng từ màn hình Risk Review
+ * @route   POST /api/orders/:id/approve
+ * @access  Private (Admin)
+ */
+const approveOrderHandler = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { deliveryHub, overrideNote } = req.body;
+
+    const order = await Order.findById(id);
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Đơn hàng không tồn tại' });
+    }
+
+    order.status = 'READY_TO_PICK';
+    if (deliveryHub) order.deliveryHub = deliveryHub;
+    if (overrideNote) order.cancelNote = overrideNote;
+    order.needsManualRouting = false;
+    order.flagCodAnomaly = false;
+    order.flagFeeWarning = false;
+
+    await order.save();
+
+    return res.status(200).json({
+      success: true,
+      message: 'Phê duyệt đơn hàng và chuyển sang READY_TO_PICK thành công',
+      data: order
+    });
+  } catch (err) {
     next(err);
   }
 };
@@ -427,20 +460,66 @@ const confirmBatchPickupHandler = async (req, res, next) => {
 
 const verifyPickupScanHandler = async (req, res, next) => {
   try {
-    return res.status(200).json({ success: true, message: 'Xác minh quét mã đơn hàng thành công' });
-  } catch (err) { next(err); }
+    const code = req.params.id || req.body.trackingCode || req.body.scannedCode;
+    const result = await orderService.verifyPickupScan(req.user, code);
+    return res.status(200).json({
+      success: true,
+      message: result.message,
+      data: result.order
+    });
+  } catch (err) {
+    if (err.statusCode) {
+      return res.status(err.statusCode).json({
+        success: false,
+        message: err.message,
+        code: err.code || 'BAD_REQUEST'
+      });
+    }
+    next(err);
+  }
 };
 
 const confirmPickupHandler = async (req, res, next) => {
   try {
-    return res.status(200).json({ success: true, message: 'Xác nhận lấy đơn hàng thành công' });
-  } catch (err) { next(err); }
+    const { id } = req.params;
+    const result = await orderService.confirmPickup(req.user, id, req.body);
+    return res.status(200).json({
+      success: true,
+      message: result.message || 'Xác nhận lấy đơn hàng thành công',
+      data: result.confirmation,
+      order: result.order
+    });
+  } catch (err) {
+    if (err.statusCode) {
+      return res.status(err.statusCode).json({
+        success: false,
+        message: err.message,
+        code: err.code || 'BAD_REQUEST'
+      });
+    }
+    next(err);
+  }
 };
 
 const pickupFailedHandler = async (req, res, next) => {
   try {
-    return res.status(200).json({ success: true, message: 'Ghi nhận lấy hàng thất bại' });
-  } catch (err) { next(err); }
+    const { id } = req.params;
+    const result = await orderService.pickupFailed(req.user, id, req.body);
+    return res.status(200).json({
+      success: true,
+      message: result.message || 'Ghi nhận lấy hàng thất bại',
+      order: result.order
+    });
+  } catch (err) {
+    if (err.statusCode) {
+      return res.status(err.statusCode).json({
+        success: false,
+        message: err.message,
+        code: err.code || 'BAD_REQUEST'
+      });
+    }
+    next(err);
+  }
 };
 
 module.exports = {
@@ -462,6 +541,7 @@ module.exports = {
   confirmBatchPickupHandler,
   verifyPickupScanHandler,
   confirmPickupHandler,
-  pickupFailedHandler
+  pickupFailedHandler,
+  approveOrderHandler
 };
 
