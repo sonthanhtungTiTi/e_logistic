@@ -17,6 +17,7 @@ export const driverApi = {
       note: payload.note
     };
 
+    try {
       const res = await axiosClient.post<PickupConfirmResponse>(`/orders/shipper/${code}/confirm-pickup`, requestBody);
       return res.data;
     } catch (err: any) {

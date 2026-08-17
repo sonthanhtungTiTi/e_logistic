@@ -8,6 +8,7 @@ export const AdminSidebar: React.FC = () => {
   const { user, logout } = useAdminAuth();
   const userRole = (user?.role || '').toString();
 
+  const navItems = [
     {
       to: '/warehouse/inbound',
       label: 'Quét Nhập Kho (UC-16)',
@@ -77,6 +78,7 @@ export const AdminSidebar: React.FC = () => {
       icon: BarChart3,
       roles: [UserRole.ADMIN, UserRole.OPERATIONS],
     },
+  ];
 
   const visibleNavItems = navItems.filter(
     (item) => (item.roles as string[]).includes(userRole) || userRole === UserRole.ADMIN
