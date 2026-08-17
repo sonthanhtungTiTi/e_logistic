@@ -22,6 +22,7 @@ app.get('/', (req, res) => {
 app.use('/api/auth', require('./routes/auth.routes'));
 app.use('/api/orders', require('./routes/order.routes'));
 app.use('/api/admin', require('./routes/admin.routes')); // UC Quản lý người dùng
+app.use('/api/seller', require('./routes/seller.routes')); // Module Quản lý Seller Nâng cao (2FA, KYC, Sub-account, Multi-pickup)
 app.use('/api/inbound', require('./routes/inbound.routes')); // UC-16 Nhập kho
 app.use('/api/trips', require('./routes/trips.routes'));          // UC-17: Tạo chuyến xe
 app.use('/api/outbound', require('./routes/outbound.routes'));    // UC-17: Xuất kho
@@ -31,8 +32,6 @@ app.use('/api/audit', require('./routes/audit.routes'));          // UC-18: Ki�
 app.use('/api/inventory', require('./routes/inventory.routes')); // UC-19: Dashboard Tồn kho
 app.use('/api/wallet', require('./routes/wallet.routes'));       // Module 6: Ví COD Seller & Rút tiền
 app.use('/api/seller/wallet', require('./routes/wallet.routes'));// Alias cho sub-account Seller
-
-
 
 // Error Handling Middleware (luôn phải nằm cuối cùng)
 app.use(errorMiddleware);

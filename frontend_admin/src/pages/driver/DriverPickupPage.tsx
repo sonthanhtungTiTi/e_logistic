@@ -75,7 +75,7 @@ export const DriverPickupPage: React.FC = () => {
       playSound('error');
       const msg = err.response?.data?.message || err.message || 'Lỗi kiểm tra mã vận đơn';
       setStatusMsg({ type: 'error', text: `❌ ${msg}` });
-    } finally {
+    } fontally {
       setLoading(false);
     }
   };
@@ -109,7 +109,7 @@ export const DriverPickupPage: React.FC = () => {
             longitude: coords.longitude
           });
 
-          const orderObj = (res as any).order || res.data?.order || res.data || {};
+          const orderObj = (res as any).order || (res as any).data?.order || (res as any).data || {};
           const confirmedCode = orderObj.trackingCode || orderObj.tracking_code || code;
 
           successResults.push({

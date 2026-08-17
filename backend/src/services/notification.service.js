@@ -149,11 +149,47 @@ const sendRegistrationOtpEmail = async (toEmail, otp) => {
  * @param {string} otp - Mã OTP 6 chữ số
  * @returns {Promise<void>}
  */
-const sendPasswordResetSms = async (phoneNumber, otp) => {
-  console.log(`[SMS SERVICE - MOCK] Gửi OTP đến ${phoneNumber}: ${otp}`);
-  console.log(`[SMS SERVICE] OTP hết hạn sau 10 phút.`);
+const NotificationPreference = require('../models/notificationPreference.model');
+
+/**
+ * Gửi thông báo đa kênh dựa trên Cấu hình tùy chọn của Người dùng (Notification Preferences)
+ * @param {string} userId - ID người nhận
+ * @param {string} eventType - Tên sự kiện ('NEW_ORDER', 'ORDER_FAILED', 'COD_SETTLED', 'COMPLAINT_RECEIVED', 'KYC_STATUS_CHANGED')
+ * @param {object} payload - Nội dung thông báo
+ */
+const sendNotification = async (userId, eventType, payload = {}) => {
+  try {
+    let pref = await NotificationPreference.findOne({ userId });
+    if (!pref) {
+      pref = await NotificationPreference.create({ userId });
+    }
+
+    const channels = pref.preferences ? pref.preferences[eventType] : null;
+    if (!channels) {
+      console.warn(`[NotificationService] Event type ${eventType} chưa được định nghĩa trong preference schema`);
+      return;
+    }
+
+    const tasks = [];
+    if (channels.email && payload.email) {
+      tasks.push(sendRegistrationOtpEmail(payload.email, payload.otp || '123456'));
+    }
+    if (channels.sms && payload.phone) {
+      tasks.push(sendPasswordResetSms(payload.phone, payload.otp || '123456'));
+    }
+    if (channels.push) {
+      tasks.push(Promise.resolve(`[Push Notification] Sent event ${eventType} to user ${userId}`));
+    }
+
+    // Dùng Promise.allSettled để 1 kênh lỗi không làm hủy các kênh khác
+    const results = await Promise.allSettled(tasks);
+    console.log(`[NotificationService] Đã xử lý ${results.length} kênh cho sự kiện ${eventType}`);
+  } catch (error) {
+    console.error(`[NotificationService] Lỗi gửi thông báo tổng hợp:`, error.message);
+  }
 };
 
-module.exports = { sendPasswordResetEmail, sendRegistrationOtpEmail, sendPasswordResetSms };
+module.exports = { sendPasswordResetEmail, sendRegistrationOtpEmail, sendPasswordResetSms, sendNotification };
+
 
 
