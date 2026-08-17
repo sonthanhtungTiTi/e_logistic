@@ -43,9 +43,9 @@ export const CreateOrderPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  // Shop Completion Modal state
-  const isShopInfoComplete = Boolean(user?.companyName && user?.phoneNumber && user?.address);
-  const [showInfoModal, setShowInfoModal] = useState<boolean>(!isShopInfoComplete);
+  // Shop Completion Modal state (Tạm thời tắt xác thực thông tin theo yêu cầu)
+  const isShopInfoComplete = true; // Boolean(user?.companyName && user?.phoneNumber && user?.address);
+  const [showInfoModal, setShowInfoModal] = useState<boolean>(false);
 
   // Receiver Info
   const [deliverToShop, setDeliverToShop] = useState<boolean>(false);
