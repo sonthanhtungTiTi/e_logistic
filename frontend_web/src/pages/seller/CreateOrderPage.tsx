@@ -538,6 +538,7 @@ export const CreateOrderPage: React.FC = () => {
           weight: Number(p.weight) || 0.5,
         })),
         dimensions: { length: 20, width: 15, height: 10 },
+        actualWeight: totalActualWeight || 0.5,
         isCod: Number(codAmount) > 0,
         codAmount: Number(codAmount) || 0,
         goodsValue: Number(goodsValue) || 0,
@@ -1223,7 +1224,7 @@ export const CreateOrderPage: React.FC = () => {
 
                 <div className="flex justify-between text-slate-300">
                   <span>Tổng trọng lượng thực:</span>
-                  <span className="font-mono font-bold text-white">{totalActualWeight.toFixed(1)} kg</span>
+                  <span className="font-mono font-bold text-white">{(Number(totalActualWeight) || 0).toFixed(1)} kg</span>
                 </div>
                 <div className="flex justify-between text-slate-300">
                   <span>Gói cước & Phương thức:</span>
@@ -1342,7 +1343,7 @@ export const CreateOrderPage: React.FC = () => {
             <div className="flex items-center gap-2 text-xs text-slate-300">
               <Info className="w-4 h-4 text-blue-400 shrink-0" />
               <span>
-                Tổng trọng lượng: <strong className="text-white font-mono">{totalActualWeight.toFixed(1)} kg</strong>
+                Tổng trọng lượng: <strong className="text-white font-mono">{(Number(totalActualWeight) || 0).toFixed(1)} kg</strong>
               </span>
             </div>
 

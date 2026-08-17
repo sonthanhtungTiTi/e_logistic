@@ -18,35 +18,64 @@ export const CameraScanner: React.FC<CameraScannerProps> = ({
 
   const startCamera = async () => {
     setErrorMsg(null);
+
+    // Kiểm tra bảo mật HTTP (Chrome chặn camera trên HTTP ngoại trừ localhost)
+    const isSecureOrigin =
+      window.location.protocol === 'https:' ||
+      window.location.hostname === 'localhost' ||
+      window.location.hostname === '127.0.0.1';
+
+    if (!isSecureOrigin) {
+      setErrorMsg(
+        '⚠️ Trình duyệt chặn Camera trên kết nối HTTP không bảo mật (IP local). Vui lòng dùng link HTTPS (localtunnel) hoặc nhập tay mã vận đơn bên dưới.'
+      );
+      return;
+    }
+
     try {
       const html5QrCode = new Html5Qrcode('camera-container');
       html5QrCodeRef.current = html5QrCode;
       onToggleScan(true);
 
-      await html5QrCode.start(
-        { facingMode: 'environment' },
-        { fps: 10, qrbox: { width: 220, height: 220 } },
-        (decodedText) => {
-          onScanSuccess(decodedText);
-          // Tạm dừng 2s tránh quét lặp mã vận đơn liên tục
-          try {
-            html5QrCode.pause(true);
-            setTimeout(() => {
-              try {
-                html5QrCode.resume();
-              } catch (e) {
-                /* Container destroyed or unmounted */
-              }
-            }, 2000);
-          } catch (e) {
-            console.warn('Pause error:', e);
-          }
-        },
-        () => {} // Frame rỗng
-      );
+      const qrConfig = { fps: 10, qrbox: { width: 220, height: 220 } };
+
+      const onScan = (decodedText: string) => {
+        onScanSuccess(decodedText);
+        try {
+          html5QrCode.pause(true);
+          setTimeout(() => {
+            try {
+              html5QrCode.resume();
+            } catch (e) {
+              /* Ignore resume error */
+            }
+          }, 2000);
+        } catch (e) {
+          console.warn('Pause error:', e);
+        }
+      };
+
+      try {
+        // Ưu tiên Camera sau (environment)
+        await html5QrCode.start({ facingMode: 'environment' }, qrConfig, onScan, () => {});
+      } catch (firstErr) {
+        // Fallback: Lấy danh sách camera vật lý của thiết bị
+        const devices = await Html5Qrcode.getCameras();
+        if (devices && devices.length > 0) {
+          const cameraId = devices[devices.length - 1].id; // Lấy camera sau cùng
+          await html5QrCode.start(cameraId, qrConfig, onScan, () => {});
+        } else {
+          throw firstErr;
+        }
+      }
     } catch (err: any) {
       onToggleScan(false);
-      setErrorMsg('Không thể truy cập camera. Vui lòng cấp quyền hoặc nhập tay mã vận đơn.');
+      const msg = err?.message || err?.toString() || '';
+      if (msg.includes('Permission') || msg.includes('NotAllowedError')) {
+        setErrorMsg('❌ Trình duyệt bị từ chối quyền Camera. Hãy vào Cài đặt Chrome ➔ Quyền ➔ Bật Camera.');
+      } else {
+        setErrorMsg('❌ Không thể mở Camera. Vui lòng kiểm tra quyền truy cập hoặc sử dụng ô nhập mã thủ công.');
+      }
     }
   };
 
@@ -80,15 +109,25 @@ export const CameraScanner: React.FC<CameraScannerProps> = ({
         </span>
       </div>
 
-      <div
-        id="camera-container"
-        className="w-full bg-black rounded-xl overflow-hidden min-h-[220px] flex items-center justify-center text-slate-500 text-xs border border-slate-800 relative"
-      >
+      <div className="w-full bg-black rounded-xl overflow-hidden min-h-[220px] flex items-center justify-center text-slate-500 text-xs border border-slate-800 relative">
+        <div id="camera-container" className="w-full h-full min-h-[220px]" />
+
         {!isScanning && (
-          <div className="flex flex-col items-center gap-2 p-4 text-center">
+          <div className="absolute inset-0 bg-slate-950/90 flex flex-col items-center justify-center gap-2 p-4 text-center z-10 pointer-events-none">
             <CameraOff className="w-8 h-8 text-slate-600" />
             <span>Camera đang tắt. Nhấn nút bên dưới để mở quét mã.</span>
           </div>
+        )}
+
+        {isScanning && (
+          <button
+            type="button"
+            onClick={stopCamera}
+            title="Đóng Camera"
+            className="absolute top-2 right-2 z-20 bg-rose-600/90 hover:bg-rose-600 text-white p-1.5 rounded-full shadow-lg transition flex items-center justify-center"
+          >
+            <CameraOff className="w-4 h-4" />
+          </button>
         )}
       </div>
 
@@ -112,7 +151,7 @@ export const CameraScanner: React.FC<CameraScannerProps> = ({
           <button
             type="button"
             onClick={stopCamera}
-            className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold transition border border-slate-700 flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full py-2.5 bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white rounded-xl text-xs font-bold transition shadow-md shadow-rose-500/20 flex items-center justify-center gap-2 cursor-pointer"
           >
             <CameraOff className="w-4 h-4" /> Tắt Camera
           </button>

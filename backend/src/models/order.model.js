@@ -62,11 +62,21 @@ const orderSchema = new mongoose.Schema(
     isFlagged: { type: Boolean, default: false },
     pickupFailReason: { type: String, default: null },
     pickupFailNote: { type: String, default: null },
-    // Liên kết với Seller
+    // Liên kết với Seller & Tài xế được gán
     sellerId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,
+    },
+    assignedDriverId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    assignedShipperId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
     },
     // Thông tin lấy hàng (Pickup)
     pickupAddress: {

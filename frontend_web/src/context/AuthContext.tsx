@@ -1,4 +1,5 @@
 import React, { createContext, useState, useEffect } from 'react';
+import axiosClient from '../api/axiosClient';
 import type { AuthUser, UserRole } from '../types';
 
 interface AuthContextType {
@@ -70,10 +71,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     if (token && token !== 'undefined' && token !== 'null') {
       localStorage.setItem('token', token);
+      // Kiểm tra tính hiệu lực của Token với Backend ngay khi mở lại trang
+      axiosClient.get('/auth/profile').catch((err) => {
+        if (err.response?.status === 401 || err.response?.status === 403) {
+          console.warn('⚠️ Phiên làm việc đã hết hạn. Đang đăng xuất...');
+          logout();
+        }
+      });
     } else if (!token) {
       localStorage.removeItem('token');
     }
-  }, [token]);
+  }, []);
 
   return (
     <AuthContext.Provider value={{ user, role: user?.role || null, token, login, logout, updateUser }}>

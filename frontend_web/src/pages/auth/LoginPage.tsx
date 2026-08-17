@@ -22,7 +22,7 @@ export const LoginPage: React.FC = () => {
     setError('');
 
     try {
-      const response = await authApi.login({ email: email.trim(), password });
+      const response = await authApi.login({ identifier: email.trim(), password });
       const data = response.data;
 
       if (data && data.accessToken) {
