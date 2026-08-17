@@ -31,5 +31,5 @@ export interface TripResponse {
 
 export const tripsApi = {
   createTrip: (payload: CreateTripPayload): Promise<TripResponse> =>
-    axiosClient.post<TripResponse>('/api/trips', payload).then(r => r.data),
+    axiosClient.post<TripResponse>('/trips', payload).then(r => r.data),
 };

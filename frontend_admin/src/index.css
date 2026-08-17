@@ -137,3 +137,25 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #3b82f6;
 }
+
+/* Html5Qrcode Camera Scanner Styles */
+[id^="camera-reader-"] {
+  width: 100% !important;
+  border: none !important;
+}
+
+[id^="camera-reader-"] video {
+  width: 100% !important;
+  height: 100% !important;
+  max-height: 380px;
+  object-fit: cover !important;
+  border-radius: 0.75rem;
+}
+
+[id^="camera-reader-"] img[alt="Info icon"] {
+  display: none !important;
+}
+
+[id^="camera-reader-"] > div {
+  border: none !important;
+}

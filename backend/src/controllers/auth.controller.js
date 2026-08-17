@@ -114,6 +114,7 @@ const loginUser = async (req, res) => {
       fullName: user.fullName,
       email: user.email,
       role: user.role,
+      hubId: user.hubId || null,
       accessToken,
       refreshToken,
     });

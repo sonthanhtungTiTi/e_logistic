@@ -57,20 +57,20 @@ export interface AuditApiResponse<T> {
 
 export const auditApi = {
   startAudit: (payload: StartAuditPayload): Promise<AuditApiResponse<StartAuditData>> =>
-    axiosClient.post('/api/audit/start', payload).then(r => r.data),
+    axiosClient.post('/audit/start', payload).then(r => r.data),
 
   syncAudit: (payload: SyncAuditPayload): Promise<AuditApiResponse<SyncAuditData>> =>
-    axiosClient.post('/api/audit/sync', payload).then(r => r.data),
+    axiosClient.post('/audit/sync', payload).then(r => r.data),
 
   pauseAudit: (sessionCode: string): Promise<AuditApiResponse<{ session_code: string; status: string; scanned_count: number }>> =>
-    axiosClient.post(`/api/audit/${sessionCode}/pause`).then(r => r.data),
+    axiosClient.post(`/audit/${sessionCode}/pause`).then(r => r.data),
 
   resumeAudit: (sessionCode: string): Promise<AuditApiResponse<{ session_code: string; status: string; scanned_count: number }>> =>
-    axiosClient.post(`/api/audit/${sessionCode}/resume`).then(r => r.data),
+    axiosClient.post(`/audit/${sessionCode}/resume`).then(r => r.data),
 
   submitAudit: (sessionCode: string): Promise<AuditApiResponse<SyncAuditData>> =>
-    axiosClient.post(`/api/audit/${sessionCode}/submit`).then(r => r.data),
+    axiosClient.post(`/audit/${sessionCode}/submit`).then(r => r.data),
 
   approveAudit: (sessionCode: string, note?: string): Promise<AuditApiResponse<{ session_code: string; status: string; approved_at: string }>> =>
-    axiosClient.post(`/api/audit/${sessionCode}/approve`, { note }).then(r => r.data),
+    axiosClient.post(`/audit/${sessionCode}/approve`, { note }).then(r => r.data),
 };

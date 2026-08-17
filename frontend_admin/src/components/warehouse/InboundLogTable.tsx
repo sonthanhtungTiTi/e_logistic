@@ -10,6 +10,7 @@ export interface ScanItemLog {
   time: string;
   isSuccess: boolean;
   errorMessage?: string;
+  isDuplicate?: boolean;
   // UC-16 Module 4 fields (optional)
   weightDiscrepancyGram?: number | null;
   zoneId?: string | null;
@@ -31,6 +32,8 @@ export const InboundLogTable: React.FC<InboundLogTableProps> = ({ logs }) => {
         return 'bg-blue-500/20 text-blue-300 border-blue-500/40';
       case 'WAITING_SELLER_RETURN':
         return 'bg-purple-500/20 text-purple-300 border-purple-500/40';
+      case 'ALREADY_IN_HUB':
+        return 'bg-amber-500/20 text-amber-300 border-amber-500/40';
       default:
         return 'bg-rose-500/20 text-rose-300 border-rose-500/40';
     }
@@ -49,6 +52,8 @@ export const InboundLogTable: React.FC<InboundLogTableProps> = ({ logs }) => {
       case 'HOLD':
       case 'EXCEPTION_AREA':
         return '⛔ Giữ lại kiểm tra ngoại lệ';
+      case 'ALREADY_IN_HUB':
+        return 'ℹ️ Đã nằm trong kho này';
       default:
         return action;
     }
@@ -90,7 +95,9 @@ export const InboundLogTable: React.FC<InboundLogTableProps> = ({ logs }) => {
                 <tr
                   key={log.id}
                   className={`transition ${
-                    log.isSuccess
+                    log.isDuplicate
+                      ? 'hover:bg-slate-800/40 text-amber-200/90'
+                      : log.isSuccess
                       ? 'hover:bg-slate-800/40 text-slate-200'
                       : 'bg-rose-950/20 hover:bg-rose-950/30 text-rose-200'
                   }`}
@@ -136,7 +143,11 @@ export const InboundLogTable: React.FC<InboundLogTableProps> = ({ logs }) => {
                     )}
                   </td>
                   <td className="py-3.5 px-4">
-                    {log.isSuccess ? (
+                    {log.isDuplicate ? (
+                      <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-400">
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Thành công (Đã quét)
+                      </span>
+                    ) : log.isSuccess ? (
                       <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-400">
                         <CheckCircle2 className="w-3.5 h-3.5" /> Thành công
                       </span>

@@ -69,11 +69,11 @@ export interface DriverConfirmResponse {
 
 export const outboundApi = {
   scanOutbound: (payload: OutboundScanPayload): Promise<OutboundScanResponse> =>
-    axiosClient.post<OutboundScanResponse>('/api/outbound/scan', payload).then(r => r.data),
+    axiosClient.post<OutboundScanResponse>('/outbound/scan', payload).then(r => r.data),
 
   commitTrip: (payload: CommitPayload): Promise<CommitResponse> =>
-    axiosClient.post<CommitResponse>('/api/outbound/commit', payload).then(r => r.data),
+    axiosClient.post<CommitResponse>('/outbound/commit', payload).then(r => r.data),
 
   driverConfirmTrip: (tripCode: string, payload: DriverConfirmPayload): Promise<DriverConfirmResponse> =>
-    axiosClient.post<DriverConfirmResponse>(`/api/driver/trips/${tripCode}/confirm`, payload).then(r => r.data),
+    axiosClient.post<DriverConfirmResponse>(`/driver/trips/${tripCode}/confirm`, payload).then(r => r.data),
 };

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { io as socketIO, Socket } from 'socket.io-client';
-import { inventoryApi, AgingItem, SummaryData, MovementHistoryData, AgingStatus, InventoryActionType } from '@/api/inventory.api';
+import { inventoryApi } from '@/api/inventory.api';
+import type { AgingItem, SummaryData, MovementHistoryData, AgingStatus, InventoryActionType } from '@/api/inventory.api';
 import {
   Package, AlertTriangle, XCircle, CheckCircle2, RefreshCcw,
   Download, History, Cpu, RotateCcw, Trash2, ChevronLeft, ChevronRight,

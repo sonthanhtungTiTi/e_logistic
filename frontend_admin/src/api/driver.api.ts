@@ -20,11 +20,11 @@ export const driverApi = {
     };
 
     try {
-      const res = await axiosClient.post<PickupConfirmResponse>('/api/v1/driver/pickup-confirm', requestBody);
+      const res = await axiosClient.post<PickupConfirmResponse>('/v1/driver/pickup-confirm', requestBody);
       return res.data;
     } catch (err: any) {
       if (err.response?.status === 404) {
-        const res = await axiosClient.post<PickupConfirmResponse>('/api/orders/shipper/process-scan', requestBody);
+        const res = await axiosClient.post<PickupConfirmResponse>('/orders/shipper/process-scan', requestBody);
         return res.data;
       }
       throw err;

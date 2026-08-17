@@ -73,21 +73,21 @@ export const inventoryApi = {
     sort?: string;
     status?: string;
   }): Promise<InventoryApiResponse<AgingListData>> =>
-    axiosClient.get('/api/inventory/aging', { params }).then(r => r.data),
+    axiosClient.get('/inventory/aging', { params }).then(r => r.data),
 
   getSummary: (hub_id?: string): Promise<InventoryApiResponse<SummaryData>> =>
-    axiosClient.get('/api/inventory/summary', { params: { hub_id } }).then(r => r.data),
+    axiosClient.get('/inventory/summary', { params: { hub_id } }).then(r => r.data),
 
   getMovementHistory: (trackingCode: string, page = 1, limit = 20): Promise<InventoryApiResponse<MovementHistoryData>> =>
-    axiosClient.get(`/api/inventory/${trackingCode}/movement-history`, { params: { page, limit } }).then(r => r.data),
+    axiosClient.get(`/inventory/${trackingCode}/movement-history`, { params: { page, limit } }).then(r => r.data),
 
   exportInventory: (params: { hub_id?: string; aging_status?: AgingStatus; format?: 'json' | 'csv' }): Promise<InventoryApiResponse<{ items: any[]; count: number }>> =>
-    axiosClient.get('/api/inventory/export', { params }).then(r => r.data),
+    axiosClient.get('/inventory/export', { params }).then(r => r.data),
 
   performAction: (payload: {
     tracking_code: string;
     action_type: InventoryActionType;
     reason?: string;
   }): Promise<InventoryApiResponse<{ tracking_code: string; new_status: string; action: string }>> =>
-    axiosClient.post('/api/inventory/action', payload).then(r => r.data),
+    axiosClient.post('/inventory/action', payload).then(r => r.data),
 };

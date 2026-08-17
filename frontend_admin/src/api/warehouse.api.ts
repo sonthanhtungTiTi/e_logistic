@@ -50,7 +50,7 @@ async function flushOfflineQueue() {
 
     for (const item of allItems) {
       try {
-        await axiosClient.post('/api/inbound/scan-single', item);
+        await axiosClient.post('/inbound/scan-single', item);
         // Xóa khỏi queue sau khi gửi thành công
         const tx = db.transaction(OFFLINE_STORE, 'readwrite');
         tx.objectStore(OFFLINE_STORE).delete((item as any).client_offline_id);
@@ -75,17 +75,9 @@ export const warehouseApi = {
    */
   scanInbound: async (payload: InboundScanRequest): Promise<InboundScanResponse> => {
     try {
-      const res = await axiosClient.post<InboundScanResponse>('/api/inbound/scan-single', payload);
+      const res = await axiosClient.post<InboundScanResponse>('/inbound/scan-single', payload);
       return res.data;
     } catch (err: any) {
-      // Fallback legacy endpoint (404 guard từ code cũ)
-      if (err.response?.status === 404) {
-        const res = await axiosClient.post<InboundScanResponse>('/api/orders/warehouse/inbound', {
-          tracking_code: payload.tracking_code || payload.trackingCode,
-          package_condition: payload.package_condition,
-        });
-        return res.data;
-      }
 
       // Offline fallback: lưu vào IndexedDB nếu mất mạng (network error)
       if (!err.response && (payload as any).client_offline_id) {
@@ -103,17 +95,17 @@ export const warehouseApi = {
 
   /**
    * Quét nhập kho theo Seal bao tải
-   * POST /api/inbound/scan-seal
+   * POST /inbound/scan-seal
    */
   scanSealInbound: (payload: SealScanPayload): Promise<SealScanResponse> =>
-    axiosClient.post<SealScanResponse>('/api/inbound/scan-seal', payload).then((r) => r.data),
+    axiosClient.post<SealScanResponse>('/inbound/scan-seal', payload).then((r) => r.data),
 
   /**
    * Báo cáo sự cố / ngoại lệ kiện hàng
-   * POST /api/inbound/incident
+   * POST /inbound/incident
    */
   reportIncident: (payload: IncidentPayload): Promise<IncidentResponse> =>
-    axiosClient.post<IncidentResponse>('/api/inbound/incident', payload).then((r) => r.data),
+    axiosClient.post<IncidentResponse>('/inbound/incident', payload).then((r) => r.data),
 
   // Expose flush để component có thể gọi thủ công nếu cần
   flushOfflineQueue,

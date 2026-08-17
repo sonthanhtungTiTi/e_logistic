@@ -2,6 +2,16 @@ import axios from 'axios';
 
 const baseURL = import.meta.env.VITE_ADMIN_API_URL || 'http://localhost:5000/api';
 
+// ── Tự động xóa mock token cũ nếu còn kẹt trong localStorage ──────────────────
+// Token thật từ backend là JWT (3 segment ngăn cách bằng dấu chấm, bắt đầu bằng "ey")
+// Token mock "mock_admin_jwt_token_889922" không có định dạng này → xóa ngay.
+const storedToken = localStorage.getItem('admin_access_token');
+if (storedToken && !storedToken.startsWith('ey')) {
+  localStorage.removeItem('admin_access_token');
+  localStorage.removeItem('admin_user_profile');
+  console.info('[Auth] Đã xóa mock token cũ. Vui lòng đăng nhập lại.');
+}
+
 export const axiosClient = axios.create({
   baseURL,
   headers: {
@@ -28,6 +38,8 @@ axiosClient.interceptors.response.use(
     if (error.response?.status === 401) {
       localStorage.removeItem('admin_access_token');
       localStorage.removeItem('access_token');
+      localStorage.removeItem('admin_user_profile');
+      window.location.href = '/auth/login'; // Force redirect to login
     }
     return Promise.reject(error);
   }

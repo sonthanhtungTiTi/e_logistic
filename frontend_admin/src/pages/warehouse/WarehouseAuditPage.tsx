@@ -1,9 +1,12 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { auditApi, SyncAuditData } from '@/api/audit.api';
+import { auditApi } from '@/api/audit.api';
 import {
   ClipboardList, Barcode, CheckCircle2, XCircle, AlertTriangle,
-  Play, Pause, Send, RotateCcw, PackageSearch, PackageX, PackageCheck,
+  Play, Pause, Send, RotateCcw, PackageSearch, PackageX, PackageCheck, RefreshCcw,
+  Keyboard, ChevronDown, ChevronUp
 } from 'lucide-react';
+import { CameraScanner } from '@/components/driver/CameraScanner';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
 
 function generateOfflineId(): string {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
@@ -33,22 +36,24 @@ interface AuditResult {
 
 export const WarehouseAuditPage: React.FC = () => {
   // ── Session state ────────────────────────────────────────────────────────
-  const [phase, setPhase]               = useState<AuditPhase>('IDLE');
-  const [sessionCode, setSessionCode]   = useState<string>('');
-  const [snapshotCount, setSnapshotCount] = useState<number>(0);
-  const [startedAt, setStartedAt]       = useState<string>('');
-  const [totalScanned, setTotalScanned] = useState<number>(0);
+  const [phase, setPhase]               = useLocalStorage<AuditPhase>('audit_phase', 'IDLE');
+  const [sessionCode, setSessionCode]   = useLocalStorage<string>('audit_sessionCode', '');
+  const [snapshotCount, setSnapshotCount] = useLocalStorage<number>('audit_snapshotCount', 0);
+  const [startedAt, setStartedAt]       = useLocalStorage<string>('audit_startedAt', '');
+  const [totalScanned, setTotalScanned] = useLocalStorage<number>('audit_totalScanned', 0);
 
   // ── Input state ──────────────────────────────────────────────────────────
+  const [isCameraActive, setIsCameraActive] = useState<boolean>(false);
+  const [showManualInput, setShowManualInput] = useState<boolean>(false);
   const [barcodeInput, setBarcodeInput] = useState<string>('');
   const [loading, setLoading]           = useState<boolean>(false);
   const [statusMsg, setStatusMsg]       = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
 
   // ── Scan log (chỉ hiện cho UX, không hiện snapshot) ─────────────────────
-  const [scanLog, setScanLog]           = useState<ScanLogEntry[]>([]);
+  const [scanLog, setScanLog]           = useLocalStorage<ScanLogEntry[]>('audit_scanLog', []);
 
   // ── Final result ─────────────────────────────────────────────────────────
-  const [result, setResult]             = useState<AuditResult | null>(null);
+  const [result, setResult]             = useLocalStorage<AuditResult | null>('audit_result', null);
 
   const inputRef   = useRef<HTMLInputElement>(null);
 
@@ -168,6 +173,7 @@ export const WarehouseAuditPage: React.FC = () => {
 
   // ── Reset ────────────────────────────────────────────────────────────────
   const handleReset = () => {
+    if (!window.confirm('Bạn có chắc muốn xóa dữ liệu phiên kiểm kê này?')) return;
     setPhase('IDLE'); setSessionCode(''); setSnapshotCount(0);
     setTotalScanned(0); setScanLog([]); setResult(null); setStatusMsg(null);
   };
@@ -228,24 +234,53 @@ export const WarehouseAuditPage: React.FC = () => {
         <>
           {/* Scan input */}
           <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl space-y-4">
-            <label className="block text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-              <Barcode className="w-4 h-4 text-violet-400" />
-              {phase === 'IN_PROGRESS' ? 'Bắn mã vạch kiện hàng (Enter):' : '⏸ Phiên đang tạm dừng — nhấn Tiếp tục để quét'}
-            </label>
-            <div className="relative">
-              <input
-                ref={inputRef}
-                type="text"
-                value={barcodeInput}
-                onChange={e => setBarcodeInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                disabled={phase === 'PAUSED'}
-                placeholder={phase === 'IN_PROGRESS' ? 'Quét hoặc nhập mã vận đơn...' : 'Đang tạm dừng...'}
-                className="w-full text-lg font-mono border-2 border-violet-500/80 rounded-xl px-4 py-3.5 bg-slate-950 text-white placeholder:text-slate-600 focus:outline-none focus:ring-4 focus:ring-violet-500/30 focus:border-violet-400 transition disabled:opacity-40"
-              />
-              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-violet-400 bg-violet-500/20 px-2.5 py-1 rounded-lg border border-violet-500/30">
-                AUDIT
-              </span>
+            {/* LUỒNG CHÍNH: Camera Barcode & QR */}
+            <CameraScanner
+              onScanSuccess={executeScan}
+              isScanning={isCameraActive}
+              onToggleScan={setIsCameraActive}
+              title="Camera Quét Mã Kiện Hàng Kiểm Kê (UC-18)"
+              subtitle="Hỗ trợ tự động: Barcode 1D (Code 128, Code 39, EAN) & QR Code"
+            />
+
+            {/* DỰ PHÒNG: Nhập tay / Súng quét USB */}
+            <div>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowManualInput(!showManualInput);
+                  if (!showManualInput) setTimeout(() => inputRef.current?.focus(), 100);
+                }}
+                className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200 transition cursor-pointer select-none"
+              >
+                <Keyboard className="w-3.5 h-3.5" />
+                Không quét được? Nhập mã thủ công
+                {showManualInput ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+              </button>
+
+              {showManualInput && (
+                <div className="relative mt-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
+                    <Barcode className="w-4 h-4 text-violet-400" />
+                    {phase === 'IN_PROGRESS' ? 'Bắn mã vạch kiện hàng (Súng USB & Enter):' : '⏸ Phiên đang tạm dừng'}
+                  </label>
+                  <div className="relative">
+                    <input
+                      ref={inputRef}
+                      type="text"
+                      value={barcodeInput}
+                      onChange={e => setBarcodeInput(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      disabled={phase === 'PAUSED'}
+                      placeholder={phase === 'IN_PROGRESS' ? 'Quét hoặc nhập mã vận đơn...' : 'Đang tạm dừng...'}
+                      className="w-full text-lg font-mono border-2 border-violet-500/80 rounded-xl px-4 py-3.5 bg-slate-950 text-white placeholder:text-slate-600 focus:outline-none focus:ring-4 focus:ring-violet-500/30 focus:border-violet-400 transition disabled:opacity-40"
+                    />
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-violet-400 bg-violet-500/20 px-2.5 py-1 rounded-lg border border-violet-500/30">
+                      AUDIT
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

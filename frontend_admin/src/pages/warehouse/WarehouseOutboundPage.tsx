@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { outboundApi } from '@/api/outbound.api';
-import { Barcode, CheckCircle2, XCircle, Package, AlertTriangle, Truck, PackageX } from 'lucide-react';
+import { Barcode, CheckCircle2, XCircle, Package, AlertTriangle, Truck, PackageX, RefreshCcw, Keyboard, ChevronDown, ChevronUp } from 'lucide-react';
+import { CameraScanner } from '@/components/driver/CameraScanner';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
 
 function generateOfflineId(): string {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
@@ -20,15 +22,17 @@ interface ScanLog {
 }
 
 export const WarehouseOutboundPage: React.FC = () => {
-  const [tripCode, setTripCode] = useState<string>('');
-  const [activeTripCode, setActiveTripCode] = useState<string>('');
+  const [tripCode, setTripCode] = useLocalStorage('outbound_tripCode', '');
+  const [activeTripCode, setActiveTripCode] = useLocalStorage('outbound_activeTripCode', '');
+  const [isTripActive, setIsTripActive] = useLocalStorage('outbound_isTripActive', false);
+  const [scanLogs, setScanLogs] = useLocalStorage<ScanLog[]>('outbound_scanLogs', []);
+  const [stats, setStats] = useLocalStorage('outbound_stats', { total: 0, success: 0, failed: 0, duplicate: 0 });
   const [barcodeInput, setBarcodeInput] = useState<string>('');
-  const [scanLogs, setScanLogs] = useState<ScanLog[]>([]);
-  const [stats, setStats] = useState({ total: 0, success: 0, failed: 0, duplicate: 0 });
   const [isShortage, setIsShortage] = useState(false);
   const [committing, setCommitting] = useState(false);
   const [commitResult, setCommitResult] = useState<any>(null);
-  const [isTripActive, setIsTripActive] = useState(false);
+  const [isCameraActive, setIsCameraActive] = useState(false);
+  const [showManualInput, setShowManualInput] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const tripInputRef = useRef<HTMLInputElement>(null);
@@ -120,9 +124,24 @@ export const WarehouseOutboundPage: React.FC = () => {
             <p className="text-xs text-slate-400 mt-0.5">Xuất kho theo Chuyến xe — Barcode USB / Quét thủ công</p>
           </div>
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-2">
+          <button
+            onClick={() => {
+              if (window.confirm('Bạn có chắc muốn xóa dữ liệu phiên xuất kho này?')) {
+                setScanLogs([]);
+                setStats({ total: 0, success: 0, failed: 0, duplicate: 0 });
+                setTripCode('');
+                setActiveTripCode('');
+                setIsTripActive(false);
+              }
+            }}
+            className="text-xs text-slate-400 hover:text-rose-400 border border-slate-800 hover:border-rose-900/50 hover:bg-rose-950/20 px-3 py-2 rounded-xl transition font-bold"
+          >
+            <RefreshCcw className="w-3.5 h-3.5 inline mr-1" />
+            Làm mới ca làm việc
+          </button>
           <div className="text-center px-4 py-2 bg-slate-950/80 border border-slate-800 rounded-xl">
-            <p className="text-[10px] text-slate-400 uppercase font-bold">Tổng</p>
+            <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Tổng</p>
             <p className="text-xl font-black text-slate-100">{stats.total}</p>
           </div>
           <div className="text-center px-4 py-2 bg-emerald-950/40 border border-emerald-800/60 rounded-xl">
@@ -169,24 +188,53 @@ export const WarehouseOutboundPage: React.FC = () => {
         )}
       </div>
 
-      {/* Scan Input */}
+      {/* Scan Input Area */}
       {isTripActive && (
         <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl space-y-4">
-          <label className="block text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-            <Barcode className="w-4 h-4 text-orange-400" />
-            Bắn mã vạch kiện hàng xuất kho (Enter):
-          </label>
-          <div className="relative">
-            <input
-              ref={inputRef}
-              type="text"
-              value={barcodeInput}
-              onChange={e => setBarcodeInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Quét hoặc nhập mã vận đơn..."
-              className="w-full text-lg font-mono border-2 border-orange-500/80 rounded-xl px-4 py-3.5 bg-slate-950 text-white placeholder:text-slate-600 focus:outline-none focus:ring-4 focus:ring-orange-500/30 focus:border-orange-400 transition"
-            />
-            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-orange-400 bg-orange-500/20 px-2.5 py-1 rounded-lg border border-orange-500/30">OUTBOUND</span>
+          {/* LUỒNG CHÍNH: Camera Barcode & QR */}
+          <CameraScanner
+            onScanSuccess={executeScan}
+            isScanning={isCameraActive}
+            onToggleScan={setIsCameraActive}
+            title="Camera Quét Mã Kiện Hàng Xuất Kho (UC-17)"
+            subtitle="Hỗ trợ tự động: Barcode 1D (Code 128, Code 39, EAN) & QR Code"
+          />
+
+          {/* DỰ PHÒNG: Nhập tay / Súng quét USB */}
+          <div>
+            <button
+              type="button"
+              onClick={() => {
+                setShowManualInput(!showManualInput);
+                if (!showManualInput) setTimeout(() => inputRef.current?.focus(), 100);
+              }}
+              className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200 transition cursor-pointer select-none"
+            >
+              <Keyboard className="w-3.5 h-3.5" />
+              Không quét được? Nhập mã thủ công
+              {showManualInput ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+            </button>
+
+            {showManualInput && (
+              <div className="relative mt-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
+                  <Barcode className="w-4 h-4 text-orange-400" />
+                  Nhập mã vận đơn (Súng Barcode USB & Enter):
+                </label>
+                <div className="relative">
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={barcodeInput}
+                    onChange={e => setBarcodeInput(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Quét Barcode USB hoặc nhập mã vận đơn rồi Enter..."
+                    className="w-full text-lg font-mono border-2 border-orange-500/80 rounded-xl px-4 py-3.5 bg-slate-950 text-white placeholder:text-slate-600 focus:outline-none focus:ring-4 focus:ring-orange-500/30 focus:border-orange-400 transition"
+                  />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-orange-400 bg-orange-500/20 px-2.5 py-1 rounded-lg border border-orange-500/30">OUTBOUND</span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

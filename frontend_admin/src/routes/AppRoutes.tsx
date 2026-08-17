@@ -83,8 +83,9 @@ export const AppRoutes: React.FC = () => {
         </Route>
       </Route>
 
-      {/* Fallback route */}
-      <Route path="*" element={<Navigate to="/warehouse/inbound" replace />} />
+      {/* Fallback route — chưa login → về trang login */}
+      <Route path="*" element={<Navigate to="/login" replace />} />
+
     </Routes>
   );
 };

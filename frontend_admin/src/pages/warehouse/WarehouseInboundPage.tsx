@@ -1,5 +1,8 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { warehouseApi } from '@/api/warehouse.api';
+import { toast } from 'sonner';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { CameraScanner } from '@/components/driver/CameraScanner';
 import { InboundLogTable } from '@/components/warehouse/InboundLogTable';
 import type { ScanItemLog } from '@/components/warehouse/InboundLogTable';
 import {
@@ -15,6 +18,9 @@ import {
   Send,
   ToggleLeft,
   ToggleRight,
+  Keyboard,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -24,7 +30,6 @@ function generateOfflineId(): string {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
     return crypto.randomUUID();
   }
-  // Fallback polyfill
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
     const r = (Math.random() * 16) | 0;
     return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
@@ -41,12 +46,17 @@ export const WarehouseInboundPage: React.FC = () => {
   const [condition, setCondition] = useState<'INTACT' | 'DAMAGED' | 'TORN_SEAL'>('INTACT');
   const [scanMode, setScanMode] = useState<ScanMode>('single');
 
+  // ── Camera state (Camera là mặc định — UC-16 § 3.1)
+  const [isCameraActive, setIsCameraActive] = useState<boolean>(false);
+  /** Mặc định ẩn nhập tay; chỉ hiện khi camera không dùng được */
+  const [showManualInput, setShowManualInput] = useState<boolean>(false);
+
   // ── Weight measurement
   const [hubWeight, setHubWeight] = useState<string>('');
 
-  // ── Logs & stats
-  const [scanLogs, setScanLogs] = useState<ScanItemLog[]>([]);
-  const [stats, setStats] = useState({ total: 0, success: 0, failed: 0 });
+  // ── Logs & stats (lưu local storage để F5 không mất data)
+  const [scanLogs, setScanLogs] = useLocalStorage<ScanItemLog[]>('inbound_scanLogs', []);
+  const [stats, setStats] = useLocalStorage('inbound_stats', { total: 0, success: 0, failed: 0 });
 
   // ── Incident report panel (hiện khi condition !== INTACT)
   const [incidentPhotos, setIncidentPhotos] = useState<string[]>([]);
@@ -75,15 +85,18 @@ export const WarehouseInboundPage: React.FC = () => {
     };
   }, []);
 
-  // ── Always focus barcode input (USB gun support)
-  useEffect(() => { inputRef.current?.focus(); }, []);
+  // ── Focus barcode input khi hiện manual input (USB gun support)
+  useEffect(() => {
+    if (showManualInput) {
+      setTimeout(() => inputRef.current?.focus(), 50);
+    }
+  }, [showManualInput]);
 
   const handleContainerClick = useCallback(() => {
-    // Jangan focus kalau user lagi klik ke weight input
-    if (document.activeElement !== weightInputRef.current) {
+    if (showManualInput && document.activeElement !== weightInputRef.current) {
       inputRef.current?.focus();
     }
-  }, []);
+  }, [showManualInput]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -92,6 +105,7 @@ export const WarehouseInboundPage: React.FC = () => {
         executeInboundScan(barcodeInput);
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [barcodeInput, condition, scanMode, hubWeight]
   );
 
@@ -103,12 +117,13 @@ export const WarehouseInboundPage: React.FC = () => {
 
     // Reset input ngay để nhân viên bóp cò súng quét kiện kế tiếp
     setBarcodeInput('');
-    inputRef.current?.focus();
+    if (showManualInput) inputRef.current?.focus();
 
-    // Sinh idempotency key mỗi lần quét
     const clientOfflineId = generateOfflineId();
 
-    if (scanMode === 'seal') {
+    const isSealCode = scanMode === 'seal' || cleanCode.startsWith('SEAL-') || cleanCode.startsWith('SEAL_') || cleanCode.startsWith('SEAL');
+
+    if (isSealCode) {
       await executeSealScan(cleanCode, clientOfflineId);
     } else {
       await executeSingleScan(cleanCode, clientOfflineId);
@@ -116,6 +131,13 @@ export const WarehouseInboundPage: React.FC = () => {
   };
 
   const executeSingleScan = async (cleanCode: string, clientOfflineId: string) => {
+    // 1. Kiểm tra trùng mã trong phiên hiện tại (tránh gọi API vô ích)
+    const isAlreadyScanned = scanLogs.some((log) => log.tracking_code === cleanCode && log.isSuccess);
+    if (isAlreadyScanned) {
+      toast.warning(`Mã ${cleanCode} đã được quét trong phiên này!`);
+      return;
+    }
+
     const hubMeasuredWeight = hubWeight ? parseFloat(hubWeight) * 1000 : null; // kg → gram
 
     try {
@@ -148,12 +170,10 @@ export const WarehouseInboundPage: React.FC = () => {
       setScanLogs((prev) => [newLog, ...prev]);
       setStats((prev) => ({ ...prev, total: prev.total + 1, success: prev.success + 1 }));
 
-      // Ghi nhớ mã đơn để dùng cho incident form (nếu condition !== INTACT)
       if (condition !== 'INTACT') {
         setLastScannedForIncident(cleanCode);
       }
     } catch (err: any) {
-      // Offline queue case — không hiện là lỗi thật
       if (err.isOfflineQueued) {
         const offlineLog: ScanItemLog = {
           id: `${Date.now()}-${Math.random()}`,
@@ -171,6 +191,16 @@ export const WarehouseInboundPage: React.FC = () => {
       }
 
       const errMsg = err.response?.data?.message || 'Lỗi quét kiện hàng (Xung đột hoặc Mã không hợp lệ)';
+      const errCode = err.response?.data?.code;
+
+      // Nhận diện lỗi quét trùng (Đã nhập kho rồi)
+      const isDuplicate = errCode === 'INVALID_STATE_TRANSITION' && errMsg.includes('không hợp lệ để nhập kho tại Hub này');
+
+      if (isDuplicate) {
+        toast.warning(`Mã ${cleanCode} đã nằm trong kho (Quét trùng)!`);
+        return; // Không ghi nhận vào bảng log làm lãng phí data
+      }
+
       const failedLog: ScanItemLog = {
         id: `${Date.now()}-${Math.random()}`,
         tracking_code: cleanCode,
@@ -193,9 +223,8 @@ export const WarehouseInboundPage: React.FC = () => {
         client_offline_id: clientOfflineId,
       });
 
-      const { total, success_count, failed_count, success_items, failed_items } = res.data;
+      const { total, success_count, failed_count, failed_items } = res.data;
 
-      // Thêm 1 log tổng hợp cho seal
       const sealSummaryLog: ScanItemLog = {
         id: `seal-${Date.now()}`,
         tracking_code: `[SEAL] ${sealCode}`,
@@ -207,7 +236,6 @@ export const WarehouseInboundPage: React.FC = () => {
         errorMessage: failed_count > 0 ? `${failed_count} kiện thất bại` : undefined,
       };
 
-      // Thêm log từng đơn thất bại
       const failLogs: ScanItemLog[] = failed_items.map((f, i) => ({
         id: `seal-fail-${Date.now()}-${i}`,
         tracking_code: f.tracking_code,
@@ -246,8 +274,6 @@ export const WarehouseInboundPage: React.FC = () => {
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    // Trong môi trường thật, upload lên storage trước rồi lấy URL.
-    // Hiện tại demo bằng Object URL (blob:) để xác nhận luồng.
     const urls = files.map((f) => URL.createObjectURL(f));
     setIncidentPhotos((prev) => [...prev, ...urls].slice(0, 10));
   };
@@ -261,7 +287,6 @@ export const WarehouseInboundPage: React.FC = () => {
         photo_urls: incidentPhotos,
         note: incidentNote,
       });
-      // Reset incident form
       setIncidentPhotos([]);
       setIncidentNote('');
       setLastScannedForIncident(null);
@@ -288,7 +313,7 @@ export const WarehouseInboundPage: React.FC = () => {
                 Quét Nhập Kho &amp; Phân Luồng (UC-16 Inbound)
               </h1>
               <p className="text-xs text-slate-400 mt-0.5">
-                Chuyên dụng cho Súng quét mã vạch USB tại Bưu cục Gốc / Kho Tổng / Bưu cục Đích
+                Luồng chính: Camera QR — nhập tay là dự phòng khi mã bị mờ/rách
               </p>
             </div>
           </div>
@@ -296,7 +321,6 @@ export const WarehouseInboundPage: React.FC = () => {
 
         {/* Offline indicator + Live Counters */}
         <div className="flex flex-col items-end gap-2 w-full md:w-auto">
-          {/* Online/Offline badge */}
           <div
             className={`flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1 rounded-full border ${
               isOnline
@@ -308,9 +332,20 @@ export const WarehouseInboundPage: React.FC = () => {
             {isOnline ? 'Online' : 'Offline — hàng đợi đang hoạt động'}
           </div>
 
-          <div className="flex gap-3">
-            <div className="flex-1 md:flex-initial text-center px-5 py-2.5 bg-slate-950/80 border border-slate-800 rounded-xl">
-              <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Tổng quét</p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                if (window.confirm('Bạn có chắc muốn xóa toàn bộ lịch sử quét trong phiên này?')) {
+                  setScanLogs([]);
+                  setStats({ total: 0, success: 0, failed: 0 });
+                }
+              }}
+              className="text-xs text-slate-400 hover:text-rose-400 border border-slate-800 hover:border-rose-900/50 hover:bg-rose-950/20 px-3 py-2 rounded-xl transition font-bold"
+            >
+              Làm mới ca làm việc
+            </button>
+            <div className="text-center px-4 py-2 bg-slate-950/80 border border-slate-800 rounded-xl">
+              <p className="text-[10px] text-slate-400 uppercase font-bold">Tổng</p>
               <p className="text-xl font-black text-slate-100">{stats.total}</p>
             </div>
             <div className="flex-1 md:flex-initial text-center px-5 py-2.5 bg-emerald-950/40 border border-emerald-800/60 rounded-xl">
@@ -357,85 +392,150 @@ export const WarehouseInboundPage: React.FC = () => {
           </button>
         </div>
 
-        {/* Scan inputs row */}
-        <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-start">
+        {/* ── LUỒNG CHÍNH: Camera QR (UC-16 § 3.1) ── */}
+        <CameraScanner
+          onScanSuccess={executeInboundScan}
+          isScanning={isCameraActive}
+          onToggleScan={setIsCameraActive}
+        />
 
-          {/* Barcode input */}
-          <div className="flex-1">
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
-              <Barcode className="w-4 h-4 text-cyan-400" />
-              {scanMode === 'seal'
-                ? 'Bắn mã Seal bao tải (Enter):'
-                : 'Bắn mã vạch vào đây (Súng Barcode USB & Enter):'}
-            </label>
-            <div className="relative">
-              <input
-                ref={inputRef}
-                type="text"
-                value={barcodeInput}
-                onChange={(e) => setBarcodeInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder={
-                  scanMode === 'seal'
-                    ? 'Quét Seal bao tải để nhập lô...'
-                    : 'Đặt con trỏ tại đây và bóp cò súng quét...'
-                }
-                className="w-full text-lg font-mono border-2 border-blue-500/80 rounded-xl px-4 py-3.5 bg-slate-950 text-white placeholder:text-slate-600 focus:outline-none focus:ring-4 focus:ring-blue-500/30 focus:border-cyan-400 transition"
-              />
-              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-cyan-400 bg-blue-500/20 px-2.5 py-1 rounded-lg border border-blue-500/30">
-                {scanMode === 'seal' ? 'SEAL MODE' : 'READY FOR SCAN'}
-              </span>
-            </div>
-          </div>
+        {/* ── DỰ PHÒNG: Nhập tay — ẩn mặc định, hiện khi camera không dùng được ── */}
+        <div>
+          <button
+            type="button"
+            onClick={() => setShowManualInput((v) => !v)}
+            className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200 transition cursor-pointer select-none"
+          >
+            <Keyboard className="w-3.5 h-3.5" />
+            Không quét được? Nhập mã thủ công
+            {showManualInput
+              ? <ChevronUp className="w-3.5 h-3.5" />
+              : <ChevronDown className="w-3.5 h-3.5" />}
+          </button>
 
-          {/* Condition + Weight (chỉ hiện trong chế độ đơn lẻ) */}
-          {scanMode === 'single' && (
-            <div className="flex flex-col gap-3 w-full md:w-72">
-              {/* Tình trạng ngoại quan */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  Tình trạng ngoại quan kiện hàng:
-                </label>
-                <select
-                  value={condition}
-                  onChange={(e: any) => {
-                    setCondition(e.target.value);
-                    // Nếu chuyển về INTACT, reset incident form
-                    if (e.target.value === 'INTACT') {
-                      setLastScannedForIncident(null);
-                      setIncidentPhotos([]);
-                      setIncidentNote('');
-                    }
-                  }}
-                  className="w-full border border-slate-700 rounded-xl px-4 py-3 text-sm bg-slate-950 text-slate-200 font-semibold focus:outline-none focus:border-cyan-500 cursor-pointer"
-                >
-                  <option value="INTACT">✅ Nguyên vẹn (Bình thường)</option>
-                  <option value="DAMAGED">⚠️ Hư hỏng / Móp méo</option>
-                  <option value="TORN_SEAL">❌ Rách niêm phong</option>
-                </select>
-              </div>
-
-              {/* Cân lại trọng lượng tại kho (optional) */}
-              <div>
+          {showManualInput && (
+            <div className="mt-3 flex flex-col md:flex-row gap-4 items-stretch md:items-start animate-in fade-in slide-in-from-top-2 duration-200">
+              {/* Barcode input */}
+              <div className="flex-1">
                 <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
-                  <Scale className="w-3.5 h-3.5 text-slate-400" />
-                  Cân lại tại kho (kg, tuỳ chọn):
+                  <Barcode className="w-4 h-4 text-cyan-400" />
+                  {scanMode === 'seal'
+                    ? 'Nhập mã Seal bao tải (Enter):'
+                    : 'Nhập mã vận đơn (Súng Barcode USB & Enter):'}
                 </label>
-                <input
-                  ref={weightInputRef}
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={hubWeight}
-                  onChange={(e) => setHubWeight(e.target.value)}
-                  placeholder="VD: 1.25"
-                  className="w-full border border-slate-700 rounded-xl px-4 py-3 text-sm bg-slate-950 text-slate-200 font-mono focus:outline-none focus:border-cyan-500 placeholder:text-slate-600"
-                  onClick={(e) => e.stopPropagation()} // không focus barcode input
-                />
+                <div className="relative">
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={barcodeInput}
+                    onChange={(e) => setBarcodeInput(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder={
+                      scanMode === 'seal'
+                        ? 'Nhập mã Seal bao tải...'
+                        : 'Nhập hoặc bóp cò súng quét...'
+                    }
+                    className="w-full text-lg font-mono border-2 border-blue-500/80 rounded-xl px-4 py-3.5 bg-slate-950 text-white placeholder:text-slate-600 focus:outline-none focus:ring-4 focus:ring-blue-500/30 focus:border-cyan-400 transition"
+                  />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-cyan-400 bg-blue-500/20 px-2.5 py-1 rounded-lg border border-blue-500/30">
+                    {scanMode === 'seal' ? 'SEAL MODE' : 'MANUAL'}
+                  </span>
+                </div>
               </div>
+
+              {/* Condition + Weight (chỉ hiện trong chế độ đơn lẻ) */}
+              {scanMode === 'single' && (
+                <div className="flex flex-col gap-3 w-full md:w-72">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                      Tình trạng ngoại quan kiện hàng:
+                    </label>
+                    <select
+                      value={condition}
+                      onClick={(e) => e.stopPropagation()}
+                      onChange={(e: any) => {
+                        setCondition(e.target.value);
+                        if (e.target.value === 'INTACT') {
+                          setLastScannedForIncident(null);
+                          setIncidentPhotos([]);
+                          setIncidentNote('');
+                        }
+                      }}
+                      className="w-full border border-slate-700 rounded-xl px-4 py-3 text-sm bg-slate-950 text-slate-200 font-semibold focus:outline-none focus:border-cyan-500 cursor-pointer"
+                    >
+                      <option value="INTACT">✅ Nguyên vẹn (Bình thường)</option>
+                      <option value="DAMAGED">⚠️ Hư hỏng / Móp méo</option>
+                      <option value="TORN_SEAL">❌ Rách niêm phong</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
+                      <Scale className="w-3.5 h-3.5 text-slate-400" />
+                      Cân lại tại kho (kg, tuỳ chọn):
+                    </label>
+                    <input
+                      ref={weightInputRef}
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={hubWeight}
+                      onChange={(e) => setHubWeight(e.target.value)}
+                      placeholder="VD: 1.25"
+                      className="w-full border border-slate-700 rounded-xl px-4 py-3 text-sm bg-slate-950 text-slate-200 font-mono focus:outline-none focus:border-cyan-500 placeholder:text-slate-600"
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
+
+        {/* Condition selector khi đang dùng Camera (vẫn hiện để chọn tình trạng trước khi quét) */}
+        {!showManualInput && scanMode === 'single' && (
+          <div className="flex flex-col sm:flex-row gap-3 pt-1">
+            <div className="flex-1">
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                Tình trạng ngoại quan kiện hàng:
+              </label>
+              <select
+                value={condition}
+                onClick={(e) => e.stopPropagation()}
+                onChange={(e: any) => {
+                  setCondition(e.target.value);
+                  if (e.target.value === 'INTACT') {
+                    setLastScannedForIncident(null);
+                    setIncidentPhotos([]);
+                    setIncidentNote('');
+                  }
+                }}
+                className="w-full border border-slate-700 rounded-xl px-4 py-3 text-sm bg-slate-950 text-slate-200 font-semibold focus:outline-none focus:border-cyan-500 cursor-pointer"
+              >
+                <option value="INTACT">✅ Nguyên vẹn (Bình thường)</option>
+                <option value="DAMAGED">⚠️ Hư hỏng / Móp méo</option>
+                <option value="TORN_SEAL">❌ Rách niêm phong</option>
+              </select>
+            </div>
+            <div className="flex-1 sm:max-w-[200px]">
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
+                <Scale className="w-3.5 h-3.5 text-slate-400" />
+                Cân lại tại kho (kg, tuỳ chọn):
+              </label>
+              <input
+                ref={weightInputRef}
+                type="number"
+                min="0"
+                step="0.01"
+                value={hubWeight}
+                onChange={(e) => setHubWeight(e.target.value)}
+                placeholder="VD: 1.25"
+                className="w-full border border-slate-700 rounded-xl px-4 py-3 text-sm bg-slate-950 text-slate-200 font-mono focus:outline-none focus:border-cyan-500 placeholder:text-slate-600"
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
+          </div>
+        )}
 
         {/* Cảnh báo tình trạng hư hỏng */}
         {condition !== 'INTACT' && (
@@ -449,7 +549,7 @@ export const WarehouseInboundPage: React.FC = () => {
         )}
       </div>
 
-      {/* ── Incident Report Panel (hiện khi condition !== INTACT và đã quét ít nhất 1 đơn) ── */}
+      {/* ── Incident Report Panel ── */}
       {condition !== 'INTACT' && lastScannedForIncident && (
         <div className="bg-rose-950/20 border border-rose-700/40 p-5 rounded-2xl shadow-xl space-y-4">
           <h3 className="text-sm font-bold text-rose-300 flex items-center gap-2">
@@ -458,7 +558,6 @@ export const WarehouseInboundPage: React.FC = () => {
             <span className="font-mono text-white">{lastScannedForIncident}</span>
           </h3>
 
-          {/* Upload ảnh */}
           <div>
             <label className="block text-xs font-semibold text-slate-300 mb-1.5">
               Ảnh bằng chứng hư hỏng (tối đa 10 ảnh):
@@ -486,7 +585,6 @@ export const WarehouseInboundPage: React.FC = () => {
             )}
           </div>
 
-          {/* Ghi chú */}
           <div>
             <label className="block text-xs font-semibold text-slate-300 mb-1.5">Ghi chú sự cố:</label>
             <textarea

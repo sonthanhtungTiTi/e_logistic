@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router';
-import { LayoutDashboard, Package, Truck, Users, ShieldAlert, BarChart3, LogOut, ShieldCheck } from 'lucide-react';
+import { LayoutDashboard, Package, Truck, Users, ShieldAlert, BarChart3, LogOut, ShieldCheck, ClipboardCheck } from 'lucide-react';
 import { useAdminAuth } from '../../hooks/useAdminAuth';
 
 export const AdminSidebar: React.FC = () => {
@@ -8,6 +8,8 @@ export const AdminSidebar: React.FC = () => {
 
   const navItems = [
     { to: '/warehouse/inbound', label: 'Quét Nhập Kho (UC-16)', icon: Package },
+    { to: '/warehouse/outbound', label: 'Quét Xuất Kho (UC-17)', icon: Truck },
+    { to: '/warehouse/audit', label: 'Kiểm Kê Kho (UC-18)', icon: ClipboardCheck },
     { to: '/driver/pickup', label: 'Driver Pickup PWA (UC-12)', icon: Truck },
     { to: '/admin/dashboard', label: 'Tổng Quan Operations', icon: LayoutDashboard },
     { to: '/admin/orders', label: 'Global Order List', icon: Package },
