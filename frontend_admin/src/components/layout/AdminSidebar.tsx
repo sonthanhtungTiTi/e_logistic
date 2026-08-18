@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router';
-import { LayoutDashboard, Package, Truck, Users, ShieldAlert, BarChart3, LogOut, ShieldCheck } from 'lucide-react';
+import { LayoutDashboard, Package, Truck, Users, ShieldAlert, BarChart3, LogOut, ShieldCheck, ClipboardCheck, Boxes } from 'lucide-react';
 import { useAdminAuth } from '../../hooks/useAdminAuth';
 import { UserRole } from '@/types/auth.types';
 
@@ -13,6 +13,24 @@ export const AdminSidebar: React.FC = () => {
       to: '/warehouse/inbound',
       label: 'Quét Nhập Kho (UC-16)',
       icon: Package,
+      roles: [UserRole.ADMIN, UserRole.WAREHOUSE_STAFF, UserRole.HUB_STAFF, UserRole.HUB_COORDINATOR],
+    },
+    {
+      to: '/warehouse/bagging',
+      label: 'Gom Bao Niêm Phong',
+      icon: Boxes,
+      roles: [UserRole.ADMIN, UserRole.WAREHOUSE_STAFF, UserRole.HUB_STAFF, UserRole.HUB_COORDINATOR],
+    },
+    {
+      to: '/warehouse/outbound',
+      label: 'Quét Xuất Kho (UC-17)',
+      icon: Truck,
+      roles: [UserRole.ADMIN, UserRole.WAREHOUSE_STAFF, UserRole.HUB_STAFF, UserRole.HUB_COORDINATOR],
+    },
+    {
+      to: '/warehouse/audit',
+      label: 'Kiểm Kê Kho (UC-18)',
+      icon: ClipboardCheck,
       roles: [UserRole.ADMIN, UserRole.WAREHOUSE_STAFF, UserRole.HUB_STAFF, UserRole.HUB_COORDINATOR],
     },
     {

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, NavLink } from 'react-router';
-import { Truck, PackageCheck, LogOut } from 'lucide-react';
+import { Truck, PackageCheck, LogOut, ClipboardCheck } from 'lucide-react';
 import { useAdminAuth } from '../hooks/useAdminAuth';
 
 interface DriverLayoutProps {
@@ -62,6 +62,17 @@ export const DriverLayout: React.FC<DriverLayoutProps> = ({ children }) => {
         >
           <PackageCheck className="w-5 h-5" />
           <span>Kho Inbound</span>
+        </NavLink>
+        <NavLink
+          to="/driver/handoff"
+          className={({ isActive }) =>
+            `flex flex-col items-center gap-1 text-[11px] font-bold transition ${
+              isActive ? 'text-orange-400' : 'text-slate-500 hover:text-slate-300'
+            }`
+          }
+        >
+          <ClipboardCheck className="w-5 h-5" />
+          <span>Nhận Chuyến</span>
         </NavLink>
       </nav>
     </div>

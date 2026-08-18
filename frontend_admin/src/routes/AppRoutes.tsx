@@ -8,7 +8,12 @@ import { useAdminAuth } from '@/hooks/useAdminAuth';
 
 // Pages
 import { WarehouseInboundPage } from '@/pages/warehouse/WarehouseInboundPage';
+import { WarehouseBaggingPage } from '@/pages/warehouse/WarehouseBaggingPage';
+import { WarehouseOutboundPage } from '@/pages/warehouse/WarehouseOutboundPage';
+import { WarehouseAuditPage } from '@/pages/warehouse/WarehouseAuditPage';
+import { WarehouseInventoryDashboardPage } from '@/pages/warehouse/WarehouseInventoryDashboardPage';
 import { DriverPickupPage } from '@/pages/driver/DriverPickupPage';
+import { DriverHandoffPage } from '@/pages/driver/DriverHandoffPage';
 import { AdminLoginPage } from '@/pages/auth/AdminLoginPage';
 import { UnauthorizedPage } from '@/pages/auth/UnauthorizedPage';
 
@@ -30,7 +35,11 @@ const RootRedirect: React.FC = () => {
   if (role === UserRole.DRIVER || role === UserRole.LINE_HAUL_DRIVER) {
     return <Navigate to="/driver/pickup" replace />;
   }
-  if (role === UserRole.WAREHOUSE_STAFF || role === UserRole.HUB_STAFF) {
+  if (
+    role === UserRole.WAREHOUSE_STAFF ||
+    role === UserRole.HUB_STAFF ||
+    role === UserRole.HUB_COORDINATOR
+  ) {
     return <Navigate to="/warehouse/inbound" replace />;
   }
   return <Navigate to="/admin/dashboard" replace />;
@@ -65,6 +74,10 @@ export const AppRoutes: React.FC = () => {
       >
         <Route element={<AdminLayout />}>
           <Route path="/warehouse/inbound" element={<WarehouseInboundPage />} />
+          <Route path="/warehouse/bagging" element={<WarehouseBaggingPage />} />
+          <Route path="/warehouse/outbound" element={<WarehouseOutboundPage />} />
+          <Route path="/warehouse/audit" element={<WarehouseAuditPage />} />
+          <Route path="/warehouse/inventory" element={<WarehouseInventoryDashboardPage />} />
           <Route path="/warehouse" element={<Navigate to="/warehouse/inbound" replace />} />
           
           <Route path="/admin/dashboard" element={<OperationsDashboardPage />} />
@@ -113,6 +126,7 @@ export const AppRoutes: React.FC = () => {
       >
         <Route element={<DriverLayout />}>
           <Route path="/driver/pickup" element={<DriverPickupPage />} />
+          <Route path="/driver/handoff" element={<DriverHandoffPage />} />
           <Route path="/driver" element={<Navigate to="/driver/pickup" replace />} />
         </Route>
       </Route>
@@ -124,4 +138,3 @@ export const AppRoutes: React.FC = () => {
 };
 
 export default AppRoutes;
-

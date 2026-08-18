@@ -31,7 +31,7 @@ const otpLimiter = rateLimit({
 router.post('/register', registerLimiter, registerUser);
 router.post('/send-register-otp', otpLimiter, sendRegisterOtp);
 router.post('/verify-register-otp', verifyRegisterOtp);
-router.post('/login', loginLimiter, loginUser);
+router.post('/login', loginUser);
 router.get('/profile', protect, getUserProfile);
 router.put('/profile', protect, updateUserProfile); // UC Cập nhật hồ sơ cá nhân
 router.post('/logout', protect, logoutUser);

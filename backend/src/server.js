@@ -27,8 +27,23 @@ const startServer = async () => {
       }
     });
 
+    // Khởi tạo io singleton cho các service
+    const ioSingleton = require('./lib/ioSingleton');
+    ioSingleton.setIo(io);
+
     // Khởi tạo WebSocket Room Gateway cho Live GPS Tracking
     initTrackingGateway(io);
+
+    // Dashboard inventory: client join room
+    io.on('connection', (socket) => {
+      socket.on('join_warehouse_dashboard', (hubId) => {
+        if (hubId) socket.join(`warehouse-dashboard:${hubId}`);
+      });
+    });
+
+    // Khởi động Audit Lost Timeout Job
+    const { startAuditLostTimeoutJob } = require('./jobs/auditLostTimeout.job');
+    startAuditLostTimeoutJob();
 
     server.listen(PORT, () => {
       console.log(`🚀 E-Logistics Server & WebSocket Gateway running on http://localhost:${PORT}`);

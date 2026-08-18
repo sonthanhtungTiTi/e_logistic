@@ -1,13 +1,19 @@
 const Joi = require('joi');
 
+// ── Schema cũ (KHÔNG thay đổi) ──────────────────────────────────────────
 const singleInboundSchema = Joi.object({
   tracking_code: Joi.string().trim().uppercase().optional(),
   trackingCode: Joi.string().trim().uppercase().optional(),
   package_condition: Joi.string().valid('INTACT', 'DAMAGED', 'TORN_SEAL').default('INTACT'),
   condition: Joi.string().valid('INTACT', 'DAMAGED', 'TORN_SEAL').default('INTACT'),
   note: Joi.string().max(255).allow('', null),
-  hub_id: Joi.any().strip(), // Strip any client-supplied hub_id to prevent IDOR
-  hubId: Joi.any().strip()
+  hub_id: Joi.any().strip(),  // Strip IDOR
+  hubId: Joi.any().strip(),
+  // Các field mới (optional, backward compatible)
+  hub_measured_weight: Joi.number().positive().allow(null).optional(),
+  hubMeasuredWeight: Joi.number().positive().allow(null).optional(),
+  client_offline_id: Joi.string().max(128).allow(null).optional(),
+  clientOfflineId: Joi.string().max(128).allow(null).optional(),
 }).or('tracking_code', 'trackingCode');
 
 const batchInboundSchema = Joi.object({
@@ -19,4 +25,20 @@ const batchInboundSchema = Joi.object({
   hubId: Joi.any().strip()
 }).or('tracking_codes', 'trackingCodes');
 
-module.exports = { singleInboundSchema, batchInboundSchema };
+// ── Schema mới ───────────────────────────────────────────────────────────
+const sealScanSchema = Joi.object({
+  seal_code: Joi.string().trim().uppercase().optional(),
+  sealCode: Joi.string().trim().uppercase().optional(),
+  client_offline_id: Joi.string().max(128).allow(null).optional(),
+  clientOfflineId: Joi.string().max(128).allow(null).optional(),
+}).or('seal_code', 'sealCode');
+
+const incidentSchema = Joi.object({
+  tracking_code: Joi.string().trim().uppercase().optional(),
+  trackingCode: Joi.string().trim().uppercase().optional(),
+  photo_urls: Joi.array().items(Joi.string().uri()).max(10).default([]),
+  photoUrls: Joi.array().items(Joi.string().uri()).max(10).default([]),
+  note: Joi.string().max(1000).allow('', null),
+}).or('tracking_code', 'trackingCode');
+
+module.exports = { singleInboundSchema, batchInboundSchema, sealScanSchema, incidentSchema };

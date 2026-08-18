@@ -54,6 +54,12 @@ const orderSchema = new mongoose.Schema(
         'RETURNED_TO_HUB_ORIGIN',
         'EXCEPTION_INBOUND',
         'CANCELLED',
+        'SEARCH_ZONE',
+        'SUSPECTED_LOST',
+        'LOST',
+        'SURPLUS',
+        'OVERDUE',
+        'LIQUIDATED',
       ],
       default: 'CREATED',
     },
@@ -212,7 +218,25 @@ const orderSchema = new mongoose.Schema(
       lat: { type: Number, default: 10.769012 },
       lng: { type: Number, default: 106.695123 }
     },
-    calculatedEta: { type: Number, default: 15 }
+    calculatedEta: { type: Number, default: 15 },
+    // UC-16 Module 4: Hub Inbound Processing
+    sealId: { type: mongoose.Schema.Types.ObjectId, ref: 'Bag', default: null },
+    currentZoneId: { type: mongoose.Schema.Types.ObjectId, ref: 'Zone', default: null },
+    hubInboundAt: { type: Date, default: null },
+    hubMeasuredWeight: { type: Number, default: null },
+    weightDiscrepancyGram: { type: Number, default: null },
+    // UC-17: Trip/Outbound
+    currentTripId: { type: mongoose.Schema.Types.ObjectId, ref: 'Trip', default: null },
+    // UC-18: Kiểm kê kho
+    searchZoneEnteredAt: { type: Date, default: null },
+    lostSearchDeadlineAt: { type: Date, default: null },
+    // UC-19: Quản lý tồn kho / Thanh lý
+    liquidationApprovedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+    liquidationApprovedAt: { type: Date, default: null },
+    // UC-Routing: Phân vùng & Khoảng cách
+    zoneTier: { type: String, default: null },
+    routeDistanceKm: { type: Number, default: null },
+    estimatedDeliveryDays: { type: Number, default: null },
   },
   {
     timestamps: true,

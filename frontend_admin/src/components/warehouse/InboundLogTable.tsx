@@ -10,6 +10,11 @@ export interface ScanItemLog {
   time: string;
   isSuccess: boolean;
   errorMessage?: string;
+  isDuplicate?: boolean;
+  // UC-16 Module 4 fields (optional)
+  weightDiscrepancyGram?: number | null;
+  zoneId?: string | null;
+  needsManualRouting?: boolean;
 }
 
 interface InboundLogTableProps {
@@ -27,6 +32,8 @@ export const InboundLogTable: React.FC<InboundLogTableProps> = ({ logs }) => {
         return 'bg-blue-500/20 text-blue-300 border-blue-500/40';
       case 'WAITING_SELLER_RETURN':
         return 'bg-purple-500/20 text-purple-300 border-purple-500/40';
+      case 'ALREADY_IN_HUB':
+        return 'bg-amber-500/20 text-amber-300 border-amber-500/40';
       default:
         return 'bg-rose-500/20 text-rose-300 border-rose-500/40';
     }
@@ -45,6 +52,8 @@ export const InboundLogTable: React.FC<InboundLogTableProps> = ({ logs }) => {
       case 'HOLD':
       case 'EXCEPTION_AREA':
         return '⛔ Giữ lại kiểm tra ngoại lệ';
+      case 'ALREADY_IN_HUB':
+        return 'ℹ️ Đã nằm trong kho này';
       default:
         return action;
     }
@@ -70,6 +79,7 @@ export const InboundLogTable: React.FC<InboundLogTableProps> = ({ logs }) => {
               <th className="py-3.5 px-4">Mã vận đơn</th>
               <th className="py-3.5 px-4">Trạng thái mới</th>
               <th className="py-3.5 px-4">Chỉ định luồng xử lý</th>
+              <th className="py-3.5 px-4">Lệch cân</th>
               <th className="py-3.5 px-4">Kết quả</th>
             </tr>
           </thead>
@@ -85,7 +95,9 @@ export const InboundLogTable: React.FC<InboundLogTableProps> = ({ logs }) => {
                 <tr
                   key={log.id}
                   className={`transition ${
-                    log.isSuccess
+                    log.isDuplicate
+                      ? 'hover:bg-slate-800/40 text-amber-200/90'
+                      : log.isSuccess
                       ? 'hover:bg-slate-800/40 text-slate-200'
                       : 'bg-rose-950/20 hover:bg-rose-950/30 text-rose-200'
                   }`}
@@ -108,9 +120,34 @@ export const InboundLogTable: React.FC<InboundLogTableProps> = ({ logs }) => {
                       {log.is_flagged && <AlertOctagon className="w-3.5 h-3.5 text-rose-400 shrink-0" />}
                       {getActionLabel(log.next_action)}
                     </span>
+                    {log.needsManualRouting && (
+                      <span className="ml-1.5 inline-flex items-center gap-0.5 px-2 py-0.5 text-[10px] font-bold rounded-full border bg-orange-500/15 text-orange-300 border-orange-500/30">
+                        ⚠ Định tuyến thủ công
+                      </span>
+                    )}
                   </td>
                   <td className="py-3.5 px-4">
-                    {log.isSuccess ? (
+                    {/* Weight discrepancy badge */}
+                    {log.weightDiscrepancyGram !== null && log.weightDiscrepancyGram !== undefined ? (
+                      <span
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-full border ${
+                          Math.abs(log.weightDiscrepancyGram) > 50
+                            ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+                            : 'bg-slate-700/40 text-slate-400 border-slate-700'
+                        }`}
+                      >
+                        {log.weightDiscrepancyGram > 0 ? '+' : ''}{log.weightDiscrepancyGram}g
+                      </span>
+                    ) : (
+                      <span className="text-slate-600 text-[10px]">—</span>
+                    )}
+                  </td>
+                  <td className="py-3.5 px-4">
+                    {log.isDuplicate ? (
+                      <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-400">
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Thành công (Đã quét)
+                      </span>
+                    ) : log.isSuccess ? (
                       <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-400">
                         <CheckCircle2 className="w-3.5 h-3.5" /> Thành công
                       </span>

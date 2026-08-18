@@ -22,8 +22,16 @@ export const driverApi = {
       return res.data;
     } catch (err: any) {
       if (err.response?.status === 404) {
-        const res = await axiosClient.post<PickupConfirmResponse>('/v1/driver/pickup-confirm', requestBody);
-        return res.data;
+        try {
+          const res = await axiosClient.post<PickupConfirmResponse>('/v1/driver/pickup-confirm', requestBody);
+          return res.data;
+        } catch (e2: any) {
+          if (e2.response?.status === 404) {
+            const res = await axiosClient.post<PickupConfirmResponse>('/orders/shipper/process-scan', requestBody);
+            return res.data;
+          }
+          throw e2;
+        }
       }
       throw err;
     }

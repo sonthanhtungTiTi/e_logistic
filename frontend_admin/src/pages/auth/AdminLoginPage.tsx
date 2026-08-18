@@ -1,22 +1,27 @@
 import React, { useState } from 'react';
-import { ShieldCheck, Lock, Mail, ArrowRight } from 'lucide-react';
+import { ShieldCheck, Lock, Mail, ArrowRight, Loader2, Eye, EyeOff } from 'lucide-react';
 import { useAdminAuth } from '../../hooks/useAdminAuth';
 import { useNavigate } from 'react-router';
-import { adminAuthApi } from '../../api/auth.api';
-import { UserRole, type AdminUser } from '../../types';
+import { UserRole } from '../../types';
 
 export const AdminLoginPage: React.FC = () => {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState('');
-  const { login } = useAdminAuth();
+  const [loading, setLoading] = useState(false);
+
+  const { loginWithCredentials } = useAdminAuth();
   const navigate = useNavigate();
 
   const redirectByRole = (role: string) => {
     if (role === UserRole.DRIVER || role === UserRole.LINE_HAUL_DRIVER) {
       navigate('/driver/pickup');
-    } else if (role === UserRole.WAREHOUSE_STAFF || role === UserRole.HUB_STAFF) {
+    } else if (
+      role === UserRole.WAREHOUSE_STAFF ||
+      role === UserRole.HUB_STAFF ||
+      role === UserRole.HUB_COORDINATOR
+    ) {
       navigate('/warehouse/inbound');
     } else {
       navigate('/admin/dashboard');
@@ -25,31 +30,27 @@ export const AdminLoginPage: React.FC = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!identifier || !password) {
-      setError('Vui lòng nhập Email/Số điện thoại và Mật khẩu');
+    setError('');
+
+    if (!identifier.trim()) {
+      setError('Vui lòng nhập Email hoặc Số điện thoại');
       return;
     }
-    setError('');
+    if (!password) {
+      setError('Vui lòng nhập Mật khẩu');
+      return;
+    }
+
     setLoading(true);
-
     try {
-      const res = await adminAuthApi.login({ identifier, password });
-      const userProfile: AdminUser = res.user || {
-        id: res._id || res.id || `USR-${Date.now()}`,
-        fullName: res.fullName || 'Người dùng hệ thống',
-        email: res.email || identifier,
-        role: res.role,
-        department: res.department || 'Bộ phận vận hành',
-      };
-
-      login(userProfile, res.accessToken);
-      redirectByRole((res.role || '').toString());
+      const profile = await loginWithCredentials(identifier.trim(), password);
+      redirectByRole((profile.role || '').toString());
     } catch (err: any) {
-      const apiMsg =
-        err.response?.data?.message ||
-        err.message ||
+      const msg =
+        err?.response?.data?.message ||
+        err?.message ||
         'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin xác thực.';
-      setError(apiMsg);
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -62,8 +63,8 @@ export const AdminLoginPage: React.FC = () => {
           <div className="w-14 h-14 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 mx-auto shadow-inner">
             <ShieldCheck className="w-8 h-8" />
           </div>
-          <h2 className="text-2xl font-black text-white tracking-tight">Cổng Đăng Nhập E-Logistic</h2>
-          <p className="text-xs text-slate-400">Đăng nhập bằng tài khoản được cấp bởi Quản trị viên</p>
+          <h2 className="text-2xl font-black text-white tracking-tight">Cổng Quản Trị Operations</h2>
+          <p className="text-xs text-slate-400">Đăng nhập tài khoản nhân sự &amp; điều hành E-Logistic</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">
@@ -76,48 +77,98 @@ export const AdminLoginPage: React.FC = () => {
             </div>
           )}
 
+          {/* Email / số điện thoại */}
           <div>
-            <label className="block text-xs font-bold text-slate-300 mb-1">Email hoặc Số Điện Thoại</label>
+            <label className="block text-xs font-bold text-slate-300 mb-1">Email hoặc Số điện thoại</label>
             <div className="relative">
               <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
               <input
+                id="login-identifier"
                 type="text"
                 required
+                autoComplete="username"
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
-                placeholder="Nhập email hoặc sđt tài khoản..."
+                placeholder="staff@test.local"
                 className="w-full glass-input rounded-xl pl-10 pr-4 py-2.5 text-xs font-mono"
+                disabled={loading}
               />
             </div>
           </div>
 
+          {/* Mật khẩu */}
           <div>
             <label className="block text-xs font-bold text-slate-300 mb-1">Mật Khẩu</label>
             <div className="relative">
               <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
               <input
-                type="password"
+                id="login-password"
+                type={showPw ? 'text' : 'password'}
                 required
+                autoComplete="current-password"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full glass-input rounded-xl pl-10 pr-4 py-2.5 text-xs"
+                className="w-full glass-input rounded-xl pl-10 pr-10 py-2.5 text-xs"
+                disabled={loading}
               />
+              <button
+                type="button"
+                tabIndex={-1}
+                onClick={() => setShowPw((v) => !v)}
+                className="absolute right-3 top-2.5 text-slate-500 hover:text-slate-300 transition cursor-pointer"
+              >
+                {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
             </div>
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 rounded-xl shimmer-btn text-white font-bold text-xs shadow-lg shadow-cyan-600/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+            className="w-full py-3 rounded-xl shimmer-btn text-white font-bold text-xs shadow-lg shadow-cyan-600/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            {loading ? 'Đang xác thực...' : 'Xác Thực & Đăng Nhập'}
-            <ArrowRight className="w-4 h-4" />
+            {loading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Đang xác thực...
+              </>
+            ) : (
+              <>
+                Đăng Nhập
+                <ArrowRight className="w-4 h-4" />
+              </>
+            )}
           </button>
         </form>
+
+        {/* Gợi ý tài khoản test */}
+        <div className="pt-2 border-t border-slate-800 space-y-1.5">
+          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Tài khoản test nhanh</p>
+          {[
+            { label: 'HUB_STAFF (nhập kho)', email: 'staff@test.local', pw: 'Test@123456' },
+            { label: 'HUB_COORDINATOR (xuất kho)', email: 'coordinator@test.local', pw: 'Test@123456' },
+            { label: 'DRIVER (tài xế)', email: 'driver@test.local', pw: 'Test@123456' },
+            { label: 'E2E Staff', email: 'e2e.staff@test.local', pw: 'E2eTest@123' },
+          ].map((acc) => (
+            <button
+              key={acc.email}
+              type="button"
+              onClick={() => {
+                setIdentifier(acc.email);
+                setPassword(acc.pw);
+              }}
+              className="w-full text-left px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-[10px] font-mono text-slate-400 hover:text-slate-200 transition cursor-pointer"
+            >
+              <span className="text-cyan-500">{acc.email}</span>
+              <span className="text-slate-600"> / {acc.pw}</span>
+              <span className="float-right text-slate-500">{acc.label}</span>
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );
 };
 
-
+export default AdminLoginPage;

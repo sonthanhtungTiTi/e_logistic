@@ -5,7 +5,9 @@
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "nodemon src/server.js"
+    "dev": "nodemon src/server.js",
+    "test:e2e": "node test/e2e/run-guide-tests.js",
+    "seed": "node seed-test-data.js"
   },
   "keywords": [],
   "author": "",
