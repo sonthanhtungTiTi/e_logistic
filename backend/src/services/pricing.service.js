@@ -47,6 +47,8 @@ const calculateChargeableWeight = (actualWeightKg = 0, dimensions) => {
   };
 };
 
+const hubRoutingService = require('./hubRouting.service');
+
 /**
  * Service Area & Hub Routing Lookup
  */
@@ -54,25 +56,7 @@ const resolveHubRouting = (province) => {
   if (!province) {
     return { isSupported: false, hubCode: null, needsManualRouting: true };
   }
-  const normalized = province.trim().toUpperCase();
-  
-  // Find key in map
-  const match = Object.keys(MASTER_HUB_MAP).find(k => k === normalized || normalized.includes(k) || k.includes(normalized));
-  
-  if (match) {
-    return {
-      isSupported: true,
-      hubCode: MASTER_HUB_MAP[match].hubCode,
-      needsManualRouting: false
-    };
-  }
-
-  // Fallback to provincial default if supported in general but unmapped hub
-  return {
-    isSupported: true, // Assuming domestic shipping is supported
-    hubCode: 'HUB_PROVINCIAL_DEFAULT',
-    needsManualRouting: true
-  };
+  return hubRoutingService.resolveHubRouting(province);
 };
 
 /**
@@ -93,27 +77,33 @@ const calculateOrderFees = ({ actualWeight, dimensions, pickupAddress, deliveryA
     throw error;
   }
 
-  const needsManualRouting = pickupRouting.needsManualRouting || deliveryRouting.needsManualRouting;
+  const needsManualRouting = pickupRouting.needsManualRouting || deliveryRouting.needsManualRouting || false;
 
-  // 3. Base Shipping Fee Logic
-  const isSameProvince = pickupAddress?.province && deliveryAddress?.province &&
-    pickupAddress.province.trim().toLowerCase() === deliveryAddress.province.trim().toLowerCase();
+  // 3. Zone-Based Pricing & Route Distance/ETA
+  const zoneInfo = hubRoutingService.calculateZoneTier(pickupAddress?.province, deliveryAddress?.province);
+  const routeMetrics = hubRoutingService.calculateRouteDistanceAndEta(pickupRouting.hubCode, deliveryRouting.hubCode);
 
   let baseFee = 0;
-  if (isSameProvince) {
-    // Intra-province base rate: 16,500 VND for <= 1 kg, + 5,000 VND per extra 0.5 kg
-    baseFee = 16500;
-    if (chgW > 1.0) {
-      const extraSteps = Math.ceil((chgW - 1.0) / 0.5);
-      baseFee += extraSteps * 5000;
-    }
-  } else {
-    // Inter-province base rate: 24,000 VND for <= 1 kg, + 7,500 VND per extra 0.5 kg
-    baseFee = 24000;
-    if (chgW > 1.0) {
-      const extraSteps = Math.ceil((chgW - 1.0) / 0.5);
-      baseFee += extraSteps * 7500;
-    }
+  const extraWeightSteps = chgW > 1.0 ? Math.ceil((chgW - 1.0) / 0.5) : 0;
+
+  switch (zoneInfo.tier) {
+    case 'INTRA_PROVINCE':
+      // Nội tỉnh: 16.500 đ (<= 1.0 kg), + 5.000 đ / 0.5 kg phụ trội
+      baseFee = 16500 + extraWeightSteps * 5000;
+      break;
+    case 'INTRA_REGION':
+      // Nội miền: 22.000 đ (<= 1.0 kg), + 6.000 đ / 0.5 kg phụ trội
+      baseFee = 22000 + extraWeightSteps * 6000;
+      break;
+    case 'NEAR_REGION':
+      // Cận miền: 28.000 đ (<= 1.0 kg), + 7.000 đ / 0.5 kg phụ trội
+      baseFee = 28000 + extraWeightSteps * 7000;
+      break;
+    case 'INTER_REGION':
+    default:
+      // Liên miền (Bắc - Nam): 35.000 đ (<= 1.0 kg), + 8.500 đ / 0.5 kg phụ trội
+      baseFee = 35000 + extraWeightSteps * 8500;
+      break;
   }
 
   // 4. Insurance / Goods Valuation Fee
@@ -159,7 +149,14 @@ const calculateOrderFees = ({ actualWeight, dimensions, pickupAddress, deliveryA
     shippingFee: Math.floor(finalFee),
     pickupHub: pickupRouting.hubCode,
     deliveryHub: deliveryRouting.hubCode,
-    needsManualRouting
+    needsManualRouting,
+    // Zone & Distance/ETA Information
+    zoneTier: zoneInfo.tier,
+    zoneName: zoneInfo.tierName,
+    routeDistanceKm: routeMetrics.totalDistanceKm,
+    estimatedEtaHours: routeMetrics.totalEtaHours,
+    estimatedDeliveryDays: routeMetrics.estimatedDeliveryDays,
+    routePath: routeMetrics.routePath,
   };
 };
 

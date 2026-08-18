@@ -13,6 +13,12 @@ const syncAuditSchema = Joi.object({
   // tracking_codes có thể rỗng khi is_final_sync=true (chỉ tính kết quả, không thêm mã)
   tracking_codes:   Joi.array().items(Joi.string().trim().uppercase()).min(0).max(500).optional(),
   trackingCodes:    Joi.array().items(Joi.string().trim().uppercase()).min(0).max(500).optional(),
+  seal_code:        Joi.string().trim().uppercase().allow(null,'').optional(),
+  sealCode:         Joi.string().trim().uppercase().allow(null,'').optional(),
+  seal_codes:       Joi.array().items(Joi.string().trim().uppercase()).max(50).optional(),
+  sealCodes:        Joi.array().items(Joi.string().trim().uppercase()).max(50).optional(),
+  auto_relocate_zone: Joi.boolean().default(false),
+  autoRelocateZone:   Joi.boolean().optional(),
   client_offline_id: Joi.string().max(128).allow(null,'').optional(),
   clientOfflineId:   Joi.string().max(128).allow(null,'').optional(),
   is_final_sync:    Joi.boolean().default(false),

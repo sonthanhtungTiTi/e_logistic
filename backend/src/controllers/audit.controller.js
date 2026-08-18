@@ -23,9 +23,21 @@ exports.syncAudit = async (req, res) => {
     if (error) return res.status(400).json({ success: false, message: error.details[0].message, code: 'VALIDATION_ERROR' });
     const sessionCode     = value.session_code     || value.sessionCode;
     const trackingCodes   = value.tracking_codes   || value.trackingCodes || [];
+    const sealCode        = value.seal_code        || value.sealCode      || null;
+    const sealCodes       = value.seal_codes       || value.sealCodes     || [];
+    const autoRelocateZone = value.auto_relocate_zone ?? value.autoRelocateZone ?? false;
     const clientOfflineId = value.client_offline_id || value.clientOfflineId || null;
     const isFinalSync     = value.is_final_sync    || value.isFinalSync    || false;
-    const result = await syncAuditScan({ sessionCode, trackingCodes, operator: req.user, clientOfflineId, isFinalSync });
+    const result = await syncAuditScan({
+      sessionCode,
+      trackingCodes,
+      sealCode,
+      sealCodes,
+      autoRelocateZone,
+      operator: req.user,
+      clientOfflineId,
+      isFinalSync,
+    });
     const msg = isFinalSync ? 'Phiên kiểm kê hoàn tất, chờ phê duyệt' : `Đã đồng bộ ${result.added_count} mã`;
     return res.status(200).json({ success: true, message: msg, data: result });
   } catch (err) {

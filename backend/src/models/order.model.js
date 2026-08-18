@@ -233,6 +233,10 @@ const orderSchema = new mongoose.Schema(
     // UC-19: Quản lý tồn kho / Thanh lý
     liquidationApprovedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     liquidationApprovedAt: { type: Date, default: null },
+    // UC-Routing: Phân vùng & Khoảng cách
+    zoneTier: { type: String, default: null },
+    routeDistanceKm: { type: Number, default: null },
+    estimatedDeliveryDays: { type: Number, default: null },
   },
   {
     timestamps: true,

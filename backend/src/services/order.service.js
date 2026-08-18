@@ -50,40 +50,45 @@ const orderService = {
     const calcFee = await pricingService.calculateShippingFee({ ...data, actualWeight });
 
     const Hub = mongoose.model('Hub');
+    const hubRoutingService = require('./hubRouting.service');
     let originHubId = data.originHubId || null;
     let destinationHubId = data.destinationHubId || null;
 
     try {
       if (!originHubId) {
-        const pickupCode = calcFee.pickupHub || data.pickupHub;
-        const prov = (data.pickupAddress?.province || '').replace(/^(tỉnh|thành phố|tp\.?)\s+/i, '').trim();
-        
+        let pickupCode = calcFee.pickupHub || data.pickupHub;
+        if (!pickupCode && data.pickupAddress?.province) {
+          pickupCode = hubRoutingService.resolveHubRouting(data.pickupAddress.province).hubCode;
+        }
         let originHub = null;
         if (pickupCode) {
           originHub = await Hub.findOne({ code: pickupCode });
         }
-        if (!originHub && prov) {
+        if (!originHub && data.pickupAddress?.province) {
+          const prov = hubRoutingService.normalizeProvince(data.pickupAddress.province);
           originHub = await Hub.findOne({ province: new RegExp(prov, 'i') });
         }
         if (!originHub) {
-          originHub = await Hub.findOne({ code: 'TEST-HCM-01' }) || await Hub.findOne({ isActive: true });
+          originHub = await Hub.findOne({ code: 'HUB_HAN_01' }) || await Hub.findOne({ isActive: true });
         }
         if (originHub) originHubId = originHub._id;
       }
 
       if (!destinationHubId) {
-        const deliveryCode = calcFee.deliveryHub || data.deliveryHub;
-        const prov = (data.deliveryAddress?.province || '').replace(/^(tỉnh|thành phố|tp\.?)\s+/i, '').trim();
-        
+        let deliveryCode = calcFee.deliveryHub || data.deliveryHub;
+        if (!deliveryCode && data.deliveryAddress?.province) {
+          deliveryCode = hubRoutingService.resolveHubRouting(data.deliveryAddress.province).hubCode;
+        }
         let destHub = null;
         if (deliveryCode) {
           destHub = await Hub.findOne({ code: deliveryCode });
         }
-        if (!destHub && prov) {
+        if (!destHub && data.deliveryAddress?.province) {
+          const prov = hubRoutingService.normalizeProvince(data.deliveryAddress.province);
           destHub = await Hub.findOne({ province: new RegExp(prov, 'i') });
         }
         if (!destHub) {
-          destHub = await Hub.findOne({ code: 'TEST-HCM-01' }) || await Hub.findOne({ isActive: true });
+          destHub = await Hub.findOne({ code: 'HUB_SGN_01' }) || await Hub.findOne({ isActive: true });
         }
         if (destHub) destinationHubId = destHub._id;
       }
@@ -108,6 +113,9 @@ const orderService = {
       shippingFee: calcFee.shippingFee || data.shippingFee || 30000,
       pickupHub: calcFee.pickupHub || null,
       deliveryHub: calcFee.deliveryHub || null,
+      zoneTier: calcFee.zoneTier || null,
+      routeDistanceKm: calcFee.routeDistanceKm || null,
+      estimatedDeliveryDays: calcFee.estimatedDeliveryDays || 1,
       status: data.status || 'READY_TO_PICK'
     });
 

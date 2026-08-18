@@ -8,6 +8,7 @@ import { useAdminAuth } from '@/hooks/useAdminAuth';
 
 // Pages
 import { WarehouseInboundPage } from '@/pages/warehouse/WarehouseInboundPage';
+import { WarehouseBaggingPage } from '@/pages/warehouse/WarehouseBaggingPage';
 import { WarehouseOutboundPage } from '@/pages/warehouse/WarehouseOutboundPage';
 import { WarehouseAuditPage } from '@/pages/warehouse/WarehouseAuditPage';
 import { WarehouseInventoryDashboardPage } from '@/pages/warehouse/WarehouseInventoryDashboardPage';
@@ -73,6 +74,7 @@ export const AppRoutes: React.FC = () => {
       >
         <Route element={<AdminLayout />}>
           <Route path="/warehouse/inbound" element={<WarehouseInboundPage />} />
+          <Route path="/warehouse/bagging" element={<WarehouseBaggingPage />} />
           <Route path="/warehouse/outbound" element={<WarehouseOutboundPage />} />
           <Route path="/warehouse/audit" element={<WarehouseAuditPage />} />
           <Route path="/warehouse/inventory" element={<WarehouseInventoryDashboardPage />} />

@@ -3,6 +3,8 @@ const Order = require('../models/order.model');
 const OrderLog = require('../models/orderLog.model');
 const OrderTrackingLog = require('../models/orderTrackingLog.model');
 const Zone = require('../models/zone.model');
+const Hub = require('../models/hub.model');
+const hubRoutingService = require('./hubRouting.service');
 
 // Zone type mapping theo next_action
 const NEXT_ACTION_TO_ZONE_TYPE = {
@@ -202,6 +204,10 @@ async function processInboundSingle({
     is_flagged: isDamaged,
     hub_id: currentHubId,
     hubId: currentHubId,
+    is_dest_hub: isDestHub,
+    isDestHub: isDestHub,
+    is_origin_hub: isOriginHub,
+    isOriginHub: isOriginHub,
     weight_discrepancy_gram: weightDiscrepancyGram,
     weightDiscrepancyGram,
     needs_manual_routing: needsManualRouting,

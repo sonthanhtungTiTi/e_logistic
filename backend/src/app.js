@@ -26,6 +26,7 @@ app.use('/api/inbound', require('./routes/inbound.routes')); // UC-16 Nhập kho
 app.use('/api/trips', require('./routes/trips.routes'));          // UC-17: Tạo chuyến xe
 app.use('/api/outbound', require('./routes/outbound.routes'));    // UC-17: Xuất kho
 app.use('/api/driver/trips', require('./routes/driverHandoff.routes')); // UC-17: Tài xế xác nhận
+app.use('/api/bags', require('./routes/bag.routes'));                // UC-Bagging: Gom bao & Niêm phong
 app.use('/api/audit', require('./routes/audit.routes'));          // UC-18: Kiểm kê kho
 app.use('/api/inventory', require('./routes/inventory.routes')); // UC-19: Dashboard Tồn kho
 

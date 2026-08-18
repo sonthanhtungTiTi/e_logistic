@@ -1,10 +1,13 @@
 // Payload UC12 - Xác nhận lấy hàng (Shipper Pickup)
 export interface PickupConfirmRequest {
-  tracking_code: string;
+  tracking_code?: string;
   trackingCode?: string;
   latitude?: number;
   longitude?: number;
   note?: string;
+  signatureImageUrl?: string;
+  parcelImageUrl?: string;
+  actualWeight?: number;
 }
 
 export interface PickupConfirmResponse {
@@ -13,10 +16,11 @@ export interface PickupConfirmResponse {
   data: {
     tracking_code: string;
     trackingCode?: string;
-    status: 'PICKED_UP';
+    status: 'PICKED_UP' | string;
     picked_at: string;
     seller_name?: string;
     destination_hub_name?: string;
+    order?: any;
   };
 }
 

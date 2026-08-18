@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { auditApi } from '@/api/audit.api';
 import {
   ClipboardList, Barcode, CheckCircle2, XCircle, AlertTriangle,
-  Play, Pause, Send, RotateCcw, PackageSearch, PackageX, PackageCheck, RefreshCcw,
+  Play, Pause, Send, RotateCcw, PackageSearch, PackageX, PackageCheck,
   Keyboard, ChevronDown, ChevronUp
 } from 'lucide-react';
 import { CameraScanner } from '@/components/driver/CameraScanner';

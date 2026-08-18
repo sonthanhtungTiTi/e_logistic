@@ -1,12 +1,35 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { io as socketIO, Socket } from 'socket.io-client';
 import { inventoryApi } from '@/api/inventory.api';
-import type { AgingItem, SummaryData, MovementHistoryData, AgingStatus, InventoryActionType } from '@/api/inventory.api';
+import type {
+  AgingItem,
+  SummaryData,
+  MovementHistoryData,
+  AgingStatus,
+  InventoryActionType,
+  TripSuggestion,
+} from '@/api/inventory.api';
 import {
-  Package, AlertTriangle, XCircle, CheckCircle2, RefreshCcw,
-  Download, History, Cpu, RotateCcw, Trash2, ChevronLeft, ChevronRight,
-  Wifi, WifiOff, BarChart3, Map,
+  Package,
+  AlertTriangle,
+  XCircle,
+  CheckCircle2,
+  RefreshCcw,
+  Download,
+  History,
+  RotateCcw,
+  Trash2,
+  ChevronLeft,
+  ChevronRight,
+  BarChart3,
+  Truck,
+  TrendingUp,
+  Search,
+  CheckSquare,
+  Square,
+  Zap,
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 // ── Aging badge ───────────────────────────────────────────────────────────────
 function AgingBadge({ status }: { status: AgingStatus }) {
@@ -25,20 +48,26 @@ function AgingBadge({ status }: { status: AgingStatus }) {
 
 // ── Status chip ───────────────────────────────────────────────────────────────
 function StatusChip({ status }: { status: string }) {
-  const warnStatuses = ['SEARCH_ZONE','SUSPECTED_LOST','LOST','OVERDUE','SURPLUS'];
+  const warnStatuses = ['SEARCH_ZONE', 'SUSPECTED_LOST', 'LOST', 'OVERDUE', 'SURPLUS'];
   const cls = warnStatuses.includes(status)
     ? 'bg-rose-950/60 text-rose-300 border-rose-700/50'
     : 'bg-slate-800 text-slate-300 border-slate-700';
   return <span className={`px-2 py-0.5 rounded-md border text-[10px] font-mono font-semibold ${cls}`}>{status}</span>;
 }
 
-// ── Movement history panel ────────────────────────────────────────────────────
+// ── Movement history modal ────────────────────────────────────────────────────
 function MovementHistoryPanel({ trackingCode, onClose }: { trackingCode: string; onClose: () => void }) {
   const [history, setHistory] = useState<MovementHistoryData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    inventoryApi.getMovementHistory(trackingCode).then(r => { setHistory(r.data); setLoading(false); }).catch(() => setLoading(false));
+    inventoryApi
+      .getMovementHistory(trackingCode)
+      .then((r) => {
+        setHistory(r.data);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
   }, [trackingCode]);
 
   return (
@@ -47,12 +76,13 @@ function MovementHistoryPanel({ trackingCode, onClose }: { trackingCode: string;
         <div className="flex justify-between items-center px-5 py-4 border-b border-slate-800">
           <div>
             <h3 className="font-bold text-white flex items-center gap-2">
-              <History className="w-4 h-4 text-violet-400" />
-              Lịch sử: <span className="text-violet-300 font-mono">{trackingCode}</span>
+              <History className="w-4 h-4 text-orange-400" />
+              Lịch sử: <span className="text-orange-300 font-mono">{trackingCode}</span>
             </h3>
             {history && (
               <p className="text-xs text-slate-400 mt-0.5">
-                Hiện tại: <StatusChip status={history.current_status} /> · Dwell: {history.dwell_human} · <AgingBadge status={history.aging_status} />
+                Hiện tại: <StatusChip status={history.current_status} /> · Dwell: {history.dwell_human} ·{' '}
+                <AgingBadge status={history.aging_status} />
               </p>
             )}
           </div>
@@ -62,15 +92,20 @@ function MovementHistoryPanel({ trackingCode, onClose }: { trackingCode: string;
         </div>
         <div className="overflow-y-auto flex-1 p-4 space-y-2">
           {loading && <p className="text-slate-400 text-sm text-center py-6">Đang tải...</p>}
-          {!loading && history?.logs.length === 0 && <p className="text-slate-500 text-sm text-center py-6">Không có log nào.</p>}
-          {history?.logs.map(log => (
-            <div key={log._id} className="flex gap-3 items-start p-3 bg-slate-950/60 border border-slate-800 rounded-xl hover:border-slate-700 transition">
-              <div className="w-1.5 h-1.5 mt-2 rounded-full bg-violet-400 shrink-0" />
+          {!loading && history?.logs.length === 0 && (
+            <p className="text-slate-500 text-sm text-center py-6">Không có log nào.</p>
+          )}
+          {history?.logs.map((log) => (
+            <div
+              key={log._id}
+              className="flex gap-3 items-start p-3 bg-slate-950/60 border border-slate-800 rounded-xl hover:border-slate-700 transition"
+            >
+              <div className="w-1.5 h-1.5 mt-2 rounded-full bg-orange-400 shrink-0" />
               <div className="flex-1 min-w-0">
                 <p className="text-xs text-slate-300">
                   <span className="font-mono text-slate-500">{log.preStatus}</span>
                   {' → '}
-                  <span className="font-mono text-violet-300 font-bold">{log.postStatus}</span>
+                  <span className="font-mono text-orange-300 font-bold">{log.postStatus}</span>
                   {' · '}
                   <span className="text-slate-400">{log.actionType}</span>
                 </p>
@@ -85,11 +120,16 @@ function MovementHistoryPanel({ trackingCode, onClose }: { trackingCode: string;
   );
 }
 
-// ── Action menu ───────────────────────────────────────────────────────────────
+// ── Action modal ──────────────────────────────────────────────────────────────
 function ActionMenu({
-  item, onClose, onDone,
-}: { item: AgingItem; onClose: () => void; onDone: (msg: string, ok: boolean) => void }) {
-  const [action, setAction] = useState<InventoryActionType | null>(null);
+  item,
+  onClose,
+  onDone,
+}: {
+  item: AgingItem;
+  onClose: () => void;
+  onDone: (msg: string, ok: boolean) => void;
+}) {
   const [reason, setReason] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -104,319 +144,589 @@ function ActionMenu({
       onDone(`✅ [${item.tracking_code}] → ${res.data.new_status}`, true);
       onClose();
     } catch (err: any) {
-      onDone(`❌ ${err.response?.data?.message || 'Lỗi thực hiện action'}`, false);
+      onDone(err.response?.data?.message || 'Lỗi thực hiện thao tác', false);
+    } finally {
       setLoading(false);
     }
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-      <div className="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
-        <div className="flex justify-between items-center">
-          <h3 className="font-bold text-white">Hành động tồn kho</h3>
-          <button onClick={onClose} className="text-slate-500 hover:text-slate-300 cursor-pointer"><XCircle className="w-4 h-4" /></button>
+      <div className="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-md p-5 space-y-4">
+        <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+          <h3 className="font-bold text-white text-sm">
+            Thao tác OCC Tồn kho: <span className="text-orange-400 font-mono">{item.tracking_code}</span>
+          </h3>
+          <button onClick={onClose} className="text-slate-500 hover:text-slate-300">
+            <XCircle className="w-5 h-5" />
+          </button>
         </div>
         <p className="text-xs text-slate-400">
-          Kiện: <span className="font-mono text-violet-300 font-bold">{item.tracking_code}</span>
-          <br />Trạng thái: <StatusChip status={item.status} /> · Dwell: {item.dwell_human}
+          Trạng thái: <StatusChip status={item.status} /> · Dwell: <span className="font-bold text-white">{item.dwell_human}</span> ·{' '}
+          <AgingBadge status={item.aging_status} />
         </p>
-
         <textarea
+          placeholder="Lý do thao tác (không bắt buộc)..."
           value={reason}
-          onChange={e => setReason(e.target.value)}
-          placeholder="Lý do (tuỳ chọn)..."
+          onChange={(e) => setReason(e.target.value)}
           rows={2}
-          className="w-full bg-slate-950 border border-slate-700 text-xs text-slate-300 rounded-xl px-3 py-2 placeholder:text-slate-600 focus:outline-none focus:border-violet-500 resize-none"
+          className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-orange-500 resize-none"
         />
-
-        <div className="space-y-2">
-          <button onClick={() => doAction('AI_REROUTE')} disabled={loading}
-            className="w-full flex items-center justify-center gap-2 py-2.5 bg-blue-700 hover:bg-blue-600 text-white text-xs font-bold rounded-xl transition disabled:opacity-50 cursor-pointer">
-            <Cpu className="w-3.5 h-3.5" /> AI Reroute
+        <div className="grid grid-cols-2 gap-2 pt-1">
+          <button
+            onClick={() => doAction('RETURN')}
+            disabled={loading}
+            className="py-2.5 px-3 bg-amber-600/80 hover:bg-amber-500 text-white font-semibold text-xs rounded-xl flex items-center justify-center gap-1.5 transition"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            Chuyển hoàn
           </button>
-          <button onClick={() => doAction('RETURN')} disabled={loading}
-            className="w-full flex items-center justify-center gap-2 py-2.5 bg-amber-700 hover:bg-amber-600 text-white text-xs font-bold rounded-xl transition disabled:opacity-50 cursor-pointer">
-            <RotateCcw className="w-3.5 h-3.5" /> Hoàn trả (RETURN)
-          </button>
-          <button onClick={() => doAction('LIQUIDATE')} disabled={loading}
-            className="w-full flex items-center justify-center gap-2 py-2.5 bg-rose-700 hover:bg-rose-600 text-white text-xs font-bold rounded-xl transition disabled:opacity-50 cursor-pointer">
-            <Trash2 className="w-3.5 h-3.5" /> Thanh lý (LIQUIDATE)
+          <button
+            onClick={() => doAction('LIQUIDATE')}
+            disabled={loading}
+            className="py-2.5 px-3 bg-rose-600/80 hover:bg-rose-500 text-white font-semibold text-xs rounded-xl flex items-center justify-center gap-1.5 transition"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            Thanh lý
           </button>
         </div>
-        {loading && <p className="text-center text-xs text-slate-400 animate-pulse">Đang xử lý...</p>}
       </div>
     </div>
   );
 }
 
-// ── Main Dashboard ────────────────────────────────────────────────────────────
+// ── Main Page Component ───────────────────────────────────────────────────────
 export const WarehouseInventoryDashboardPage: React.FC = () => {
-  const [items, setItems]             = useState<AgingItem[]>([]);
-  const [summary, setSummary]         = useState<SummaryData | null>(null);
-  const [pagination, setPagination]   = useState({ total: 0, page: 1, limit: 20, total_pages: 1 });
-  const [slaThresholds, setSlaThresholds] = useState({ warning_hours: 24, critical_hours: 48 });
+  const [summary, setSummary] = useState<SummaryData | null>(null);
+  const [tripSuggestions, setTripSuggestions] = useState<TripSuggestion[]>([]);
+  const [agingData, setAgingData] = useState<AgingItem[]>([]);
+  const [pagination, setPagination] = useState({ total: 0, page: 1, limit: 15, totalPages: 1 });
   const [agingFilter, setAgingFilter] = useState<AgingStatus>('ALL');
-  const [loading, setLoading]         = useState(false);
-  const [toast, setToast]             = useState<{ msg: string; ok: boolean } | null>(null);
-  const [historyTarget, setHistoryTarget] = useState<string | null>(null);
-  const [actionTarget, setActionTarget]   = useState<AgingItem | null>(null);
-  const [socketConnected, setSocketConnected] = useState(false);
+  const [selectedZone, setSelectedZone] = useState<string>('');
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [dwellRangeFilter, setDwellRangeFilter] = useState<string>('ALL');
+
+  // Selected for batch operations
+  const [selectedCodes, setSelectedCodes] = useState<string[]>([]);
+  const [batchLoading, setBatchLoading] = useState<boolean>(false);
+
+  // Modals
+  const [historyCode, setHistoryCode] = useState<string | null>(null);
+  const [actionItem, setActionItem] = useState<AgingItem | null>(null);
+
   const socketRef = useRef<Socket | null>(null);
 
-  // ── Load data ──────────────────────────────────────────────────────────────
-  const loadData = useCallback(async (page = 1) => {
-    setLoading(true);
+  const loadData = useCallback(async () => {
     try {
-      const [agingRes, summaryRes] = await Promise.all([
-        inventoryApi.getAging({ aging_status: agingFilter, page, limit: 20 }),
+      const [sumRes, agingRes, tripRes] = await Promise.all([
         inventoryApi.getSummary(),
+        inventoryApi.getAging({
+          page: pagination.page,
+          limit: pagination.limit,
+          aging_status: agingFilter,
+          zone_id: selectedZone || undefined,
+          search: searchTerm || undefined,
+          dwell_range: dwellRangeFilter !== 'ALL' ? dwellRangeFilter : undefined,
+        }),
+        inventoryApi.getTripSuggestions().catch(() => ({ data: [] })),
       ]);
-      setItems(agingRes.data.items);
-      setPagination(agingRes.data.pagination as any);
-      setSlaThresholds(agingRes.data.sla_thresholds);
-      setSummary(summaryRes.data);
+      setSummary(sumRes.data);
+      setAgingData(agingRes.data.items);
+      setPagination(agingRes.data.pagination);
+      setTripSuggestions(tripRes.data || []);
     } catch (err: any) {
-      showToast(err.response?.data?.message || 'Lỗi tải dữ liệu', false);
-    } finally {
-      setLoading(false);
+      console.error('Error loading inventory data:', err);
     }
-  }, [agingFilter]);
+  }, [pagination.page, pagination.limit, agingFilter, selectedZone, searchTerm, dwellRangeFilter]);
 
-  useEffect(() => { loadData(1); }, [loadData]);
-
-  // ── Socket.IO realtime ─────────────────────────────────────────────────────
   useEffect(() => {
-    const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-    const socket = socketIO(backendUrl, { transports: ['websocket'] });
+    loadData();
+  }, [loadData]);
+
+  // Socket.IO Real-time setup
+  useEffect(() => {
+    const socket = socketIO('http://localhost:5000', { transports: ['websocket'] });
     socketRef.current = socket;
-    socket.on('connect', () => {
-      setSocketConnected(true);
-      // Join room dựa trên hubId của user (lấy từ localStorage/JWT context nếu có)
-      // Tạm join 'ALL' cho demo
-      socket.emit('join_warehouse_dashboard', 'ALL');
-    });
-    socket.on('disconnect', () => setSocketConnected(false));
-    socket.on('inventory:update', (payload: any) => {
-      showToast(`🔄 Cập nhật realtime: [${payload.trackingCode}] → ${payload.newStatus}`, true);
-      loadData(1);
-    });
-    return () => { socket.disconnect(); };
-  }, []);
 
-  const showToast = (msg: string, ok: boolean) => {
-    setToast({ msg, ok });
-    setTimeout(() => setToast(null), 4000);
-  };
+    socket.on('INVENTORY_UPDATE', () => {
+      loadData();
+    });
 
-  // ── Export ─────────────────────────────────────────────────────────────────
-  const handleExport = async () => {
+    return () => {
+      socket.disconnect();
+    };
+  }, [loadData]);
+
+  // Handle Export
+  const handleExport = async (format: 'json' | 'csv') => {
     try {
-      const res = await inventoryApi.exportInventory({ aging_status: agingFilter });
-      const blob = new Blob([JSON.stringify(res.data.items, null, 2)], { type: 'application/json' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = `inventory_export_${Date.now()}.json`;
-      a.click();
-      showToast(`✅ Đã export ${res.data.count} kiện`, true);
+      const res = await inventoryApi.exportInventory({ aging_status: agingFilter, format });
+      if (format === 'csv') {
+        const url = window.URL.createObjectURL(new Blob([res]));
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `inventory_export_${Date.now()}.csv`;
+        a.click();
+        toast.success('Đã tải xuống file CSV thành công!');
+      } else {
+        const blob = new Blob([JSON.stringify(res.data, null, 2)], { type: 'application/json' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `inventory_export_${Date.now()}.json`;
+        a.click();
+        toast.success('Đã tải xuống file JSON thành công!');
+      }
     } catch (err: any) {
-      showToast(err.response?.data?.message || 'Lỗi export', false);
+      toast.error('Lỗi khi xuất dữ liệu tồn kho');
     }
   };
 
-  const agingCount = summary?.by_aging || { NORMAL: 0, WARNING: 0, CRITICAL: 0 };
+  // Handle Batch Action
+  const handleBatchAction = async (actionType: InventoryActionType) => {
+    if (selectedCodes.length === 0) {
+      toast.error('Vui lòng chọn ít nhất 1 kiện hàng để thực hiện!');
+      return;
+    }
+    setBatchLoading(true);
+    try {
+      const res = await inventoryApi.performBatchAction({
+        tracking_codes: selectedCodes,
+        action_type: actionType,
+        reason: `Xử lý hàng loạt ${actionType} từ Dashboard`,
+      });
+      toast.success(`Đã xử lý xong: ${res.data.success_count}/${res.data.total} kiện thành công!`);
+      setSelectedCodes([]);
+      loadData();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Lỗi khi xử lý hàng loạt');
+    } finally {
+      setBatchLoading(false);
+    }
+  };
+
+  // Handle 1-Click Create Trip from Stock
+  const handleCreateTripFromSuggestion = async (sug: TripSuggestion) => {
+    try {
+      const res = await inventoryApi.createTripFromStock({
+        destination_hub_id: sug.destination_hub_id,
+        tracking_codes: sug.tracking_codes,
+      });
+      toast.success(`⚡ Đã tạo Chuyến xe [${res.data.trip_code}] gồm ${sug.total_items} kiện đi ${sug.destination_hub_name}!`);
+      loadData();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Lỗi khi tạo chuyến xe');
+    }
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedCodes.length === agingData.length) {
+      setSelectedCodes([]);
+    } else {
+      setSelectedCodes(agingData.map((i) => i.tracking_code));
+    }
+  };
+
+  const toggleSelectOne = (code: string) => {
+    setSelectedCodes((prev) =>
+      prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]
+    );
+  };
 
   return (
-    <div className="space-y-6 max-w-screen-2xl mx-auto pb-12">
+    <div className="p-6 max-w-7xl mx-auto space-y-6 text-slate-100 font-sans">
       {/* Header */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-xl gap-4">
-        <div className="flex items-center gap-2.5">
-          <div className="p-2.5 bg-violet-600/20 border border-violet-500/30 rounded-xl text-violet-400">
-            <BarChart3 className="w-6 h-6" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold text-white tracking-wide">Dashboard Tồn Kho (UC-19)</h1>
-            <p className="text-xs text-slate-400 mt-0.5">
-              SLA: ⚠ {slaThresholds.warning_hours}h · 🔴 {slaThresholds.critical_hours}h ·{' '}
-              {socketConnected ? <span className="text-emerald-400">● Realtime ON</span> : <span className="text-rose-400">● Offline</span>}
-            </p>
-          </div>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/90 border border-slate-800 p-5 rounded-2xl shadow-xl">
+        <div>
+          <h1 className="text-xl font-black tracking-tight text-white flex items-center gap-3">
+            <BarChart3 className="w-6 h-6 text-orange-500" />
+            Dashboard Quản Lý Tồn Kho & Aging SLA (UC-19)
+          </h1>
+          <p className="text-xs text-slate-400 mt-1">
+            Giám sát Sức chứa Zone · Cảnh báo Nghẽn Kho · Vận tốc Nhập/Xuất 24h & Gợi ý Gom xe
+          </p>
         </div>
-        <div className="flex gap-2 flex-wrap">
-          <button onClick={() => loadData(1)} disabled={loading}
-            className="flex items-center gap-1.5 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl transition cursor-pointer disabled:opacity-50">
-            <RefreshCcw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /> Tải lại
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => handleExport('csv')}
+            className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl flex items-center gap-1.5 border border-slate-700 transition"
+          >
+            <Download className="w-3.5 h-3.5 text-orange-400" />
+            CSV
           </button>
-          <button onClick={handleExport}
-            className="flex items-center gap-1.5 px-4 py-2 bg-violet-700 hover:bg-violet-600 text-white text-xs font-bold rounded-xl transition cursor-pointer">
-            <Download className="w-3.5 h-3.5" /> Export JSON
+          <button
+            onClick={loadData}
+            className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl flex items-center gap-1.5 border border-slate-700 transition"
+          >
+            <RefreshCcw className="w-3.5 h-3.5" />
+            Làm mới
           </button>
         </div>
       </div>
 
-      {/* Summary cards */}
-      {summary && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl text-center">
-            <Package className="w-6 h-6 text-slate-400 mx-auto mb-1.5" />
-            <p className="text-[10px] text-slate-400 uppercase font-bold mb-1">Tổng tồn kho</p>
-            <p className="text-3xl font-black text-slate-100">{summary.total}</p>
+      {/* TOP METRICS: AGING & 24H VELOCITY */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        {/* Total Stock */}
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold text-slate-400 uppercase">TỔNG TỒN KHO</span>
+            <Package className="w-4 h-4 text-orange-400" />
           </div>
-          <div className="bg-emerald-950/30 border border-emerald-800/40 p-4 rounded-2xl text-center cursor-pointer hover:border-emerald-600 transition" onClick={() => setAgingFilter('NORMAL')}>
-            <CheckCircle2 className="w-6 h-6 text-emerald-400 mx-auto mb-1.5" />
-            <p className="text-[10px] text-emerald-400 uppercase font-bold mb-1">Bình thường</p>
-            <p className="text-3xl font-black text-emerald-300">{agingCount.NORMAL}</p>
-          </div>
-          <div className="bg-amber-950/30 border border-amber-800/40 p-4 rounded-2xl text-center cursor-pointer hover:border-amber-600 transition" onClick={() => setAgingFilter('WARNING')}>
-            <AlertTriangle className="w-6 h-6 text-amber-400 mx-auto mb-1.5" />
-            <p className="text-[10px] text-amber-400 uppercase font-bold mb-1">Cảnh báo ≥{slaThresholds.warning_hours}h</p>
-            <p className="text-3xl font-black text-amber-300">{agingCount.WARNING}</p>
-          </div>
-          <div className="bg-rose-950/30 border border-rose-800/40 p-4 rounded-2xl text-center cursor-pointer hover:border-rose-600 transition" onClick={() => setAgingFilter('CRITICAL')}>
-            <XCircle className="w-6 h-6 text-rose-400 mx-auto mb-1.5" />
-            <p className="text-[10px] text-rose-400 uppercase font-bold mb-1">Nguy hiểm ≥{slaThresholds.critical_hours}h</p>
-            <p className="text-3xl font-black text-rose-300">{agingCount.CRITICAL}</p>
-          </div>
+          <p className="text-2xl font-black text-white font-mono mt-1">{summary?.total || 0}</p>
+          <p className="text-[11px] text-slate-400 mt-0.5">
+            Giá trị: <span className="text-orange-300 font-semibold">{((summary?.total_stock_value_vnd || 0) / 1e6).toFixed(1)} tr đ</span>
+          </p>
         </div>
-      )}
 
-      {/* Filter tabs */}
-      <div className="flex gap-2 flex-wrap">
-        {(['ALL','NORMAL','WARNING','CRITICAL'] as AgingStatus[]).map(s => (
-          <button key={s} onClick={() => { setAgingFilter(s); loadData(1); }}
-            className={`px-4 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer border ${
-              agingFilter === s
-                ? 'bg-violet-600 border-violet-500 text-white'
-                : 'bg-slate-900 border-slate-700 text-slate-400 hover:border-slate-500'
-            }`}>
-            {s}
-          </button>
-        ))}
-        <span className="ml-auto text-xs text-slate-500 flex items-center">{pagination.total} kiện</span>
+        {/* Normal SLA */}
+        <div className="bg-emerald-950/30 border border-emerald-800/40 rounded-2xl p-4 shadow-xl">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold text-emerald-400 uppercase">NORMAL (&lt;24H)</span>
+            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+          </div>
+          <p className="text-2xl font-black text-emerald-300 font-mono mt-1">{summary?.by_aging?.NORMAL || 0}</p>
+          <p className="text-[11px] text-emerald-400/80 mt-0.5">Lưu kho an toàn</p>
+        </div>
+
+        {/* Warning SLA */}
+        <div className="bg-amber-950/30 border border-amber-800/40 rounded-2xl p-4 shadow-xl">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold text-amber-400 uppercase">WARNING (24-48H)</span>
+            <AlertTriangle className="w-4 h-4 text-amber-400" />
+          </div>
+          <p className="text-2xl font-black text-amber-300 font-mono mt-1">{summary?.by_aging?.WARNING || 0}</p>
+          <p className="text-[11px] text-amber-400/80 mt-0.5">Cần ưu tiên xuất</p>
+        </div>
+
+        {/* Critical SLA */}
+        <div className="bg-rose-950/30 border border-rose-800/40 rounded-2xl p-4 shadow-xl">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold text-rose-400 uppercase">CRITICAL (&gt;48H)</span>
+            <AlertTriangle className="w-4 h-4 text-rose-400" />
+          </div>
+          <p className="text-2xl font-black text-rose-300 font-mono mt-1">{summary?.by_aging?.CRITICAL || 0}</p>
+          <p className="text-[11px] text-rose-400/80 mt-0.5">Quá hạn SLA nghiêm trọng</p>
+        </div>
       </div>
 
-      {/* Table */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-slate-950 text-slate-400 text-xs uppercase font-semibold border-b border-slate-800">
-              <tr>
-                <th className="py-3 px-4">Mã vận đơn</th>
-                <th className="py-3 px-4">Trạng thái</th>
-                <th className="py-3 px-4">Zone</th>
-                <th className="py-3 px-4">Nhập kho</th>
-                <th className="py-3 px-4">Dwell Time</th>
-                <th className="py-3 px-4">Aging</th>
-                <th className="py-3 px-4 text-right">Hành động</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800/60">
-              {loading && (
-                <tr><td colSpan={7} className="py-12 text-center text-slate-500 text-sm">Đang tải...</td></tr>
-              )}
-              {!loading && items.length === 0 && (
-                <tr><td colSpan={7} className="py-12 text-center text-slate-500 text-sm">Không có dữ liệu tồn kho.</td></tr>
-              )}
-              {items.map(item => (
-                <tr key={item.tracking_code}
-                  className={`transition hover:bg-slate-800/30 ${item.aging_status === 'CRITICAL' ? 'bg-rose-950/10' : item.aging_status === 'WARNING' ? 'bg-amber-950/10' : ''}`}>
-                  <td className="py-3 px-4">
-                    <span className="font-mono font-bold text-violet-400 text-xs">{item.tracking_code}</span>
-                    {item.is_flagged && <span className="ml-1 text-[9px] bg-rose-500/20 text-rose-300 border border-rose-500/30 px-1 rounded">FLAG</span>}
-                  </td>
-                  <td className="py-3 px-4"><StatusChip status={item.status} /></td>
-                  <td className="py-3 px-4 text-xs text-slate-400">
-                    {item.current_zone ? (
-                      <span className="flex items-center gap-1">
-                        <Map className="w-3 h-3 text-violet-400" />
-                        {item.current_zone.code}
-                      </span>
-                    ) : <span className="text-slate-600">—</span>}
-                  </td>
-                  <td className="py-3 px-4 text-xs text-slate-400">
-                    {item.hub_inbound_at ? new Date(item.hub_inbound_at).toLocaleDateString('vi-VN') : '—'}
-                  </td>
-                  <td className="py-3 px-4">
-                    <span className={`text-xs font-bold ${item.aging_status === 'CRITICAL' ? 'text-rose-400' : item.aging_status === 'WARNING' ? 'text-amber-400' : 'text-emerald-400'}`}>
-                      {item.dwell_human}
+      {/* 2 CỘT: SỨC CHỨA ZONE & GỢI Ý GOM CHUYẾN XE */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Cột 1: Sức chứa Zone & Cảnh báo Nghẽn */}
+        <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <h2 className="text-sm font-bold text-white flex items-center gap-2">
+              <Package className="w-4 h-4 text-orange-400" />
+              Sức Chứa Khu Vực (Zone Utilization & Bottleneck Warning)
+            </h2>
+            {summary?.throughput_24h && (
+              <span className="text-[11px] font-semibold text-slate-400 flex items-center gap-1.5">
+                <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
+                Vận tốc 24h: <b className="text-white">{summary.throughput_24h.inbound_count} Nhập</b> /{' '}
+                <b className="text-orange-400">{summary.throughput_24h.outbound_count} Xuất</b> ({summary.throughput_24h.turnover_ratio}%)
+              </span>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            {summary?.by_zone?.map((z) => {
+              const isOver = z.capacity_status === 'CRITICAL_OVERCAPACITY';
+              const isWarn = z.capacity_status === 'WARNING';
+              return (
+                <div
+                  key={z.zone_id}
+                  className={`p-3.5 rounded-xl border transition ${
+                    isOver
+                      ? 'bg-rose-950/30 border-rose-600/50'
+                      : isWarn
+                      ? 'bg-amber-950/20 border-amber-600/40'
+                      : 'bg-slate-950/60 border-slate-800'
+                  }`}
+                >
+                  <div className="flex items-center justify-between text-xs mb-1.5">
+                    <span className="font-bold text-slate-200 truncate">{z.zone_name || z.zone_code}</span>
+                    <span
+                      className={`font-mono font-bold text-[11px] ${
+                        isOver ? 'text-rose-400' : isWarn ? 'text-amber-400' : 'text-emerald-400'
+                      }`}
+                    >
+                      {z.current_count} / {z.capacity} ({z.utilization_percent}%)
                     </span>
-                  </td>
-                  <td className="py-3 px-4"><AgingBadge status={item.aging_status} /></td>
-                  <td className="py-3 px-4 text-right">
-                    <div className="flex gap-1.5 justify-end">
-                      <button onClick={() => setHistoryTarget(item.tracking_code)}
-                        title="Lịch sử di chuyển"
-                        className="p-1.5 bg-slate-800 hover:bg-violet-900 text-slate-400 hover:text-violet-300 rounded-lg transition cursor-pointer border border-slate-700 hover:border-violet-600">
-                        <History className="w-3.5 h-3.5" />
-                      </button>
-                      <button onClick={() => setActionTarget(item)}
-                        title="Hành động"
-                        className="p-1.5 bg-slate-800 hover:bg-violet-900 text-slate-400 hover:text-violet-300 rounded-lg transition cursor-pointer border border-slate-700 hover:border-violet-600">
-                        <Cpu className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  </div>
+
+                  <div className="w-full bg-slate-900 rounded-full h-2 overflow-hidden border border-slate-800">
+                    <div
+                      className={`h-full transition-all duration-300 ${
+                        isOver ? 'bg-rose-500' : isWarn ? 'bg-amber-500' : 'bg-emerald-500'
+                      }`}
+                      style={{ width: `${z.utilization_percent}%` }}
+                    />
+                  </div>
+
+                  {isOver && (
+                    <p className="text-[10px] text-rose-400 font-bold mt-1.5 flex items-center gap-1">
+                      <AlertTriangle className="w-3 h-3" /> 🚨 CẢNH BÁO NGHẼN KHAY / QUÁ TẢI (&gt;90%)
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
 
-        {/* Pagination */}
-        {pagination.total_pages > 1 && (
-          <div className="px-5 py-3 border-t border-slate-800 flex items-center justify-between bg-slate-950/50">
-            <p className="text-xs text-slate-400">
-              Trang {pagination.page}/{pagination.total_pages} · {pagination.total} kiện
+        {/* Cột 2: Gợi ý tạo chuyến xe thông minh */}
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-3.5 flex flex-col justify-between">
+          <div>
+            <h3 className="text-sm font-bold text-white flex items-center gap-2 border-b border-slate-800 pb-3">
+              <Zap className="w-4 h-4 text-orange-400" />
+              Gợi Ý Gom Chuyến Xe (Smart Auto-Trip)
+            </h3>
+            <p className="text-xs text-slate-400 mt-1">
+              Phát hiện các kiện đang chờ trung chuyển theo tuyến:
             </p>
-            <div className="flex gap-2">
-              <button disabled={pagination.page <= 1} onClick={() => loadData(pagination.page - 1)}
-                className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-lg transition disabled:opacity-30 cursor-pointer border border-slate-700">
-                <ChevronLeft className="w-4 h-4" />
+
+            {tripSuggestions.length === 0 ? (
+              <p className="text-xs text-slate-500 italic py-6 text-center">
+                Không có kiện hàng chờ gom chuyến xe tại kho lúc này.
+              </p>
+            ) : (
+              <div className="space-y-2.5 mt-3 max-h-56 overflow-y-auto pr-1">
+                {tripSuggestions.map((sug) => (
+                  <div
+                    key={sug.destination_hub_id}
+                    className="p-3 bg-slate-950/80 border border-slate-800 rounded-xl flex items-center justify-between text-xs"
+                  >
+                    <div>
+                      <p className="font-bold text-orange-400 flex items-center gap-1">
+                        <Truck className="w-3.5 h-3.5" />
+                        {sug.destination_hub_name}
+                      </p>
+                      <p className="text-[11px] text-slate-400 mt-0.5">
+                        {sug.total_items} kiện · {sug.total_weight_kg} kg
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => handleCreateTripFromSuggestion(sug)}
+                      className="px-2.5 py-1.5 bg-orange-600 hover:bg-orange-500 text-white font-bold text-[11px] rounded-lg shadow transition flex items-center gap-1"
+                    >
+                      ⚡ Tạo xe
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* FILTER & BATCH ACTION BAR */}
+      <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl shadow-xl space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          {/* Search Input */}
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Tìm theo mã vận đơn (ELG-VN-...)"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-9 pr-3.5 py-2 text-white text-xs focus:outline-none focus:border-orange-500"
+            />
+          </div>
+
+          {/* Aging Status Filter Tabs */}
+          <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
+            {(['ALL', 'NORMAL', 'WARNING', 'CRITICAL'] as AgingStatus[]).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setAgingFilter(tab)}
+                className={`px-3 py-1.5 rounded-lg font-bold transition ${
+                  agingFilter === tab ? 'bg-orange-600 text-white' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                {tab}
               </button>
-              <button disabled={pagination.page >= pagination.total_pages} onClick={() => loadData(pagination.page + 1)}
-                className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-lg transition disabled:opacity-30 cursor-pointer border border-slate-700">
-                <ChevronRight className="w-4 h-4" />
+            ))}
+          </div>
+
+          {/* Dwell Range Filter */}
+          <select
+            value={dwellRangeFilter}
+            onChange={(e) => setDwellRangeFilter(e.target.value)}
+            className="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-orange-500"
+          >
+            <option value="ALL">Mọi thời gian lưu kho</option>
+            <option value="<12h">&lt; 12 giờ</option>
+            <option value="12-24h">12 - 24 giờ</option>
+            <option value="24-48h">24 - 48 giờ</option>
+            <option value=">48h">&gt; 48 giờ (Quá hạn)</option>
+          </select>
+
+          {/* Zone Filter */}
+          <select
+            value={selectedZone}
+            onChange={(e) => setSelectedZone(e.target.value)}
+            className="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-orange-500"
+          >
+            <option value="">Tất cả khu vực (Zones)</option>
+            {summary?.by_zone?.map((z) => (
+              <option key={z.zone_id} value={z.zone_id}>
+                {z.zone_name || z.zone_code} ({z.current_count})
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Batch Operations Bar (Khi có chọn checkbox) */}
+        {selectedCodes.length > 0 && (
+          <div className="flex items-center justify-between bg-orange-950/40 border border-orange-600/50 p-3 rounded-xl text-xs">
+            <span className="font-bold text-orange-300">
+              Đã chọn: {selectedCodes.length} kiện hàng
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => handleBatchAction('RETURN')}
+                disabled={batchLoading}
+                className="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-lg transition flex items-center gap-1"
+              >
+                <RotateCcw className="w-3 h-3" />
+                Chuyển hoàn hàng loạt
+              </button>
+              <button
+                onClick={() => handleBatchAction('LIQUIDATE')}
+                disabled={batchLoading}
+                className="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-lg transition flex items-center gap-1"
+              >
+                <Trash2 className="w-3 h-3" />
+                Thanh lý hàng loạt
               </button>
             </div>
           </div>
         )}
       </div>
 
-      {/* Zone breakdown */}
-      {summary && summary.by_zone.length > 0 && (
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-xl overflow-hidden">
-          <div className="px-5 py-3.5 border-b border-slate-800 bg-slate-950/60">
-            <h2 className="text-sm font-bold text-slate-200 flex items-center gap-2">
-              <Map className="w-4 h-4 text-violet-400" /> Phân bố theo Zone
-            </h2>
-          </div>
-          <div className="p-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-            {summary.by_zone.map((z, i) => (
-              <div key={i} className="bg-slate-950/60 border border-slate-800 rounded-xl p-3 hover:border-violet-700/50 transition">
-                <p className="text-xs font-mono font-bold text-violet-400">{z.zone_code || '—'}</p>
-                <p className="text-[10px] text-slate-500">{z.zone_type}</p>
-                <p className="text-xl font-black text-slate-100 mt-1">{z.count}</p>
-              </div>
-            ))}
-          </div>
+      {/* AGING INVENTORY TABLE */}
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-xl overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-slate-950 text-slate-400 uppercase font-semibold border-b border-slate-800">
+              <tr>
+                <th className="py-3 px-4 w-10">
+                  <button onClick={toggleSelectAll} className="text-slate-400 hover:text-white">
+                    {selectedCodes.length > 0 && selectedCodes.length === agingData.length ? (
+                      <CheckSquare className="w-4 h-4 text-orange-400" />
+                    ) : (
+                      <Square className="w-4 h-4" />
+                    )}
+                  </button>
+                </th>
+                <th className="py-3 px-4">Mã Vận Đơn</th>
+                <th className="py-3 px-4">Trạng Thái</th>
+                <th className="py-3 px-4">Khu Vực (Zone)</th>
+                <th className="py-3 px-4">Đích Đến</th>
+                <th className="py-3 px-4">Thời Gian Lưu (Dwell)</th>
+                <th className="py-3 px-4">Mức SLA</th>
+                <th className="py-3 px-4 text-right">Thao Tác</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-800/60">
+              {agingData.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="py-8 text-center text-slate-500 italic">
+                    Không tìm thấy kiện hàng nào theo bộ lọc.
+                  </td>
+                </tr>
+              ) : (
+                agingData.map((item) => {
+                  const isSelected = selectedCodes.includes(item.tracking_code);
+                  return (
+                    <tr
+                      key={item.tracking_code}
+                      className={`transition ${isSelected ? 'bg-orange-950/20' : 'hover:bg-slate-800/40'}`}
+                    >
+                      <td className="py-3 px-4">
+                        <button onClick={() => toggleSelectOne(item.tracking_code)}>
+                          {isSelected ? (
+                            <CheckSquare className="w-4 h-4 text-orange-400" />
+                          ) : (
+                            <Square className="w-4 h-4 text-slate-600" />
+                          )}
+                        </button>
+                      </td>
+                      <td className="py-3 px-4 font-mono font-bold text-orange-400">
+                        {item.tracking_code}
+                      </td>
+                      <td className="py-3 px-4">
+                        <StatusChip status={item.status} />
+                      </td>
+                      <td className="py-3 px-4 text-slate-300">
+                        {item.current_zone?.name || item.current_zone?.code || '—'}
+                      </td>
+                      <td className="py-3 px-4 text-slate-300 font-medium">
+                        {item.destination_hub?.province || item.destination_hub?.name || '—'}
+                      </td>
+                      <td className="py-3 px-4 font-mono font-bold text-white">
+                        {item.dwell_human}
+                      </td>
+                      <td className="py-3 px-4">
+                        <AgingBadge status={item.aging_status} />
+                      </td>
+                      <td className="py-3 px-4 text-right space-x-2">
+                        <button
+                          onClick={() => setHistoryCode(item.tracking_code)}
+                          className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-lg border border-slate-700 transition"
+                        >
+                          Lịch sử
+                        </button>
+                        <button
+                          onClick={() => setActionItem(item)}
+                          className="px-2.5 py-1 bg-orange-600/90 hover:bg-orange-500 text-white font-semibold rounded-lg shadow transition"
+                        >
+                          Xử lý
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
         </div>
-      )}
 
-      {/* Toast */}
-      {toast && (
-        <div className={`fixed bottom-6 right-6 z-50 px-5 py-3 rounded-2xl text-sm font-bold shadow-2xl border transition-all ${
-          toast.ok ? 'bg-emerald-950/95 text-emerald-200 border-emerald-700' : 'bg-rose-950/95 text-rose-200 border-rose-700'
-        }`}>
-          {toast.msg}
+        {/* Pagination */}
+        <div className="px-5 py-3 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
+          <span>Tổng số: <b>{pagination.total}</b> kiện hàng</span>
+          <div className="flex items-center gap-2">
+            <button
+              disabled={pagination.page <= 1}
+              onClick={() => setPagination((p) => ({ ...p, page: p.page - 1 }))}
+              className="p-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 rounded-lg text-slate-300 transition"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <span className="font-mono font-bold text-white">
+              {pagination.page} / {pagination.totalPages || 1}
+            </span>
+            <button
+              disabled={pagination.page >= pagination.totalPages}
+              onClick={() => setPagination((p) => ({ ...p, page: p.page + 1 }))}
+              className="p-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 rounded-lg text-slate-300 transition"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
-      )}
+      </div>
 
       {/* Modals */}
-      {historyTarget && <MovementHistoryPanel trackingCode={historyTarget} onClose={() => setHistoryTarget(null)} />}
-      {actionTarget && (
+      {historyCode && (
+        <MovementHistoryPanel trackingCode={historyCode} onClose={() => setHistoryCode(null)} />
+      )}
+      {actionItem && (
         <ActionMenu
-          item={actionTarget}
-          onClose={() => setActionTarget(null)}
-          onDone={(msg, ok) => { showToast(msg, ok); loadData(1); }}
+          item={actionItem}
+          onClose={() => setActionItem(null)}
+          onDone={(msg) => toast.info(msg)}
         />
       )}
     </div>
