@@ -29,6 +29,8 @@ app.use('/api/driver/trips', require('./routes/driverHandoff.routes')); // UC-17
 app.use('/api/bags', require('./routes/bag.routes'));                // UC-Bagging: Gom bao & Niêm phong
 app.use('/api/audit', require('./routes/audit.routes'));          // UC-18: Kiểm kê kho
 app.use('/api/inventory', require('./routes/inventory.routes')); // UC-19: Dashboard Tồn kho
+app.use('/api/wallet', require('./routes/wallet.routes'));       // Module 6: Ví COD Seller & Rút tiền
+app.use('/api/seller/wallet', require('./routes/wallet.routes'));// Alias cho sub-account Seller
 
 
 
