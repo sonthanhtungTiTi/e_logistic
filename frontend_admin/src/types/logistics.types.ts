@@ -11,9 +11,6 @@ export interface PickupConfirmRequest {
   parcelPhoto?: string;
   actualWeight?: number;
   note?: string;
-  signatureImageUrl?: string;
-  parcelImageUrl?: string;
-  actualWeight?: number;
 }
 
 export interface PickupConfirmResponse {

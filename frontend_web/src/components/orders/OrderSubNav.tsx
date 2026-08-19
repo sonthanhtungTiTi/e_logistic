@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router';
-import { FileSpreadsheet, ListFilter, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 
 export interface OrderSubNavProps {
   activeTab?: 'single' | 'batch' | 'list';

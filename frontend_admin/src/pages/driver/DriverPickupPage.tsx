@@ -9,7 +9,6 @@ import {
   Navigation,
   MapPin,
   Send,
-  History,
   Search,
   RefreshCw,
   FileCheck,
@@ -17,14 +16,11 @@ import {
   Calendar,
   Clock,
   Phone,
-  ExternalLink,
   Eye,
   Plus,
   X,
   User,
   Box,
-  ChevronRight,
-  Info
 } from 'lucide-react';
 
 const LOCAL_STORAGE_HISTORY_KEY = 'driver_pickup_history_cache';

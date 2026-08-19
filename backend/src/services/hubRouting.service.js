@@ -507,18 +507,18 @@ async function resolveOrderRoute(pickupAddress, deliveryAddress) {
   const pickupHub = await findHubByAddress(pickupAddress.province, pickupAddress.district);
   const deliveryHub = await findHubByAddress(deliveryAddress.province, deliveryAddress.district);
 
-  const path = await findShortestHubPath(pickupHub._id, deliveryHub._id);
+  let path = await findShortestHubPath(pickupHub._id, deliveryHub._id);
   if (!path || path.length === 0) {
-    const fallbackPath = pickupHub._id.equals(deliveryHub._id)
-      ? [pickupHub._id.toString()]
-      : [pickupHub._id.toString(), deliveryHub._id.toString()];
-
-    return fallbackPath.map((hubId, index) => ({
-      hubId,
-      hubType: index === 0 ? 'PICKUP' : (index === fallbackPath.length - 1 ? 'DELIVERY' : 'SORTING'),
-      sequenceIndex: index,
-      status: 'PENDING'
-    }));
+    const routeCodes = calculateRoutePath(pickupHub.code, deliveryHub.code);
+    const hubs = await Promise.all(routeCodes.map(code => Hub.findOne({ code })));
+    const validHubs = hubs.filter(Boolean);
+    if (validHubs.length > 0) {
+      path = validHubs.map(h => h._id.toString());
+    } else {
+      path = pickupHub._id.equals(deliveryHub._id)
+        ? [pickupHub._id.toString()]
+        : [pickupHub._id.toString(), deliveryHub._id.toString()];
+    }
   }
 
   return path.map((hubId, index) => ({
