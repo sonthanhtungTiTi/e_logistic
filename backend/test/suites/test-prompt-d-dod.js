@@ -4,17 +4,17 @@
  *
  * Chạy: node test-prompt-d-dod.js
  */
-require('dotenv').config();
+require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env') });
 const mongoose = require('mongoose');
 const assert = require('assert');
 const http = require('http');
 
-const app = require('./src/app');
-const Hub = require('./src/models/hub.model');
-const User = require('./src/models/user.model');
-const Order = require('./src/models/order.model');
-const OrderLog = require('./src/models/orderLog.model');
-const AuditSession = require('./src/models/auditSession.model');
+const app = require('../../src/app');
+const Hub = require('../../src/models/hub.model');
+const User = require('../../src/models/user.model');
+const Order = require('../../src/models/order.model');
+const OrderLog = require('../../src/models/orderLog.model');
+const AuditSession = require('../../src/models/auditSession.model');
 
 const PORT = 5097;
 
@@ -282,7 +282,7 @@ async function run() {
   console.log('\n────────────────────────────────────────────────────────');
   console.log('📌 D7 — Job: SEARCH_ZONE → SUSPECTED_LOST (mock timeout)');
   try {
-    const { runAuditLostCheck } = require('./src/jobs/auditLostTimeout.job');
+    const { runAuditLostCheck } = require('../../src/jobs/auditLostTimeout.job');
     const d7Code = `D7-SEARCH-${ts}`;
     // Tạo đơn SEARCH_ZONE với searchZoneEnteredAt = 25h trước (vượt 24h timeout)
     await makeInHubOrder(d7Code, hubHan._id, {
@@ -306,7 +306,7 @@ async function run() {
   console.log('\n────────────────────────────────────────────────────────');
   console.log('📌 D8 — Job: SUSPECTED_LOST → LOST + OrderLog(LOST_CONFIRMED)');
   try {
-    const { runAuditLostCheck } = require('./src/jobs/auditLostTimeout.job');
+    const { runAuditLostCheck } = require('../../src/jobs/auditLostTimeout.job');
     const d8Code = `D8-LOST-${ts}`;
     // SUSPECTED_LOST với lostSearchDeadlineAt đã qua (1 phút trước)
     await makeInHubOrder(d8Code, hubHan._id, {
@@ -333,7 +333,7 @@ async function run() {
   console.log('\n────────────────────────────────────────────────────────');
   console.log('📌 D9 — Deadline lưu DB, server restart vẫn chuyển đúng');
   try {
-    const { runAuditLostCheck } = require('./src/jobs/auditLostTimeout.job');
+    const { runAuditLostCheck } = require('../../src/jobs/auditLostTimeout.job');
     const d9Code = `D9-RESTART-${ts}`;
     // Tạo SUSPECTED_LOST với lostSearchDeadlineAt = 5 phút trước
     await makeInHubOrder(d9Code, hubHan._id, {
@@ -342,8 +342,8 @@ async function run() {
     });
 
     // Giả lập restart: clear module cache và re-require
-    delete require.cache[require.resolve('./src/jobs/auditLostTimeout.job')];
-    const { runAuditLostCheck: runAfterRestart } = require('./src/jobs/auditLostTimeout.job');
+    delete require.cache[require.resolve('../../src/jobs/auditLostTimeout.job')];
+    const { runAuditLostCheck: runAfterRestart } = require('../../src/jobs/auditLostTimeout.job');
 
     await runAfterRestart();
     await new Promise(r => setTimeout(r, 500));
@@ -414,7 +414,7 @@ async function run() {
 
   // U1: HUB_UNASSIGNED guard
   try {
-    const { startAuditSession } = require('./src/services/auditCore.service');
+    const { startAuditSession } = require('../../src/services/auditCore.service');
     const noHubOp = { _id: new mongoose.Types.ObjectId(), role: 'HUB_STAFF' };
     let threw = false;
     try { await startAuditSession({ operator: noHubOp }); }
@@ -426,7 +426,7 @@ async function run() {
   // U2: syncAudit sau PENDING_APPROVAL → SESSION_NOT_ACTIVE
   try {
     assert.ok(session2Code, 'D4/D11 phải xong trước');
-    const { syncAuditScan } = require('./src/services/auditCore.service');
+    const { syncAuditScan } = require('../../src/services/auditCore.service');
     const staffUser = await User.findOne({ email: 'test.hub_staff.han01@elogistic.test' });
     let threw = false;
     try {

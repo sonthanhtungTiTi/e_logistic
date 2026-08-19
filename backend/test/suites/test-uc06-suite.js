@@ -1,9 +1,9 @@
-require('dotenv').config();
+require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env') });
 const mongoose = require('mongoose');
-const app = require('./src/app');
-const User = require('./src/models/user.model');
-const Order = require('./src/models/order.model');
-const OrderLog = require('./src/models/orderLog.model');
+const app = require('../../src/app');
+const User = require('../../src/models/user.model');
+const Order = require('../../src/models/order.model');
+const OrderLog = require('../../src/models/orderLog.model');
 
 const PORT = 5056;
 const BASE_URL = `http://localhost:${PORT}/api`;

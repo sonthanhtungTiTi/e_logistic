@@ -188,9 +188,20 @@ async function processDriverConfirm({ tripCode, action, rejectReason, operator }
     const o = await Order.findOne({ trackingCode: item.trackingCode }).lean();
     if (!o) { confirmResults.push({ code: item.trackingCode, error: 'NOT_FOUND' }); continue; }
 
+    const atomicSet = { status: newOrderStatus, currentTripId: trip._id, updatedAt: new Date() };
+
+    // ── THÊM MỚI BƯỚC 9: Cập nhật node status = DEPARTED ──
+    if (o.routeNodes && o.routeNodes.length > 0) {
+      let nodeIdxToUpdate = o.currentRouteIndex > 0 ? o.currentRouteIndex - 1 : 0;
+      if (o.routeNodes[nodeIdxToUpdate]) {
+        atomicSet[`routeNodes.${nodeIdxToUpdate}.status`] = 'DEPARTED';
+        atomicSet[`routeNodes.${nodeIdxToUpdate}.departedAt`] = new Date();
+      }
+    }
+
     const updated = await Order.findOneAndUpdate(
       { _id: o._id, status: o.status }, // OCC
-      { $set: { status: newOrderStatus, currentTripId: trip._id, updatedAt: new Date() } },
+      { $set: atomicSet },
       { returnDocument: 'after' }
     );
     if (!updated) {

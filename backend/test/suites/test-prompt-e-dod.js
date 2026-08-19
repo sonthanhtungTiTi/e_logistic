@@ -4,16 +4,16 @@
  *
  * Chạy: node test-prompt-e-dod.js
  */
-require('dotenv').config();
+require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env') });
 const mongoose = require('mongoose');
 const assert = require('assert');
 const http = require('http');
 
-const app = require('./src/app');
-const Hub = require('./src/models/hub.model');
-const User = require('./src/models/user.model');
-const Order = require('./src/models/order.model');
-const OrderLog = require('./src/models/orderLog.model');
+const app = require('../../src/app');
+const Hub = require('../../src/models/hub.model');
+const User = require('../../src/models/user.model');
+const Order = require('../../src/models/order.model');
+const OrderLog = require('../../src/models/orderLog.model');
 
 const PORT = 5098;
 
@@ -343,7 +343,7 @@ async function run() {
   console.log('\n────────────────────────────────────────────────────────');
   console.log('📌 E10 — Socket.IO: emit inventory:update khi action thay đổi status');
   try {
-    const { emitInventoryUpdate, setIo } = require('./src/lib/ioSingleton');
+    const { emitInventoryUpdate, setIo } = require('../../src/lib/ioSingleton');
     // Mock io
     let emitted = null;
     const mockRoom = (roomName) => ({
@@ -373,7 +373,7 @@ async function run() {
 
   // U1: calcAgingStatus logic đúng ngưỡng
   try {
-    const { calcAgingStatus } = require('./src/services/inventoryCore.service');
+    const { calcAgingStatus } = require('../../src/services/inventoryCore.service');
     const warnHours  = Number(process.env.SLA_WARNING_HOURS_DEFAULT) || 24;
     const critHours  = Number(process.env.SLA_CRITICAL_HOURS_DEFAULT) || 48;
     const normalTime = new Date(Date.now() - (warnHours - 1) * 3600_000);

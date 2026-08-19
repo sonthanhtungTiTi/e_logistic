@@ -153,6 +153,26 @@ async function processInboundSingle({
     ? true
     : order.needsManualRouting || false;
 
+  // ── 6.1 Route Nodes Validation & Node Status Advancement ──
+  let routeCheckSkip = true;
+  let expectedNodeIndex = 0;
+  if (order.routeNodes && order.routeNodes.length > 0) {
+    const expectedNode = order.routeNodes[order.currentRouteIndex];
+    if (expectedNode) {
+      const expectedHubIdStr = expectedNode.hubId.toString();
+      const scannedHubIdStr = currentHubId.toString();
+      if (expectedHubIdStr !== scannedHubIdStr) {
+        throw {
+          status: 400,
+          message: `Kiện hàng SAI TUYẾN ĐỊNH TUYẾN. Kho quét (${scannedHubIdStr}) không khớp kho dự kiến ở chặng ${order.currentRouteIndex}`,
+          code: 'INVALID_ROUTE_HOP',
+        };
+      }
+      routeCheckSkip = false;
+      expectedNodeIndex = order.currentRouteIndex;
+    }
+  }
+
   // ── 7. ATOMIC CONDITIONAL UPDATE — OCC chống Race Condition / Double Scan ─
   const atomicSet = {
     status: finalStatus,
@@ -162,6 +182,14 @@ async function processInboundSingle({
     hubInboundAt: new Date(),
     updatedAt: new Date(),
   };
+
+  if (!routeCheckSkip) {
+    atomicSet[`routeNodes.${expectedNodeIndex}.status`] = 'ARRIVED';
+    atomicSet[`routeNodes.${expectedNodeIndex}.arrivedAt`] = new Date();
+    if (order.currentRouteIndex < order.routeNodes.length - 1) {
+      atomicSet.currentRouteIndex = order.currentRouteIndex + 1;
+    }
+  }
   if (weightDiscrepancyGram !== null) {
     atomicSet.hubMeasuredWeight = hubMeasuredWeight;
     atomicSet.weightDiscrepancyGram = weightDiscrepancyGram;

@@ -187,7 +187,7 @@ const bulkCancelOrders = async (req, res, next) => {
 const searchOrders = async (req, res, next) => {
   try {
     const sellerId = req.effectiveSellerId || req.user._id;
-    const isAdmin = req.user.role === 'ADMIN';
+    const isAdmin = req.user.role !== 'SELLER';
 
     const searchResult = await orderService.searchSellerOrders(sellerId, isAdmin, req.query);
 

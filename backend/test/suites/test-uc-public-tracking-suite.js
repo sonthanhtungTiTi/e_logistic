@@ -2,9 +2,9 @@ const http = require('http');
 const { Server } = require('socket.io');
 const axios = require('axios');
 const ioClient = require('socket.io-client');
-const app = require('./src/app');
-const { initTrackingGateway } = require('./src/websocket/tracking.gateway');
-const Order = require('./src/models/order.model');
+const app = require('../../src/app');
+const { initTrackingGateway } = require('../../src/websocket/tracking.gateway');
+const Order = require('../../src/models/order.model');
 const mongoose = require('mongoose');
 
 const PORT = 5002;

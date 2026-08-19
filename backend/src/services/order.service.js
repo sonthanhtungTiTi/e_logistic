@@ -4,6 +4,9 @@ const OrderLog = require('../models/orderLog.model');
 const PickupConfirmation = require('../models/pickupConfirmation.model');
 const PickupManifest = require('../models/pickupManifest.model');
 const pricingService = require('./pricing.service');
+const Hub = require('../models/hub.model');
+const hubRoutingService = require('./hubRouting.service');
+const ioSingleton = require('../lib/ioSingleton');
 
 /**
  * Service xử lý logic đơn hàng (Order Domain Logic)
@@ -50,8 +53,6 @@ const orderService = {
 
     const calcFee = await pricingService.calculateShippingFee({ ...data, actualWeight });
 
-    const Hub = mongoose.model('Hub');
-    const hubRoutingService = require('./hubRouting.service');
     let originHubId = data.originHubId || null;
     let destinationHubId = data.destinationHubId || null;
 
@@ -97,6 +98,16 @@ const orderService = {
       console.warn('[OrderService] Hub lookup warning:', hubErr.message);
     }
 
+    // ── THÊM MỚI BƯỚC 7: Tính toán routeNodes Đa Kho ──
+    let routeNodes = [];
+    try {
+      if (data.pickupAddress?.province && data.deliveryAddress?.province) {
+        routeNodes = await hubRoutingService.resolveOrderRoute(data.pickupAddress, data.deliveryAddress);
+      }
+    } catch (routeErr) {
+      console.warn('[OrderService] resolveOrderRoute warning:', routeErr.message);
+    }
+
     const newOrder = new Order({
       ...data,
       actualWeight,
@@ -105,6 +116,8 @@ const orderService = {
       idempotencyKey,
       originHubId,
       destinationHubId,
+      routeNodes,
+      currentRouteIndex: 0,
       volumetricWeight: calcFee.volumetricWeight || 0,
       chargeableWeight: calcFee.chargeableWeight || actualWeight,
       baseFee: calcFee.baseFee || 30000,
@@ -112,15 +125,16 @@ const orderService = {
       discountAmount: calcFee.discountAmount || 0,
       discountCode: data.discountCode || null,
       shippingFee: calcFee.shippingFee || data.shippingFee || 30000,
-      pickupHub: calcFee.pickupHub || null,
-      deliveryHub: calcFee.deliveryHub || null,
+      pickupHub: calcFee.pickupHub || (routeNodes[0] ? routeNodes[0].hubId.toString() : null),
+      deliveryHub: calcFee.deliveryHub || (routeNodes[routeNodes.length - 1] ? routeNodes[routeNodes.length - 1].hubId.toString() : null),
       zoneTier: calcFee.zoneTier || null,
       routeDistanceKm: calcFee.routeDistanceKm || null,
       estimatedDeliveryDays: calcFee.estimatedDeliveryDays || 1,
-      status: data.status || 'READY_TO_PICK'
+      status: data.status || 'CREATED'
     });
 
     await newOrder.save();
+    ioSingleton.emitOrderUpdate(sellerId, newOrder);
     return { statusCode: 201, message: 'Tạo đơn hàng thành công', order: newOrder };
   },
 
@@ -146,6 +160,7 @@ const orderService = {
 
     Object.assign(order, data);
     await order.save();
+    ioSingleton.emitOrderUpdate(order.sellerId, order);
     return { message: 'Cập nhật đơn hàng thành công', order };
   },
 
@@ -179,6 +194,7 @@ const orderService = {
     order.cancelledAt = new Date();
 
     await order.save();
+    ioSingleton.emitOrderUpdate(order.sellerId, order);
     return { cancelledOrder: order, wasRouted };
   },
 
@@ -338,6 +354,7 @@ const orderService = {
     order.status = status;
     if (note) order.cancelNote = note;
     await order.save();
+    ioSingleton.emitOrderUpdate(order.sellerId, order);
     return order;
   },
 
@@ -364,8 +381,8 @@ const orderService = {
       throw err;
     }
 
-    if (order.status === 'DRAFT' || order.status === 'PENDING_VERIFICATION') {
-      const err = new Error(`Không thể lấy hàng! Đơn hàng [${order.trackingCode}] mới ở trạng thái "${order.status}" (Chưa chuẩn bị xong). Yêu cầu Seller bấm "Chuẩn Bị Xong" trước.`);
+    if (order.status === 'CREATED' || order.status === 'DRAFT' || order.status === 'PENDING_VERIFICATION') {
+      const err = new Error(`Không thể lấy hàng! Đơn hàng [${order.trackingCode}] mới ở trạng thái "${order.status}" (Chưa chuẩn bị xong). Yêu cầu Seller bấm "Chuẩn Bị Xong" (READY_TO_PICK) trước.`);
       err.statusCode = 400;
       throw err;
     }
@@ -376,7 +393,7 @@ const orderService = {
       throw err;
     }
 
-    const allowedStatuses = ['CREATED', 'READY_TO_PICK', 'PICKING'];
+    const allowedStatuses = ['READY_TO_PICK', 'PICKING'];
     if (!allowedStatuses.includes(order.status)) {
       const err = new Error(`Đơn hàng [${order.trackingCode}] đang ở trạng thái "${order.status}", không hợp lệ để lấy hàng.`);
       err.statusCode = 400;
@@ -448,7 +465,7 @@ const orderService = {
       throw err;
     }
 
-    if (order.status === 'DRAFT' || order.status === 'PENDING_VERIFICATION') {
+    if (order.status === 'CREATED' || order.status === 'DRAFT' || order.status === 'PENDING_VERIFICATION') {
       const err = new Error(`Không thể lấy hàng! Đơn hàng [${order.trackingCode}] mới ở trạng thái "${order.status}" (Chưa chuẩn bị xong). Yêu cầu Seller bấm "Chuẩn Bị Xong" (READY_TO_PICK) trước.`);
       err.statusCode = 400;
       throw err;
@@ -483,8 +500,8 @@ const orderService = {
       throw err;
     }
 
-    // 5. Kiểm tra trạng thái đơn hợp lệ (Theo UC-12 Pre-condition: Đơn phải ở trạng thái CREATED / READY_TO_PICK / PICKING)
-    const allowedStatuses = ['CREATED', 'READY_TO_PICK', 'PICKING'];
+    // 5. Kiểm tra trạng thái đơn hợp lệ (Pre-condition: Đơn phải ở trạng thái READY_TO_PICK / PICKING)
+    const allowedStatuses = ['READY_TO_PICK', 'PICKING'];
     if (!allowedStatuses.includes(order.status)) {
       const err = new Error(`Không thể lấy hàng! Đơn hàng [${order.trackingCode}] đang ở trạng thái "${order.status}", không hợp lệ để lấy hàng.`);
       err.statusCode = 400;
@@ -539,6 +556,7 @@ const orderService = {
       order.originHubId = user.hubId;
     }
     await order.save();
+    ioSingleton.emitOrderUpdate(order.sellerId, order);
 
     // 9. Lưu ePOH (PickupConfirmation)
     const confirmation = await PickupConfirmation.create({
@@ -610,6 +628,7 @@ const orderService = {
     order.status = 'PICKUP_FAILED';
     order.cancelNote = `Lấy hàng thất bại: ${failReason}`;
     await order.save();
+    ioSingleton.emitOrderUpdate(order.sellerId, order);
 
     try {
       await OrderLog.create({

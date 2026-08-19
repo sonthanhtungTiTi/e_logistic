@@ -33,8 +33,8 @@ router.get('/track/:trackingCode', trackingRateLimiter, trackOrderPublic);
 // POST /api/orders/driver-location - Ingestion API GPS cho tài xế (Telematics)
 router.post('/driver-location', updateDriverLocation);
 
-// GET /api/orders - Tra cứu & Lọc danh sách đơn hàng của Seller (UC Tra Cứu Đơn Hàng)
-router.get('/', protect, authorize('SELLER', 'ADMIN'), resolveSellerContext, searchOrders);
+// GET /api/orders - Tra cứu & Lọc danh sách đơn hàng của Seller hoặc Nhân viên vận hành
+router.get('/', protect, authorize('SELLER', 'ADMIN', 'MANAGER', 'OPERATOR', 'COORDINATOR', 'HUB_STAFF', 'DRIVER', 'SHIPPER'), resolveSellerContext, searchOrders);
 
 // POST /api/orders/quote - Lấy báo giá xem trước (chưa lưu DB)
 router.post('/quote', protect, authorize('SELLER', 'ADMIN'), resolveSellerContext, getQuote);

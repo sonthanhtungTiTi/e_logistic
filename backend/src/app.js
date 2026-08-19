@@ -32,6 +32,7 @@ app.use('/api/audit', require('./routes/audit.routes'));          // UC-18: Ki�
 app.use('/api/inventory', require('./routes/inventory.routes')); // UC-19: Dashboard Tồn kho
 app.use('/api/wallet', require('./routes/wallet.routes'));       // Module 6: Ví COD Seller & Rút tiền
 app.use('/api/seller/wallet', require('./routes/wallet.routes'));// Alias cho sub-account Seller
+app.use('/api', require('./routes/deliveryFailure.routes'));       // Chức năng Báo giao thất bại (Delivery Failure Report)
 
 // Error Handling Middleware (luôn phải nằm cuối cùng)
 app.use(errorMiddleware);

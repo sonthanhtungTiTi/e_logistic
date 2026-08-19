@@ -4,6 +4,10 @@
  * Tích hợp Phân vùng Cước 4 Cấp (Zone-based Pricing) & Tính Khoảng cách GPS Haversine + ETA
  */
 
+const Hub = require('../models/hub.model');
+const HubCoverage = require('../models/hubCoverage.model');
+const HubConnection = require('../models/hubConnection.model');
+
 // Tọa độ GPS chuẩn của các Hub chính
 const HUB_COORDINATES = {
   'HUB_HAN_01': { lat: 21.0285, lng: 105.8542, name: 'Hà Nội' },
@@ -389,6 +393,142 @@ function getNextHopHub(currentHubCode, destHubCode, originHubCode = null) {
   return curr === destMaster ? dest : destMaster;
 }
 
+/**
+ * Tìm hub phụ trách 1 địa chỉ cụ thể theo HubCoverage DB hoặc fallback theo resolveHubRouting.
+ */
+async function findHubByAddress(province, district) {
+  if (!province) {
+    throw new Error('Thiếu thông tin Tỉnh/Thành phố khi tìm Hub phụ trách.');
+  }
+
+  // 1. Tìm trong HubCoverage DB
+  let coverage = null;
+  if (district) {
+    coverage = await HubCoverage.findOne({ province, district }).populate('hubId');
+  }
+
+  if (!coverage) {
+    const cleanProv = (province || '').replace(/^(Tỉnh|Thành phố|TP\.?)\s+/i, '').trim();
+    coverage = await HubCoverage.findOne({
+      province: new RegExp(cleanProv, 'i'),
+      ...(district ? { district: new RegExp(district.trim(), 'i') } : {})
+    }).populate('hubId');
+  }
+
+  if (coverage && coverage.hubId) {
+    return coverage.hubId;
+  }
+
+  // 2. Fallback nếu chưa cấu hình HubCoverage DB: tìm hoặc tạo Hub theo resolveHubRouting
+  const legacyRouting = resolveHubRouting(province);
+  let fallbackHub = await Hub.findOne({ code: legacyRouting.hubCode });
+  if (!fallbackHub) {
+    fallbackHub = await Hub.create({
+      code: legacyRouting.hubCode,
+      name: legacyRouting.hubName,
+      type: legacyRouting.isMaster ? 'SORTING' : 'HYBRID',
+      province: province,
+      district: district || '',
+    });
+  }
+  return fallbackHub;
+}
+
+/**
+ * Dijkstra tìm đường đi ngắn nhất giữa 2 Hub dựa trên transitTimeHours.
+ */
+async function findShortestHubPath(fromHubId, toHubId) {
+  const fromId = fromHubId.toString();
+  const toId = toHubId.toString();
+
+  if (fromId === toId) {
+    return [fromId];
+  }
+
+  const allConnections = await HubConnection.find({ isActive: true }).lean();
+
+  const graph = {};
+  for (const conn of allConnections) {
+    const from = conn.fromHubId.toString();
+    const to = conn.toHubId.toString();
+    if (!graph[from]) graph[from] = [];
+    graph[from].push({ to, weight: conn.transitTimeHours });
+  }
+
+  const distances = { [fromId]: 0 };
+  const previous = {};
+  const visited = new Set();
+  const queue = new Set([fromId]);
+
+  while (queue.size > 0) {
+    let current = null;
+    let currentDist = Infinity;
+    for (const node of queue) {
+      if ((distances[node] ?? Infinity) < currentDist) {
+        currentDist = distances[node];
+        current = node;
+      }
+    }
+    if (current === null) break;
+    queue.delete(current);
+    visited.add(current);
+
+    if (current === toId) break;
+
+    const neighbors = graph[current] || [];
+    for (const { to, weight } of neighbors) {
+      if (visited.has(to)) continue;
+      const newDist = distances[current] + weight;
+      if (newDist < (distances[to] ?? Infinity)) {
+        distances[to] = newDist;
+        previous[to] = current;
+        queue.add(to);
+      }
+    }
+  }
+
+  if (!(toId in distances)) {
+    return null;
+  }
+
+  const path = [];
+  let node = toId;
+  while (node !== undefined) {
+    path.unshift(node);
+    node = previous[node];
+  }
+  return path;
+}
+
+/**
+ * Hàm chính: từ địa chỉ pickup + delivery -> trả về routeNodes hoàn chỉnh.
+ */
+async function resolveOrderRoute(pickupAddress, deliveryAddress) {
+  const pickupHub = await findHubByAddress(pickupAddress.province, pickupAddress.district);
+  const deliveryHub = await findHubByAddress(deliveryAddress.province, deliveryAddress.district);
+
+  const path = await findShortestHubPath(pickupHub._id, deliveryHub._id);
+  if (!path || path.length === 0) {
+    const fallbackPath = pickupHub._id.equals(deliveryHub._id)
+      ? [pickupHub._id.toString()]
+      : [pickupHub._id.toString(), deliveryHub._id.toString()];
+
+    return fallbackPath.map((hubId, index) => ({
+      hubId,
+      hubType: index === 0 ? 'PICKUP' : (index === fallbackPath.length - 1 ? 'DELIVERY' : 'SORTING'),
+      sequenceIndex: index,
+      status: 'PENDING'
+    }));
+  }
+
+  return path.map((hubId, index) => ({
+    hubId,
+    hubType: index === 0 ? 'PICKUP' : (index === path.length - 1 ? 'DELIVERY' : 'SORTING'),
+    sequenceIndex: index,
+    status: 'PENDING'
+  }));
+}
+
 module.exports = {
   HUB_COORDINATES,
   MASTER_HUBS,
@@ -402,4 +542,7 @@ module.exports = {
   calculateRoutePath,
   calculateRouteDistanceAndEta,
   getNextHopHub,
+  findHubByAddress,
+  findShortestHubPath,
+  resolveOrderRoute,
 };

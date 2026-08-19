@@ -19,8 +19,9 @@ const hubSchema = new mongoose.Schema(
     province: String,
     type: {
       type: String,
-      enum: ['ORIGIN_HUB', 'TRANSIT_HUB', 'DEST_HUB', 'MIXED'],
-      default: 'MIXED',
+      enum: ['PICKUP', 'SORTING', 'DELIVERY', 'HYBRID', 'ORIGIN_HUB', 'TRANSIT_HUB', 'DEST_HUB', 'MIXED'],
+      default: 'HYBRID',
+      required: true,
     },
     coordinates: {
       lat: Number,

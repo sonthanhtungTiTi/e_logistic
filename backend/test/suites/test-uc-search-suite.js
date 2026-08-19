@@ -1,13 +1,13 @@
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
-require('dotenv').config();
+require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env') });
 
 const BASE_URL = 'http://127.0.0.1:5000/api';
 const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_logistics_key_2026';
 
-const User = require('./src/models/user.model');
-const Order = require('./src/models/order.model');
-const OrderLog = require('./src/models/orderLog.model');
+const User = require('../../src/models/user.model');
+const Order = require('../../src/models/order.model');
+const OrderLog = require('../../src/models/orderLog.model');
 
 async function runSearchTestSuite() {
   console.log('================================================================');

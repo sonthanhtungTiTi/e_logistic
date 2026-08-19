@@ -74,5 +74,15 @@ const requirePermission = (permission) => {
   };
 };
 
+// Middleware phân quyền theo Vai Trò (RBAC)
+const authorize = (...roles) => {
+  return (req, res, next) => {
+    if (!req.user || !roles.includes(req.user.role)) {
+      return res.status(403).json({ message: `Quyền hạn '${req.user ? req.user.role : 'GUEST'}' không được phép truy cập tài nguyên này.` });
+    }
+    next();
+  };
+};
+
 module.exports = { protect, authorize, resolveSellerContext, requirePermission };
 

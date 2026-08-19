@@ -149,6 +149,10 @@ const sendRegistrationOtpEmail = async (toEmail, otp) => {
  * @param {string} otp - Mã OTP 6 chữ số
  * @returns {Promise<void>}
  */
+const sendPasswordResetSms = async (phoneNumber, otp) => {
+  console.log(`[SMS MOCK] Sent OTP ${otp} to ${phoneNumber}`);
+};
+
 const NotificationPreference = require('../models/notificationPreference.model');
 
 /**
@@ -159,10 +163,11 @@ const NotificationPreference = require('../models/notificationPreference.model')
  */
 const sendNotification = async (userId, eventType, payload = {}) => {
   try {
-    let pref = await NotificationPreference.findOne({ userId });
-    if (!pref) {
-      pref = await NotificationPreference.create({ userId });
-    }
+    let pref = await NotificationPreference.findOneAndUpdate(
+      { userId },
+      { $setOnInsert: { userId } },
+      { upsert: true, returnDocument: 'after' }
+    );
 
     const channels = pref.preferences ? pref.preferences[eventType] : null;
     if (!channels) {

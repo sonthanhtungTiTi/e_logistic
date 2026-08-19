@@ -2,22 +2,22 @@
  * E2E Test Suite: 5 Nâng cấp Đắt giá cho Quản lý Tồn kho (UC-19)
  * Chạy: node test-inventory-enhanced-e2e.js
  */
-require('dotenv').config();
+require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env') });
 const mongoose = require('mongoose');
 const assert = require('assert');
 
-const Hub = require('./src/models/hub.model');
-const Zone = require('./src/models/zone.model');
-const Trip = require('./src/models/trip.model');
-const Order = require('./src/models/order.model');
-const OrderLog = require('./src/models/orderLog.model');
+const Hub = require('../../src/models/hub.model');
+const Zone = require('../../src/models/zone.model');
+const Trip = require('../../src/models/trip.model');
+const Order = require('../../src/models/order.model');
+const OrderLog = require('../../src/models/orderLog.model');
 const {
   getSummary,
   getAgingList,
   getTripSuggestions,
   createTripFromStock,
   performBatchAction,
-} = require('./src/services/inventoryCore.service');
+} = require('../../src/services/inventoryCore.service');
 
 const results = { pass: 0, fail: 0, cases: [] };
 function pass(label) { results.pass++; results.cases.push({ label, ok: true }); console.log(`  ✅ PASS: ${label}`); }

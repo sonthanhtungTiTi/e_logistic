@@ -1,7 +1,8 @@
-require('dotenv').config();
+require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env') });
 const mongoose = require('mongoose');
-const app = require('./src/app');
-const User = require('./src/models/user.model');
+const app = require('../../src/app');
+const User = require('../../src/models/user.model');
+const generateToken = require('../../src/utils/generateToken');
 
 const PORT = 5055;
 const BASE_URL = `http://localhost:${PORT}/api`;
@@ -33,21 +34,17 @@ async function runTestSuite() {
       const phoneAdmin = `09${Math.floor(10000000 + Math.random() * 90000000)}`;
 
       // Step A.1: Đăng ký & Đăng nhập User A
-      console.log(`[A.1] Đăng ký User thường (Victim): ${userAEmail}`);
-      const regARes = await fetch(`${BASE_URL}/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          fullName: 'User Victim',
-          email: userAEmail,
-          phoneNumber: phoneA,
-          password: 'password123',
-          confirmPassword: 'password123'
-        })
+      console.log(`[A.1] Tạo User thường (Victim): ${userAEmail}`);
+      const userAObj = await User.create({
+        fullName: 'User Victim',
+        email: userAEmail,
+        phoneNumber: phoneA,
+        password: 'password123',
+        role: 'SELLER',
+        isActive: true,
       });
-      const regAData = await regARes.json();
-      const userAToken = regAData.accessToken;
-      const userAId = regAData._id;
+      const userAToken = generateToken.generateAccessToken(userAObj._id);
+      const userAId = userAObj._id;
       console.log(`   User A ID: ${userAId}`);
       console.log(`   User A AccessToken: ${userAToken.substring(0, 25)}...`);
 
@@ -59,29 +56,15 @@ async function runTestSuite() {
 
       // Step A.2: Đăng ký & Nâng quyền Admin
       console.log(`\n[A.2] Tạo tài khoản Admin: ${adminEmail}`);
-      const regAdminRes = await fetch(`${BASE_URL}/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          fullName: 'Admin User',
-          email: adminEmail,
-          phoneNumber: phoneAdmin,
-          password: 'password123',
-          confirmPassword: 'password123'
-        })
+      const adminObj = await User.create({
+        fullName: 'Admin User',
+        email: adminEmail,
+        phoneNumber: phoneAdmin,
+        password: 'password123',
+        role: 'ADMIN',
+        isActive: true,
       });
-      const regAdminData = await regAdminRes.json();
-      // Set role ADMIN trực tiếp trong DB cho test admin
-      await User.findByIdAndUpdate(regAdminData._id, { role: 'ADMIN' });
-      
-      // Login lại Admin để nhận token có role ADMIN
-      const loginAdminRes = await fetch(`${BASE_URL}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identifier: adminEmail, password: 'password123' })
-      });
-      const loginAdminData = await loginAdminRes.json();
-      const adminToken = loginAdminData.accessToken;
+      const adminToken = generateToken.generateAccessToken(adminObj._id);
       console.log(`   Admin AccessToken: ${adminToken.substring(0, 25)}...`);
 
       // Step A.3: Admin thực hiện KHÓA User A

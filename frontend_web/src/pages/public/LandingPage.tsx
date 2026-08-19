@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useContext } from 'react';
+import { CheckCircle2 } from 'lucide-react';
 import { HeroTracking } from '../../components/HeroTracking';
 import { TrackingModal } from '../../components/shared/TrackingModal';
 import { EditOrderModal } from '../../components/orders/EditOrderModal';
@@ -58,8 +59,9 @@ export const LandingPage: React.FC = () => {
   return (
     <div className="space-y-12 relative">
       {toastMessage && (
-        <div className="fixed top-20 right-6 z-50 p-4 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-bold text-xs shadow-2xl backdrop-blur-xl animate-in slide-in-from-top-4 duration-300">
-          ✅ {toastMessage}
+        <div className="fixed top-20 right-6 z-50 p-4 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-bold text-xs shadow-2xl backdrop-blur-xl animate-in slide-in-from-top-4 duration-300 flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span>{toastMessage}</span>
         </div>
       )}
 

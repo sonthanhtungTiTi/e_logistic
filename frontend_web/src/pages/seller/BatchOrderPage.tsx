@@ -21,12 +21,17 @@ import {
   FileCheck,
   HelpCircle,
   RotateCcw,
+  Lightbulb,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { orderApi } from '../../api/order.api';
 import type { CreateOrderPayload, Order } from '../../types/order.types';
 import { OrderSubNav } from '../../components/orders/OrderSubNav';
 import { formatNumberWithDots, parseDotsToNumber } from '../../lib/formatters';
+import { ExcelImportOrderModal } from '../../components/orders/ExcelImportOrderModal';
+import type { MappedOrderItem } from '../../components/orders/ExcelImportOrderModal';
+import * as XLSX from 'xlsx';
+
 
 export interface ParsedBatchItem {
   id: string;
@@ -68,12 +73,52 @@ export const BatchOrderPage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'VALID' | 'INVALID'>('ALL');
 
   // Modal & Processing State
+  const [isImportModalOpen, setIsImportModalOpen] = useState<boolean>(false);
+  const [pendingWizardFile, setPendingWizardFile] = useState<File | null>(null);
   const [selectedItemForView, setSelectedItemForView] = useState<ParsedBatchItem | null>(null);
   const [selectedItemForEdit, setSelectedItemForEdit] = useState<ParsedBatchItem | null>(null);
   const [isGuideOpen, setIsGuideOpen] = useState<boolean>(false);
   const [creatingBatch, setCreatingBatch] = useState<boolean>(false);
   const [creationProgress, setCreationProgress] = useState<number>(0);
   const [createdOrdersResult, setCreatedOrdersResult] = useState<Order[] | null>(null);
+
+  /** Mở wizard và tự nạp file vào Step 1 (dùng cho drag-drop và click vùng upload) */
+  const handleOpenWizardWithFile = (file: File) => {
+    setPendingWizardFile(file);
+    setIsImportModalOpen(true);
+  };
+
+  /** Khi wizard hoàn tất Step 3: map MappedOrderItem -> ParsedBatchItem và cập nhật bảng */
+  const handleModalPreviewReady = (wizardItems: MappedOrderItem[]) => {
+    const mapped: ParsedBatchItem[] = wizardItems.map((item, idx) => ({
+      id: `wizard-row-${item.rowIndex}-${idx}`,
+      rowIndex: item.rowIndex,
+      shopOrderCode: item.shopOrderCode || `SHOP-${1000 + idx}`,
+      receiverName: item.receiverName,
+      receiverPhone: item.receiverPhone,
+      detailAddress: item.detailAddress,
+      ward: item.ward,
+      district: item.district,
+      province: item.province,
+      productName: item.productName,
+      quantity: item.quantity,
+      weight: item.weight,
+      length: item.length,
+      width: item.width,
+      height: item.height,
+      codAmount: item.codAmount,
+      goodsValue: item.goodsValue,
+      deliveryNote: item.deliveryNote,
+      isValid: item.isValid,
+      errorMessages: item.errors,
+    }));
+    // Cập nhật bảng nền — KHÔNG đóng modal ở đây, user cần xem Step 3 trước
+    setBatchItems(mapped);
+    setFileName(pendingWizardFile?.name ?? 'File Excel (từ Wizard)');
+    // Modal vẫn mở để hiển thị Step 3 preview
+  };
+
+
 
   // LocalStorage Batch Draft Key
   const BATCH_DRAFT_KEY = 'elogistic_batch_order_draft';
@@ -269,90 +314,152 @@ export const BatchOrderPage: React.FC = () => {
     document.body.removeChild(link);
   };
 
-  // CSV Simple Line Parser
-  const parseCSVText = (text: string): ParsedBatchItem[] => {
-    const lines = text.split(/\r\n|\n/).filter((l) => l.trim().length > 0);
-    if (lines.length <= 1) return [];
 
-    const items: ParsedBatchItem[] = [];
-
-    // Skip header line 0
-    for (let i = 1; i < lines.length; i++) {
-      const line = lines[i];
-      const cols = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || line.split(',');
-      const cleanCols = cols.map((c) => c.replace(/^"|"$/g, '').trim());
-
-      const rawItem: Partial<ParsedBatchItem> = {
-        shopOrderCode: cleanCols[0] || `DH-AUTO-${i}`,
-        receiverName: cleanCols[1] || '',
-        receiverPhone: cleanCols[2] || '',
-        detailAddress: cleanCols[3] || '',
-        ward: cleanCols[4] || 'Phường 1',
-        district: cleanCols[5] || 'Quận 1',
-        province: cleanCols[6] || 'TP Hồ Chí Minh',
-        productName: cleanCols[7] || 'Sản phẩm',
-        quantity: parseInt(cleanCols[8]) || 1,
-        weight: parseFloat(cleanCols[9]) || 0.5,
-        length: parseFloat(cleanCols[10]) || 20,
-        width: parseFloat(cleanCols[11]) || 15,
-        height: parseFloat(cleanCols[12]) || 10,
-        codAmount: parseInt(cleanCols[13]) || 0,
-        goodsValue: parseInt(cleanCols[14]) || 0,
-        deliveryNote: cleanCols[15] || '',
-        discountCode: cleanCols[16] || '',
-      };
-
-      const val = validateItem(rawItem);
-      items.push({
-        id: `batch-item-${Date.now()}-${i}`,
-        rowIndex: i,
-        shopOrderCode: rawItem.shopOrderCode,
-        receiverName: rawItem.receiverName || '',
-        receiverPhone: rawItem.receiverPhone || '',
-        detailAddress: rawItem.detailAddress || '',
-        ward: rawItem.ward || '',
-        district: rawItem.district || '',
-        province: rawItem.province || '',
-        productName: rawItem.productName || '',
-        quantity: rawItem.quantity || 1,
-        weight: rawItem.weight || 0.5,
-        length: rawItem.length || 20,
-        width: rawItem.width || 15,
-        height: rawItem.height || 10,
-        codAmount: rawItem.codAmount || 0,
-        goodsValue: rawItem.goodsValue || 0,
-        deliveryNote: rawItem.deliveryNote,
-        discountCode: rawItem.discountCode,
-        isValid: val.isValid,
-        errorMessages: val.errors,
-      });
-    }
-
-    return items;
-  };
 
   // Process File Upload
+  // Process File Upload via XLSX parser
   const handleFileChange = (file: File) => {
     setFileName(file.name);
     setParsing(true);
 
     const reader = new FileReader();
     reader.onload = (e) => {
-      const text = e.target?.result as string;
-      const parsed = parseCSVText(text);
+      try {
+        const data = new Uint8Array(e.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const rawRows: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
 
-      if (parsed.length > 0) {
-        setBatchItems(parsed);
-      } else {
+        if (!rawRows || rawRows.length === 0) {
+          loadDemoBatchData(file.name);
+          setParsing(false);
+          return;
+        }
+
+        // Detect header row (first row with at least 3 non-empty cells)
+        let headerIdx = 0;
+        for (let i = 0; i < Math.min(10, rawRows.length); i++) {
+          const nonEmpties = rawRows[i].filter((c: any) => String(c).trim().length > 0);
+          if (nonEmpties.length >= 3) {
+            headerIdx = i;
+            break;
+          }
+        }
+
+        const headers = rawRows[headerIdx] || [];
+
+        let nameIdx = -1, phoneIdx = -1, addrIdx = -1, provIdx = -1, distIdx = -1, wrdIdx = -1;
+        let prodIdx = -1, qtyIdx = -1, wgtIdx = -1, codIdx = -1, valIdx = -1, noteIdx = -1, codeIdx = -1;
+
+        headers.forEach((cell: any, idx: number) => {
+          const txt = String(cell || '').toLowerCase().trim();
+          if ((txt.includes('tên') || txt.includes('họ')) && (txt.includes('nhận') || txt.includes('khách') || txt.includes('hàng'))) nameIdx = idx;
+          else if (txt.includes('sđt') || txt.includes('điện thoại') || txt.includes('phone') || txt.includes('sdt')) phoneIdx = idx;
+          else if (txt.includes('địa chỉ') || txt.includes('address')) addrIdx = idx;
+          else if (txt.includes('tỉnh') || txt.includes('thành phố') || txt.includes('city')) provIdx = idx;
+          else if (txt.includes('quận') || txt.includes('huyện') || txt.includes('district')) distIdx = idx;
+          else if (txt.includes('phường') || txt.includes('xã') || txt.includes('ward')) wrdIdx = idx;
+          else if (txt.includes('sản phẩm') || txt.includes('tên hàng') || txt.includes('hàng hóa') || txt.includes('product')) prodIdx = idx;
+          else if (txt.includes('số lượng') || txt.includes('sl') || txt.includes('qty')) qtyIdx = idx;
+          else if (txt.includes('trọng lượng') || txt.includes('khối lượng') || txt.includes('kg') || txt.includes('cân')) wgtIdx = idx;
+          else if (txt.includes('cod') || txt.includes('thu hộ') || txt.includes('tiền thu')) codIdx = idx;
+          else if (txt.includes('giá trị') || txt.includes('khai giá') || txt.includes('trị giá')) valIdx = idx;
+          else if (txt.includes('ghi chú') || txt.includes('note')) noteIdx = idx;
+          else if (txt.includes('mã') && (txt.includes('đơn') || txt.includes('shop') || txt.includes('dh'))) codeIdx = idx;
+        });
+
+        // Fallbacks
+        if (nameIdx === -1) nameIdx = 1;
+        if (phoneIdx === -1) phoneIdx = 2;
+        if (addrIdx === -1) addrIdx = 3;
+        if (provIdx === -1) provIdx = 6;
+
+        const items: ParsedBatchItem[] = [];
+        for (let i = headerIdx + 1; i < rawRows.length; i++) {
+          const row = rawRows[i] || [];
+          if (!row.some((cell: any) => String(cell).trim().length > 0)) continue;
+
+          let rawPhone = String(row[phoneIdx] !== undefined ? row[phoneIdx] : '').trim();
+          // Normalize scientific notation (9.12E+08) and missing leading zero
+          if (/^\d+\.?\d*e\+\d+$/i.test(rawPhone)) {
+            const numVal = Number(rawPhone);
+            if (!isNaN(numVal)) rawPhone = Math.round(numVal).toString();
+          }
+          if (/^[1-9]\d{8}$/.test(rawPhone)) {
+            rawPhone = '0' + rawPhone;
+          }
+
+          const rawItem: Partial<ParsedBatchItem> = {
+            id: `excel-row-${i}`,
+            rowIndex: i + 1,
+            shopOrderCode: codeIdx !== -1 ? String(row[codeIdx] || '').trim() : `SHOP-${1000 + i}`,
+            receiverName: String(row[nameIdx] || '').trim(),
+            receiverPhone: rawPhone,
+            detailAddress: String(row[addrIdx] || '').trim(),
+            ward: wrdIdx !== -1 ? String(row[wrdIdx] || '').trim() : 'Phường 1',
+            district: distIdx !== -1 ? String(row[distIdx] || '').trim() : 'Quận 1',
+            province: String(row[provIdx] || '').trim() || 'TP Hồ Chí Minh',
+            productName: prodIdx !== -1 ? String(row[prodIdx] || '').trim() : 'Sản phẩm giao hàng',
+            quantity: qtyIdx !== -1 ? parseInt(row[qtyIdx]) || 1 : 1,
+            weight: wgtIdx !== -1 ? parseFloat(String(row[wgtIdx]).replace(',', '.')) || 0.5 : 0.5,
+            length: 20,
+            width: 15,
+            height: 10,
+            codAmount: codIdx !== -1 ? parseInt(String(row[codIdx]).replace(/\D/g, '')) || 0 : 0,
+            goodsValue: valIdx !== -1 ? parseInt(String(row[valIdx]).replace(/\D/g, '')) || 0 : 0,
+            deliveryNote: noteIdx !== -1 ? String(row[noteIdx] || '').trim() : '',
+          };
+
+          const fullItem: ParsedBatchItem = {
+            id: rawItem.id!,
+            rowIndex: rawItem.rowIndex!,
+            shopOrderCode: rawItem.shopOrderCode || '',
+            receiverName: rawItem.receiverName || '',
+            receiverPhone: rawItem.receiverPhone || '',
+            detailAddress: rawItem.detailAddress || '',
+            ward: rawItem.ward || 'Phường 1',
+            district: rawItem.district || 'Quận 1',
+            province: rawItem.province || 'TP Hồ Chí Minh',
+            productName: rawItem.productName || 'Sản phẩm giao hàng',
+            quantity: rawItem.quantity || 1,
+            weight: rawItem.weight || 0.5,
+            length: rawItem.length || 20,
+            width: rawItem.width || 15,
+            height: rawItem.height || 10,
+            codAmount: rawItem.codAmount || 0,
+            goodsValue: rawItem.goodsValue || rawItem.codAmount || 0,
+            deliveryNote: rawItem.deliveryNote || '',
+            isValid: true,
+            errorMessages: [],
+          };
+
+          const valRes = validateItem(fullItem);
+          fullItem.isValid = valRes.isValid;
+          fullItem.errorMessages = valRes.errors;
+
+          items.push(fullItem);
+        }
+
+        if (items.length > 0) {
+          setBatchItems(items);
+        } else {
+          loadDemoBatchData(file.name);
+        }
+      } catch (err) {
+        console.error('Error reading excel in BatchOrderPage:', err);
         loadDemoBatchData(file.name);
+      } finally {
+        setParsing(false);
       }
-      setParsing(false);
     };
+
     reader.onerror = () => {
       loadDemoBatchData(file.name);
       setParsing(false);
     };
-    reader.readAsText(file);
+
+    reader.readAsArrayBuffer(file);
   };
 
   // Load Demo Batch Data for testing
@@ -641,10 +748,12 @@ export const BatchOrderPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300">
-      {/* Top Header Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800/80 pb-5">
-        <div>
+    <>
+      <div className="flex flex-col lg:flex-row gap-6 animate-in fade-in duration-300">
+      {/* LEFT SIDEBAR MENU (Thanh menu chuyển sang bên tay trái, sổ dọc xuống) */}
+      <div className="w-full lg:w-72 shrink-0 space-y-4">
+        {/* Header Title Card */}
+        <div className="glass-panel p-5 rounded-3xl border border-slate-800 space-y-2">
           <div className="flex items-center gap-2 text-xs text-slate-400 mb-1">
             <span className="cursor-pointer hover:text-blue-400" onClick={() => navigate('/seller/dashboard')}>
               Seller Portal
@@ -652,34 +761,59 @@ export const BatchOrderPage: React.FC = () => {
             <ChevronRight className="w-3.5 h-3.5 text-slate-600" />
             <span className="text-cyan-400 font-semibold">Tạo Đơn Hàng Loạt</span>
           </div>
-          <h2 className="text-2xl font-black text-white flex items-center gap-2.5">
-            <FileSpreadsheet className="w-7 h-7 text-cyan-400" /> Nhập Đơn Hàng Hàng Loạt (Excel / CSV)
+          <h2 className="text-xl font-black text-white flex items-center gap-2">
+            <FileSpreadsheet className="w-6 h-6 text-cyan-400 shrink-0" /> Nhập Đơn Excel
           </h2>
-          <p className="text-xs text-slate-400 mt-1">
-            Tải lên file danh sách để khởi tạo tự động hàng trăm vận đơn, phát hiện lỗi cấu trúc và xem chi tiết trước khi xác nhận.
+          <p className="text-xs text-slate-400 leading-relaxed pt-1">
+            Tải lên file danh sách để khởi tạo tự động hàng trăm vận đơn, phát hiện lỗi cấu trúc và xem chi tiết.
           </p>
         </div>
 
-        {/* Action Buttons Header */}
-        <div className="flex flex-wrap items-center gap-3">
-          <OrderSubNav activeTab="batch" />
+        {/* Vertical Action & Navigation Menu */}
+        <div className="glass-panel p-4 rounded-3xl border border-slate-800 space-y-4 shadow-xl">
+          <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-1">
+            Menu Thao Tác Hệ Thống
+          </div>
 
-          <button
-            type="button"
-            onClick={handleDownloadTemplate}
-            className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-cyan-400 text-xs font-bold border border-cyan-500/30 flex items-center gap-2 shadow-lg transition cursor-pointer"
-          >
-            <Download className="w-4 h-4" /> Tải File Mẫu Excel (.CSV)
-          </button>
-          <button
-            type="button"
-            onClick={() => setIsGuideOpen(true)}
-            className="px-3.5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-semibold border border-slate-800 flex items-center gap-1.5 transition cursor-pointer"
-          >
-            <HelpCircle className="w-4 h-4 text-amber-400" /> Hướng Dẫn Định Dạng
-          </button>
+          {/* SubNav Tabs (Vertical Layout) */}
+          <OrderSubNav activeTab="batch" layout="vertical" />
+
+          <div className="h-px bg-slate-800/80 my-2" />
+
+          {/* Action Buttons Stacked Vertically */}
+          <div className="flex flex-col gap-2.5">
+            <button
+              type="button"
+              onClick={() => setIsImportModalOpen(true)}
+              className="w-full px-4 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black shadow-lg shadow-emerald-600/30 flex items-center gap-2.5 transition cursor-pointer"
+            >
+              <Upload className="w-4 h-4 text-emerald-200 shrink-0" />
+              <span>Tải File Excel (Wizard 4 Bước)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleDownloadTemplate}
+              className="w-full px-4 py-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-cyan-400 hover:text-cyan-300 text-xs font-bold border border-cyan-500/30 flex items-center gap-2.5 shadow-md transition cursor-pointer"
+            >
+              <Download className="w-4 h-4 text-cyan-400 shrink-0" />
+              <span>Tải File Mẫu Excel (.CSV)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsGuideOpen(true)}
+              className="w-full px-3.5 py-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white text-xs font-semibold border border-slate-800 flex items-center gap-2.5 transition cursor-pointer"
+            >
+              <HelpCircle className="w-4 h-4 text-amber-400 shrink-0" />
+              <span>Hướng Dẫn Định Dạng</span>
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* RIGHT MAIN WORKSPACE (Full Width & Expanded Space) */}
+      <div className="flex-1 min-w-0 space-y-6">
 
       {/* Auto-Restored Batch Draft Notification Banner */}
       {hasBatchDraftRestored && (
@@ -718,16 +852,16 @@ export const BatchOrderPage: React.FC = () => {
               e.preventDefault();
               setIsDragOver(false);
               if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-                handleFileChange(e.dataTransfer.files[0]);
+                handleOpenWizardWithFile(e.dataTransfer.files[0]);
               }
             }}
-            className={`glass-panel p-12 rounded-3xl border-2 border-dashed text-center space-y-5 transition duration-300 cursor-pointer ${
-              isDragOver
+            className={`glass-panel p-12 rounded-3xl border-2 border-dashed text-center space-y-5 transition duration-300 cursor-pointer ${isDragOver
                 ? 'border-cyan-400 bg-cyan-950/20 scale-[1.01]'
                 : 'border-slate-700/80 hover:border-cyan-500/60 bg-slate-900/40'
-            }`}
-            onClick={() => fileInputRef.current?.click()}
+              }`}
+            onClick={() => setIsImportModalOpen(true)}
           >
+            {/* Hidden input: chỉ dùng để nhận file từ drag-drop zone, rồi đưa vào wizard */}
             <input
               type="file"
               ref={fileInputRef}
@@ -735,7 +869,9 @@ export const BatchOrderPage: React.FC = () => {
               className="hidden"
               onChange={(e) => {
                 if (e.target.files && e.target.files[0]) {
-                  handleFileChange(e.target.files[0]);
+                  handleOpenWizardWithFile(e.target.files[0]);
+                  // Reset input để có thể chọn lại cùng file
+                  e.target.value = '';
                 }
               }}
             />
@@ -878,9 +1014,8 @@ export const BatchOrderPage: React.FC = () => {
             </div>
 
             <div
-              className={`glass-panel p-4 rounded-2xl border space-y-1 transition ${
-                invalidCount > 0 ? 'border-rose-500/40 bg-rose-950/20' : 'border-slate-800'
-              }`}
+              className={`glass-panel p-4 rounded-2xl border space-y-1 transition ${invalidCount > 0 ? 'border-rose-500/40 bg-rose-950/20' : 'border-slate-800'
+                }`}
             >
               <span className="text-[11px] font-semibold text-rose-400 block">Đơn lỗi cấu trúc</span>
               <div className="flex items-center justify-between">
@@ -906,11 +1041,10 @@ export const BatchOrderPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setStatusFilter('ALL')}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
-                  statusFilter === 'ALL'
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${statusFilter === 'ALL'
                     ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
                     : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
-                }`}
+                  }`}
               >
                 Tất cả ({totalCount})
               </button>
@@ -918,11 +1052,10 @@ export const BatchOrderPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setStatusFilter('VALID')}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
-                  statusFilter === 'VALID'
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${statusFilter === 'VALID'
                     ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30'
                     : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
-                }`}
+                  }`}
               >
                 Hợp Lệ ({validCount})
               </button>
@@ -930,11 +1063,10 @@ export const BatchOrderPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setStatusFilter('INVALID')}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
-                  statusFilter === 'INVALID'
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${statusFilter === 'INVALID'
                     ? 'bg-rose-600 text-white shadow-md shadow-rose-600/30'
                     : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
-                }`}
+                  }`}
               >
                 Lỗi Cấu Trúc ({invalidCount})
               </button>
@@ -990,9 +1122,8 @@ export const BatchOrderPage: React.FC = () => {
                     filteredItems.map((item) => (
                       <tr
                         key={item.id}
-                        className={`hover:bg-slate-800/40 transition ${
-                          !item.isValid ? 'bg-rose-950/10' : ''
-                        }`}
+                        className={`hover:bg-slate-800/40 transition ${!item.isValid ? 'bg-rose-950/10' : ''
+                          }`}
                       >
                         <td className="py-3 px-4 text-center font-mono text-slate-400 font-bold">
                           #{item.rowIndex}
@@ -1116,11 +1247,10 @@ export const BatchOrderPage: React.FC = () => {
                 type="button"
                 onClick={handleConfirmCreateBatch}
                 disabled={validCount === 0 || creatingBatch}
-                className={`w-full sm:w-auto px-8 py-3.5 rounded-2xl font-black text-sm flex items-center justify-center gap-2 cursor-pointer shadow-xl transition ${
-                  validCount > 0
+                className={`w-full sm:w-auto px-8 py-3.5 rounded-2xl font-black text-sm flex items-center justify-center gap-2 cursor-pointer shadow-xl transition ${validCount > 0
                     ? 'bg-gradient-to-r from-cyan-600 via-blue-600 to-emerald-600 hover:from-cyan-500 hover:to-emerald-500 text-white shadow-cyan-600/30'
                     : 'bg-slate-800 text-slate-500 cursor-not-allowed'
-                }`}
+                  }`}
               >
                 {creatingBatch ? (
                   <>
@@ -1136,6 +1266,9 @@ export const BatchOrderPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      </div>
+    </div>
 
       {/* MODAL 1: EDIT ROW FORM MODAL */}
       {selectedItemForEdit && (
@@ -1439,53 +1572,151 @@ export const BatchOrderPage: React.FC = () => {
       {/* MODAL 3: FORMAT GUIDE MODAL */}
       {isGuideOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="relative w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4 text-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div className="relative w-full max-w-4xl bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-5 text-white shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3 shrink-0">
               <h3 className="text-base font-bold flex items-center gap-2 text-amber-400">
-                <HelpCircle className="w-5 h-5" /> Hướng Dẫn Cấu Trúc File Excel Chuẩn
+                <HelpCircle className="w-5 h-5" /> Hướng Dẫn Định Dạng & Cấu Trúc File Excel Chuẩn
               </h3>
               <button
                 type="button"
                 onClick={() => setIsGuideOpen(false)}
-                className="text-slate-400 hover:text-white p-1"
+                className="text-slate-400 hover:text-white p-1 cursor-pointer"
               >
                 ✕
               </button>
             </div>
 
-            <div className="space-y-3 text-xs text-slate-300 max-h-[60vh] overflow-y-auto pr-1 leading-relaxed">
-              <p>Hệ thống hỗ trợ đọc dữ liệu theo đúng danh sách các cột sau:</p>
-
-              <ol className="list-decimal list-inside space-y-1.5 bg-slate-950 p-3 rounded-2xl border border-slate-800 font-mono text-[11px]">
-                <li><strong className="text-white">Mã ĐH Shop</strong> (Không bắt buộc)</li>
-                <li><strong className="text-rose-400">Họ Tên Người Nhận</strong> (Bắt buộc)</li>
-                <li><strong className="text-rose-400">Số Điện Thoại</strong> (Bắt buộc, 10 số)</li>
-                <li><strong className="text-rose-400">Địa Chỉ Chi Tiết</strong> (Bắt buộc)</li>
-                <li><strong className="text-white">Phường Xã</strong></li>
-                <li><strong className="text-white">Quận Huyện</strong></li>
-                <li><strong className="text-rose-400">Tỉnh Thành</strong> (Bắt buộc)</li>
-                <li><strong className="text-rose-400">Tên Sản Phẩm</strong> (Bắt buộc)</li>
-                <li><strong className="text-white">Số Lượng</strong> (Số nguyên &gt; 0)</li>
-                <li><strong className="text-rose-400">Trọng Lượng (kg)</strong> (Số thực &gt; 0)</li>
-                <li><strong className="text-cyan-400">Chiều Dài (cm)</strong> (Nếu bỏ trống mặc định 20cm)</li>
-                <li><strong className="text-cyan-400">Chiều Rộng (cm)</strong> (Nếu bỏ trống mặc định 15cm)</li>
-                <li><strong className="text-cyan-400">Chiều Cao (cm)</strong> (Nếu bỏ trống mặc định 10cm)</li>
-                <li><strong className="text-white">Tiền Thu Hộ COD (VNĐ)</strong></li>
-                <li><strong className="text-white">Giá Trị Hàng (VNĐ)</strong></li>
-              </ol>
-
-              <div className="p-3 rounded-2xl bg-cyan-950/40 border border-cyan-500/30 text-cyan-300 text-[11px]">
-                💡 <strong>Mẹo nhỏ:</strong> Thêm thông tin 3 chiều Dài x Rộng x Cao giúp hệ thống quy đổi chính xác trọng lượng thể tích DIM đối với các hàng cồng kềnh.
+            <div className="space-y-5 text-xs text-slate-300 overflow-y-auto pr-1 leading-relaxed flex-1">
+              
+              {/* Image Preview Box */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-slate-200 text-xs flex items-center gap-2">
+                    <FileSpreadsheet className="w-4 h-4 text-emerald-400" /> Hình Ảnh Mẫu File Excel Nhập Đơn Hàng Hàng Loạt:
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-mono">13 Cột Chuẩn E-Logistics</span>
+                </div>
+                
+                <div className="rounded-2xl border border-slate-700/80 overflow-hidden bg-slate-950 shadow-xl group relative">
+                  <img
+                    src="/excel_template_guide.png"
+                    alt="File Excel Mẫu Chuẩn Định Dạng E-Logistics"
+                    className="w-full object-contain max-h-56 bg-slate-950 transition-transform group-hover:scale-[1.01]"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none" />
+                </div>
               </div>
+
+              {/* Real Excel Grid Replica */}
+              <div className="space-y-2">
+                <span className="font-bold text-slate-200 text-xs block">Bảng Chi Tiết Cấu Trúc Dữ Liệu Excel Mẫu:</span>
+                <div className="rounded-xl border border-slate-800 overflow-x-auto bg-slate-950/80">
+                  <table className="w-full text-[11px] font-mono text-left border-collapse min-w-[900px]">
+                    <thead>
+                      <tr className="bg-slate-900 border-b border-slate-800 text-slate-400 text-center font-bold">
+                        <th className="p-2 border-r border-slate-800 w-8 bg-slate-950 text-slate-500">#</th>
+                        <th className="p-2 border-r border-slate-800">A (Mã ĐH Shop)</th>
+                        <th className="p-2 border-r border-slate-800 text-rose-400">B (Họ Tên Nhận)*</th>
+                        <th className="p-2 border-r border-slate-800 text-rose-400">C (Số Điện Thoại)*</th>
+                        <th className="p-2 border-r border-slate-800 text-rose-400">D (Địa Chỉ Chi Tiết)*</th>
+                        <th className="p-2 border-r border-slate-800">E (Phường Xã)</th>
+                        <th className="p-2 border-r border-slate-800">F (Quận Huyện)</th>
+                        <th className="p-2 border-r border-slate-800 text-rose-400">G (Tỉnh Thành)*</th>
+                        <th className="p-2 border-r border-slate-800 text-rose-400">H (Sản Phẩm)*</th>
+                        <th className="p-2 border-r border-slate-800">I (Số Lượng)</th>
+                        <th className="p-2 border-r border-slate-800 text-rose-400">J (Trọng Lượng kg)*</th>
+                        <th className="p-2 border-r border-slate-800">K (Tiền COD)</th>
+                        <th className="p-2 border-r border-slate-800">L (Giá Trị Hàng)</th>
+                        <th className="p-2">M (Ghi Chú)</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/60 text-slate-300">
+                      <tr className="hover:bg-slate-900/50">
+                        <td className="p-2 font-bold text-slate-500 bg-slate-950 text-center border-r border-slate-800">1</td>
+                        <td className="p-2 border-r border-slate-800 font-bold text-slate-400">Mã ĐH Shop</td>
+                        <td className="p-2 border-r border-slate-800 font-bold text-slate-400">Họ Tên Người Nhận</td>
+                        <td className="p-2 border-r border-slate-800 font-bold text-slate-400">Số Điện Thoại</td>
+                        <td className="p-2 border-r border-slate-800 font-bold text-slate-400">Địa Chỉ Chi Tiết</td>
+                        <td className="p-2 border-r border-slate-800 font-bold text-slate-400">Phường Xã</td>
+                        <td className="p-2 border-r border-slate-800 font-bold text-slate-400">Quận Huyện</td>
+                        <td className="p-2 border-r border-slate-800 font-bold text-slate-400">Tỉnh Thành</td>
+                        <td className="p-2 border-r border-slate-800 font-bold text-slate-400">Tên Sản Phẩm</td>
+                        <td className="p-2 border-r border-slate-800 font-bold text-slate-400">Số Lượng</td>
+                        <td className="p-2 border-r border-slate-800 font-bold text-slate-400">Trọng Lượng</td>
+                        <td className="p-2 border-r border-slate-800 font-bold text-slate-400">Tiền COD (VNĐ)</td>
+                        <td className="p-2 border-r border-slate-800 font-bold text-slate-400">Giá Trị Hàng</td>
+                        <td className="p-2 font-bold text-slate-400">Ghi Chú Giao Hàng</td>
+                      </tr>
+                      <tr className="hover:bg-slate-900/50">
+                        <td className="p-2 font-bold text-slate-500 bg-slate-950 text-center border-r border-slate-800">2</td>
+                        <td className="p-2 border-r border-slate-800 font-bold text-blue-400">DH-8801</td>
+                        <td className="p-2 border-r border-slate-800 text-white font-bold">Nguyễn Văn An</td>
+                        <td className="p-2 border-r border-slate-800">0912345678</td>
+                        <td className="p-2 border-r border-slate-800">123 Nguyễn Trãi</td>
+                        <td className="p-2 border-r border-slate-800">Phường 2</td>
+                        <td className="p-2 border-r border-slate-800">Quận 5</td>
+                        <td className="p-2 border-r border-slate-800">TP. Hồ Chí Minh</td>
+                        <td className="p-2 border-r border-slate-800 text-emerald-400 font-semibold">Áo thun Polo Nam Premium</td>
+                        <td className="p-2 border-r border-slate-800 text-center">2</td>
+                        <td className="p-2 border-r border-slate-800 text-amber-400 font-bold">0.5</td>
+                        <td className="p-2 border-r border-slate-800 text-emerald-400">350.000</td>
+                        <td className="p-2 border-r border-slate-800 text-emerald-400">350.000</td>
+                        <td className="p-2 text-slate-400">Cho xem hàng trước khi nhận</td>
+                      </tr>
+                      <tr className="hover:bg-slate-900/50">
+                        <td className="p-2 font-bold text-slate-500 bg-slate-950 text-center border-r border-slate-800">3</td>
+                        <td className="p-2 border-r border-slate-800 font-bold text-blue-400">DH-8802</td>
+                        <td className="p-2 border-r border-slate-800 text-white font-bold">Trần Thị Bích</td>
+                        <td className="p-2 border-r border-slate-800">0987654321</td>
+                        <td className="p-2 border-r border-slate-800">456 Lê Duẩn</td>
+                        <td className="p-2 border-r border-slate-800">Phường Bến Nghé</td>
+                        <td className="p-2 border-r border-slate-800">Quận 1</td>
+                        <td className="p-2 border-r border-slate-800">TP. Hồ Chí Minh</td>
+                        <td className="p-2 border-r border-slate-800 text-emerald-400 font-semibold">Giày Sneakers Sport RunX</td>
+                        <td className="p-2 border-r border-slate-800 text-center">1</td>
+                        <td className="p-2 border-r border-slate-800 text-amber-400 font-bold">1.2</td>
+                        <td className="p-2 border-r border-slate-800 text-emerald-400">520.000</td>
+                        <td className="p-2 border-r border-slate-800 text-emerald-400">520.000</td>
+                        <td className="p-2 text-slate-400">Gọi trước khi giao 15 phút</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Requirement Notes */}
+              <div className="p-4 rounded-2xl bg-cyan-950/40 border border-cyan-500/30 text-cyan-300 text-[11px] flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <Lightbulb className="w-5 h-5 text-amber-400 shrink-0" />
+                  <span>
+                    <strong>Mẹo Wizard 4 Bước:</strong> Bạn có thể dùng bất kỳ file Excel báo cáo nào (có các dòng thông tin cửa hàng ở trên), Wizard sẽ hỗ trợ chọn dòng Tiêu Đề và dòng Bắt Đầu Dữ Liệu cực kỳ linh hoạt!
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleDownloadTemplate}
+                  className="px-3.5 py-2 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-200 border border-cyan-500/40 text-xs font-bold shrink-0 cursor-pointer transition flex items-center gap-1.5"
+                >
+                  <Download className="w-4 h-4 text-cyan-300" /> Tải File Excel Mẫu
+                </button>
+              </div>
+
             </div>
 
-            <div className="flex justify-end pt-2">
+            <div className="flex items-center justify-between border-t border-slate-800 pt-3 shrink-0">
+              <button
+                type="button"
+                onClick={handleDownloadTemplate}
+                className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-400 font-bold text-xs border border-slate-700 transition flex items-center gap-2 cursor-pointer"
+              >
+                <Download className="w-4 h-4" /> Tải Mẫu Excel (.CSV)
+              </button>
               <button
                 type="button"
                 onClick={() => setIsGuideOpen(false)}
-                className="px-5 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold shadow-md"
+                className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-lg shadow-blue-600/30 transition cursor-pointer"
               >
-                Đã Hiểu
+                Đã Hiểu & Đóng
               </button>
             </div>
           </div>
@@ -1544,6 +1775,23 @@ export const BatchOrderPage: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+
+      {/* MODAL 5: 4-STEP EXCEL WIZARD MODAL */}
+      <ExcelImportOrderModal
+        isOpen={isImportModalOpen}
+        onClose={() => {
+          setIsImportModalOpen(false);
+          setPendingWizardFile(null);
+        }}
+        initialFile={pendingWizardFile}
+        onPreviewReady={handleModalPreviewReady}
+        onSuccess={() => {
+          setIsImportModalOpen(false);
+          setPendingWizardFile(null);
+          navigate('/seller/orders');
+        }}
+      />
+    </>
   );
 };
+

@@ -42,10 +42,13 @@ const startServer = async () => {
     // Khởi tạo WebSocket Room Gateway cho Live GPS Tracking
     initTrackingGateway(io);
 
-    // Dashboard inventory: client join room
+    // Dashboard inventory & seller room connection
     io.on('connection', (socket) => {
       socket.on('join_warehouse_dashboard', (hubId) => {
         if (hubId) socket.join(`warehouse-dashboard:${hubId}`);
+      });
+      socket.on('join_seller_room', (sellerId) => {
+        if (sellerId) socket.join(`seller:${sellerId}`);
       });
     });
 

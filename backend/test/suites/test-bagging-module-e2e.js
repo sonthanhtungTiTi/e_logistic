@@ -2,14 +2,14 @@
  * E2E Test Suite: Gom Bao & Niêm Phong Seal (Bagging Engine)
  * Chạy: node test-bagging-module-e2e.js
  */
-require('dotenv').config();
+require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env') });
 const mongoose = require('mongoose');
 const assert = require('assert');
 
-const Hub = require('./src/models/hub.model');
-const Bag = require('./src/models/bag.model');
-const Order = require('./src/models/order.model');
-const OrderLog = require('./src/models/orderLog.model');
+const Hub = require('../../src/models/hub.model');
+const Bag = require('../../src/models/bag.model');
+const Order = require('../../src/models/order.model');
+const OrderLog = require('../../src/models/orderLog.model');
 const {
   openBag,
   addItemToBag,
@@ -17,9 +17,9 @@ const {
   sealBag,
   getBagDetails,
   listHubBags,
-} = require('./src/services/bagCore.service');
-const { processInboundSingle } = require('./src/services/inboundCore.service');
-const { syncAuditScan, startAuditSession } = require('./src/services/auditCore.service');
+} = require('../../src/services/bagCore.service');
+const { processInboundSingle } = require('../../src/services/inboundCore.service');
+const { syncAuditScan, startAuditSession } = require('../../src/services/auditCore.service');
 
 const results = { pass: 0, fail: 0, cases: [] };
 function pass(label) { results.pass++; results.cases.push({ label, ok: true }); console.log(`  ✅ PASS: ${label}`); }

@@ -4,18 +4,18 @@
  *
  * Chạy: node test-prompt-c-dod.js
  */
-require('dotenv').config();
+require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env') });
 const mongoose = require('mongoose');
 const assert = require('assert');
 const http = require('http');
 
-const app = require('./src/app');
-const Hub = require('./src/models/hub.model');
-const User = require('./src/models/user.model');
-const Order = require('./src/models/order.model');
-const OrderLog = require('./src/models/orderLog.model');
-const Trip = require('./src/models/trip.model');
-const Bag = require('./src/models/bag.model');
+const app = require('../../src/app');
+const Hub = require('../../src/models/hub.model');
+const User = require('../../src/models/user.model');
+const Order = require('../../src/models/order.model');
+const OrderLog = require('../../src/models/orderLog.model');
+const Trip = require('../../src/models/trip.model');
+const Bag = require('../../src/models/bag.model');
 
 const PORT = 5096;
 
@@ -414,7 +414,7 @@ async function run() {
   console.log('\n────────────────────────────────────────────────────────');
   console.log('📌 C10 — Timeout Job (mock timeout ngắn)');
   try {
-    const { runTimeoutCheck } = require('./src/jobs/driverConfirmTimeout.job');
+    const { runTimeoutCheck } = require('../../src/jobs/driverConfirmTimeout.job');
     const c10Code = `C10-TIMEOUT-${ts}`;
     await makeOrder({ trackingCode: c10Code }, hubHan, hubSgn);
     const rTrip = await createTrip(coordToken, { trip_type: 'MID_MILE_TRANSFER', planned_tracking_codes: [c10Code] });
@@ -452,7 +452,7 @@ async function run() {
   // ══════════════════════════════════════════════════════════════════════════
   console.log('\n────────────────────────────────────────────────────────');
   console.log('📌 C11 — Unit Tests (logic trực tiếp từ service)');
-  const { processOutboundScan, commitTrip, processDriverConfirm } = require('./src/services/outboundCore.service');
+  const { processOutboundScan, commitTrip, processDriverConfirm } = require('../../src/services/outboundCore.service');
   const mockCoordOp = { _id: new mongoose.Types.ObjectId(), hubId: hubHan._id, role: 'HUB_COORDINATOR' };
   const mockDriverOp = { _id: new mongoose.Types.ObjectId(), hubId: hubHan._id, role: 'DRIVER' };
 

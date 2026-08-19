@@ -2,22 +2,22 @@
  * End-to-End Test Suite: 3-Tier Regional Master Routing & Multi-Hop Lifecycle
  * Chạy: node test-hub-routing-e2e.js
  */
-require('dotenv').config();
+require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env') });
 const mongoose = require('mongoose');
 const assert = require('assert');
 const http = require('http');
 
-const app = require('./src/app');
-const Hub = require('./src/models/hub.model');
-const User = require('./src/models/user.model');
-const Order = require('./src/models/order.model');
-const OrderLog = require('./src/models/orderLog.model');
-const Trip = require('./src/models/trip.model');
-const Zone = require('./src/models/zone.model');
-const hubRoutingService = require('./src/services/hubRouting.service');
-const orderService = require('./src/services/order.service');
-const { processInboundSingle } = require('./src/services/inboundCore.service');
-const { processOutboundScan, commitTrip, processDriverConfirm } = require('./src/services/outboundCore.service');
+const app = require('../../src/app');
+const Hub = require('../../src/models/hub.model');
+const User = require('../../src/models/user.model');
+const Order = require('../../src/models/order.model');
+const OrderLog = require('../../src/models/orderLog.model');
+const Trip = require('../../src/models/trip.model');
+const Zone = require('../../src/models/zone.model');
+const hubRoutingService = require('../../src/services/hubRouting.service');
+const orderService = require('../../src/services/order.service');
+const { processInboundSingle } = require('../../src/services/inboundCore.service');
+const { processOutboundScan, commitTrip, processDriverConfirm } = require('../../src/services/outboundCore.service');
 
 const PORT = 5099;
 

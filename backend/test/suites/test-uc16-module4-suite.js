@@ -7,16 +7,16 @@
  *
  * Chạy: node test-uc16-module4-suite.js
  */
-require('dotenv').config();
+require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env') });
 const mongoose = require('mongoose');
 const assert = require('assert');
 const http = require('http');
-const app = require('./src/app');
-const Order = require('./src/models/order.model');
-const OrderLog = require('./src/models/orderLog.model');
-const Zone = require('./src/models/zone.model');
-const Hub = require('./src/models/hub.model');
-const User = require('./src/models/user.model');
+const app = require('../../src/app');
+const Order = require('../../src/models/order.model');
+const OrderLog = require('../../src/models/orderLog.model');
+const Zone = require('../../src/models/zone.model');
+const Hub = require('../../src/models/hub.model');
+const User = require('../../src/models/user.model');
 
 const PORT = 5098;
 const BASE_URL = `http://localhost:${PORT}/api`;

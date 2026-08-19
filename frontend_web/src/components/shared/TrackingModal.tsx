@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, MapPin, Truck, Edit3, Trash2, Printer, CheckCircle2, Loader2, Clock } from 'lucide-react';
+import { X, MapPin, Truck, Edit3, Trash2, Printer, CheckCircle2, Loader2, Clock, AlertTriangle, Hourglass, Lock, Radio, Check, User, Phone, Camera } from 'lucide-react';
 import type { Order } from '../../types/order.types';
 import { PrintWaybillModal } from '../orders/PrintWaybillModal';
 import { orderApi } from '../../api/order.api';
@@ -145,7 +145,8 @@ export const TrackingModal: React.FC<TrackingModalProps> = ({ order, onClose, on
         {/* Cancelled Notice Banner */}
         {isCancelled && (
           <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-semibold flex items-center gap-2">
-            ⚠️ Đơn hàng này đã bị hủy. Không thể chỉnh sửa hoặc thực hiện các thao tác vận chuyển.
+            <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+            <span>Đơn hàng này đã bị hủy. Không thể chỉnh sửa hoặc thực hiện các thao tác vận chuyển.</span>
           </div>
         )}
 
@@ -189,9 +190,15 @@ export const TrackingModal: React.FC<TrackingModalProps> = ({ order, onClose, on
                 <p className="font-bold text-white">Đơn hàng ở trạng thái Sẵn Sàng Lấy Hàng (Đang đếm ngược 5 phút)</p>
                 <p className="text-[11px] text-slate-300">
                   {secondsRemaining > 0 ? (
-                    <span>⏳ Bạn có <strong className="text-amber-400 font-mono font-bold text-sm px-1.5 py-0.5 rounded bg-amber-950/60 border border-amber-500/30">{formatCountdown(secondsRemaining)}</strong> để chỉnh sửa thông tin hoặc hủy đơn nếu đổi ý trước khi khóa tuyến thu gom.</span>
+                    <span className="flex items-center gap-1">
+                      <Hourglass className="w-3.5 h-3.5 text-amber-400 shrink-0 inline" />
+                      <span>Bạn có <strong className="text-amber-400 font-mono font-bold text-sm px-1.5 py-0.5 rounded bg-amber-950/60 border border-amber-500/30">{formatCountdown(secondsRemaining)}</strong> để chỉnh sửa thông tin hoặc hủy đơn nếu đổi ý trước khi khóa tuyến thu gom.</span>
+                    </span>
                   ) : (
-                    <span className="text-rose-400 font-bold">🔒 Đã HẾT thời hạn 5 phút. Thông tin đơn hàng đã khóa hoàn toàn và đưa vào Tuyến Thu Gom.</span>
+                    <span className="text-rose-400 font-bold flex items-center gap-1">
+                      <Lock className="w-3.5 h-3.5 text-rose-400 shrink-0 inline" />
+                      <span>Đã HẾT thời hạn 5 phút. Thông tin đơn hàng đã khóa hoàn toàn và đưa vào Tuyến Thu Gom.</span>
+                    </span>
                   )}
                 </p>
               </div>
@@ -213,10 +220,25 @@ export const TrackingModal: React.FC<TrackingModalProps> = ({ order, onClose, on
                 <div className={`w-2.5 h-2.5 rounded-full ${
                   (order as any).live_tracking.status === 'LIVE' ? 'bg-emerald-400 animate-ping' : 'bg-amber-400'
                 }`} />
-                <span>
-                  {(order as any).live_tracking.status === 'LIVE' && '📡 Chặng Giao Cuối: Vị trí GPS Shipper đang cập nhật trực tiếp'}
-                  {(order as any).live_tracking.status === 'DEGRADED_SIGNAL' && '⚠️ Chặng Giao Cuối: Tín hiệu GPS không ổn định'}
-                  {(order as any).live_tracking.status === 'LOST_SIGNAL' && '⚠️ Chặng Giao Cuối: Tạm mất kết nối GPS với tài xế'}
+                <span className="flex items-center gap-1.5">
+                  {(order as any).live_tracking.status === 'LIVE' && (
+                    <>
+                      <Radio className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                      <span>Chặng Giao Cuối: Vị trí GPS Shipper đang cập nhật trực tiếp</span>
+                    </>
+                  )}
+                  {(order as any).live_tracking.status === 'DEGRADED_SIGNAL' && (
+                    <>
+                      <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                      <span>Chặng Giao Cuối: Tín hiệu GPS không ổn định</span>
+                    </>
+                  )}
+                  {(order as any).live_tracking.status === 'LOST_SIGNAL' && (
+                    <>
+                      <AlertTriangle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                      <span>Chặng Giao Cuối: Tạm mất kết nối GPS với tài xế</span>
+                    </>
+                  )}
                 </span>
               </div>
               <span className="font-mono text-[11px] opacity-80">
@@ -233,8 +255,8 @@ export const TrackingModal: React.FC<TrackingModalProps> = ({ order, onClose, on
           !isCancelled && (
             <div className="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800 text-xs text-slate-400 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></span>
-                <span>📍 Bản đồ GPS vị trí Shipper sẽ tự động bật khi đơn hàng ở chặng giao cuối (Đang phát hàng).</span>
+                <MapPin className="w-4 h-4 text-blue-400 shrink-0" />
+                <span>Bản đồ GPS vị trí Shipper sẽ tự động bật khi đơn hàng ở chặng giao cuối (Đang phát hàng).</span>
               </div>
               <span className="font-mono text-[10px] text-slate-500">Trạng thái: {order.status}</span>
             </div>
@@ -262,7 +284,7 @@ export const TrackingModal: React.FC<TrackingModalProps> = ({ order, onClose, on
                           : 'bg-slate-800 text-slate-500'
                       }`}
                     >
-                      {isDone ? '✓' : idx + 1}
+                      {isDone ? <Check className="w-4 h-4 text-slate-950 stroke-[3]" /> : idx + 1}
                     </div>
                     <div>
                       <div className={`text-[11px] font-bold ${isDone ? 'text-white' : 'text-slate-500'}`}>
@@ -278,8 +300,9 @@ export const TrackingModal: React.FC<TrackingModalProps> = ({ order, onClose, on
             {Array.isArray((order as any).trackingTimeline) && (order as any).trackingTimeline.length > 0 ? (
               <div className="pt-4 border-t border-slate-800/80 space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-300 uppercase tracking-wider block">
-                    📍 Nhật Ký Vận Chuyển Chi Tiết Qua Các Bưu Cục & Trung Tâm Phân Loại
+                  <span className="text-xs font-bold text-slate-300 uppercase tracking-wider block flex items-center gap-1.5">
+                    <MapPin className="w-4 h-4 text-blue-400 shrink-0" />
+                    <span>Nhật Ký Vận Chuyển Chi Tiết Qua Các Bưu Cục & Trung Tâm Phân Loại</span>
                   </span>
                   <span className="text-[10px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full border border-blue-500/30 font-semibold">
                     TikTok-Shop Style Log
@@ -332,7 +355,7 @@ export const TrackingModal: React.FC<TrackingModalProps> = ({ order, onClose, on
                             <div className="mt-3 p-2.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between text-xs">
                               <div className="flex items-center gap-2">
                                 <div className="w-7 h-7 rounded-full bg-blue-600/20 text-blue-400 flex items-center justify-center font-bold">
-                                  👤
+                                  <User className="w-4 h-4" />
                                 </div>
                                 <div>
                                   <div className="font-bold text-white">{log.driverInfo.name}</div>
@@ -343,7 +366,8 @@ export const TrackingModal: React.FC<TrackingModalProps> = ({ order, onClose, on
                                 href={`tel:${log.driverInfo.hotline || '19001088'}`}
                                 className="px-2.5 py-1 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/30 text-[11px] font-bold transition-all flex items-center gap-1"
                               >
-                                📞 Hotline {log.driverInfo.hotline || '19001088'}
+                                <Phone className="w-3.5 h-3.5 text-blue-400" />
+                                <span>Hotline {log.driverInfo.hotline || '19001088'}</span>
                               </a>
                             </div>
                           )}
@@ -352,7 +376,8 @@ export const TrackingModal: React.FC<TrackingModalProps> = ({ order, onClose, on
                           {(log.podImageUrl || (isFirst && (order as any).podImageUrl)) && (
                             <div className="mt-3 space-y-1.5">
                               <div className="text-[11px] font-bold text-emerald-400 flex items-center gap-1">
-                                📸 Ảnh xác nhận giao hàng (POD - Proof of Delivery):
+                                <Camera className="w-3.5 h-3.5 text-emerald-400" />
+                                <span>Ảnh xác nhận giao hàng (POD - Proof of Delivery):</span>
                               </div>
                               <img
                                 src={log.podImageUrl || (order as any).podImageUrl}

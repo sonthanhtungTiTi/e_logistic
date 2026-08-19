@@ -1,10 +1,10 @@
-require('dotenv').config();
+require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env') });
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
-const app = require('./src/app');
-const User = require('./src/models/user.model');
-const Order = require('./src/models/order.model');
-const OrderLog = require('./src/models/orderLog.model');
+const app = require('../../src/app');
+const User = require('../../src/models/user.model');
+const Order = require('../../src/models/order.model');
+const OrderLog = require('../../src/models/orderLog.model');
 
 const PORT = 5057;
 const BASE_URL = `http://localhost:${PORT}/api`;

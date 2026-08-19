@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   User,
   ShieldCheck,
@@ -18,6 +18,7 @@ import {
   Users,
   Power,
   ShieldAlert,
+  Link2,
   X,
   QrCode,
   UploadCloud,
@@ -32,7 +33,7 @@ import { VietnamAddressSelector } from '../../components/shared/VietnamAddressSe
 import type { VietnamAddressData } from '../../components/shared/VietnamAddressSelector';
 import { WarehouseMapPicker } from '../../components/shared/WarehouseMapPicker';
 
-type TabType = 'PROFILE' | 'ADDRESS' | 'BANK' | 'KYC' | 'NOTIFICATIONS' | 'SECURITY' | 'SUB_ACCOUNTS';
+type TabType = 'PROFILE' | 'ADDRESS' | 'BANK' | 'KYC' | 'SECURITY' | 'NOTIFICATIONS' | 'SUB_ACCOUNTS';
 
 const PERMISSION_LABELS: Record<string, string> = {
   VIEW_ORDERS: 'Xem đơn hàng',
@@ -48,11 +49,8 @@ export const ProfilePage: React.FC = () => {
   const location = useLocation();
 
   const getInitialTab = (): TabType => {
-    if (location.state?.tab) return location.state.tab as TabType;
-    const params = new URLSearchParams(location.search);
-    const t = params.get('tab')?.toUpperCase() as TabType;
-    if (['PROFILE', 'ADDRESS', 'BANK', 'KYC', 'NOTIFICATIONS', 'SECURITY', 'SUB_ACCOUNTS'].includes(t)) {
-      return t;
+    if (location.state?.tab) {
+      return location.state.tab as TabType;
     }
     return 'PROFILE';
   };
@@ -76,6 +74,79 @@ export const ProfilePage: React.FC = () => {
   const [phone, setPhone] = useState(user?.phoneNumber || '');
   const [taxCode, setTaxCode] = useState(user?.taxCode || '');
   const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || '');
+  const [email, setEmail] = useState(user?.email || '');
+  const [businessAddress, setBusinessAddress] = useState(user?.address || '');
+  const [businessType, setBusinessType] = useState((user as any)?.businessType || 'COMPANY');
+  const [industryCategory, setIndustryCategory] = useState((user as any)?.industryCategory || 'PHARMA');
+  const [estimatedDailyOrders, setEstimatedDailyOrders] = useState((user as any)?.estimatedDailyOrders || '50_200');
+  const [websiteUrl, setWebsiteUrl] = useState((user as any)?.websiteUrl || '');
+
+  // Avatar Capture & Upload state
+  const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
+  const [isCameraActive, setIsCameraActive] = useState(false);
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: { ideal: 640 }, height: { ideal: 640 }, facingMode: 'user' }
+      });
+      setCameraStream(stream);
+      setIsCameraActive(true);
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+    } catch (err: any) {
+      showFeedback('Không thể bật camera. Vui lòng kiểm tra và cấp quyền truy cập webcam cho trình duyệt.', true);
+    }
+  };
+
+  const stopCamera = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach((track) => track.stop());
+      setCameraStream(null);
+    }
+    setIsCameraActive(false);
+  };
+
+  const captureCameraPhoto = () => {
+    if (!videoRef.current) return;
+    const video = videoRef.current;
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth || 400;
+    canvas.height = video.videoHeight || 400;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+      setAvatarUrl(dataUrl);
+      showFeedback('Đã chụp ảnh đại diện từ Camera thành công!');
+      stopCamera();
+      setIsAvatarModalOpen(false);
+    }
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        showFeedback('Kích thước ảnh quá lớn (Vui lòng chọn ảnh nhỏ hơn 5MB)', true);
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const result = event.target?.result as string;
+        if (result) {
+          setAvatarUrl(result);
+          showFeedback('Đã tải ảnh đại diện từ máy tính lên thành công!');
+          setIsAvatarModalOpen(false);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   // 1. Pickup Addresses State
   const [pickupAddresses, setPickupAddresses] = useState<PickupAddressItem[]>([]);
@@ -179,6 +250,12 @@ export const ProfilePage: React.FC = () => {
         setPhone(u.phoneNumber || '');
         setTaxCode(u.taxCode || '');
         setAvatarUrl(u.avatarUrl || '');
+        setEmail(u.email || '');
+        setBusinessAddress(u.address || '');
+        setBusinessType((u as any).businessType || 'COMPANY');
+        setIndustryCategory((u as any).industryCategory || 'PHARMA');
+        setEstimatedDailyOrders((u as any).estimatedDailyOrders || '50_200');
+        setWebsiteUrl((u as any).websiteUrl || '');
         setBankName(u.bankName || 'Vietcombank');
         setBankAccount(u.bankAccount || '');
         setBankAccountName(u.bankAccountName || '');
@@ -233,12 +310,43 @@ export const ProfilePage: React.FC = () => {
   // Handlers
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // 1. Kiểm tra bỏ trống các trường bắt buộc (*)
+    if (!companyName.trim()) {
+      showFeedback('Vui lòng nhập Tên Cửa Hàng / Công Ty (*)', true);
+      return;
+    }
+    if (!fullName.trim()) {
+      showFeedback('Vui lòng nhập Họ và Tên người Đại Diện (*)', true);
+      return;
+    }
+    if (!phone.trim()) {
+      showFeedback('Vui lòng nhập Số Điện Thoại liên hệ (*)', true);
+      return;
+    }
+    if (!taxCode.trim()) {
+      showFeedback('Vui lòng nhập Mã Số Thuế / GPKD (*)', true);
+      return;
+    }
+
     setIsLoading(true);
     try {
-      const payload = { fullName, companyName, phoneNumber: phone, taxCode, avatarUrl };
-      await authApi.updateProfile(payload);
-      updateUser(payload);
-      showFeedback('Cập nhật hồ sơ thành công!');
+      const payload = {
+        fullName: fullName.trim(),
+        companyName: companyName.trim(),
+        phoneNumber: phone.trim(),
+        taxCode: taxCode.trim(),
+        avatarUrl,
+        address: businessAddress,
+        businessType,
+        industryCategory,
+        estimatedDailyOrders,
+        websiteUrl: websiteUrl.trim(),
+      };
+      const res = await authApi.updateProfile(payload);
+      const updatedUserData = res.data?.user || payload;
+      updateUser(updatedUserData);
+      showFeedback('Đã lưu và cập nhật thông tin hồ sơ thành công!');
     } catch (err: any) {
       showFeedback(err.response?.data?.message || 'Không thể cập nhật hồ sơ', true);
     } finally {
@@ -492,19 +600,33 @@ export const ProfilePage: React.FC = () => {
   const initialLetter = (companyName || fullName || 'S').charAt(0).toUpperCase();
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8 animate-in fade-in duration-300 pb-16">
-      {/* Toast Feedback */}
-      {successMsg && (
-        <div className="p-4 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-sm font-bold flex items-center gap-3 shadow-lg">
-          <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
-          <span>{successMsg}</span>
-        </div>
-      )}
+    <div className="w-full space-y-8 animate-in fade-in duration-300 pb-16">
+      {/* Sticky Floating Toast Feedback */}
+      {(successMsg || errorMsg) && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] max-w-md w-full px-4 animate-in slide-in-from-top-5 duration-300">
+          {successMsg && (
+            <div className="p-4 rounded-2xl bg-emerald-950/95 backdrop-blur-xl border border-emerald-500/50 text-emerald-200 text-xs sm:text-sm font-bold flex items-center justify-between shadow-2xl ring-4 ring-emerald-500/20">
+              <div className="flex items-center gap-3">
+                <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+                <span>{successMsg}</span>
+              </div>
+              <button onClick={() => setSuccessMsg('')} className="p-1 hover:bg-emerald-800/50 rounded-lg text-emerald-300">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
 
-      {errorMsg && (
-        <div className="p-4 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-sm font-bold flex items-center gap-3 shadow-lg">
-          <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />
-          <span>{errorMsg}</span>
+          {errorMsg && (
+            <div className="p-4 rounded-2xl bg-rose-950/95 backdrop-blur-xl border border-rose-500/50 text-rose-200 text-xs sm:text-sm font-bold flex items-center justify-between shadow-2xl ring-4 ring-rose-500/20">
+              <div className="flex items-center gap-3">
+                <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />
+                <span>{errorMsg}</span>
+              </div>
+              <button onClick={() => setErrorMsg('')} className="p-1 hover:bg-rose-800/50 rounded-lg text-rose-300">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -531,15 +653,125 @@ export const ProfilePage: React.FC = () => {
                 </div>
               )}
               <button
-                onClick={() => {
-                  const url = prompt('Nhập URL ảnh đại diện mới:', avatarUrl);
-                  if (url !== null) setAvatarUrl(url);
-                }}
-                className="absolute bottom-1 right-1 p-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:text-white shadow-md transition group-hover:scale-110"
+                type="button"
+                onClick={() => setIsAvatarModalOpen(true)}
+                className="absolute bottom-1 right-1 p-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:text-white shadow-md transition group-hover:scale-110 cursor-pointer"
+                title="Thay đổi ảnh đại diện (Chụp Camera / Upload ảnh)"
               >
                 <Camera className="w-4 h-4 text-cyan-400" />
               </button>
             </div>
+
+      {/* Avatar Capture & Upload Modal */}
+      {isAvatarModalOpen && (
+        <div className="fixed inset-0 z-[120] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="glass-panel p-6 rounded-3xl border border-slate-700 max-w-md w-full space-y-5 shadow-2xl relative animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <Camera className="w-5 h-5 text-cyan-400" /> Cập Nhật Ảnh Đại Diện Shop
+              </h3>
+              <button
+                onClick={() => {
+                  stopCamera();
+                  setIsAvatarModalOpen(false);
+                }}
+                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Hidden File Input */}
+            <input
+              type="file"
+              ref={fileInputRef}
+              accept="image/*"
+              className="hidden"
+              onChange={handleFileUpload}
+            />
+
+            {isCameraActive ? (
+              <div className="space-y-4 text-center">
+                <div className="relative rounded-2xl overflow-hidden bg-slate-950 border border-slate-700 aspect-square flex items-center justify-center">
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    className="w-full h-full object-cover transform -scale-x-100"
+                  />
+                </div>
+                <div className="flex items-center justify-center gap-3">
+                  <button
+                    type="button"
+                    onClick={captureCameraPhoto}
+                    className="px-5 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg cursor-pointer"
+                  >
+                    <Camera className="w-4 h-4" /> Chụp Ảnh Ngay
+                  </button>
+                  <button
+                    type="button"
+                    onClick={stopCamera}
+                    className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs border border-slate-700 cursor-pointer"
+                  >
+                    Hủy Camera
+                  </button>
+                </div>
+                <p className="text-[11px] text-cyan-300 font-medium flex items-center justify-center gap-1.5">
+                  <Camera className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                  <span>Đang bật Webcam. Căn chỉnh góc nhìn và bấm "Chụp Ảnh Ngay"</span>
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {/* Current Avatar Preview */}
+                <div className="flex flex-col items-center justify-center py-2">
+                  {avatarUrl ? (
+                    <img src={avatarUrl} alt="Avatar Preview" className="w-24 h-24 rounded-2xl object-cover ring-2 ring-cyan-500/50 shadow-lg" />
+                  ) : (
+                    <div className="w-24 h-24 rounded-2xl bg-gradient-to-tr from-blue-600 to-cyan-500 flex items-center justify-center text-white text-3xl font-black shadow-lg">
+                      {initialLetter}
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 gap-2.5 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs flex items-center justify-center gap-2.5 border border-slate-700 transition cursor-pointer"
+                  >
+                    <UploadCloud className="w-4 h-4 text-cyan-400" /> Tải Ảnh Từ Máy Tính / Thiết Bị
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={startCamera}
+                    className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold text-xs flex items-center justify-center gap-2.5 shadow-lg transition cursor-pointer"
+                  >
+                    <Camera className="w-4 h-4" /> Bật Camera & Chụp Ảnh Trực Tiếp
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const url = prompt('Nhập đường dẫn (URL) ảnh từ internet:', avatarUrl);
+                      if (url !== null) {
+                        setAvatarUrl(url);
+                        showFeedback('Đã cập nhật URL ảnh đại diện!');
+                        setIsAvatarModalOpen(false);
+                      }
+                    }}
+                    className="w-full py-2.5 px-4 rounded-xl bg-slate-900/60 hover:bg-slate-800 text-slate-400 hover:text-white font-medium text-xs flex items-center justify-center gap-2 border border-slate-800 transition cursor-pointer"
+                  >
+                    <Link2 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                    <span>Nhập URL Ảnh Online</span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
             <div className="space-y-1">
               <div className="flex items-center justify-center sm:justify-start gap-2">
@@ -648,13 +880,23 @@ export const ProfilePage: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-slate-300 font-semibold mb-1.5">Số Điện Thoại *</label>
+              <label className="block text-slate-300 font-semibold mb-1.5">Số Điện Thoại Liên Hệ *</label>
               <input
                 type="text"
                 required
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 className="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-white font-mono"
+              />
+            </div>
+
+            <div>
+              <label className="block text-slate-300 font-semibold mb-1.5">Email Đăng Ký / Nhận Đối Soát *</label>
+              <input
+                type="email"
+                disabled
+                value={email}
+                className="w-full glass-input opacity-70 cursor-not-allowed rounded-xl px-3.5 py-2.5 text-xs text-slate-300 font-mono"
               />
             </div>
 
@@ -668,15 +910,88 @@ export const ProfilePage: React.FC = () => {
                 className="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-white font-mono"
               />
             </div>
+
+            <div>
+              <label className="block text-slate-300 font-semibold mb-1.5">Loại Hình Doanh Nghiệp</label>
+              <select
+                value={businessType}
+                onChange={(e) => setBusinessType(e.target.value)}
+                className="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-white bg-slate-900 border border-slate-700"
+              >
+                <option value="COMPANY">Công Ty TNHH / Cổ Phần</option>
+                <option value="HOUSEHOLD">Hộ Kinh Doanh Cá Thể</option>
+                <option value="INDIVIDUAL">Cá Nhân Kinh Doanh Online</option>
+              </select>
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className="block text-slate-300 font-semibold mb-1.5">Địa Chỉ Trụ Sở / Đăng Ký Kinh Doanh</label>
+              <input
+                type="text"
+                placeholder="VD: Số 123 Đường Nguyễn Trãi, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh"
+                value={businessAddress}
+                onChange={(e) => setBusinessAddress(e.target.value)}
+                className="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-white"
+              />
+            </div>
+
+            <div>
+              <label className="block text-slate-300 font-semibold mb-1.5">Lĩnh Vực Kinh Doanh Chính</label>
+              <select
+                value={industryCategory}
+                onChange={(e) => setIndustryCategory(e.target.value)}
+                className="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-white bg-slate-900 border border-slate-700"
+              >
+                <option value="PHARMA">Dược Phẩm / Y Tế / Mỹ Phẩm</option>
+                <option value="FASHION">Thời Trang / Phụ Kiện</option>
+                <option value="ELECTRONICS">Điện Tử / Công Nghệ</option>
+                <option value="FOOD">Thực Phẩm / Dùng Nhanh (FMCG)</option>
+                <option value="OTHER">Ngành Hàng Khác</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-slate-300 font-semibold mb-1.5">Sản Lượng Đơn Dự Kiến / Ngày</label>
+              <select
+                value={estimatedDailyOrders}
+                onChange={(e) => setEstimatedDailyOrders(e.target.value)}
+                className="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-white bg-slate-900 border border-slate-700"
+              >
+                <option value="UNDER_50">&lt; 50 đơn / ngày (Cơ bản)</option>
+                <option value="50_200">50 - 200 đơn / ngày (Tiềm năng)</option>
+                <option value="200_1000">200 - 1,000 đơn / ngày (VIP)</option>
+                <option value="OVER_1000">&gt; 1,000 đơn / ngày (Enterprise / Platinum)</option>
+              </select>
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className="block text-slate-300 font-semibold mb-1.5">Website / Kênh Bán Hàng (Shopee / TikTok Shop / Fanpage)</label>
+              <input
+                type="text"
+                placeholder="https://anbinhpharma.vn hoặc link gian hàng Shopee/TikTok"
+                value={websiteUrl}
+                onChange={(e) => setWebsiteUrl(e.target.value)}
+                className="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-white font-mono"
+              />
+            </div>
           </div>
 
           <div className="flex justify-end pt-4 border-t border-slate-800">
             <button
               type="submit"
               disabled={isLoading}
-              className="px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg cursor-pointer"
+              className="px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg cursor-pointer disabled:opacity-50 transition-all"
             >
-              <Save className="w-4 h-4" /> Lưu Hồ Sơ
+              {isLoading ? (
+                <>
+                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin shrink-0" />
+                  <span>Đang Lưu Hồ Sơ...</span>
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4" /> <span>Lưu Hồ Sơ</span>
+                </>
+              )}
             </button>
           </div>
         </form>

@@ -4,6 +4,8 @@ const mongoose = require('mongoose');
 // PHẢI require ở đây để tránh lỗi "Schema hasn't been registered for model X"
 // khi bất kỳ model nào gọi .populate() trỏ đến model khác.
 require('../models/hub.model');          // ← THÊM MỚI: bắt buộc phải load trước các model ref Hub
+require('../models/hubCoverage.model');
+require('../models/hubConnection.model');
 require('../models/zone.model');         // UC-16: Zone khu vực trong Hub
 require('../models/bag.model');          // UC-16: Bao tải niêm phong
 require('../models/trip.model');         // UC-17: Trip xuất kho

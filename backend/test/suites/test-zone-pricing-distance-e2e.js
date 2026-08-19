@@ -2,15 +2,15 @@
  * E2E Test Suite: 4-Tier Zone Pricing & GPS Haversine Distance / ETA Engine
  * Chạy: node test-zone-pricing-distance-e2e.js
  */
-require('dotenv').config();
+require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env') });
 const mongoose = require('mongoose');
 const assert = require('assert');
 
-const hubRoutingService = require('./src/services/hubRouting.service');
-const pricingService = require('./src/services/pricing.service');
-const orderService = require('./src/services/order.service');
-const Order = require('./src/models/order.model');
-const Hub = require('./src/models/hub.model');
+const hubRoutingService = require('../../src/services/hubRouting.service');
+const pricingService = require('../../src/services/pricing.service');
+const orderService = require('../../src/services/order.service');
+const Order = require('../../src/models/order.model');
+const Hub = require('../../src/models/hub.model');
 
 const results = { pass: 0, fail: 0, cases: [] };
 function pass(label) { results.pass++; results.cases.push({ label, ok: true }); console.log(`  ✅ PASS: ${label}`); }

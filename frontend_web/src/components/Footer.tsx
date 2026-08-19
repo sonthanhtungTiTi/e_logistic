@@ -1,4 +1,4 @@
-import { Truck, Heart } from 'lucide-react';
+import { Truck, Heart, MapPin, Phone, Mail } from 'lucide-react';
 
 export const Footer: React.FC = () => {
   return (
@@ -48,10 +48,10 @@ export const Footer: React.FC = () => {
           {/* Col 4 */}
           <div className="space-y-2 text-xs">
             <h4 className="font-bold text-white uppercase text-[11px] tracking-wider">Liên Hệ Bưu Cục Hub</h4>
-            <div className="text-slate-400 space-y-1">
-              <p>📍 Kho Hub Trung Tâm: Q. Tân Bình, TP. Hồ Chí Minh</p>
-              <p>📞 Hotline Hỗ Trợ 24/7: 1900 8894</p>
-              <p>✉️ Email: support@elogistic.vn</p>
+            <div className="text-slate-400 space-y-1.5">
+              <p className="flex items-center gap-2"><MapPin className="w-3.5 h-3.5 text-blue-400 shrink-0" /> Kho Hub Trung Tâm: Q. Tân Bình, TP. Hồ Chí Minh</p>
+              <p className="flex items-center gap-2"><Phone className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> Hotline Hỗ Trợ 24/7: 1900 8894</p>
+              <p className="flex items-center gap-2"><Mail className="w-3.5 h-3.5 text-cyan-400 shrink-0" /> Email: support@elogistic.vn</p>
             </div>
           </div>
         </div>

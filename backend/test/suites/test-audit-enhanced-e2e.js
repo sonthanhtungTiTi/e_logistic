@@ -2,17 +2,17 @@
  * E2E Test Suite: 5 UC-18 Audit Enhancements
  * Chạy: node test-audit-enhanced-e2e.js
  */
-require('dotenv').config();
+require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env') });
 const mongoose = require('mongoose');
 const assert = require('assert');
 
-const Hub = require('./src/models/hub.model');
-const Zone = require('./src/models/zone.model');
-const Bag = require('./src/models/bag.model');
-const Trip = require('./src/models/trip.model');
-const Order = require('./src/models/order.model');
-const AuditSession = require('./src/models/auditSession.model');
-const { startAuditSession, syncAuditScan } = require('./src/services/auditCore.service');
+const Hub = require('../../src/models/hub.model');
+const Zone = require('../../src/models/zone.model');
+const Bag = require('../../src/models/bag.model');
+const Trip = require('../../src/models/trip.model');
+const Order = require('../../src/models/order.model');
+const AuditSession = require('../../src/models/auditSession.model');
+const { startAuditSession, syncAuditScan } = require('../../src/services/auditCore.service');
 
 const results = { pass: 0, fail: 0, cases: [] };
 function pass(label) { results.pass++; results.cases.push({ label, ok: true }); console.log(`  ✅ PASS: ${label}`); }

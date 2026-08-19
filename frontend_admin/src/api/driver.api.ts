@@ -40,5 +40,27 @@ export const driverApi = {
   verifyPickupScan: async (trackingCode: string): Promise<any> => {
     const res = await axiosClient.post(`/orders/shipper/${trackingCode}/verify-scan`, { trackingCode });
     return res.data;
+  },
+
+  getPickedUpOrders: async (): Promise<any[]> => {
+    try {
+      const res = await axiosClient.get('/orders?status=PICKED_UP&limit=100');
+      const list = res.data?.data || res.data?.orders || (Array.isArray(res.data) ? res.data : []);
+      return list;
+    } catch (err) {
+      console.warn('Failed to fetch driver picked up orders:', err);
+      return [];
+    }
+  },
+
+  getPendingPickupOrders: async (): Promise<any[]> => {
+    try {
+      const res = await axiosClient.get('/orders?status=READY_TO_PICK&limit=100');
+      const list = res.data?.data || res.data?.orders || (Array.isArray(res.data) ? res.data : []);
+      return list;
+    } catch (err) {
+      console.warn('Failed to fetch pending pickup orders:', err);
+      return [];
+    }
   }
 };

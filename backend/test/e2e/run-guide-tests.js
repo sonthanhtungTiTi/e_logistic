@@ -31,11 +31,11 @@ const BASE = `http://127.0.0.1:${PORT}`;
 const C = {
   reset: '\x1b[0m',
   green: '\x1b[32m',
-  red:   '\x1b[31m',
-  yellow:'\x1b[33m',
-  cyan:  '\x1b[36m',
-  bold:  '\x1b[1m',
-  dim:   '\x1b[2m',
+  red: '\x1b[31m',
+  yellow: '\x1b[33m',
+  cyan: '\x1b[36m',
+  bold: '\x1b[1m',
+  dim: '\x1b[2m',
 };
 const pass = (msg) => console.log(`${C.green}✅ PASS${C.reset} ${msg}`);
 const fail = (msg, err) => console.log(`${C.red}❌ FAIL${C.reset} ${msg}\n       ${C.dim}→ ${err}${C.reset}`);
@@ -169,10 +169,10 @@ async function main() {
     return User.create({ fullName: `E2E ${role}`, email, phoneNumber: uniquePhone, password: 'E2eTest@123', role, hubId: withHub ? hubId : undefined, isActive: true });
   }
 
-  const staffUser     = await upsertUser('e2e.staff@test.local',       'HUB_STAFF');
-  const coordUser     = await upsertUser('e2e.coordinator@test.local', 'HUB_COORDINATOR');
-  const driverUser    = await upsertUser('e2e.driver@test.local',      'DRIVER');
-  const adminUser     = await upsertUser('e2e.admin@test.local',       'ADMIN', false); // ADMIN không có hubId
+  const staffUser = await upsertUser('e2e.staff@test.local', 'HUB_STAFF');
+  const coordUser = await upsertUser('e2e.coordinator@test.local', 'HUB_COORDINATOR');
+  const driverUser = await upsertUser('e2e.driver@test.local', 'DRIVER');
+  const adminUser = await upsertUser('e2e.admin@test.local', 'ADMIN', false); // ADMIN không có hubId
 
   info(`Users seeded: staff / coordinator / driver / admin`);
 
@@ -182,10 +182,10 @@ async function main() {
   info(`Server listening on port ${PORT}\n`);
 
   // ── Login ───────────────────────────────────────────────────────────────────
-  const staffToken  = await login('e2e.staff@test.local',       'E2eTest@123');
-  const coordToken  = await login('e2e.coordinator@test.local', 'E2eTest@123');
-  const driverToken = await login('e2e.driver@test.local',      'E2eTest@123');
-  const adminToken  = await login('e2e.admin@test.local',       'E2eTest@123');
+  const staffToken = await login('e2e.staff@test.local', 'E2eTest@123');
+  const coordToken = await login('e2e.coordinator@test.local', 'E2eTest@123');
+  const driverToken = await login('e2e.driver@test.local', 'E2eTest@123');
+  const adminToken = await login('e2e.admin@test.local', 'E2eTest@123');
   info('All logins successful\n');
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -194,17 +194,17 @@ async function main() {
   section('UC-16 — NHẬP KHO (Inbound Scan)');
 
   // Seed orders cho UC-16
-  const CODE_OK      = `E2E-IN-OK-${Date.now()}`;
+  const CODE_OK = `E2E-IN-OK-${Date.now()}`;
   const CODE_DAMAGED = `E2E-IN-DMG-${Date.now()}`;
-  const CODE_TORN    = `E2E-IN-TORN-${Date.now()}`;
-  const CODE_WEIGHT  = `E2E-IN-WGT-${Date.now()}`;
-  const CODE_BADST   = `E2E-IN-BADST-${Date.now()}`;
+  const CODE_TORN = `E2E-IN-TORN-${Date.now()}`;
+  const CODE_WEIGHT = `E2E-IN-WGT-${Date.now()}`;
+  const CODE_BADST = `E2E-IN-BADST-${Date.now()}`;
 
-  await upsertOrder(CODE_OK,      { status: 'PICKED_UP', originHubId: hubId, destinationHubId: hubId, currentHubId: null, sellerId: staffUser._id });
+  await upsertOrder(CODE_OK, { status: 'PICKED_UP', originHubId: hubId, destinationHubId: hubId, currentHubId: null, sellerId: staffUser._id });
   await upsertOrder(CODE_DAMAGED, { status: 'PICKED_UP', originHubId: hubId, destinationHubId: hubId, currentHubId: null, sellerId: staffUser._id });
-  await upsertOrder(CODE_TORN,    { status: 'PICKED_UP', originHubId: hubId, destinationHubId: hubId, currentHubId: null, sellerId: staffUser._id });
-  await upsertOrder(CODE_WEIGHT,  { status: 'PICKED_UP', originHubId: hubId, destinationHubId: hubId, currentHubId: null, sellerId: staffUser._id, actualWeight: 2.0 });
-  await upsertOrder(CODE_BADST,   { status: 'IN_HUB_ORIGIN', originHubId: hubId, destinationHubId: hubId, currentHubId: hubId, sellerId: staffUser._id });
+  await upsertOrder(CODE_TORN, { status: 'PICKED_UP', originHubId: hubId, destinationHubId: hubId, currentHubId: null, sellerId: staffUser._id });
+  await upsertOrder(CODE_WEIGHT, { status: 'PICKED_UP', originHubId: hubId, destinationHubId: hubId, currentHubId: null, sellerId: staffUser._id, actualWeight: 2.0 });
+  await upsertOrder(CODE_BADST, { status: 'IN_HUB_ORIGIN', originHubId: hubId, destinationHubId: hubId, currentHubId: hubId, sellerId: staffUser._id });
 
   // Test 16-1: Quét bình thường → IN_HUB_ORIGIN
   await test('UC-16-01: Scan INTACT → status=IN_HUB_ORIGIN', async () => {
@@ -302,18 +302,20 @@ async function main() {
 
   await Trip.findOneAndUpdate(
     { tripCode: TRIP_CODE },
-    { $set: {
-      tripCode: TRIP_CODE,
-      tripType: 'MID_MILE_TRANSFER',
-      status: 'DRAFT',
-      originHubId: hubId,
-      destinationHubId: hubId,
-      driverId: driverUser._id,
-      plannedTrackingCodes: [OUT_1, OUT_2, OUT_LOCKED],
-      scannedItems: [],
-      shortageTrackingCodes: [],
-      createdBy: coordUser._id,
-    }},
+    {
+      $set: {
+        tripCode: TRIP_CODE,
+        tripType: 'MID_MILE_TRANSFER',
+        status: 'DRAFT',
+        originHubId: hubId,
+        destinationHubId: hubId,
+        driverId: driverUser._id,
+        plannedTrackingCodes: [OUT_1, OUT_2, OUT_LOCKED],
+        scannedItems: [],
+        shortageTrackingCodes: [],
+        createdBy: coordUser._id,
+      }
+    },
     { upsert: true, new: true }
   );
 
@@ -359,8 +361,8 @@ async function main() {
   const AUD_2 = `E2E-AUD-2-${Date.now()}`;
   const AUD_MISS = `E2E-AUD-MISS-${Date.now()}`;
 
-  await upsertOrder(AUD_1,    { status: 'IN_HUB_ORIGIN', originHubId: hubId, currentHubId: hubId, destinationHubId: hubId, sellerId: staffUser._id, hubInboundAt: new Date() });
-  await upsertOrder(AUD_2,    { status: 'IN_HUB_ORIGIN', originHubId: hubId, currentHubId: hubId, destinationHubId: hubId, sellerId: staffUser._id, hubInboundAt: new Date() });
+  await upsertOrder(AUD_1, { status: 'IN_HUB_ORIGIN', originHubId: hubId, currentHubId: hubId, destinationHubId: hubId, sellerId: staffUser._id, hubInboundAt: new Date() });
+  await upsertOrder(AUD_2, { status: 'IN_HUB_ORIGIN', originHubId: hubId, currentHubId: hubId, destinationHubId: hubId, sellerId: staffUser._id, hubInboundAt: new Date() });
   await upsertOrder(AUD_MISS, { status: 'IN_HUB_ORIGIN', originHubId: hubId, currentHubId: hubId, destinationHubId: hubId, sellerId: staffUser._id, hubInboundAt: new Date() });
 
   let sessionCode = null;
@@ -408,9 +410,9 @@ async function main() {
   section('UC-19 — DASHBOARD TỒN KHO (Inventory API)');
 
   // Seed inventory orders với hubInboundAt khác nhau
-  await upsertOrder(`E2E-INV-NORM-${Date.now()}`,  { status: 'IN_HUB_ORIGIN', currentHubId: hubId, originHubId: hubId, destinationHubId: hubId, sellerId: staffUser._id, hubInboundAt: new Date(Date.now() - 5 * 3600000) });
-  await upsertOrder(`E2E-INV-WARN-${Date.now()}`,  { status: 'IN_HUB_ORIGIN', currentHubId: hubId, originHubId: hubId, destinationHubId: hubId, sellerId: staffUser._id, hubInboundAt: new Date(Date.now() - 30 * 3600000) });
-  await upsertOrder(`E2E-INV-CRIT-${Date.now()}`,  { status: 'SEARCH_ZONE',   currentHubId: hubId, originHubId: hubId, destinationHubId: hubId, sellerId: staffUser._id, hubInboundAt: new Date(Date.now() - 55 * 3600000) });
+  await upsertOrder(`E2E-INV-NORM-${Date.now()}`, { status: 'IN_HUB_ORIGIN', currentHubId: hubId, originHubId: hubId, destinationHubId: hubId, sellerId: staffUser._id, hubInboundAt: new Date(Date.now() - 5 * 3600000) });
+  await upsertOrder(`E2E-INV-WARN-${Date.now()}`, { status: 'IN_HUB_ORIGIN', currentHubId: hubId, originHubId: hubId, destinationHubId: hubId, sellerId: staffUser._id, hubInboundAt: new Date(Date.now() - 30 * 3600000) });
+  await upsertOrder(`E2E-INV-CRIT-${Date.now()}`, { status: 'SEARCH_ZONE', currentHubId: hubId, originHubId: hubId, destinationHubId: hubId, sellerId: staffUser._id, hubInboundAt: new Date(Date.now() - 55 * 3600000) });
 
   // Test 19-1: GET /api/inventory/summary
   await test('UC-19-01: GET /api/inventory/summary → returns hub inventory counts', async () => {
@@ -460,7 +462,7 @@ async function writeLoopLog(log, pass, fail) {
 
   const now = new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
   let existing = '';
-  try { existing = fs.readFileSync(logPath, 'utf8'); } catch {}
+  try { existing = fs.readFileSync(logPath, 'utf8'); } catch { }
 
   const runId = (existing.match(/## Vòng lặp #(\d+)/g) || []).length + 1;
 
@@ -502,6 +504,6 @@ File ghi lại từng vòng chạy test tự động, nguyên nhân lỗi, và f
 main().catch(async (e) => {
   console.error(`\n${C.red}💥 CRASH: ${e.message}${C.reset}`);
   console.error(e.stack);
-  try { await mongoose.disconnect(); } catch {}
+  try { await mongoose.disconnect(); } catch { }
   process.exit(1);
 });

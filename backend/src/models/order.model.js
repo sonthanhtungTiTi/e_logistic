@@ -46,6 +46,8 @@ const orderSchema = new mongoose.Schema(
         'OUT_FOR_DELIVERY',
         'DELIVERING',
         'DELIVERED',
+        'PENDING_REDELIVERY',
+        'DELIVERY_FAILED_PENDING_RETURN',
         'FAILED',
         'PICKUP_FAILED',
         'RETURNING',
@@ -63,6 +65,34 @@ const orderSchema = new mongoose.Schema(
       ],
       default: 'CREATED',
     },
+    dispatcherId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+    deliveryFailureCount: { type: Number, default: 0 },
+    deliveryFailureHistory: [
+      {
+        reasonGroup: {
+          type: String,
+          enum: ['CANNOT_CONTACT', 'CUSTOMER_REFUSED', 'WRONG_ADDRESS', 'CUSTOMER_RESCHEDULE', 'OTHER'],
+          required: true,
+        },
+        failureCategory: {
+          type: String,
+          enum: ['CUSTOMER_FAULT', 'OPERATIONAL_FAULT', 'OTHER'],
+          required: true,
+        },
+        contactAttempts: { type: Number, default: 0 },
+        rescheduleRequestedAt: { type: Date, default: null },
+        note: { type: String, default: '' },
+        proofImageUrls: { type: [String], default: [] },
+        gpsLocation: {
+          lat: { type: Number, default: null },
+          lng: { type: Number, default: null },
+          isGpsMissing: { type: Boolean, default: false },
+        },
+        reportedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+        clientOfflineId: { type: String, default: null, index: true },
+        reportedAt: { type: Date, default: Date.now },
+      },
+    ],
     originHubId: { type: mongoose.Schema.Types.ObjectId, ref: 'Hub', default: null },
     destinationHubId: { type: mongoose.Schema.Types.ObjectId, ref: 'Hub', default: null },
     isFlagged: { type: Boolean, default: false },
@@ -177,6 +207,19 @@ const orderSchema = new mongoose.Schema(
     // Bưu cục phục vụ
     pickupHub: { type: String, default: null },
     deliveryHub: { type: String, default: null },
+
+    // ── THÊM MỚI: Định tuyến Đa Kho (Multi-Hub Routing Nodes) ──
+    routeNodes: [
+      {
+        hubId: { type: mongoose.Schema.Types.ObjectId, ref: 'Hub', required: true },
+        hubType: { type: String, enum: ['PICKUP', 'SORTING', 'DELIVERY'], required: true },
+        sequenceIndex: { type: Number, required: true },
+        status: { type: String, enum: ['PENDING', 'ARRIVED', 'DEPARTED'], default: 'PENDING' },
+        arrivedAt: { type: Date, default: null },
+        departedAt: { type: Date, default: null },
+      },
+    ],
+    currentRouteIndex: { type: Number, default: 0 },
 
     // Các cờ rủi ro & điều phối
     flagFeeWarning: { type: Boolean, default: false },

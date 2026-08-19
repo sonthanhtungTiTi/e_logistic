@@ -28,20 +28,20 @@
  * Chạy: node test-dod-verification.js
  */
 
-require('dotenv').config();
+require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env') });
 const mongoose = require('mongoose');
 const assert = require('assert');
 const http = require('http');
 
-const app = require('./src/app');
-const Order  = require('./src/models/order.model');
-const OrderLog = require('./src/models/orderLog.model');
-const Bag    = require('./src/models/bag.model');
-const Zone   = require('./src/models/zone.model');
-const Hub    = require('./src/models/hub.model');
-const User   = require('./src/models/user.model');
+const app = require('../../src/app');
+const Order  = require('../../src/models/order.model');
+const OrderLog = require('../../src/models/orderLog.model');
+const Bag    = require('../../src/models/bag.model');
+const Zone   = require('../../src/models/zone.model');
+const Hub    = require('../../src/models/hub.model');
+const User   = require('../../src/models/user.model');
 
-const { processInboundSingle } = require('./src/services/inboundCore.service');
+const { processInboundSingle } = require('../../src/services/inboundCore.service');
 
 const PORT = 5097;
 const BASE = `http://127.0.0.1:${PORT}/api`;
