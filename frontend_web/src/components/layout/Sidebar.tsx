@@ -21,6 +21,12 @@ export const Sidebar: React.FC = () => {
   const { user, logout } = useAuth();
   const location = useLocation();
 
+  // Chỉ hiển thị Sidebar khi người dùng đã ĐĂNG NHẬP và không nằm ở các trang Auth
+  const isAuthRoute = location.pathname.startsWith('/auth');
+  if (!user || isAuthRoute) {
+    return null;
+  }
+
   const displayName = user?.companyName || user?.fullName || 'Công Ty Dược An Bình';
   const roleDisplay = user?.role || 'SELLER';
   const initialLetter = displayName.trim().charAt(0).toUpperCase() || 'U';
