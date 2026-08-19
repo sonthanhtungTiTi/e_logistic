@@ -157,19 +157,28 @@ async function processInboundSingle({
   let routeCheckSkip = true;
   let expectedNodeIndex = 0;
   if (order.routeNodes && order.routeNodes.length > 0) {
-    const expectedNode = order.routeNodes[order.currentRouteIndex];
-    if (expectedNode) {
-      const expectedHubIdStr = expectedNode.hubId.toString();
-      const scannedHubIdStr = currentHubId.toString();
-      if (expectedHubIdStr !== scannedHubIdStr) {
+    const currentIndex = order.currentRouteIndex || 0;
+    const scannedHubIdStr = currentHubId.toString();
+
+    // Tìm xem Hub đang quét tương ứng với chặng nào trong routeNodes
+    const matchingNodeIdx = order.routeNodes.findIndex(
+      (node, idx) => idx >= currentIndex && (node.hubId?._id || node.hubId || '').toString() === scannedHubIdStr
+    );
+
+    if (matchingNodeIdx >= 0) {
+      routeCheckSkip = false;
+      expectedNodeIndex = matchingNodeIdx;
+    } else {
+      // Nếu không khớp chặng tiếp theo nào trong routeNodes
+      const expectedNode = order.routeNodes[currentIndex];
+      const expectedHubIdStr = (expectedNode?.hubId?._id || expectedNode?.hubId || '').toString();
+      if (expectedHubIdStr && expectedHubIdStr !== scannedHubIdStr) {
         throw {
           status: 400,
-          message: `Kiện hàng SAI TUYẾN ĐỊNH TUYẾN. Kho quét (${scannedHubIdStr}) không khớp kho dự kiến ở chặng ${order.currentRouteIndex}`,
+          message: `Kiện hàng SAI TUYẾN ĐỊNH TUYẾN. Kho quét (${scannedHubIdStr}) không khớp kho dự kiến ở chặng ${currentIndex}`,
           code: 'INVALID_ROUTE_HOP',
         };
       }
-      routeCheckSkip = false;
-      expectedNodeIndex = order.currentRouteIndex;
     }
   }
 
@@ -186,9 +195,7 @@ async function processInboundSingle({
   if (!routeCheckSkip) {
     atomicSet[`routeNodes.${expectedNodeIndex}.status`] = 'ARRIVED';
     atomicSet[`routeNodes.${expectedNodeIndex}.arrivedAt`] = new Date();
-    if (order.currentRouteIndex < order.routeNodes.length - 1) {
-      atomicSet.currentRouteIndex = order.currentRouteIndex + 1;
-    }
+    atomicSet.currentRouteIndex = Math.min(order.routeNodes.length - 1, expectedNodeIndex + 1);
   }
   if (weightDiscrepancyGram !== null) {
     atomicSet.hubMeasuredWeight = hubMeasuredWeight;

@@ -48,6 +48,7 @@ export interface CommitResponse {
 }
 
 export interface DriverConfirmPayload {
+  trip_code?: string;
   action: 'ACCEPT' | 'REJECT';
   reject_reason?: string;
   rejectReason?: string;
@@ -67,13 +68,39 @@ export interface DriverConfirmResponse {
   };
 }
 
+export interface CreateTripPayload {
+  trip_type?: 'MID_MILE_TRANSFER' | 'LAST_MILE_DELIVERY';
+  destination_hub_id?: string;
+  planned_tracking_codes: string[];
+}
+
+export interface TripListItem {
+  _id: string;
+  tripCode: string;
+  tripType: string;
+  status: string;
+  plannedTrackingCodes: string[];
+  destinationHubId?: { _id: string; code: string; name: string };
+  createdAt: string;
+}
+
 export const outboundApi = {
+  getTrips: (): Promise<{ success: boolean; data: TripListItem[] }> =>
+    axiosClient.get('/outbound/trips').then(r => r.data),
+
+  createTrip: (payload: CreateTripPayload): Promise<{ success: boolean; message: string; data: any }> =>
+    axiosClient.post('/outbound/trips', payload).then(r => r.data),
+
   scanOutbound: (payload: OutboundScanPayload): Promise<OutboundScanResponse> =>
     axiosClient.post<OutboundScanResponse>('/outbound/scan', payload).then(r => r.data),
 
   commitTrip: (payload: CommitPayload): Promise<CommitResponse> =>
     axiosClient.post<CommitResponse>('/outbound/commit', payload).then(r => r.data),
 
-  driverConfirmTrip: (tripCode: string, payload: DriverConfirmPayload): Promise<DriverConfirmResponse> =>
-    axiosClient.post<DriverConfirmResponse>(`/driver/trips/${tripCode}/confirm`, payload).then(r => r.data),
+  driverConfirmTrip: (tripCodeOrPayload: string | DriverConfirmPayload, payload?: DriverConfirmPayload): Promise<DriverConfirmResponse> => {
+    const finalPayload: DriverConfirmPayload = typeof tripCodeOrPayload === 'string'
+      ? { trip_code: tripCodeOrPayload, ...(payload || { action: 'ACCEPT' }) }
+      : tripCodeOrPayload;
+    return axiosClient.post<DriverConfirmResponse>('/outbound/driver-confirm', finalPayload).then(r => r.data);
+  },
 };

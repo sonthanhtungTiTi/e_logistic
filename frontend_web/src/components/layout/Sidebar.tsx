@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-  Package,
   Search,
   Calculator,
   PlusCircle,
