@@ -4,6 +4,12 @@ export interface PickupConfirmRequest {
   trackingCode?: string;
   latitude?: number;
   longitude?: number;
+  gpsLat?: number;
+  gpsLng?: number;
+  signatureImageUrl?: string;
+  parcelImageUrl?: string;
+  parcelPhoto?: string;
+  actualWeight?: number;
   note?: string;
   signatureImageUrl?: string;
   parcelImageUrl?: string;
@@ -13,6 +19,7 @@ export interface PickupConfirmRequest {
 export interface PickupConfirmResponse {
   success: boolean;
   message: string;
+  order?: any;
   data: {
     tracking_code: string;
     trackingCode?: string;

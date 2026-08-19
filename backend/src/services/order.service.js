@@ -2,7 +2,11 @@ const mongoose = require('mongoose');
 const Order = require('../models/order.model');
 const OrderLog = require('../models/orderLog.model');
 const PickupConfirmation = require('../models/pickupConfirmation.model');
+const PickupManifest = require('../models/pickupManifest.model');
 const pricingService = require('./pricing.service');
+const Hub = require('../models/hub.model');
+const hubRoutingService = require('./hubRouting.service');
+const ioSingleton = require('../lib/ioSingleton');
 
 /**
  * Service xử lý logic đơn hàng (Order Domain Logic)
@@ -49,8 +53,6 @@ const orderService = {
 
     const calcFee = await pricingService.calculateShippingFee({ ...data, actualWeight });
 
-    const Hub = mongoose.model('Hub');
-    const hubRoutingService = require('./hubRouting.service');
     let originHubId = data.originHubId || null;
     let destinationHubId = data.destinationHubId || null;
 
@@ -96,6 +98,16 @@ const orderService = {
       console.warn('[OrderService] Hub lookup warning:', hubErr.message);
     }
 
+    // ── THÊM MỚI BƯỚC 7: Tính toán routeNodes Đa Kho ──
+    let routeNodes = [];
+    try {
+      if (data.pickupAddress?.province && data.deliveryAddress?.province) {
+        routeNodes = await hubRoutingService.resolveOrderRoute(data.pickupAddress, data.deliveryAddress);
+      }
+    } catch (routeErr) {
+      console.warn('[OrderService] resolveOrderRoute warning:', routeErr.message);
+    }
+
     const newOrder = new Order({
       ...data,
       actualWeight,
@@ -104,6 +116,8 @@ const orderService = {
       idempotencyKey,
       originHubId,
       destinationHubId,
+      routeNodes,
+      currentRouteIndex: 0,
       volumetricWeight: calcFee.volumetricWeight || 0,
       chargeableWeight: calcFee.chargeableWeight || actualWeight,
       baseFee: calcFee.baseFee || 30000,
@@ -111,15 +125,16 @@ const orderService = {
       discountAmount: calcFee.discountAmount || 0,
       discountCode: data.discountCode || null,
       shippingFee: calcFee.shippingFee || data.shippingFee || 30000,
-      pickupHub: calcFee.pickupHub || null,
-      deliveryHub: calcFee.deliveryHub || null,
+      pickupHub: calcFee.pickupHub || (routeNodes[0] ? routeNodes[0].hubId.toString() : null),
+      deliveryHub: calcFee.deliveryHub || (routeNodes[routeNodes.length - 1] ? routeNodes[routeNodes.length - 1].hubId.toString() : null),
       zoneTier: calcFee.zoneTier || null,
       routeDistanceKm: calcFee.routeDistanceKm || null,
       estimatedDeliveryDays: calcFee.estimatedDeliveryDays || 1,
-      status: data.status || 'READY_TO_PICK'
+      status: data.status || 'CREATED'
     });
 
     await newOrder.save();
+    ioSingleton.emitOrderUpdate(sellerId, newOrder);
     return { statusCode: 201, message: 'Tạo đơn hàng thành công', order: newOrder };
   },
 
@@ -145,6 +160,7 @@ const orderService = {
 
     Object.assign(order, data);
     await order.save();
+    ioSingleton.emitOrderUpdate(order.sellerId, order);
     return { message: 'Cập nhật đơn hàng thành công', order };
   },
 
@@ -178,6 +194,7 @@ const orderService = {
     order.cancelledAt = new Date();
 
     await order.save();
+    ioSingleton.emitOrderUpdate(order.sellerId, order);
     return { cancelledOrder: order, wasRouted };
   },
 
@@ -337,6 +354,7 @@ const orderService = {
     order.status = status;
     if (note) order.cancelNote = note;
     await order.save();
+    ioSingleton.emitOrderUpdate(order.sellerId, order);
     return order;
   },
 
@@ -363,8 +381,8 @@ const orderService = {
       throw err;
     }
 
-    if (order.status === 'DRAFT' || order.status === 'PENDING_VERIFICATION') {
-      const err = new Error(`Không thể lấy hàng! Đơn hàng [${order.trackingCode}] mới ở trạng thái "${order.status}" (Chưa chuẩn bị xong). Yêu cầu Seller bấm "Chuẩn Bị Xong" trước.`);
+    if (order.status === 'CREATED' || order.status === 'DRAFT' || order.status === 'PENDING_VERIFICATION') {
+      const err = new Error(`Không thể lấy hàng! Đơn hàng [${order.trackingCode}] mới ở trạng thái "${order.status}" (Chưa chuẩn bị xong). Yêu cầu Seller bấm "Chuẩn Bị Xong" (READY_TO_PICK) trước.`);
       err.statusCode = 400;
       throw err;
     }
@@ -375,7 +393,7 @@ const orderService = {
       throw err;
     }
 
-    const allowedStatuses = ['CREATED', 'READY_TO_PICK', 'PICKING'];
+    const allowedStatuses = ['READY_TO_PICK', 'PICKING'];
     if (!allowedStatuses.includes(order.status)) {
       const err = new Error(`Đơn hàng [${order.trackingCode}] đang ở trạng thái "${order.status}", không hợp lệ để lấy hàng.`);
       err.statusCode = 400;
@@ -447,7 +465,7 @@ const orderService = {
       throw err;
     }
 
-    if (order.status === 'DRAFT' || order.status === 'PENDING_VERIFICATION') {
+    if (order.status === 'CREATED' || order.status === 'DRAFT' || order.status === 'PENDING_VERIFICATION') {
       const err = new Error(`Không thể lấy hàng! Đơn hàng [${order.trackingCode}] mới ở trạng thái "${order.status}" (Chưa chuẩn bị xong). Yêu cầu Seller bấm "Chuẩn Bị Xong" (READY_TO_PICK) trước.`);
       err.statusCode = 400;
       throw err;
@@ -482,8 +500,8 @@ const orderService = {
       throw err;
     }
 
-    // 5. Kiểm tra trạng thái đơn hợp lệ (Theo UC-12 Pre-condition: Đơn phải ở trạng thái CREATED / READY_TO_PICK / PICKING)
-    const allowedStatuses = ['CREATED', 'READY_TO_PICK', 'PICKING'];
+    // 5. Kiểm tra trạng thái đơn hợp lệ (Pre-condition: Đơn phải ở trạng thái READY_TO_PICK / PICKING)
+    const allowedStatuses = ['READY_TO_PICK', 'PICKING'];
     if (!allowedStatuses.includes(order.status)) {
       const err = new Error(`Không thể lấy hàng! Đơn hàng [${order.trackingCode}] đang ở trạng thái "${order.status}", không hợp lệ để lấy hàng.`);
       err.statusCode = 400;
@@ -538,6 +556,7 @@ const orderService = {
       order.originHubId = user.hubId;
     }
     await order.save();
+    ioSingleton.emitOrderUpdate(order.sellerId, order);
 
     // 9. Lưu ePOH (PickupConfirmation)
     const confirmation = await PickupConfirmation.create({
@@ -609,6 +628,7 @@ const orderService = {
     order.status = 'PICKUP_FAILED';
     order.cancelNote = `Lấy hàng thất bại: ${failReason}`;
     await order.save();
+    ioSingleton.emitOrderUpdate(order.sellerId, order);
 
     try {
       await OrderLog.create({
@@ -627,6 +647,166 @@ const orderService = {
     return {
       order,
       message: 'Đã ghi nhận lấy hàng thất bại'
+    };
+  },
+
+  /**
+   * UC-12 2-Phase Session: Quét từng món hàng thêm vào biên bản bàn giao (Process Item Scan)
+   */
+  async processItemScan(user, data = {}) {
+    const { trackingCode, scannedCode, manifestId } = data;
+    const code = trackingCode || scannedCode;
+
+    const verifyRes = await this.verifyPickupScan(user, code);
+    const order = await Order.findById(verifyRes.order._id);
+
+    let manifest;
+    if (manifestId && mongoose.Types.ObjectId.isValid(manifestId)) {
+      manifest = await PickupManifest.findById(manifestId);
+    }
+    if (!manifest) {
+      manifest = await PickupManifest.findOne({
+        shipperId: user._id,
+        sellerId: order.sellerId,
+        status: 'OPEN',
+      });
+    }
+
+    if (!manifest) {
+      const manifestCode = `MAN-${Date.now().toString().slice(-6)}-${Math.floor(Math.random() * 1000)}`;
+      manifest = new PickupManifest({
+        manifestCode,
+        shipperId: user._id,
+        sellerId: order.sellerId,
+        orderIds: [],
+        totalCount: 0,
+        status: 'OPEN',
+      });
+    }
+
+    if (!manifest.orderIds.some(id => id.toString() === order._id.toString())) {
+      manifest.orderIds.push(order._id);
+      manifest.totalCount = manifest.orderIds.length;
+      await manifest.save();
+    }
+
+    if (order.status !== 'PICKING') {
+      order.status = 'PICKING';
+      await order.save();
+    }
+
+    return {
+      manifest,
+      order,
+      message: `Đã quét và thêm đơn [${order.trackingCode}] vào biên bản bàn giao [${manifest.manifestCode}].`,
+    };
+  },
+
+  /**
+   * UC-12 2-Phase Session: Hoàn tất biên bản bàn giao (Complete Pickup Manifest ePOH)
+   */
+  async completePickupManifest(user, data = {}) {
+    const { manifestId, manifestCode, signatureImageUrl, proofPhotoUrls, gpsLat, gpsLng, clientOfflineId } = data;
+
+    let manifest;
+    if (manifestId && mongoose.Types.ObjectId.isValid(manifestId)) {
+      manifest = await PickupManifest.findById(manifestId);
+    }
+    if (!manifest && manifestCode) {
+      manifest = await PickupManifest.findOne({ manifestCode: manifestCode.toUpperCase() });
+    }
+
+    if (!manifest) {
+      const err = new Error('Không tìm thấy biên bản bàn giao lấy hàng');
+      err.statusCode = 404;
+      throw err;
+    }
+
+    if (manifest.status === 'COMPLETED') {
+      return {
+        manifest,
+        message: 'Biên bản bàn giao này đã được hoàn tất trước đó',
+      };
+    }
+
+    if (!signatureImageUrl) {
+      const err = new Error('Bắt buộc phải có chữ ký điện tử của Seller để hoàn tất biên bản bàn giao.');
+      err.statusCode = 400;
+      throw err;
+    }
+
+    manifest.status = 'COMPLETED';
+    manifest.signatureImageUrl = signatureImageUrl;
+    if (Array.isArray(proofPhotoUrls)) manifest.proofPhotoUrls = proofPhotoUrls;
+    if (clientOfflineId) manifest.clientOfflineId = clientOfflineId;
+    manifest.completedAt = new Date();
+    await manifest.save();
+
+    let completedCount = 0;
+    const confirmResults = [];
+
+    for (const orderId of manifest.orderIds) {
+      try {
+        const confirmRes = await this.confirmPickup(user, orderId, {
+          signatureImageUrl,
+          proofPhotoUrls,
+          gpsLat,
+          gpsLng,
+          clientOfflineId: clientOfflineId ? `${clientOfflineId}_${orderId}` : undefined,
+        });
+        confirmResults.push(confirmRes);
+        completedCount++;
+      } catch (err) {
+        console.warn(`[Manifest Complete] Lỗi confirm order ${orderId}: ${err.message}`);
+      }
+    }
+
+    return {
+      manifest,
+      completedCount,
+      totalOrders: manifest.orderIds.length,
+      message: `Đã hoàn tất biên bản bàn giao [${manifest.manifestCode}] (${completedCount}/${manifest.orderIds.length} đơn thành công).`,
+    };
+  },
+
+  /**
+   * UC-12: Xác nhận lấy hàng hàng loạt (Batch Pickup Confirmation)
+   */
+  async confirmBatchPickup(user, data = {}) {
+    const { orderIds, signatureImageUrl, gpsLat, gpsLng, proofPhotoUrls } = data;
+
+    if (!Array.isArray(orderIds) || orderIds.length === 0) {
+      const err = new Error('Vui lòng cung cấp danh sách orderIds dạng mảng');
+      err.statusCode = 400;
+      throw err;
+    }
+
+    const results = [];
+    let successCount = 0;
+    let failedCount = 0;
+
+    for (const id of orderIds) {
+      try {
+        const res = await this.confirmPickup(user, id, {
+          signatureImageUrl,
+          gpsLat,
+          gpsLng,
+          proofPhotoUrls,
+        });
+        results.push({ id, success: true, order: res.order });
+        successCount++;
+      } catch (err) {
+        results.push({ id, success: false, error: err.message });
+        failedCount++;
+      }
+    }
+
+    return {
+      total: orderIds.length,
+      successCount,
+      failedCount,
+      results,
+      message: `Đã xử lý lấy hàng hàng loạt ${orderIds.length} đơn (Thành công: ${successCount}, Thất bại: ${failedCount}).`,
     };
   }
 };

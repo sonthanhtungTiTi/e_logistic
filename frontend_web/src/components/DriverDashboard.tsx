@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Truck, CheckCircle, Navigation, Camera, Sparkles } from 'lucide-react';
+import { Truck, CheckCircle, Navigation, Camera, Sparkles, Phone, MapPin } from 'lucide-react';
 import type { Order, OrderStatus } from '../types/order.types';
 
 interface DriverDashboardProps {
@@ -114,7 +114,10 @@ export const DriverDashboard: React.FC<DriverDashboardProps> = ({
                     <span className="text-[10px] text-slate-500 uppercase font-bold">Điểm Giao Hàng</span>
                     <div className="font-bold text-emerald-400">{recipientName}</div>
                     <div className="text-slate-400">{recipientAddress}</div>
-                    <div className="font-mono text-blue-400">📞 {recipientPhone}</div>
+                    <div className="font-mono text-blue-400 flex items-center gap-1">
+                      <Phone className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                      <span>{recipientPhone}</span>
+                    </div>
                   </div>
                 </div>
 
@@ -122,7 +125,7 @@ export const DriverDashboard: React.FC<DriverDashboardProps> = ({
                 <div className="pt-3 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-3">
                   <button
                     onClick={() => onOpenOrderDetails(ord)}
-                    className="px-3.5 py-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white text-xs font-semibold"
+                    className="px-3.5 py-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white text-xs font-semibold cursor-pointer"
                   >
                     Xem Bản Đồ & Vận Đơn
                   </button>
@@ -131,27 +134,30 @@ export const DriverDashboard: React.FC<DriverDashboardProps> = ({
                     {(ord.status === 'CREATED' || ord.status === 'CONFIRMED' || ord.status === 'READY_TO_PICK') && (
                       <button
                         onClick={() => onUpdateOrderStatus(orderId, 'PICKED', 'Tài xế đã lấy hàng')}
-                        className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold shadow-md shadow-amber-600/30 transition cursor-pointer"
+                        className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold shadow-md shadow-amber-600/30 transition cursor-pointer flex items-center gap-1.5"
                       >
-                        ✓ Xác Nhận Đã Nhận Đơn
+                        <CheckCircle className="w-4 h-4" />
+                        Xác Nhận Đã Nhận Đơn
                       </button>
                     )}
 
                     {(ord.status === 'PICKED' || ord.status === 'PICKED_UP') && (
                       <button
                         onClick={() => onUpdateOrderStatus(orderId, 'IN_TRANSIT', 'Bắt đầu vận chuyển tuyến cao tốc')}
-                        className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md shadow-blue-600/30 transition cursor-pointer"
+                        className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md shadow-blue-600/30 transition cursor-pointer flex items-center gap-1.5"
                       >
-                        🚚 Bắt Đầu Vận Chuyển
+                        <Truck className="w-4 h-4" />
+                        Bắt Đầu Vận Chuyển
                       </button>
                     )}
 
                     {ord.status === 'IN_TRANSIT' && (
                       <button
                         onClick={() => onUpdateOrderStatus(orderId, 'OUT_FOR_DELIVERY', 'Tài xế đang đến vị trí giao')}
-                        className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow-md shadow-purple-600/30 transition cursor-pointer"
+                        className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow-md shadow-purple-600/30 transition cursor-pointer flex items-center gap-1.5"
                       >
-                        📍 Bắt Đầu Phát Hàng
+                        <MapPin className="w-4 h-4" />
+                        Bắt Đầu Phát Hàng
                       </button>
                     )}
 

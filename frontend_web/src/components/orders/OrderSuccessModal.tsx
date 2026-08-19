@@ -121,7 +121,7 @@ export const OrderSuccessModal: React.FC<OrderSuccessModalProps> = ({
               onClick={handleCreateNextClick}
               className="w-full py-3.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/30 transition cursor-pointer"
             >
-              <PlusCircle className="w-5 h-5" /> 🚀 Tạo Đơn Hàng Tiếp Theo Ngay
+              <PlusCircle className="w-5 h-5" /> Tạo Đơn Hàng Tiếp Theo Ngay
             </button>
 
             <div className="grid grid-cols-2 gap-2">

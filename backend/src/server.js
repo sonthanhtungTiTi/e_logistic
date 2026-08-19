@@ -4,6 +4,7 @@ const { Server } = require('socket.io');
 const app = require('./app');
 const connectDB = require('./config/db');
 const { initTrackingGateway } = require('./websocket/tracking.gateway');
+const migratePickupAddresses = require('./migrations/002_migrate_pickup_addresses');
 
 // Kiểm tra cấu hình bảo mật trước khi chạy server
 if (!process.env.JWT_SECRET) {
@@ -17,6 +18,13 @@ const startServer = async () => {
   try {
     // Kết nối Database
     await connectDB();
+
+    // Migration tự động cho địa chỉ kho Seller
+    try {
+      await migratePickupAddresses();
+    } catch (migErr) {
+      console.warn('⚠️ Cảnh báo Migration 002:', migErr.message);
+    }
 
     // Khởi tạo HTTP Server & WebSocket Server (Socket.io)
     const server = http.createServer(app);
@@ -34,10 +42,13 @@ const startServer = async () => {
     // Khởi tạo WebSocket Room Gateway cho Live GPS Tracking
     initTrackingGateway(io);
 
-    // Dashboard inventory: client join room
+    // Dashboard inventory & seller room connection
     io.on('connection', (socket) => {
       socket.on('join_warehouse_dashboard', (hubId) => {
         if (hubId) socket.join(`warehouse-dashboard:${hubId}`);
+      });
+      socket.on('join_seller_room', (sellerId) => {
+        if (sellerId) socket.join(`seller:${sellerId}`);
       });
     });
 

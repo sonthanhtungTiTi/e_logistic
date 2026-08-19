@@ -41,7 +41,8 @@ const getQuote = async (req, res, next) => {
 const createOrder = async (req, res, next) => {
   try {
     const headerIdempotencyKey = req.headers['x-idempotency-key'] || req.headers['idempotency-key'];
-    const result = await orderService.createNewOrder(req.user._id, req.body, headerIdempotencyKey);
+    const sellerId = req.effectiveSellerId || req.user._id;
+    const result = await orderService.createNewOrder(sellerId, req.body, headerIdempotencyKey);
 
     return res.status(result.statusCode).json({
       success: true,
@@ -185,8 +186,8 @@ const bulkCancelOrders = async (req, res, next) => {
  */
 const searchOrders = async (req, res, next) => {
   try {
-    const sellerId = req.user._id;
-    const isAdmin = req.user.role === 'ADMIN';
+    const sellerId = req.effectiveSellerId || req.user._id;
+    const isAdmin = req.user.role !== 'SELLER';
 
     const searchResult = await orderService.searchSellerOrders(sellerId, isAdmin, req.query);
 
@@ -438,24 +439,73 @@ const updateDriverLocation = async (req, res, next) => {
 };
 
 /**
- * UC-12 Shipper Pickup Handlers (Stubs for route registration & mobile sync)
+ * UC-12 Shipper Pickup Handlers (2-Phase Session & Mobile Manifest)
  */
 const processItemScanHandler = async (req, res, next) => {
   try {
-    return res.status(200).json({ success: true, message: 'Đã quét đơn hàng vào danh sách lấy hàng thành công' });
-  } catch (err) { next(err); }
+    const result = await orderService.processItemScan(req.user, req.body);
+    return res.status(200).json({
+      success: true,
+      message: result.message,
+      data: {
+        manifest: result.manifest,
+        order: result.order
+      }
+    });
+  } catch (err) {
+    if (err.statusCode) {
+      return res.status(err.statusCode).json({
+        success: false,
+        message: err.message,
+        code: err.code || 'BAD_REQUEST'
+      });
+    }
+    next(err);
+  }
 };
 
 const completePickupManifestHandler = async (req, res, next) => {
   try {
-    return res.status(200).json({ success: true, message: 'Hoàn tất biên bản bàn giao lấy hàng (ePOH)' });
-  } catch (err) { next(err); }
+    const result = await orderService.completePickupManifest(req.user, req.body);
+    return res.status(200).json({
+      success: true,
+      message: result.message,
+      data: {
+        manifest: result.manifest,
+        completedCount: result.completedCount,
+        totalOrders: result.totalOrders
+      }
+    });
+  } catch (err) {
+    if (err.statusCode) {
+      return res.status(err.statusCode).json({
+        success: false,
+        message: err.message,
+        code: err.code || 'BAD_REQUEST'
+      });
+    }
+    next(err);
+  }
 };
 
 const confirmBatchPickupHandler = async (req, res, next) => {
   try {
-    return res.status(200).json({ success: true, message: 'Xác nhận lấy hàng hàng loạt thành công' });
-  } catch (err) { next(err); }
+    const result = await orderService.confirmBatchPickup(req.user, req.body);
+    return res.status(200).json({
+      success: true,
+      message: result.message,
+      data: result
+    });
+  } catch (err) {
+    if (err.statusCode) {
+      return res.status(err.statusCode).json({
+        success: false,
+        message: err.message,
+        code: err.code || 'BAD_REQUEST'
+      });
+    }
+    next(err);
+  }
 };
 
 const verifyPickupScanHandler = async (req, res, next) => {

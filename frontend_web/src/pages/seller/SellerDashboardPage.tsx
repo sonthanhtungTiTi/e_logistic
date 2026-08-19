@@ -1,10 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { CheckCircle2 } from 'lucide-react';
 import { SellerDashboard } from '../../components/SellerDashboard';
 import { TrackingModal } from '../../components/shared/TrackingModal';
 import { EditOrderModal } from '../../components/orders/EditOrderModal';
 import { CancelOrderModal } from '../../components/orders/CancelOrderModal';
 import type { Order } from '../../types';
 import { orderApi } from '../../api/order.api';
+
+import { socket } from '../../api/socket';
 
 export const SellerDashboardPage: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -35,6 +38,34 @@ export const SellerDashboardPage: React.FC = () => {
 
   useEffect(() => {
     fetchOrders();
+
+    const handleOrderUpdated = (payload: any) => {
+      if (!payload) return;
+      const updatedOrder = payload.order || payload;
+      const updatedCode = updatedOrder.trackingCode || updatedOrder.trackingNumber;
+      if (!updatedCode) return;
+
+      setOrders((prevOrders) => {
+        const index = prevOrders.findIndex(
+          (o) => (o.trackingCode || o.trackingNumber) === updatedCode || o._id === updatedOrder._id
+        );
+        if (index !== -1) {
+          const newOrders = [...prevOrders];
+          newOrders[index] = { ...newOrders[index], ...updatedOrder };
+          showToast(`⚡ Vận đơn [${updatedCode}] vừa cập nhật trạng thái Realtime: ${updatedOrder.status}`);
+          return newOrders;
+        }
+        return prevOrders;
+      });
+    };
+
+    socket.on('order:updated', handleOrderUpdated);
+    socket.on('order:status_changed', handleOrderUpdated);
+
+    return () => {
+      socket.off('order:updated', handleOrderUpdated);
+      socket.off('order:status_changed', handleOrderUpdated);
+    };
   }, [fetchOrders]);
 
   const handleUpdateOrderSuccess = (updatedOrder: Order, feeMsg?: string) => {
@@ -69,8 +100,9 @@ export const SellerDashboardPage: React.FC = () => {
   return (
     <div className="space-y-6 relative">
       {toastMessage && (
-        <div className="fixed top-20 right-6 z-50 p-4 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-bold text-xs shadow-2xl backdrop-blur-xl animate-in slide-in-from-top-4 duration-300">
-          ✅ {toastMessage}
+        <div className="fixed top-20 right-6 z-50 p-4 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-bold text-xs shadow-2xl backdrop-blur-xl animate-in slide-in-from-top-4 duration-300 flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span>{toastMessage}</span>
         </div>
       )}
 

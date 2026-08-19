@@ -56,6 +56,10 @@ const userSchema = new mongoose.Schema(
     taxCode: String,
     avatarUrl: String,
     address: String,
+    businessType: String,
+    industryCategory: String,
+    estimatedDailyOrders: String,
+    websiteUrl: String,
     latitude: String,
     longitude: String,
     bankName: String,
@@ -90,7 +94,41 @@ const userSchema = new mongoose.Schema(
     refreshToken: {
       type: String,
       select: false, // Không trả về khi query thông thường, phải dùng .select('+refreshToken')
-    }
+    },
+    // Trạng thái xác minh KYC
+    kycStatus: {
+      type: String,
+      enum: ['NOT_SUBMITTED', 'PENDING_KYC', 'VERIFIED_KYC', 'REJECTED_KYC'],
+      default: 'NOT_SUBMITTED',
+    },
+    // Bảo mật 2 lớp (2FA TOTP)
+    twoFactorSecret: {
+      type: String,
+      select: false,
+    },
+    twoFactorEnabled: {
+      type: Boolean,
+      default: false,
+    },
+    twoFactorBackupCodes: {
+      type: [String],
+      select: false,
+    },
+    // Phân quyền tài khoản phụ (Sub-Account)
+    parentSellerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+      index: true,
+    },
+    subAccountPermissions: {
+      type: [String],
+      enum: ['VIEW_ORDERS', 'MANAGE_ORDERS', 'VIEW_FINANCE', 'MANAGE_FINANCE', 'MANAGE_PRODUCTS', 'MANAGE_COMPLAINTS'],
+      default: [],
+    },
+    // Tự tạm ngưng tài khoản
+    deactivatedAt: Date,
+    deactivationReason: String,
   },
   {
     timestamps: true, // Tự động có createdAt, updatedAt (mặc định múi giờ hệ thống)

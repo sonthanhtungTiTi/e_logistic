@@ -89,6 +89,18 @@ const loginUser = async (req, res) => {
     // Đăng nhập thành công → Reset bộ đếm sai
     user.failedLoginAttempts = 0;
     user.lockUntil = undefined;
+    await user.save();
+
+    // Nếu tài khoản đã BẬT 2FA -> Chặn cấp Access Token ngay, yêu cầu nhập mã TOTP bước 2
+    if (user.twoFactorEnabled) {
+      const tempSecret = process.env.JWT_TEMP_SECRET || process.env.JWT_SECRET || 'temp_secret';
+      const tempToken = jwt.sign({ userId: user._id }, tempSecret, { expiresIn: '5m' });
+      return res.json({
+        requiresTwoFactor: true,
+        tempToken,
+        message: 'Tài khoản của bạn đã bật bảo mật 2FA. Vui lòng nhập mã từ ứng dụng Authenticator.',
+      });
+    }
 
     // Bước 8 ĐT: Tạo Access Token và Refresh Token
     const accessToken = generateAccessToken(user._id);
@@ -259,6 +271,10 @@ const getUserProfile = async (req, res) => {
       taxCode: user.taxCode || '',
       avatarUrl: user.avatarUrl || '',
       address: user.address || '',
+      businessType: user.businessType || 'COMPANY',
+      industryCategory: user.industryCategory || 'PHARMA',
+      estimatedDailyOrders: user.estimatedDailyOrders || '50_200',
+      websiteUrl: user.websiteUrl || '',
       latitude: user.latitude || '',
       longitude: user.longitude || '',
       bankName: user.bankName || '',
@@ -297,6 +313,10 @@ const updateUserProfile = async (req, res) => {
       taxCode: Joi.string().allow('', null).optional(),
       avatarUrl: Joi.string().allow('', null).optional(),
       address: Joi.string().allow('', null).optional(),
+      businessType: Joi.string().allow('', null).optional(),
+      industryCategory: Joi.string().allow('', null).optional(),
+      estimatedDailyOrders: Joi.string().allow('', null).optional(),
+      websiteUrl: Joi.string().allow('', null).optional(),
       latitude: Joi.string().allow('', null).optional(),
       longitude: Joi.string().allow('', null).optional(),
       bankName: Joi.string().allow('', null).optional(),
@@ -320,6 +340,10 @@ const updateUserProfile = async (req, res) => {
       taxCode,
       avatarUrl,
       address,
+      businessType,
+      industryCategory,
+      estimatedDailyOrders,
+      websiteUrl,
       latitude,
       longitude,
       bankName,
@@ -361,6 +385,10 @@ const updateUserProfile = async (req, res) => {
     if (taxCode !== undefined) user.taxCode = taxCode;
     if (avatarUrl !== undefined) user.avatarUrl = avatarUrl;
     if (address !== undefined) user.address = address;
+    if (businessType !== undefined) user.businessType = businessType;
+    if (industryCategory !== undefined) user.industryCategory = industryCategory;
+    if (estimatedDailyOrders !== undefined) user.estimatedDailyOrders = estimatedDailyOrders;
+    if (websiteUrl !== undefined) user.websiteUrl = websiteUrl;
     if (latitude !== undefined) user.latitude = latitude;
     if (longitude !== undefined) user.longitude = longitude;
     if (bankName !== undefined) user.bankName = bankName;
@@ -391,6 +419,10 @@ const updateUserProfile = async (req, res) => {
         taxCode: user.taxCode,
         avatarUrl: user.avatarUrl,
         address: user.address,
+        businessType: user.businessType,
+        industryCategory: user.industryCategory,
+        estimatedDailyOrders: user.estimatedDailyOrders,
+        websiteUrl: user.websiteUrl,
         latitude: user.latitude,
         longitude: user.longitude,
         bankName: user.bankName,

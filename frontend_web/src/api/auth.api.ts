@@ -1,7 +1,7 @@
 import axiosClient from './axiosClient';
 
 export const authApi = {
-  login: (data: { email: string; password: string }) =>
+  login: (data: { email?: string; identifier?: string; password: string }) =>
     axiosClient.post('/auth/login', data),
   register: (data: Record<string, unknown>) =>
     axiosClient.post('/auth/register', data),
@@ -22,4 +22,3 @@ export const authApi = {
   changePassword: (data: Record<string, unknown>) =>
     axiosClient.put('/auth/change-password', data),
 };
-

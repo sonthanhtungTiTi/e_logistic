@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Package, X, MapPin, User, Edit3, Printer, CheckCircle2, Clock } from 'lucide-react';
+import { Package, X, MapPin, User, Edit3, Printer, CheckCircle2, Clock, Hourglass, Lock } from 'lucide-react';
 import type { Order } from '../../types/order.types';
 import { PrintWaybillModal } from './PrintWaybillModal';
 
@@ -96,9 +96,15 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, onClo
                 <p className="font-bold text-white">Đơn hàng ở trạng thái Sẵn Sàng Lấy Hàng (Đang đếm ngược 5 phút)</p>
                 <p className="text-[11px] text-slate-300">
                   {secondsRemaining > 0 ? (
-                    <span>⏳ Bạn có <strong className="text-amber-400 font-mono font-bold text-sm px-1.5 py-0.5 rounded bg-amber-950/60 border border-amber-500/30">{formatCountdown(secondsRemaining)}</strong> để chỉnh sửa thông tin hoặc hủy đơn trước khi bưu tá ghé lấy.</span>
+                    <span className="flex items-center gap-1">
+                      <Hourglass className="w-3.5 h-3.5 text-amber-400 shrink-0 inline" />
+                      <span>Bạn có <strong className="text-amber-400 font-mono font-bold text-sm px-1.5 py-0.5 rounded bg-amber-950/60 border border-amber-500/30">{formatCountdown(secondsRemaining)}</strong> để chỉnh sửa thông tin hoặc hủy đơn trước khi bưu tá ghé lấy.</span>
+                    </span>
                   ) : (
-                    <span className="text-rose-400 font-bold">🔒 Đã HẾT thời hạn 5 phút. Thông tin đơn hàng đã khóa hoàn toàn.</span>
+                    <span className="text-rose-400 font-bold flex items-center gap-1">
+                      <Lock className="w-3.5 h-3.5 text-rose-400 shrink-0 inline" />
+                      <span>Đã HẾT thời hạn 5 phút. Thông tin đơn hàng đã khóa hoàn toàn.</span>
+                    </span>
                   )}
                 </p>
               </div>

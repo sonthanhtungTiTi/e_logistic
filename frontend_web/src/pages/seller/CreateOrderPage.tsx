@@ -311,9 +311,10 @@ export const CreateOrderPage: React.FC = () => {
       ? Math.max(0, Number(codAmount) - activeShippingFee)
       : Number(codAmount);
 
-  // Background auto-quote effect (runs silently when address info is entered)
+  // Background auto-quote effect (runs silently when valid address info is entered)
   useEffect(() => {
-    if (!receiverPhone.trim() || !receiverName.trim() || !detailAddress.trim()) {
+    const cleanPhone = receiverPhone.trim().replace(/[^0-9+]/g, '');
+    if (cleanPhone.length < 9 || !receiverName.trim() || detailAddress.trim().length < 3) {
       return;
     }
 
@@ -1304,7 +1305,10 @@ export const CreateOrderPage: React.FC = () => {
                 <div className="p-3 rounded-xl bg-purple-950/40 border border-purple-500/30 text-[11px] text-purple-200 flex items-start gap-2.5 animate-in fade-in">
                   <Wallet className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
                   <div>
-                    <p className="font-bold text-purple-300">💳 Shop chọn trả cước vận chuyển ({formatNumberWithDots(activeShippingFee)} đ):</p>
+                    <p className="font-bold text-purple-300 flex items-center gap-1.5">
+                      <CreditCard className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+                      <span>Shop chọn trả cước vận chuyển ({formatNumberWithDots(activeShippingFee)} đ):</span>
+                    </p>
                     <p className="text-[11px] text-slate-300 mt-0.5">
                       • Phí ship sẽ được <strong>trừ trực tiếp vào Tài khoản / Ví Shop</strong> (hoặc trừ khi đối soát COD).<br />
                       • Tiền Shop thực nhận từ COD: <strong className="text-emerald-400 font-mono">{formatNumberWithDots(netSellerReceive)} đ</strong>.
@@ -1315,7 +1319,10 @@ export const CreateOrderPage: React.FC = () => {
                 <div className="p-3 rounded-xl bg-blue-950/40 border border-blue-500/30 text-[11px] text-blue-200 flex items-start gap-2.5 animate-in fade-in">
                   <Truck className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
                   <div>
-                    <p className="font-bold text-blue-300">📦 Khách hàng (Người nhận) trả cước vận chuyển:</p>
+                    <p className="font-bold text-blue-300 flex items-center gap-1.5">
+                      <Package className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                      <span>Khách hàng (Người nhận) trả cước vận chuyển:</span>
+                    </p>
                     <p className="text-[11px] text-slate-300 mt-0.5">
                       • Shipper sẽ thu tổng cộng <strong className="text-emerald-400 font-mono">{formatNumberWithDots(totalCollectFromBuyer)} đ</strong> ({formatNumberWithDots(codAmount)}đ COD + {formatNumberWithDots(activeShippingFee)}đ ship) khi giao hàng.<br />
                       • Shop sẽ nhận đủ 100% tiền hàng COD: <strong className="text-emerald-400 font-mono">{formatNumberWithDots(codAmount)} đ</strong>.

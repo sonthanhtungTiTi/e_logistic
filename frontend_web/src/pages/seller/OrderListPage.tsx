@@ -7,6 +7,9 @@ import { OrderDetailModal } from '../../components/orders/OrderDetailModal';
 import { EditOrderModal } from '../../components/orders/EditOrderModal';
 import { OrderSubNav } from '../../components/orders/OrderSubNav';
 import { orderApi } from '../../api/order.api';
+import { ExcelImportOrderModal } from '../../components/orders/ExcelImportOrderModal';
+
+import { socket } from '../../api/socket';
 
 export const OrderListPage: React.FC = () => {
   const navigate = useNavigate();
@@ -15,6 +18,11 @@ export const OrderListPage: React.FC = () => {
   const [selectedOrderToCancel, setSelectedOrderToCancel] = useState<Order | null>(null);
   const [selectedOrderView, setSelectedOrderView] = useState<Order | null>(null);
   const [selectedOrderToEdit, setSelectedOrderToEdit] = useState<Order | null>(null);
+  const [isImportModalOpen, setIsImportModalOpen] = useState<boolean>(false);
+  const [isRealtimeActive, setIsRealtimeActive] = useState<boolean>(true);
+
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isBulkUpdating, setIsBulkUpdating] = useState<boolean>(false);
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [dateError, setDateError] = useState<string | null>(null);
@@ -67,12 +75,51 @@ export const OrderListPage: React.FC = () => {
   useEffect(() => {
     fetchOrders();
 
-    // Polling tự động làm mới danh sách đơn hàng mỗi 5 giây để đồng bộ trạng thái Realtime giữa Shipper & Seller
+    // Kết nối WebSocket Realtime: Chỉ cập nhật khi vận đơn thuộc quyền sở hữu của Seller này
+    const handleOrderUpdated = (payload: any) => {
+      if (!payload) return;
+      const updatedOrder = payload.order || payload;
+      const updatedCode = updatedOrder.trackingCode || updatedOrder.trackingNumber;
+      const newStatus = updatedOrder.status;
+
+      if (!updatedCode) return;
+
+      setOrders((prevOrders) => {
+        const index = prevOrders.findIndex(
+          (o) => (o.trackingCode || o.trackingNumber) === updatedCode || o._id === updatedOrder._id
+        );
+
+        if (index !== -1) {
+          const newOrders = [...prevOrders];
+          newOrders[index] = {
+            ...newOrders[index],
+            ...updatedOrder,
+            status: newStatus || newOrders[index].status,
+          };
+          setToastMessage(`⚡ Vận đơn [${updatedCode}] vừa cập nhật trạng thái Realtime: ${newStatus}`);
+          setTimeout(() => setToastMessage(null), 4000);
+          return newOrders;
+        }
+
+        // Nếu đơn hàng không thuộc danh sách hiện tại của Seller này thì không reload vô cớ
+        return prevOrders;
+      });
+    };
+
+    socket.on('order:updated', handleOrderUpdated);
+    socket.on('order:status_changed', handleOrderUpdated);
+    setIsRealtimeActive(true);
+
+    // Fallback Polling nhẹ 60s
     const intervalId = setInterval(() => {
       fetchOrders();
-    }, 5000);
+    }, 60000);
 
-    return () => clearInterval(intervalId);
+    return () => {
+      socket.off('order:updated', handleOrderUpdated);
+      socket.off('order:status_changed', handleOrderUpdated);
+      clearInterval(intervalId);
+    };
   }, [fetchOrders]);
 
   const handleDateChange = (type: 'from' | 'to', val: string) => {
@@ -142,6 +189,46 @@ export const OrderListPage: React.FC = () => {
     }
   };
 
+  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked) {
+      const selectableIds = orders
+        .filter((o) => ['CREATED', 'PENDING_VERIFICATION', 'PENDING'].includes(o.status))
+        .map((o) => o._id || (o as any).id)
+        .filter(Boolean);
+      setSelectedIds(selectableIds);
+    } else {
+      setSelectedIds([]);
+    }
+  };
+
+  const handleSelectOne = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkReadyToPick = async () => {
+    if (selectedIds.length === 0) return;
+    setIsBulkUpdating(true);
+    let successCount = 0;
+    try {
+      for (const id of selectedIds) {
+        try {
+          await orderApi.updateOrderStatus(id, 'READY_TO_PICK');
+          successCount++;
+        } catch (err) {
+          console.error(`Lỗi chuyển trạng thái đơn ${id}:`, err);
+        }
+      }
+      setToastMessage(`🎉 Đã xác nhận đóng gói xong & chuyển ${successCount}/${selectedIds.length} đơn sang "SẴN SÀNG LẤY" (READY_TO_PICK)! Shippers đã có thể đến thu gom.`);
+      setSelectedIds([]);
+      fetchOrders();
+      setTimeout(() => setToastMessage(null), 5000);
+    } finally {
+      setIsBulkUpdating(false);
+    }
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       
@@ -170,6 +257,11 @@ export const OrderListPage: React.FC = () => {
         <div>
           <h3 className="text-2xl font-black text-white flex items-center gap-2">
             <Package className="w-6 h-6 text-blue-400" /> Tra Cứu & Quản Lý Đơn Hàng
+            {isRealtimeActive && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 animate-pulse ml-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Realtime Active
+              </span>
+            )}
           </h3>
           <p className="text-xs text-slate-400">Tìm kiếm, lọc chi tiết theo mã vận đơn, người nhận, chỉnh sửa & quản lý bưu gửi từ MongoDB</p>
         </div>
@@ -271,11 +363,66 @@ export const OrderListPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Floating Bulk Action Bar */}
+      {selectedIds.length > 0 && (
+        <div className="p-3.5 bg-gradient-to-r from-blue-950 via-cyan-950 to-slate-900 border border-cyan-500/40 rounded-2xl flex items-center justify-between shadow-2xl animate-fade-in">
+          <div className="flex items-center gap-3">
+            <span className="w-8 h-8 rounded-xl bg-cyan-500/20 text-cyan-300 font-extrabold text-xs flex items-center justify-center border border-cyan-500/40">
+              {selectedIds.length}
+            </span>
+            <div>
+              <p className="text-xs font-bold text-white">
+                Đã chọn <span className="text-cyan-400 font-extrabold">{selectedIds.length}</span> đơn hàng
+              </p>
+              <p className="text-[10px] text-slate-400">Xác nhận đã đóng gói xong để bưu tá / tài xế có thể đến thu gom</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleBulkReadyToPick}
+              disabled={isBulkUpdating}
+              className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-600 to-emerald-600 hover:from-cyan-500 hover:to-emerald-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg transition cursor-pointer disabled:opacity-50"
+            >
+              {isBulkUpdating ? (
+                <Loader2 className="w-4 h-4 animate-spin text-white" />
+              ) : (
+                <CheckCircle2 className="w-4 h-4 text-emerald-300" />
+              )}
+              <span>Xác Nhận Chuẩn Bị Xong ({selectedIds.length} Đơn)</span>
+            </button>
+
+            <button
+              onClick={() => setSelectedIds([])}
+              className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold cursor-pointer transition"
+            >
+              Bỏ Chọn
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Orders Table */}
       <div className="glass-panel rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
         <table className="w-full text-left text-xs border-collapse">
           <thead>
             <tr className="bg-slate-900 border-b border-slate-800 text-slate-400 font-bold uppercase text-[10px]">
+              <th className="p-3.5 w-10 text-center">
+                {(() => {
+                  const selectableOrders = orders.filter((o) => ['CREATED', 'PENDING_VERIFICATION', 'PENDING'].includes(o.status));
+                  const isAllChecked = selectableOrders.length > 0 && selectableOrders.every((o) => selectedIds.includes(o._id || (o as any).id));
+                  return (
+                    <input
+                      type="checkbox"
+                      checked={isAllChecked}
+                      disabled={selectableOrders.length === 0}
+                      onChange={handleSelectAll}
+                      title={selectableOrders.length > 0 ? "Chọn tất cả các đơn MỚI TẠO để chuyển hàng loạt sang Sẵn Sàng Lấy" : "Không có đơn MỚI TẠO nào để chọn"}
+                      className="rounded border-slate-700 bg-slate-950 text-cyan-500 focus:ring-cyan-500 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                    />
+                  );
+                })()}
+              </th>
               <th className="p-3.5">Mã Vận Đơn</th>
               <th className="p-3.5">Người Nhận</th>
               <th className="p-3.5">Trọng Lượng</th>
@@ -288,21 +435,36 @@ export const OrderListPage: React.FC = () => {
           <tbody className="divide-y divide-slate-800/60">
             {loading ? (
               <tr>
-                <td colSpan={7} className="p-12 text-center text-slate-400">
+                <td colSpan={8} className="p-12 text-center text-slate-400">
                   <Loader2 className="w-8 h-8 text-blue-500 animate-spin mx-auto mb-2" />
                   <p className="font-semibold text-xs text-slate-300">Đang tải danh sách đơn hàng thực từ MongoDB...</p>
                 </td>
               </tr>
             ) : orders.length > 0 ? (
               orders.map((o) => {
+                const orderId = o._id || (o as any).id;
+                const isSelected = selectedIds.includes(orderId);
+                const isSelectable = ['CREATED', 'PENDING_VERIFICATION', 'PENDING'].includes(o.status);
                 const readyTime = (o as any).readyToPickAt || o.updatedAt;
                 const elapsedSecs = readyTime ? Math.floor((Date.now() - new Date(readyTime).getTime()) / 1000) : 0;
                 const isWithin5MinWindow = o.status === 'READY_TO_PICK' && elapsedSecs < 300;
-                const canEdit = ['CREATED', 'PENDING_VERIFICATION', 'PENDING'].includes(o.status) || isWithin5MinWindow;
-                const canCancel = ['CREATED', 'PENDING_VERIFICATION', 'PENDING'].includes(o.status) || isWithin5MinWindow;
+                const canEdit = isSelectable || isWithin5MinWindow;
+                const canCancel = isSelectable || isWithin5MinWindow;
 
                 return (
-                  <tr key={o._id || o.trackingCode} className="hover:bg-slate-800/40 transition">
+                  <tr key={orderId || o.trackingCode} className={`transition ${isSelected ? 'bg-cyan-950/30 border-l-2 border-l-cyan-400' : 'hover:bg-slate-800/40'}`}>
+                    <td className="p-3.5 text-center">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        disabled={!isSelectable}
+                        onChange={() => isSelectable && handleSelectOne(orderId)}
+                        title={isSelectable ? "Chọn đơn này để chuyển sang Sẵn Sàng Lấy Hàng" : `Đơn hàng ở trạng thái ${o.status}, không cần chọn đóng gói nữa`}
+                        className={`rounded border-slate-700 bg-slate-950 text-cyan-500 focus:ring-cyan-500 ${
+                          isSelectable ? 'cursor-pointer' : 'opacity-25 cursor-not-allowed'
+                        }`}
+                      />
+                    </td>
                     <td className="p-3.5 font-mono font-bold text-blue-400">
                       <button
                         onClick={() => setSelectedOrderView(o)}
@@ -323,13 +485,15 @@ export const OrderListPage: React.FC = () => {
                         o.status === 'CANCELLED'
                           ? 'bg-rose-500/20 text-rose-400 border-rose-500/30'
                           : o.status === 'CREATED'
-                          ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+                          ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                          : o.status === 'READY_TO_PICK'
+                          ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30'
                           : o.status === 'DELIVERED'
                           ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
                           : 'bg-blue-500/20 text-blue-300 border-blue-500/30'
                       }`}>
                         {o.status === 'CANCELLED' && <Ban className="w-3 h-3" />}
-                        {o.status}
+                        {o.status === 'CREATED' ? 'MỚI TẠO' : o.status === 'READY_TO_PICK' ? 'SẴN SÀNG LẤY' : o.status}
                       </span>
                     </td>
                     <td className="p-3.5 text-right">
@@ -378,7 +542,7 @@ export const OrderListPage: React.FC = () => {
               })
             ) : (
               <tr>
-                <td colSpan={7} className="p-12 text-center text-slate-400 space-y-3">
+                <td colSpan={8} className="p-12 text-center text-slate-400 space-y-3">
                   <Package className="w-12 h-12 text-slate-600 mx-auto" />
                   <div>
                     <p className="font-bold text-sm text-slate-200">Chưa có đơn hàng nào trong MongoDB</p>
@@ -447,6 +611,17 @@ export const OrderListPage: React.FC = () => {
           onSuccess={handleOrderUpdatedSuccess}
         />
       )}
+
+      {/* Excel 4-Step Import Wizard Modal */}
+      <ExcelImportOrderModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onSuccess={() => {
+          setIsImportModalOpen(false);
+          fetchOrders();
+        }}
+      />
     </div>
   );
 };
+

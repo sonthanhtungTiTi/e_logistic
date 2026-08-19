@@ -1,6 +1,6 @@
 import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router';
-import { Search, ShieldCheck, Zap, Thermometer, ArrowRight, Sparkles, Navigation, MapPin, Loader2, Package, LayoutList, AlignJustify, Phone, Lock, PlusCircle } from 'lucide-react';
+import { Search, ShieldCheck, Zap, Thermometer, ArrowRight, Sparkles, Navigation, MapPin, Loader2, Package, LayoutList, AlignJustify, Phone, Lock, Rocket, LogIn, FileSpreadsheet, AlertTriangle } from 'lucide-react';
 import type { Order } from '../types/order.types';
 import heroBg from '../assets/hero_bg.png';
 import { orderApi } from '../api/order.api';
@@ -36,14 +36,49 @@ export const HeroTracking: React.FC<HeroTrackingProps> = ({
       return;
     }
 
-    if (!cleanPhone4 || cleanPhone4.length !== 4 || !/^\d{4}$/.test(cleanPhone4)) {
-      setSearchError('Vui lòng nhập 4 số cuối số điện thoại người nhận (VD: 0153) để xác thực tra cứu bảo mật.');
+    const isLoggedIn = Boolean(user);
+
+    // Step 1: Search in local orders array owned by this Seller
+    const localOrder = orders.find(
+      (o) => o.trackingCode?.toLowerCase() === cleanCode.toLowerCase()
+    );
+
+    if (localOrder) {
+      // Order belongs to this logged-in Seller! Open details directly without 4-digit phone.
+      onOpenOrderDetails(localOrder);
+      setSearchError('');
       return;
     }
 
     setIsSearching(true);
     setSearchError('');
+
     try {
+      // Step 2: If logged in, search authenticated server API for Seller's owned orders
+      if (isLoggedIn) {
+        const searchRes = await orderApi.searchOrders({ trackingCode: cleanCode });
+        if (searchRes.data?.success && searchRes.data.data?.length > 0) {
+          const found = searchRes.data.data.find(
+            (o) => o.trackingCode?.toLowerCase() === cleanCode.toLowerCase()
+          );
+          if (found) {
+            onOpenOrderDetails(found);
+            return;
+          }
+        }
+      }
+
+      // Step 3: Order not owned by logged-in Seller (or Guest mode): Require 4-digit phone validation for security
+      if (!cleanPhone4 || cleanPhone4.length !== 4 || !/^\d{4}$/.test(cleanPhone4)) {
+        if (isLoggedIn) {
+          setSearchError('Vận đơn này không nằm trong danh sách đơn hàng của bạn. Để tra cứu đơn hàng khác, vui lòng nhập 4 số cuối SĐT người nhận.');
+        } else {
+          setSearchError('Vui lòng nhập 4 số cuối số điện thoại người nhận (VD: 0153) để xác thực tra cứu bảo mật.');
+        }
+        return;
+      }
+
+      // Call public tracking API with 4-digit phone verification
       const response = await orderApi.trackOrderPublic(cleanCode, cleanPhone4);
       if (response.data?.success && response.data.data) {
         onOpenOrderDetails(response.data.data);
@@ -102,8 +137,17 @@ export const HeroTracking: React.FC<HeroTrackingProps> = ({
               }}
               className="px-6 py-3 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 text-white font-extrabold text-xs sm:text-sm shadow-xl shadow-emerald-600/30 flex items-center gap-2 cursor-pointer transition transform hover:-translate-y-0.5"
             >
-              <PlusCircle className="w-5 h-5 text-emerald-200" />
-              <span>{user ? '🚀 Tạo Đơn Vận Chuyển Mới Ngay' : '🔑 Đăng Nhập Để Tạo Đơn Hàng'}</span>
+              {user ? (
+                <>
+                  <Rocket className="w-4 h-4 text-emerald-200" />
+                  <span>Tạo Đơn Vận Chuyển Mới Ngay</span>
+                </>
+              ) : (
+                <>
+                  <LogIn className="w-4 h-4 text-emerald-200" />
+                  <span>Đăng Nhập Để Tạo Đơn Hàng</span>
+                </>
+              )}
             </button>
 
             {user && (
@@ -112,7 +156,8 @@ export const HeroTracking: React.FC<HeroTrackingProps> = ({
                 onClick={() => navigate('/seller/orders/batch')}
                 className="px-5 py-3 rounded-2xl bg-slate-900/90 hover:bg-slate-800 text-cyan-300 border border-cyan-500/30 font-bold text-xs sm:text-sm flex items-center gap-2 cursor-pointer transition"
               >
-                <span>📦 Tạo Đơn Theo Lô (Excel)</span>
+                <FileSpreadsheet className="w-4 h-4 text-cyan-400" />
+                <span>Tạo Đơn Theo Lô (Excel)</span>
               </button>
             )}
           </div>
@@ -147,7 +192,7 @@ export const HeroTracking: React.FC<HeroTrackingProps> = ({
                     setPhoneLast4Input(val);
                     if (searchError) setSearchError('');
                   }}
-                  placeholder="4 số cuối SĐT nhận"
+                  placeholder={user ? '4 số cuối SĐT (Tùy chọn)' : '4 số cuối SĐT nhận *'}
                   className="w-full bg-transparent text-white placeholder-slate-400 text-sm outline-none font-mono"
                 />
               </div>
@@ -172,8 +217,9 @@ export const HeroTracking: React.FC<HeroTrackingProps> = ({
             </div>
 
             {searchError && (
-              <p className="text-xs font-semibold text-rose-400 px-2 animate-in fade-in duration-200">
-                ⚠️ {searchError}
+              <p className="text-xs font-semibold text-rose-400 px-2 animate-in fade-in duration-200 flex items-center gap-1.5">
+                <AlertTriangle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                <span>{searchError}</span>
               </p>
             )}
           </form>
@@ -225,249 +271,245 @@ export const HeroTracking: React.FC<HeroTrackingProps> = ({
       {/* Recent Live Trackings Horizontal List Section (Chỉ hiển thị danh sách khi ĐÃ ĐĂNG NHẬP) */}
       {user && (
         <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></div>
-            <h2 className="text-xl font-extrabold text-white">Vận Đơn Đang Chuyển Động Hàng Ngày</h2>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-slate-400 hidden md:inline">
-              Nhấn Chi Tiết / Sửa / Hủy để quản lý vận đơn
-            </span>
-            <div className="flex items-center bg-slate-900/80 border border-slate-800 rounded-xl p-1">
-              <button
-                onClick={() => setViewMode('table')}
-                className={`p-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
-                  viewMode === 'table' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'
-                }`}
-                title="Bảng Ngang Đầy Đủ"
-              >
-                <LayoutList className="w-4 h-4" />
-                <span className="text-xs">Bảng Ngang</span>
-              </button>
-              <button
-                onClick={() => setViewMode('bar')}
-                className={`p-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
-                  viewMode === 'bar' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'
-                }`}
-                title="Thẻ Ngang Rộng"
-              >
-                <AlignJustify className="w-4 h-4" />
-                <span className="text-xs">Thẻ Ngang</span>
-              </button>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></div>
+              <h2 className="text-xl font-extrabold text-white">Vận Đơn Đang Chuyển Động Hàng Ngày</h2>
             </div>
-          </div>
-        </div>
 
-        {orders.length > 0 ? (
-          viewMode === 'table' ? (
-            /* FULL HORIZONTAL TABLE (DẠNG BẢNG NGANG ĐẦY ĐỦ NHƯ ẢNH THIẾT KẾ) */
-            <div className="glass-panel rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="border-b border-slate-800 bg-slate-900/80 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                      <th className="py-3.5 px-4">MÃ VẬN ĐƠN</th>
-                      <th className="py-3.5 px-4">NGƯỜI NHẬN & NƠI GIAO</th>
-                      <th className="py-3.5 px-4">TRỌNG LƯỢNG (THỰC / DIM)</th>
-                      <th className="py-3.5 px-4">CƯỚC PHÍ</th>
-                      <th className="py-3.5 px-4">TRẠNG THÁI</th>
-                      <th className="py-3.5 px-4 text-right">THAO TÁC</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-800/60 text-xs">
-                    {orders.map((ord) => {
-                      const code = ord.trackingCode || ord.trackingNumber || '';
-                      const recipientName = ord.deliveryAddress?.fullName || ord.recipientName || 'Người nhận';
-                      const recipientAddress = [
-                        ord.deliveryAddress?.address,
-                        ord.deliveryAddress?.district,
-                        ord.deliveryAddress?.province
-                      ].filter(Boolean).join(', ') || ord.recipientAddress || 'Địa chỉ N/A';
-
-                      const actualWeight = ord.actualWeight || ord.weightKg || 0;
-                      const chargeableWeightVal = ord.chargeableWeight || ord.chargeableWeightKg || actualWeight;
-                      const fee = ord.shippingFee || ord.cost || 0;
-                      const isEditable = ['CREATED', 'PENDING_VERIFICATION', 'READY_TO_PICK', 'PENDING'].includes(ord.status);
-
-                      return (
-                        <tr key={ord._id || ord.id} className="hover:bg-slate-800/40 transition">
-                          <td className="py-4 px-4 font-mono font-bold text-blue-400">
-                            <button
-                              onClick={() => onOpenOrderDetails(ord)}
-                              className="hover:underline cursor-pointer text-left"
-                            >
-                              {code}
-                            </button>
-                            <span className="block text-[10px] font-normal text-slate-500">{ord.serviceType || 'EXPRESS'}</span>
-                          </td>
-
-                          <td className="py-4 px-4">
-                            <div className="font-bold text-white">{recipientName}</div>
-                            <div className="text-[11px] text-slate-400 truncate max-w-xs">{recipientAddress}</div>
-                          </td>
-
-                          <td className="py-4 px-4">
-                            <div className="text-slate-200 font-mono">{actualWeight} kg (Thực)</div>
-                            <div className="text-cyan-400 text-[11px] font-mono">➡ {chargeableWeightVal} kg (Tính cước)</div>
-                          </td>
-
-                          <td className="py-4 px-4 font-mono font-bold text-emerald-400">
-                            {fee.toLocaleString('vi-VN')} đ
-                          </td>
-
-                          <td className="py-4 px-4">
-                            <span
-                              className={`inline-block text-[10px] font-bold px-2.5 py-1 rounded-full uppercase border ${
-                                ord.status === 'CANCELLED'
-                                  ? 'bg-rose-500/20 text-rose-400 border-rose-500/30'
-                                  : ord.status === 'DELIVERED'
-                                  ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
-                                  : ord.status === 'IN_TRANSIT' || ord.status === 'OUT_FOR_DELIVERY'
-                                  ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
-                                  : 'bg-blue-500/20 text-blue-300 border-blue-500/30'
-                              }`}
-                            >
-                              {ord.status}
-                            </span>
-                          </td>
-
-                          <td className="py-4 px-4 text-right">
-                            <div className="flex items-center justify-end gap-1.5">
-                              <button
-                                onClick={() => onOpenOrderDetails(ord)}
-                                className="px-2.5 py-1 rounded-lg bg-blue-600/20 hover:bg-blue-600 text-blue-300 hover:text-white border border-blue-500/30 text-xs font-semibold transition cursor-pointer"
-                                title="Xem chi tiết vận đơn"
-                              >
-                                Chi Tiết
-                              </button>
-
-                              {isEditable && onEditOrder && (
-                                <button
-                                  onClick={() => onEditOrder(ord)}
-                                  className="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-600 text-amber-300 hover:text-white border border-amber-500/30 text-xs font-semibold transition cursor-pointer"
-                                  title="Chỉnh sửa đơn hàng"
-                                >
-                                  Sửa
-                                </button>
-                              )}
-
-                              {isEditable && onCancelOrder && (
-                                <button
-                                  onClick={() => onCancelOrder(ord)}
-                                  className="px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 text-xs font-semibold transition cursor-pointer"
-                                  title="Hủy đơn hàng"
-                                >
-                                  Hủy
-                                </button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-slate-400 hidden md:inline">
+                Nhấn Chi Tiết / Sửa / Hủy để quản lý vận đơn
+              </span>
+              <div className="flex items-center bg-slate-900/80 border border-slate-800 rounded-xl p-1">
+                <button
+                  onClick={() => setViewMode('table')}
+                  className={`p-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${viewMode === 'table' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  title="Bảng Ngang Đầy Đủ"
+                >
+                  <LayoutList className="w-4 h-4" />
+                  <span className="text-xs">Bảng Ngang</span>
+                </button>
+                <button
+                  onClick={() => setViewMode('bar')}
+                  className={`p-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${viewMode === 'bar' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  title="Thẻ Ngang Rộng"
+                >
+                  <AlignJustify className="w-4 h-4" />
+                  <span className="text-xs">Thẻ Ngang</span>
+                </button>
               </div>
             </div>
-          ) : (
-            /* HORIZONTAL BAR CARDS (DẠNG THẺ THUÔN NGANG RỘNG) */
-            <div className="space-y-3">
-              {orders.map((ord) => {
-                const code = ord.trackingCode || ord.trackingNumber || '';
-                const origin = ord.pickupAddress?.province || ord.originCity || 'TP.HCM';
-                const dest = ord.deliveryAddress?.province || ord.destinationCity || 'Hà Nội';
-                const recipientName = ord.deliveryAddress?.fullName || ord.recipientName || 'Người nhận';
-                const weight = ord.chargeableWeight || ord.chargeableWeightKg || ord.actualWeight || 0;
-                const fee = ord.shippingFee || ord.cost || 0;
-                const isEditable = ['CREATED', 'PENDING_VERIFICATION', 'READY_TO_PICK', 'PENDING'].includes(ord.status);
+          </div>
 
-                return (
-                  <div
-                    key={ord._id || ord.id}
-                    className="glass-card rounded-2xl p-4 border border-slate-800 hover:border-blue-500/40 transition group flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-lg"
-                  >
-                    {/* Left: Code & Service */}
-                    <div className="flex items-center gap-3 min-w-[200px]">
-                      <span className="font-mono text-xs font-bold text-blue-400 bg-blue-500/10 px-3 py-1.5 rounded-lg border border-blue-500/20">
-                        {code}
-                      </span>
-                      <span
-                        className={`text-[10px] font-extrabold px-2.5 py-1 rounded-full uppercase border ${
-                          ord.status === 'DELIVERED'
+          {orders.length > 0 ? (
+            viewMode === 'table' ? (
+              /* FULL HORIZONTAL TABLE (DẠNG BẢNG NGANG ĐẦY ĐỦ NHƯ ẢNH THIẾT KẾ) */
+              <div className="glass-panel rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-800 bg-slate-900/80 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                        <th className="py-3.5 px-4">MÃ VẬN ĐƠN</th>
+                        <th className="py-3.5 px-4">NGƯỜI NHẬN & NƠI GIAO</th>
+                        <th className="py-3.5 px-4">TRỌNG LƯỢNG (THỰC / DIM)</th>
+                        <th className="py-3.5 px-4">CƯỚC PHÍ</th>
+                        <th className="py-3.5 px-4">TRẠNG THÁI</th>
+                        <th className="py-3.5 px-4 text-right">THAO TÁC</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/60 text-xs">
+                      {orders.map((ord) => {
+                        const code = ord.trackingCode || ord.trackingNumber || '';
+                        const recipientName = ord.deliveryAddress?.fullName || ord.recipientName || 'Người nhận';
+                        const recipientAddress = [
+                          ord.deliveryAddress?.address,
+                          ord.deliveryAddress?.district,
+                          ord.deliveryAddress?.province
+                        ].filter(Boolean).join(', ') || ord.recipientAddress || 'Địa chỉ N/A';
+
+                        const actualWeight = ord.actualWeight || ord.weightKg || 0;
+                        const chargeableWeightVal = ord.chargeableWeight || ord.chargeableWeightKg || actualWeight;
+                        const fee = ord.shippingFee || ord.cost || 0;
+                        const isEditable = ['CREATED', 'PENDING_VERIFICATION', 'READY_TO_PICK', 'PENDING'].includes(ord.status);
+
+                        return (
+                          <tr key={ord._id || ord.id} className="hover:bg-slate-800/40 transition">
+                            <td className="py-4 px-4 font-mono font-bold text-blue-400">
+                              <button
+                                onClick={() => onOpenOrderDetails(ord)}
+                                className="hover:underline cursor-pointer text-left"
+                              >
+                                {code}
+                              </button>
+                              <span className="block text-[10px] font-normal text-slate-500">{ord.serviceType || 'EXPRESS'}</span>
+                            </td>
+
+                            <td className="py-4 px-4">
+                              <div className="font-bold text-white">{recipientName}</div>
+                              <div className="text-[11px] text-slate-400 truncate max-w-xs">{recipientAddress}</div>
+                            </td>
+
+                            <td className="py-4 px-4">
+                              <div className="text-slate-200 font-mono">{actualWeight} kg (Thực)</div>
+                              <div className="text-cyan-400 text-[11px] font-mono">➡ {chargeableWeightVal} kg (Tính cước)</div>
+                            </td>
+
+                            <td className="py-4 px-4 font-mono font-bold text-emerald-400">
+                              {fee.toLocaleString('vi-VN')} đ
+                            </td>
+
+                            <td className="py-4 px-4">
+                              <span
+                                className={`inline-block text-[10px] font-bold px-2.5 py-1 rounded-full uppercase border ${ord.status === 'CANCELLED'
+                                  ? 'bg-rose-500/20 text-rose-400 border-rose-500/30'
+                                  : ord.status === 'DELIVERED'
+                                    ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                                    : ord.status === 'IN_TRANSIT' || ord.status === 'OUT_FOR_DELIVERY'
+                                      ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                                      : 'bg-blue-500/20 text-blue-300 border-blue-500/30'
+                                  }`}
+                              >
+                                {ord.status}
+                              </span>
+                            </td>
+
+                            <td className="py-4 px-4 text-right">
+                              <div className="flex items-center justify-end gap-1.5">
+                                <button
+                                  onClick={() => onOpenOrderDetails(ord)}
+                                  className="px-2.5 py-1 rounded-lg bg-blue-600/20 hover:bg-blue-600 text-blue-300 hover:text-white border border-blue-500/30 text-xs font-semibold transition cursor-pointer"
+                                  title="Xem chi tiết vận đơn"
+                                >
+                                  Chi Tiết
+                                </button>
+
+                                {isEditable && onEditOrder && (
+                                  <button
+                                    onClick={() => onEditOrder(ord)}
+                                    className="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-600 text-amber-300 hover:text-white border border-amber-500/30 text-xs font-semibold transition cursor-pointer"
+                                    title="Chỉnh sửa đơn hàng"
+                                  >
+                                    Sửa
+                                  </button>
+                                )}
+
+                                {isEditable && onCancelOrder && (
+                                  <button
+                                    onClick={() => onCancelOrder(ord)}
+                                    className="px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 text-xs font-semibold transition cursor-pointer"
+                                    title="Hủy đơn hàng"
+                                  >
+                                    Hủy
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ) : (
+              /* HORIZONTAL BAR CARDS (DẠNG THẺ THUÔN NGANG RỘNG) */
+              <div className="space-y-3">
+                {orders.map((ord) => {
+                  const code = ord.trackingCode || ord.trackingNumber || '';
+                  const origin = ord.pickupAddress?.province || ord.originCity || 'TP.HCM';
+                  const dest = ord.deliveryAddress?.province || ord.destinationCity || 'Hà Nội';
+                  const recipientName = ord.deliveryAddress?.fullName || ord.recipientName || 'Người nhận';
+                  const weight = ord.chargeableWeight || ord.chargeableWeightKg || ord.actualWeight || 0;
+                  const fee = ord.shippingFee || ord.cost || 0;
+                  const isEditable = ['CREATED', 'PENDING_VERIFICATION', 'READY_TO_PICK', 'PENDING'].includes(ord.status);
+
+                  return (
+                    <div
+                      key={ord._id || ord.id}
+                      className="glass-card rounded-2xl p-4 border border-slate-800 hover:border-blue-500/40 transition group flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-lg"
+                    >
+                      {/* Left: Code & Service */}
+                      <div className="flex items-center gap-3 min-w-[200px]">
+                        <span className="font-mono text-xs font-bold text-blue-400 bg-blue-500/10 px-3 py-1.5 rounded-lg border border-blue-500/20">
+                          {code}
+                        </span>
+                        <span
+                          className={`text-[10px] font-extrabold px-2.5 py-1 rounded-full uppercase border ${ord.status === 'DELIVERED'
                             ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
                             : ord.status === 'IN_TRANSIT' || ord.status === 'OUT_FOR_DELIVERY'
-                            ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
-                            : 'bg-blue-500/20 text-blue-300 border-blue-500/30'
-                        }`}
-                      >
-                        {ord.status === 'IN_TRANSIT'
-                          ? 'Đang vận chuyển'
-                          : ord.status === 'OUT_FOR_DELIVERY'
-                            ? 'Đang phát hàng'
-                            : ord.status === 'DELIVERED'
-                              ? 'Đã giao'
-                              : 'Chờ xử lý'}
-                      </span>
-                    </div>
-
-                    {/* Middle: Route & Recipient */}
-                    <div className="flex-1 space-y-1">
-                      <div className="flex items-center gap-1.5 text-xs text-slate-200 font-bold">
-                        <MapPin className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-                        {origin} ➔ {dest}
-                      </div>
-                      <p className="text-xs text-slate-400 truncate">
-                        Người nhận: <span className="text-slate-200 font-semibold">{recipientName}</span>
-                      </p>
-                    </div>
-
-                    {/* Right: Weight, Fee & Actions */}
-                    <div className="flex items-center justify-between md:justify-end gap-4 shrink-0 border-t md:border-t-0 pt-3 md:pt-0 border-slate-800">
-                      <div className="text-left md:text-right text-xs">
-                        <div className="text-slate-400">TL: <strong className="text-white">{weight} kg</strong></div>
-                        {fee > 0 && <div className="text-emerald-400 font-mono font-bold">{fee.toLocaleString('vi-VN')} đ</div>}
-                      </div>
-
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          onClick={() => onOpenOrderDetails(ord)}
-                          className="px-3 py-1.5 rounded-xl bg-blue-600/20 hover:bg-blue-600 text-blue-300 hover:text-white border border-blue-500/30 text-xs font-bold transition cursor-pointer flex items-center gap-1"
+                              ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                              : 'bg-blue-500/20 text-blue-300 border-blue-500/30'
+                            }`}
                         >
-                          Chi Tiết <ArrowRight className="w-3 h-3" />
-                        </button>
-                        {isEditable && onEditOrder && (
+                          {ord.status === 'IN_TRANSIT'
+                            ? 'Đang vận chuyển'
+                            : ord.status === 'OUT_FOR_DELIVERY'
+                              ? 'Đang phát hàng'
+                              : ord.status === 'DELIVERED'
+                                ? 'Đã giao'
+                                : 'Chờ xử lý'}
+                        </span>
+                      </div>
+
+                      {/* Middle: Route & Recipient */}
+                      <div className="flex-1 space-y-1">
+                        <div className="flex items-center gap-1.5 text-xs text-slate-200 font-bold">
+                          <MapPin className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                          {origin} ➔ {dest}
+                        </div>
+                        <p className="text-xs text-slate-400 truncate">
+                          Người nhận: <span className="text-slate-200 font-semibold">{recipientName}</span>
+                        </p>
+                      </div>
+
+                      {/* Right: Weight, Fee & Actions */}
+                      <div className="flex items-center justify-between md:justify-end gap-4 shrink-0 border-t md:border-t-0 pt-3 md:pt-0 border-slate-800">
+                        <div className="text-left md:text-right text-xs">
+                          <div className="text-slate-400">TL: <strong className="text-white">{weight} kg</strong></div>
+                          {fee > 0 && <div className="text-emerald-400 font-mono font-bold">{fee.toLocaleString('vi-VN')} đ</div>}
+                        </div>
+
+                        <div className="flex items-center gap-1.5">
                           <button
-                            onClick={() => onEditOrder(ord)}
-                            className="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-600 text-amber-300 hover:text-white border border-amber-500/30 text-xs font-bold transition cursor-pointer"
+                            onClick={() => onOpenOrderDetails(ord)}
+                            className="px-3 py-1.5 rounded-xl bg-blue-600/20 hover:bg-blue-600 text-blue-300 hover:text-white border border-blue-500/30 text-xs font-bold transition cursor-pointer flex items-center gap-1"
                           >
-                            Sửa
+                            Chi Tiết <ArrowRight className="w-3 h-3" />
                           </button>
-                        )}
-                        {isEditable && onCancelOrder && (
-                          <button
-                            onClick={() => onCancelOrder(ord)}
-                            className="px-3 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 text-xs font-bold transition cursor-pointer"
-                          >
-                            Hủy
-                          </button>
-                        )}
+                          {isEditable && onEditOrder && (
+                            <button
+                              onClick={() => onEditOrder(ord)}
+                              className="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-600 text-amber-300 hover:text-white border border-amber-500/30 text-xs font-bold transition cursor-pointer"
+                            >
+                              Sửa
+                            </button>
+                          )}
+                          {isEditable && onCancelOrder && (
+                            <button
+                              onClick={() => onCancelOrder(ord)}
+                              className="px-3 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 text-xs font-bold transition cursor-pointer"
+                            >
+                              Hủy
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
+            )
+          ) : (
+            <div className="p-8 rounded-2xl bg-slate-900/60 border border-slate-800 text-center space-y-2">
+              <Package className="w-8 h-8 text-slate-600 mx-auto" />
+              <p className="text-sm font-bold text-slate-300">Chưa có vận đơn nào trong CSDL MongoDB</p>
+              <p className="text-xs text-slate-500">Các vận đơn vừa khởi tạo sẽ xuất hiện tại đây theo thời gian thực.</p>
             </div>
-          )
-        ) : (
-          <div className="p-8 rounded-2xl bg-slate-900/60 border border-slate-800 text-center space-y-2">
-            <Package className="w-8 h-8 text-slate-600 mx-auto" />
-            <p className="text-sm font-bold text-slate-300">Chưa có vận đơn nào trong CSDL MongoDB</p>
-            <p className="text-xs text-slate-500">Các vận đơn vừa khởi tạo sẽ xuất hiện tại đây theo thời gian thực.</p>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
       )}
     </div>
   );
