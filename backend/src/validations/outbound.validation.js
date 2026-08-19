@@ -32,9 +32,11 @@ const commitTripSchema = Joi.object({
 }).or('trip_code','tripCode');
 
 const driverConfirmSchema = Joi.object({
-  action: Joi.string().valid('ACCEPT','REJECT').required(),
-  reject_reason: Joi.string().max(500).allow(null,'').optional(),
-  rejectReason: Joi.string().max(500).allow(null,'').optional(),
+  trip_code: Joi.string().trim().uppercase().optional(),
+  tripCode: Joi.string().trim().uppercase().optional(),
+  action: Joi.string().valid('ACCEPT', 'REJECT').required(),
+  reject_reason: Joi.string().max(500).allow(null, '').optional(),
+  rejectReason: Joi.string().max(500).allow(null, '').optional(),
 });
 
 module.exports = { createTripSchema, outboundScanSchema, commitTripSchema, driverConfirmSchema };
