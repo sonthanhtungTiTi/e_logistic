@@ -2,10 +2,12 @@ const express = require('express');
 const router = express.Router();
 const { scanSingleInbound, scanBatchInbound, scanSealInbound, reportIncident } = require('../controllers/inbound.controller');
 const { protect, authorize } = require('../middleware/auth.middleware');
+const { requireOwnHub } = require('../middleware/hubScope.middleware');
 
 // Áp dụng bảo vệ JWT & Authorization cho toàn bộ endpoint nhập kho
 router.use(protect);
-router.use(authorize('HUB_STAFF', 'HUB_COORDINATOR', 'ADMIN', 'DRIVER', 'SHIPPER', 'LINE_HAUL_DRIVER'));
+router.use(authorize('HUB_STAFF', 'HUB_COORDINATOR', 'ADMIN', 'DRIVER', 'SHIPPER', 'LINE_HAUL_DRIVER', 'WAREHOUSE_MANAGER'));
+router.use(requireOwnHub);
 
 // POST /api/inbound/scan-single - Quét nhập kho đơn lẻ (route gốc, không đổi)
 router.post('/scan-single', scanSingleInbound);

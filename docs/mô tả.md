@@ -1,478 +1,297 @@
-Dưới đây là nguyên văn từng hàm từ code thật:
+  # E-LOGISTIC — TỔNG QUAN HỆ THỐNG (System Overview for AI Context)
 
-1. Hàm forgotPassword, verifyOtp, resetPassword (từ auth.controller.js)
-javascript
-// ============================================================
-// UC Quên mật khẩu
-[ignoring loop detection]
+  > **Dự án:** Khóa luận tốt nghiệp K18 — Hệ thống Quản lý Vận chuyển Thương mại Điện tử  
+  > **Stack:** Node.js/Express + MongoDB (Mongoose) | React/TypeScript + Vite + TailwindCSS  
+  > **Kiến trúc:** Monorepo 3 thư mục: `backend/`, `frontend_web/`, `frontend_admin/`
 
-Dưới đây là nguyên văn từng hàm từ code thật (đã được trích xuất trực tiếp từ các file):
+  ---
 
-1. Hàm forgotPassword, verifyOtp, resetPassword (File: auth.controller.js)
-javascript
-// ============================================================
-// UC Quên mật khẩu — Bước 1: Yêu cầu gửi OTP
-// @desc    Kiểm tra tài khoản và gửi mã OTP về Email/SĐT
-// @route   POST /api/auth/forgot-password
-// @access  Public
-// ============================================================
-const forgotPassword = async (req, res) => {
-  try {
-    // Joi Validation — chỉ cần 1 trong 2: email hoặc số điện thoại
-    const schema = Joi.object({
-      identifier: Joi.string().required().messages({
-        'any.required': 'Vui lòng nhập Email hoặc Số điện thoại'
-      })
-    });
-    const { error } = schema.validate(req.body);
-    if (error) return res.status(400).json({ message: error.details[0].message });
-    const { identifier } = req.body;
-    // Bước 4 ĐT: Kiểm tra tồn tại tài khoản
-    const user = await User.findOne({
-      $or: [{ email: identifier }, { phoneNumber: identifier }]
-    });
-    // Alt 4.1 ĐT: Không tìm thấy tài khoản
-    if (!user) {
-      return res.status(404).json({ message: 'Tài khoản không tồn tại.' });
-    }
-    // Sinh OTP 6 số ngẫu nhiên
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const OTP_EXPIRE_MINUTES = 10;
-    // Hash OTP trước khi lưu DB (bảo mật: DB không lưu plaintext)
-    const otpHash = await bcrypt.hash(otp, 10);
-    // Xóa OTP cũ của user này (tránh tích tụ rác, mỗi lân chỉ 1 OTP hợp lệ)
-    await PasswordResetOtp.deleteMany({ userId: user._id });
-    // Xác định kênh gửi và địa chỉ gửi
-    const isEmail = identifier.includes('@');
-    const channel = isEmail ? 'email' : 'sms';
-    const sentTo = identifier;
-    // Lưu OTP mới vào DB
-    await PasswordResetOtp.create({
-      userId: user._id,
-      otpHash,
-      expiresAt: new Date(Date.now() + OTP_EXPIRE_MINUTES * 60 * 1000),
-      channel,
-      sentTo,
-    });
-    // Bước 5 ĐT: Gửi OTP — Ex 5.1: lỗi gửi thì bắt được ở đây
-    try {
-      if (isEmail) {
-        await sendPasswordResetEmail(sentTo, otp);
-      } else {
-        await sendPasswordResetSms(sentTo, otp);
-      }
-    } catch (sendError) {
-      // Ex 5.1 ĐT: Không thể gửi OTP — xóa OTP vừa tạo, trả lỗi
-      await PasswordResetOtp.deleteMany({ userId: user._id });
-      console.error(`[OTP] Lỗi gửi OTP: ${sendError.message}`);
-      return res.status(503).json({ message: 'Không thể gửi mã xác thực. Vui lòng thử lại sau.' });
-    }
-    res.status(200).json({
-      message: `Mã OTP đã được gửi đến ${sentTo}. Hiệu lực trong ${OTP_EXPIRE_MINUTES} phút.`,
-      // userId trả về để Client dùng gửi tiếp ở bước verify
-      userId: user._id,
-      channel,
-    });
-  } catch (error) {
-    console.error(`Lỗi Quên mật khẩu: ${error.stack}`);
-    res.status(500).json({ message: 'Lỗi máy chủ nội bộ, vui lòng thử lại sau.' });
-  }
-};
-// ============================================================
-// UC Quên mật khẩu — Bước 2: Xác thực mã OTP
-// @desc    Kiểm tra mã OTP người dùng nhập
-// @route   POST /api/auth/verify-otp
-// @access  Public
-// ============================================================
-const verifyOtp = async (req, res) => {
-  try {
-    const schema = Joi.object({
-      userId: Joi.string().required(),
-      otp: Joi.string().length(6).required().messages({
-        'string.length': 'Mã OTP gồm 6 chữ số',
-        'any.required': 'Vui lòng nhập mã OTP'
-      })
-    });
-    const { error } = schema.validate(req.body);
-    if (error) return res.status(400).json({ message: error.details[0].message });
-    const { userId, otp } = req.body;
-    const MAX_OTP_ATTEMPTS = 5;
-    // Tìm OTP chưa dùng của user này
-    const otpRecord = await PasswordResetOtp.findOne({
-      userId,
-      isUsed: false,
-    }).select('+otpHash');
-    if (!otpRecord) {
-      return res.status(400).json({ message: 'Yêu cầu đặt lại mật khẩu không tồn tại hoặc đã được sử dụng.' });
-    }
-    // Alt 7.2 ĐT: OTP hết hạn
-    if (otpRecord.expiresAt < new Date()) {
-      return res.status(400).json({ message: 'Mã xác thực đã hết hạn. Vui lòng yêu cầu gửi lại mã mới.' });
-    }
-    // Ex 7.3 ĐT: Vượt quá số lần cho phép
-    if (otpRecord.failedAttempts >= MAX_OTP_ATTEMPTS) {
-      await PasswordResetOtp.deleteOne({ _id: otpRecord._id });
-      return res.status(400).json({ message: 'Vượt quá số lần nhập sai. Yêu cầu đã bị hủy, vui lòng thực hiện lại từ đầu.' });
-    }
-    // Bước 7 ĐT: Xác thực mã OTP bằng bcrypt.compare (so với hash đã lưu)
-    const isOtpValid = await bcrypt.compare(otp, otpRecord.otpHash);
-    if (!isOtpValid) {
-      // Alt 7.1 ĐT: Mã OTP không chính xác — tăng bộ đếm sai
-      otpRecord.failedAttempts += 1;
-      await otpRecord.save();
-      const attemptsLeft = MAX_OTP_ATTEMPTS - otpRecord.failedAttempts;
-      return res.status(400).json({
-        message: `Mã OTP không chính xác. Còn ${attemptsLeft} lần thử.`
-      });
-    }
-    // OTP hợp lệ: Đánh dấu là đã dùng (chặn dùng lại)
-    // Không xóa ngay — giữ lại để bước reset-password xác nhận lần nữa
-    otpRecord.isUsed = true;
-    await otpRecord.save();
-    res.status(200).json({
-      message: 'Xác thực OTP thành công. Vui lòng nhập mật khẩu mới.',
-      userId,
-    });
-  } catch (error) {
-    console.error(`Lỗi Xác thực OTP: ${error.stack}`);
-    res.status(500).json({ message: 'Lỗi máy chủ nội bộ, vui lòng thử lại sau.' });
-  }
-};
-// ============================================================
-// UC Quên mật khẩu — Bước 3: Đặt lại mật khẩu mới
-// @desc    Cập nhật mật khẩu mới sau khi OTP đã xác thực
-// @route   POST /api/auth/reset-password
-// @access  Public
-// ============================================================
-const resetPassword = async (req, res) => {
-  try {
-    // Bước 9 ĐT: Joi validation mật khẩu mới
-    const schema = Joi.object({
-      userId: Joi.string().required(),
-      newPassword: Joi.string().min(6).required().messages({
-        'string.min': 'Mật khẩu phải từ 6 ký tự',
-        'any.required': 'Vui lòng nhập mật khẩu mới'
-      }),
-      // Alt 9.2 ĐT: Xác nhận mật khẩu không khớp
-      confirmNewPassword: Joi.string().valid(Joi.ref('newPassword')).required().messages({
-        'any.only': 'Mật khẩu xác nhận không khớp',
-        'any.required': 'Vui lòng xác nhận mật khẩu mới'
-      })
-    });
-    const { error } = schema.validate(req.body);
-    if (error) return res.status(400).json({ message: error.details[0].message });
-    const { userId, newPassword } = req.body;
-    // Xác nhận OTP đã được xác thực (isUsed: true) và chưa hết hạn
-    const otpRecord = await PasswordResetOtp.findOne({
-      userId,
-      isUsed: true,
-      expiresAt: { $gt: new Date() },
-    });
-    if (!otpRecord) {
-      return res.status(400).json({ message: 'Phiên đặt lại mật khẩu không hợp lệ hoặc đã hết hạn. Vui lòng thực hiện lại từ đầu.' });
-    }
-    // Bước 10 ĐT: Cập nhật mật khẩu mới vào DB
-    // (pre-save hook tự động hash nếu isModified('password'))
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ message: 'Tài khoản không tồn tại.' });
-    }
-    user.password = newPassword;
-    // Ex 10.1 ĐT: Lỗi khi cập nhật mật khẩu
-    try {
-      await user.save();
-    } catch (saveError) {
-      console.error(`[ResetPassword] Lỗi lưu mật khẩu: ${saveError.stack}`);
-      return res.status(500).json({ message: 'Đặt lại mật khẩu thất bại. Vui lòng thử lại sau.' });
-    }
-    // Bước 11 ĐT: Vô hiệu hóa OTP đã dùng + thu hồi mọi phiên cũ
-    await PasswordResetOtp.deleteMany({ userId });
-    await User.findByIdAndUpdate(userId, { refreshToken: null }); // bẫt buộc đăng nhập lại
-    // Bước 11 ĐT: Ghi Audit Log
-    try {
-      await AuthLog.create({
-        userId: user._id,
-        action: 'PASSWORD_CHANGED',
-        ipAddress: req.ip || req.connection.remoteAddress,
-        userAgent: req.headers['user-agent'],
-        note: 'Đặt lại mật khẩu qua OTP',
-      });
-    } catch (logErr) {
-      console.error(`[AuthLog] Không thể ghi log PASSWORD_CHANGED: ${logErr.message}`);
-    }
-    // Bước 12 ĐT: Thông báo thành công
-    res.status(200).json({ message: 'Đặt lại mật khẩu thành công. Vui lòng đăng nhập lại bằng mật khẩu mới.' });
-  } catch (error) {
-    console.error(`Lỗi Đặt lại mật khẩu: ${error.stack}`);
-    res.status(500).json({ message: 'Lỗi máy chủ nội bộ, vui lòng thử lại sau.' });
-  }
-};
-2. Hàm changePassword (File: auth.controller.js)
-javascript
-// ============================================================
-// UC Đổi mật khẩu — Người dùng đã đăng nhập
-// @desc    Xác thực mật khẩu hiện tại và đổi sang mật khẩu mới
-// @route   PUT /api/auth/change-password
-// @access  Private (Bảo vệ bởi middleware protect)
-// ============================================================
-const changePassword = async (req, res) => {
-  const MAX_FAILED_ATTEMPTS = 5;
-  const LOCK_DURATION_MINUTES = 15;
-  try {
-    // Bước 4 ĐT: Kiểm tra đầy đủ trường + đúng định dạng
-    const schema = Joi.object({
-      currentPassword: Joi.string().required().messages({
-        'any.required': 'Vui lòng nhập mật khẩu hiện tại'
-      }),
-      // Bước 6 ĐT: Chính sách bảo mật mật khẩu mới (≥ 6 ký tự)
-      newPassword: Joi.string().min(6).required().messages({
-        'string.min': 'Mật khẩu mới phải từ 6 ký tự trở lên',
-        'any.required': 'Vui lòng nhập mật khẩu mới'
-      }),
-      // Alt 4.2 ĐT: Xác nhận không khớp → chặn ngay ở đây
-      confirmNewPassword: Joi.string().valid(Joi.ref('newPassword')).required().messages({
-        'any.only': 'Mật khẩu xác nhận không khớp với mật khẩu mới',
-        'any.required': 'Vui lòng xác nhận mật khẩu mới'
-      })
-    });
-    const { error } = schema.validate(req.body);
-    if (error) return res.status(400).json({ message: error.details[0].message });
-    const { currentPassword, newPassword } = req.body;
-    // Lấy user kèm password (select: false — phải gọi tường minh)
-    const user = await User.findById(req.user._id).select('+password');
-    if (!user) {
-      return res.status(404).json({ message: 'Không tìm thấy tài khoản.' });
-    }
-    // Ex 5.2 ĐT: Kiểm tra tài khoản có đang bị khóa chức năng đổi mật khẩu không
-    if (user.lockUntil && user.lockUntil > Date.now()) {
-      const minutesLeft = Math.ceil((user.lockUntil - Date.now()) / 60000);
-      return res.status(403).json({
-        message: `Chức năng đổi mật khẩu tạm thời bị khóa. Vui lòng thử lại sau ${minutesLeft} phút.`
-      });
-    }
-    // Bước 5 ĐT: Xác thực mật khẩu hiện tại
-    const isMatch = await user.matchPassword(currentPassword);
-    if (!isMatch) {
-      // Alt 5.1 ĐT: Sai mật khẩu — tăng bộ đếm
-      user.failedLoginAttempts += 1;
-      // Ex 5.2 ĐT: Vượt quá số lần cho phép → khóa chức năng
-      if (user.failedLoginAttempts >= MAX_FAILED_ATTEMPTS) {
-        user.lockUntil = Date.now() + LOCK_DURATION_MINUTES * 60 * 1000;
-        await user.save();
-        return res.status(403).json({
-          message: `Nhập sai mật khẩu quá ${MAX_FAILED_ATTEMPTS} lần. Chức năng bị tạm khóa ${LOCK_DURATION_MINUTES} phút.`
-        });
-      }
-      await user.save();
-      const attemptsLeft = MAX_FAILED_ATTEMPTS - user.failedLoginAttempts;
-      return res.status(401).json({
-        message: `Mật khẩu hiện tại không đúng. Còn ${attemptsLeft} lần thử trước khi bị khóa.`
-      });
-    }
-    // Bước 7 ĐT: Mật khẩu mới không được trùng mật khẩu hiện tại
-    const isSamePassword = await user.matchPassword(newPassword);
-    if (isSamePassword) {
-      return res.status(400).json({ message: 'Mật khẩu mới không được trùng với mật khẩu hiện tại.' });
-    }
-    // Nếu mật khẩu đúng, reset bộ đếm sai
-    user.failedLoginAttempts = 0;
-    user.lockUntil = undefined;
-    
-    // Bước 8 ĐT: Cập nhật mật khẩu mới (pre-save hook sẽ hash)
-    user.password = newPassword;
-    // Đánh dấu đã đổi mật khẩu (hữu ích cho tài khoản nhân viên mới tạo)
-    if (user.mustChangePassword) {
-      user.mustChangePassword = false;
-    }
-    // Ex 8.1 ĐT: Xử lý lỗi hệ thống khi lưu
-    try {
-      await user.save();
-    } catch (saveError) {
-      console.error(`[ChangePassword] Lỗi lưu thay đổi: ${saveError.stack}`);
-      return res.status(500).json({ message: 'Đổi mật khẩu thất bại. Vui lòng thử lại sau.' });
-    }
-    // Bước 9 ĐT: Hủy toàn bộ các phiên đăng nhập khác (xóa refreshToken)
-    await User.findByIdAndUpdate(req.user._id, { refreshToken: null });
-    // Ghi nhận Audit Log
-    try {
-      await AuthLog.create({
-        userId: user._id,
-        action: 'PASSWORD_CHANGED',
-        ipAddress: req.ip || req.connection.remoteAddress,
-        userAgent: req.headers['user-agent'],
-        note: 'Đổi mật khẩu từ trang Hồ sơ cá nhân',
-      });
-    } catch (logErr) {
-      console.error(`[AuthLog] Không thể ghi log PASSWORD_CHANGED: ${logErr.message}`);
-    }
-    // Bước 10 ĐT: Thông báo thành công
-    res.status(200).json({ message: 'Đổi mật khẩu thành công. Vui lòng đăng nhập lại bằng mật khẩu mới.' });
-  } catch (error) {
-    console.error(`Lỗi Đổi mật khẩu: ${error.stack}`);
-    res.status(500).json({ message: 'Lỗi máy chủ nội bộ, vui lòng thử lại sau.' });
-  }
-};
-3. Hàm updateUserProfile (File: auth.controller.js)
-javascript
-// ============================================================
-// UC Cập nhật hồ sơ cá nhân
-// @desc    Chỉnh sửa thông tin cá nhân của chính người dùng đang đăng nhập
-// @route   PUT /api/auth/profile
-// @access  Private
-// ============================================================
-const updateUserProfile = async (req, res) => {
-  try {
-    // Bước 5 ĐT: WHITELIST — chỉ chấp nhận đúng những trường này
-    // Không bao giờ nhận: role, isActive, refreshToken, failedLoginAttempts, lockUntil
-    const schema = Joi.object({
-      fullName: Joi.string().min(2).optional().messages({
-        'string.min': 'Họ tên phải từ 2 ký tự'
-      }),
-      phoneNumber: Joi.string().pattern(/^[0-9]{10,11}$/).optional().messages({
-        'string.pattern.base': 'Số điện thoại không hợp lệ'
-      }),
-      email: Joi.string().email().optional().messages({
-        'string.email': 'Email không đúng định dạng'
-      }),
-      // Mật khẩu mới (tùy chọn — nếu có mới xử lý ở bước 7)
-      newPassword: Joi.string().min(6).optional().messages({
-        'string.min': 'Mật khẩu mới phải từ 6 ký tự'
-      }),
-    });
-    // Alt 5.1 ĐT: Dữ liệu sai định dạng
-    const { error } = schema.validate(req.body);
-    if (error) return res.status(400).json({ message: error.details[0].message });
-    // Không có gì để cập nhật
-    if (Object.keys(req.body).length === 0) {
-      return res.status(400).json({ message: 'Vui lòng cung cấp ít nhất một trường cần cập nhật.' });
-    }
-    const { fullName, phoneNumber, email, newPassword } = req.body;
-    // Lấy user kèm password (để so sánh mật khẩu ở bước 7 nếu cần)
-    const user = await User.findById(req.user._id).select('+password');
-    if (!user) {
-      return res.status(404).json({ message: 'Không tìm thấy tài khoản.' });
-    }
-    // Bước 6 ĐT: Kiểm tra trùng lặp Email/SĐT với tài khoản khác
-    if (email && email !== user.email) {
-      const emailExists = await User.findOne({ email, _id: { $ne: req.user._id } });
-      if (emailExists) {
-        return res.status(400).json({ message: 'Email này đã được sử dụng bởi tài khoản khác.' });
-      }
-    }
-    if (phoneNumber && phoneNumber !== user.phoneNumber) {
-      const phoneExists = await User.findOne({ phoneNumber, _id: { $ne: req.user._id } });
-      if (phoneExists) {
-        return res.status(400).json({ message: 'Số điện thoại này đã được sử dụng bởi tài khoản khác.' });
-      }
-    }
-    // Bước 7 ĐT: Nếu có đổi mật khẩu — kiểm tra mật khẩu mới không trùng mật khẩu hiện tại
-    if (newPassword) {
-      const isSame = await user.matchPassword(newPassword);
-      if (isSame) {
-        // Alt 7.1 ĐT: Mật khẩu mới trùng mật khẩu hiện tại
-        return res.status(400).json({ message: 'Mật khẩu không hợp lệ, không được trùng với mật khẩu hiện tại.' });
-      }
-      // pre-save hook sẽ tự động hash nếu isModified('password')
-      user.password = newPassword;
-    }
-    // Bước 8 ĐT: Áp dụng các thay đổi được phép
-    if (fullName) user.fullName = fullName;
-    if (email) user.email = email;
-    if (phoneNumber) user.phoneNumber = phoneNumber;
-    // Ex 8.1 ĐT: Lỗi lưu vào CSDL
-    // Ex 8.2 ĐT: Race Condition — E11000
-    try {
-      await user.save();
-    } catch (saveError) {
-      if (saveError.code === 11000) {
-        // Phân tích trường bị trùng để thông báo đúng (Alt 6.1)
-        const duplicatedField = Object.keys(saveError.keyPattern)[0];
-        const fieldName = duplicatedField === 'email' ? 'Email' : 'Số điện thoại';
-        return res.status(400).json({ message: `${fieldName} này đã được sử dụng bởi tài khoản khác.` });
-      }
-      console.error(`[UpdateProfile] Lỗi lưu hồ sơ: ${saveError.stack}`);
-      return res.status(500).json({ message: 'Cập nhật hồ sơ thất bại. Vui lòng thử lại sau.' });
-    }
-    // Bước 9 ĐT: Thông báo thành công + trả dữ liệu mới
-    res.status(200).json({
-      message: 'Cập nhật hồ sơ thành công.',
-      user: {
-        _id: user._id,
-        fullName: user.fullName,
-        email: user.email,
-        phoneNumber: user.phoneNumber,
-        role: user.role,
-      },
-    });
-  } catch (error) {
-    console.error(`Lỗi cập nhật hồ sơ: ${error.stack}`);
-    res.status(500).json({ message: 'Lỗi máy chủ nội bộ, vui lòng thử lại sau.' });
-  }
-};
-4. Hàm setUserStatus (File: admin.controller.js)
-javascript
-// ============================================================
-// Alt 3.1 / 3.2 / 3.3 ĐT: Khóa / Mở khóa / Vô hiệu hóa tài khoản
-// @desc    Admin thay đổi trạng thái tài khoản, xóa Refresh Token nếu khóa
-// @route   PATCH /api/admin/users/:id/status
-// @access  Private/Admin
-// ============================================================
-const setUserStatus = async (req, res) => {
-  try {
-    const { action } = req.body; // 'lock' | 'unlock' | 'deactivate'
-    if (!['lock', 'unlock', 'deactivate'].includes(action)) {
-      return res.status(400).json({ message: 'Thao tác không hợp lệ. Chỉ chấp nhận: lock, unlock, deactivate.' });
-    }
-    // Alt 7.2 ĐT: Self-lock prevention — không cho khóa chính mình
-    if (req.params.id === req.user._id.toString()) {
-      return res.status(400).json({ message: 'Không thể tự khóa hoặc vô hiệu hóa tài khoản đang đăng nhập.' });
-    }
-    const targetUser = await User.findById(req.params.id).select('+refreshToken');
-    if (!targetUser) return res.status(404).json({ message: 'Không tìm thấy tài khoản.' });
-    let statusNote = '';
-    if (action === 'lock') {
-      // Alt 3.1 ĐT: Khóa → isActive = false, xóa refreshToken ngay
-      targetUser.isActive = false;
-      targetUser.refreshToken = null;
-      statusNote = 'Admin khóa tài khoản';
-    } else if (action === 'unlock') {
-      // Alt 3.2 ĐT: Mở khóa → isActive = true, reset bộ đếm sai
-      targetUser.isActive = true;
-      targetUser.failedLoginAttempts = 0;
-      targetUser.lockUntil = undefined;
-      statusNote = 'Admin mở khóa tài khoản';
-    } else if (action === 'deactivate') {
-      // Alt 3.3 ĐT: Vô hiệu hóa → isActive = false, xóa refreshToken, dữ liệu lịch sử vẫn giữ
-      targetUser.isActive = false;
-      targetUser.refreshToken = null;
-      statusNote = 'Admin vô hiệu hóa tài khoản';
-    }
-    // Ex 9.2 ĐT: Lỗi CSDL
-    try {
-      await targetUser.save();
-    } catch (saveError) {
-      console.error(`[Admin] Lỗi cập nhật trạng thái: ${saveError.stack}`);
-      return res.status(500).json({ message: 'Thao tác thất bại. Vui lòng thử lại sau.' });
-    }
-    // Bước 11 ĐT: Audit Log với actor_id + target_user_id
-    try {
-      await AuthLog.create({
-        userId: req.user._id,           // Actor: Admin
-        action: 'ADMIN_STATUS_CHANGE',
-        ipAddress: req.ip || req.connection.remoteAddress,
-        userAgent: req.headers['user-agent'],
-        note: `${statusNote}. Target: ${targetUser._id} (${targetUser.email})`,
-      });
-    } catch (logErr) {
-      console.error(`[AuthLog] Không thể ghi log: ${logErr.message}`);
-    }
-    res.status(200).json({
-      message: `${statusNote} thành công.`,
-      userId: targetUser._id,
-      isActive: targetUser.isActive,
-    });
-  } catch (error) {
-    console.error(`[Admin] Lỗi setUserStatus: ${error.stack}`);
-    res.status(500).json({ message: 'Thao tác thất bại. Vui lòng thử lại sau.' });
-  }
-};
+  ## 1. KIẾN TRÚC TỔNG THỂ
+
+  ```
+  e_logistic/
+  ├── backend/src/           # REST API + WebSocket (Port 5000)
+  │   ├── models/            # 19 Mongoose Schema
+  │   ├── controllers/       # 21 Controller
+  │   ├── services/          # 13 Business Logic Service
+  │   ├── routes/            # 17 Route files
+  │   ├── middleware/         # Auth, RateLimit, HubScope, KYC, Error
+  │   ├── jobs/              # 4 Cron Jobs (audit, driver quota reset...)
+  │   ├── validations/       # Joi schemas (inbound, outbound, audit, bag, inventory)
+  │   ├── websocket/         # Socket.io Gateway (Live GPS Tracking)
+  │   ├── lib/               # ioSingleton (Socket.io shared instance)
+  │   ├── config/            # db.js (MongoDB connection)
+  │   └── migrations/        # Data migration scripts
+  ├── frontend_web/src/      # Seller & Public Portal (Port 5173)
+  │   ├── pages/seller/      # 9 trang: Dashboard, CreateOrder, BatchOrder, OrderList, Profile...
+  │   ├── pages/auth/        # Login/Register
+  │   ├── pages/public/      # Tracking công khai
+  │   ├── components/        # Navbar, Sidebar, HeroTracking, AuthModal, SellerDashboard...
+  │   ├── api/               # 8 API modules (auth, order, seller, location, finance, socket...)
+  │   └── context/           # AuthContext, ThemeContext
+  ├── frontend_admin/src/    # Operations & Admin Portal (Port 5174)
+  │   ├── pages/warehouse/   # Inbound, Outbound, Bagging, Audit, Inventory Dashboard
+  │   ├── pages/driver/      # DriverPickup, DriverHandoff
+  │   ├── pages/orders/      # GlobalOrderList, RiskReview
+  │   ├── pages/dispatch/    # DispatchControl
+  │   ├── components/        # AdminSidebar, AdminNavbar, Warehouse components
+  │   ├── api/               # 14 API modules (warehouse, driver, outbound, audit, inventory...)
+  │   └── layouts/           # AdminLayout, DriverLayout
+  └── docs/                  # 16 tài liệu thiết kế & test case
+  ```
+
+  ---
+
+  ## 2. HỆ THỐNG VAI TRÒ (12 Roles)
+
+  | Role | Mô tả | Scope |
+  |------|--------|-------|
+  | `SELLER` | Người bán hàng — tạo đơn, quản lý profile, ví COD | Dữ liệu cá nhân |
+  | `BUYER` | Người mua — tra cứu đơn công khai | Public tracking |
+  | `DRIVER` | Tài xế gom/giao hàng last-mile | Đơn được gán |
+  | `LINE_HAUL_DRIVER` | Tài xế tuyến liên kho (Line-haul) | Chuyến xe được gán |
+  | `HUB_STAFF` | Nhân viên kho — quét nhập/xuất kho | Kho được gán (`hubId`) |
+  | `HUB_COORDINATOR` | Điều phối viên kho | Kho được gán |
+  | `ORDER_MANAGER` | Duyệt đơn hàng loạt từ Seller | Toàn hệ thống |
+  | `DRIVER_MANAGER` | Phân công tài xế, duyệt từ chối đơn | Theo khu vực (`serviceAreas`) |
+  | `WAREHOUSE_MANAGER` | Quản lý kho — xác nhận nhập/xuất | Gắn 1 Hub (`assignedHubId`) |
+  | `CS` | Chăm sóc khách hàng | Toàn hệ thống |
+  | `ACCOUNTANT` | Kế toán — đối soát COD | Toàn hệ thống |
+  | `ADMIN` | Quản trị hệ thống — CRUD users, cấu hình | Toàn quyền |
+
+  ---
+
+  ## 3. DATA MODELS (19 Schema)
+
+  ### Core Models
+  - **`User`** — 12 roles, profile seller (company/tax/bank), 2FA TOTP, KYC, sub-account, rejection quota
+  - **`Order`** — ~35 trạng thái, dual assignment (pickup/delivery), routeNodes multi-hub, COD/fees, delivery failure history, dimensions/weight, risk flags
+  - **`OrderLog`** — Audit trail mọi thay đổi trạng thái đơn
+  - **`OrderTrackingLog`** — Log GPS tracking public
+
+  ### Hub & Routing
+  - **`Hub`** — Bưu cục/kho (tên, địa chỉ, tọa độ, zones)
+  - **`HubCoverage`** — Vùng phủ sóng hub theo tỉnh/quận
+  - **`HubConnection`** — Kết nối giữa 2 hub (khoảng cách km, ETA giờ) → đồ thị cho Dijkstra
+  - **`Zone`** — Khu vực phân loại trong kho
+
+  ### Warehouse Operations
+  - **`Bag`** — Bao niêm phong (sealCode, hubId, status, orders[])
+  - **`Trip`** — Chuyến xe liên kho (origin/dest hub, driver, bags[], status)
+  - **`AuditSession`** — Phiên kiểm kê kho (scanned/expected counts, discrepancies)
+  - **`PickupManifest`** — Bảng kê gom hàng cho tài xế
+  - **`PickupConfirmation`** — Xác nhận lấy hàng (ảnh chụp, chữ ký)
+
+  ### Auth & Security
+  - **`PasswordResetOtp`** — OTP quên mật khẩu (6 số, TTL 10 phút, max 5 lần thử)
+  - **`AuthLog`** — Log đăng nhập/đăng xuất
+  - **`KYC`** — Hồ sơ xác minh danh tính seller
+  - **`NotificationPreference`** — Cài đặt thông báo user
+  - **`PickupAddress`** — Địa chỉ kho lấy hàng seller (multi-pickup)
+  - **`SystemConfig`** — Cấu hình hệ thống (key-value)
+
+  ---
+
+  ## 4. ORDER STATE MACHINE (~35 trạng thái)
+
+  ### Luồng chính (Happy Path)
+  ```
+  CREATED → SELLER_PREPARING → PENDING_APPROVAL → APPROVED
+    → [DIRECT] ASSIGNED_TO_PICKUP_AND_DELIVERY → PICKED_UP → DELIVERING → DELIVERED
+    → [HUB_ROUTED] ASSIGNED_TO_PICKUP → PICKED_UP → INBOUND_ORIGIN_HUB → SORTING
+      → BAGGED_SEALED → IN_TRANSIT → INBOUND_DEST_HUB
+      → PENDING_DELIVERY_ASSIGNMENT → ASSIGNED_TO_DELIVERY → DELIVERING → DELIVERED
+  ```
+
+  ### Luồng ngoại lệ
+  - **Giao thất bại:** `DELIVERING → FAILED → PENDING_REDELIVERY` (tối đa 3 lần) → `DELIVERY_FAILED_PENDING_RETURN`
+  - **Hoàn hàng:** `RETURNING → RETURN_IN_TRANSIT → RETURNED`
+  - **Hủy đơn:** Bất kỳ trạng thái trước `PICKED_UP` → `CANCELLED`
+  - **Thất lạc kho:** `SEARCH_ZONE → SUSPECTED_LOST → LOST → LIQUIDATED`
+  - **Lấy hàng thất bại:** `PICKING → PICKUP_FAILED`
+
+  ### 2 nhánh định tuyến
+  - **`DIRECT`**: Cùng hub (nội tỉnh) → giao thẳng, không qua kho
+  - **`HUB_ROUTED`**: Liên kho → luân chuyển qua 1+ hub trung chuyển (Dijkstra routing)
+
+  ---
+
+  ## 5. BUSINESS SERVICES (Logic lõi)
+
+  | Service | Chức năng |
+  |---------|-----------|
+  | `order.service.js` | Tạo đơn (idempotency SHA-256), cập nhật, hủy, tính cước tự động |
+  | `pricing.service.js` | Tính cước theo vùng (4 tier), trọng lượng quy đổi, bảo hiểm, mã giảm giá, risk engine |
+  | `hubRouting.service.js` | Dijkstra pathfinding, zone tier (INTRA_PROVINCE/INTRA_REGION/NEAR_REGION/INTER_REGION), ETA |
+  | `inboundCore.service.js` | Quét nhập kho, cân lại, phân zone, phát hiện lệch cân |
+  | `outboundCore.service.js` | Xuất kho, gán trip, xác nhận tài xế nhận hàng |
+  | `bagCore.service.js` | Gom bao niêm phong, quét mã seal, đóng/mở bao |
+  | `auditCore.service.js` | Kiểm kê kho, phát hiện thừa/thiếu/thất lạc, deadline tìm kiếm |
+  | `inventoryCore.service.js` | Dashboard tồn kho realtime, thống kê theo zone/status/aging |
+  | `deliveryFailure.service.js` | Báo giao thất bại (5 lý do), auto-return sau 3 lần, GPS proof |
+  | `notification.service.js` | Push notification qua Socket.io realtime |
+  | `auth.service.js` | Xác thực, JWT token management |
+  | `returnProcess.service.js` | Xử lý hoàn hàng |
+  | `telematics.service.js` | GPS tracking tài xế |
+
+  ---
+
+  ## 6. API ROUTES (17 route files)
+
+  | Route Prefix | File | Vai trò truy cập |
+  |-------------|------|-------------------|
+  | `/api/auth` | `auth.routes.js` | Public (register, login, logout, refresh, 2FA, KYC, password reset) |
+  | `/api/orders` | `order.routes.js` | SELLER, ADMIN (CRUD đơn hàng, quote, batch import) |
+  | `/api/seller` | `seller.routes.js` | SELLER (sub-account, pickup address, profile, 2FA, KYC, deactivation) |
+  | `/api/order-manager` | `orderManager.routes.js` | ORDER_MANAGER (duyệt đơn hàng loạt, pending list) |
+  | `/api/driver-manager` | `driverManager.routes.js` | DRIVER_MANAGER (phân công tài xế, duyệt từ chối, quota monitor) |
+  | `/api/driver` | `driver.routes.js` | DRIVER (từ chối đơn pickup/delivery) |
+  | `/api/inbound` | `inbound.routes.js` | HUB_STAFF (quét nhập kho UC-16) |
+  | `/api/outbound` | `outbound.routes.js` | HUB_STAFF (xuất kho UC-17) |
+  | `/api/bags` | `bag.routes.js` | HUB_STAFF (gom bao & niêm phong) |
+  | `/api/trips` | `trips.routes.js` | HUB_STAFF (tạo chuyến xe liên kho) |
+  | `/api/driver/trips` | `driverHandoff.routes.js` | LINE_HAUL_DRIVER (xác nhận nhận hàng) |
+  | `/api/audit` | `audit.routes.js` | HUB_STAFF (kiểm kê kho UC-18) |
+  | `/api/inventory` | `inventory.routes.js` | HUB_STAFF, WAREHOUSE_MANAGER (dashboard tồn kho UC-19) |
+  | `/api/wallet` | `wallet.routes.js` | SELLER (ví COD, rút tiền) |
+  | `/api/admin` | `admin.routes.js` | ADMIN (CRUD users, system config) |
+  | `/api/delivery-failure` | `deliveryFailure.routes.js` | DRIVER (báo giao thất bại) |
+
+  ---
+
+  ## 7. FRONTEND PAGES
+
+  ### Frontend Web (Seller Portal — Port 5173)
+  | Page | Chức năng |
+  |------|-----------|
+  | `SellerDashboardPage` | Tổng quan đơn hàng, thống kê, biểu đồ |
+  | `CreateOrderPage` | Tạo đơn vận chuyển (form địa chỉ VN 4 cấp, tính cước realtime, risk check) |
+  | `BatchOrderPage` | Import Excel hàng loạt (4 bước: Upload → Mapping cột → Preview → Xác nhận) |
+  | `OrderListPage` | Danh sách đơn, lọc theo trạng thái/ngày, chi tiết tracking |
+  | `ProfilePage` | Hồ sơ seller (thông tin cá nhân, doanh nghiệp, KYC, 2FA, sub-account, pickup addresses, bank) |
+  | `CodWalletPage` | Ví COD & số dư |
+  | `PayoutHistoryPage` | Lịch sử rút tiền |
+  | `CreateTicketPage` | Tạo khiếu nại |
+  | `TicketListPage` | Danh sách khiếu nại |
+  | `HeroTracking` | Tra cứu đơn hàng công khai (tracking number, live GPS map) |
+
+  ### Frontend Admin (Operations Portal — Port 5174)
+  | Page | Chức năng |
+  |------|-----------|
+  | `WarehouseInboundPage` | Quét nhập kho (Camera QR/Barcode + nhập tay, cân lại, phân zone) |
+  | `WarehouseOutboundPage` | Xuất kho (tạo trip, quét bao/đơn ra, gán tài xế line-haul) |
+  | `WarehouseBaggingPage` | Gom bao niêm phong (tạo seal, quét đơn vào bao, đóng seal) |
+  | `WarehouseAuditPage` | Kiểm kê kho (quét đối soát, phát hiện thừa/thiếu/thất lạc) |
+  | `WarehouseInventoryDashboardPage` | Dashboard tồn kho realtime (theo zone, aging, alerts) |
+  | `DriverPickupPage` | Lịch thu gom tài xế (danh sách đơn cần lấy, xác nhận lấy hàng) |
+  | `DriverHandoffPage` | Xác nhận bàn giao hàng tài xế line-haul |
+  | `GlobalOrderListPage` | Danh sách đơn hàng toàn hệ thống (cho Order Manager) |
+  | `RiskReviewPage` | Duyệt đơn rủi ro cao (flagFeeWarning, flagCodAnomaly) |
+  | `DispatchControlPage` | Điều phối phân công tài xế |
+
+  ---
+
+  ## 8. TÍNH CƯỚC & ĐỊNH TUYẾN (Pricing & Routing Engine)
+
+  ### Bảng cước theo vùng (Zone-Based Pricing)
+  | Vùng | Cước cơ bản (≤1kg) | Phụ trội /0.5kg |
+  |------|---------------------|-----------------|
+  | Nội tỉnh (`INTRA_PROVINCE`) | 16.500đ | +5.000đ |
+  | Nội miền (`INTRA_REGION`) | 22.000đ | +6.000đ |
+  | Cận miền (`NEAR_REGION`) | 28.000đ | +7.000đ |
+  | Liên miền (`INTER_REGION`) | 35.000đ | +8.500đ |
+
+  ### Công thức
+  - **Trọng lượng quy đổi** = (D×R×C) / 5000
+  - **Trọng lượng tính cước** = max(thực tế, quy đổi), làm tròn lên 0.5kg
+  - **Phí bảo hiểm** = 0.5% giá trị hàng (nếu > 1.000.000đ)
+  - **Cước cuối** = baseFee + insuranceFee - discountAmount
+
+  ### Risk Engine
+  - `flagFeeWarning`: Cước > 500.000đ
+  - `flagCodAnomaly`: COD > 10.000.000đ hoặc COD > 2× giá trị hàng
+  - Đơn có risk → trạng thái `PENDING_VERIFICATION` thay vì `CREATED`
+
+  ### Hub Routing (Dijkstra)
+  - Graph-based pathfinding giữa các Hub
+  - Tự động tính route nodes, khoảng cách km, ETA giờ
+  - Hỗ trợ 7 hub chính: Hà Nội, TP.HCM, Đà Nẵng, Cần Thơ, Bình Dương, Đồng Nai, Hải Phòng
+
+  ---
+
+  ## 9. BẢO MẬT & MIDDLEWARE
+
+  | Middleware | Chức năng |
+  |-----------|-----------|
+  | `auth.middleware.js` | JWT verify, role-based access (`requireRole`), sub-account permission check (`requirePermission`), seller context resolve |
+  | `rateLimit.middleware.js` | Giới hạn request/IP (chống brute-force login, OTP spam) |
+  | `hubScope.middleware.js` | `requireOwnHub` — WAREHOUSE_MANAGER chỉ thao tác trên hub được gán |
+  | `kyc.middleware.js` | Kiểm tra trạng thái KYC trước khi cho phép tạo đơn |
+  | `error.middleware.js` | Global error handler |
+
+  ### Cơ chế bảo mật
+  - **JWT Access Token** (15 phút) + **Refresh Token** (7 ngày, lưu DB, revocable)
+  - **Khóa tài khoản** sau 5 lần sai mật khẩu (khóa 30 phút)
+  - **2FA TOTP** (Google Authenticator) + backup codes
+  - **Idempotency** tạo đơn: SHA-256 payload hash + idempotencyKey header
+  - **Password hash**: bcrypt (salt 10 rounds), pre-save hook với `isModified` check
+  - **Sub-account**: 6 permission types, parentSellerId isolation
+
+  ---
+
+  ## 10. REALTIME & BACKGROUND JOBS
+
+  ### WebSocket (Socket.io)
+  - **Live GPS Tracking**: Room-based (`order:{trackingCode}`), driver emit vị trí → client nhận realtime
+  - **Warehouse Dashboard**: Room `warehouse-dashboard:{hubId}` — cập nhật số liệu nhập/xuất kho
+  - **Seller Notifications**: Room `seller:{sellerId}` — thông báo trạng thái đơn hàng
+
+  ### Cron Jobs
+  | Job | Schedule | Chức năng |
+  |-----|----------|-----------|
+  | `auditLostTimeout.job.js` | Mỗi 30 phút | Chuyển đơn `SUSPECTED_LOST` quá hạn → `LOST` |
+  | `resetDriverRejectionQuota.job.js` | 00:00 hàng ngày | Reset quota từ chối đơn tài xế về 3 |
+  | `driverConfirmTimeout.job.js` | Định kỳ | Timeout xác nhận tài xế nhận đơn |
+  | `staleRedeliveryMonitor.job.js` | Định kỳ | Monitor đơn chờ giao lại quá lâu |
+
+  ---
+
+  ## 11. UI/UX DESIGN SYSTEM
+
+  - **Theme**: Dark Mode (mặc định) + Light Mode (toggle), CSS class `body.light-theme`
+  - **Style**: Flat UI (không box-shadow), viền mỏng `#e2e8f0` phân tách khối
+  - **Palette Dark**: Navy `#030712` → Slate `#0f172a`, Accent: Cyan-400, Blue-500, Emerald-400
+  - **Palette Light**: Slate-50 `#f8fafc`, Cards: White `#ffffff`, Text: `#0f172a`, Accent đậm hơn
+  - **Components**: Glass panels, glass cards, glass inputs (với override Light Mode)
+  - **Buttons chính**: Giữ chữ trắng `#ffffff` trên nền gradient/solid color ở cả 2 theme
+  - **Font**: System default + font-mono cho mã vận đơn
+  - **Responsive**: Mobile-first, sidebar collapse trên mobile
+
+  ---
+
+  ## 12. MODULES PHÁT TRIỂN (7 Module)
+
+  | # | Module | Trạng thái | Mô tả |
+  |---|--------|-----------|--------|---------------------|
+  | 1 | Tài khoản & Phân quyền | ✅ Code xong + đã test | Register, Login, Logout, Refresh Token, 2FA, KYC, Sub-account, Password Reset | 12 role trong enum; CS/ACCOUNTANT chưa có route riêng |
+  | 2 | Quản lý Đơn hàng | ✅ Code xong | Tạo đơn (idempotency), cập nhật, hủy, import Excel, tính cước tự động | Chưa có test case race condition riêng |
+  | 3 | Vận hành Gom hàng | ✅ Code xong | UC-12 Lấy hàng, xác nhận pickup, pickup manifest | — |
+  | 4 | Vận hành Kho & Giao hàng | ✅ Code xong | UC-16→19: Nhập kho, Xuất kho, Gom bao, Kiểm kê, Tồn kho, Giao/Thất bại/Hoàn | — |
+  | 5 | Điều phối & Phân công | ✅ Code xong | Phân công tài xế (pickup/delivery), duyệt từ chối, quota 3/ngày (trừ lúc gửi - Option A) | Chưa có đặc tả UC dạng bảng |
+  | 5b | Risk Engine | ⚠️ Code xong, thiếu đặc tả | flagFeeWarning, flagCodAnomaly, PENDING_VERIFICATION, RiskReviewPage | Cần UC + test case |
+  | 6 | Tài chính | 🔄 Cơ bản | Ví COD seller, rút tiền (atomic findOneAndUpdate — đã fix race condition) | Đối soát tự động chưa triển khai |
+  | 7 | Báo cáo | 📋 Chưa làm | Aggregation pipeline trên dữ liệu hiện có | — |
+
+  ---
+
+  ## 13. CONVENTIONS & PATTERNS
+
+  - **Tiền tệ**: Integer VND (không dùng float), validate `Number.isInteger`
+  - **Tracking Code**: Format `VN-LOG-XXXXXXXX` (8 ký tự random)
+  - **API Response**: `{ status, message, data }` hoặc `{ message }` khi lỗi
+  - **Error Codes**: HTTP status + message tiếng Việt
+  - **Auth Header**: `Authorization: Bearer <accessToken>`
+  - **Idempotency**: Header `X-Idempotency-Key` + SHA-256 body hash
+  - **Validation**: Joi schemas cho warehouse operations, whitelist input ở controller
+  - **State transitions**: Kiểm tra trạng thái hiện tại trước khi cho phép chuyển
+  - **Audit trail**: OrderLog ghi nhận mọi thay đổi (actor, action, oldStatus, newStatus, metadata)

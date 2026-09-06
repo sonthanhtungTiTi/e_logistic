@@ -9,7 +9,7 @@ interface AdminLayoutProps {
 
 export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   return (
-    <div className="min-h-screen bg-[#050811] text-slate-100 flex flex-row selection:bg-cyan-500 selection:text-white">
+    <div className="min-h-screen bg-background text-foreground flex flex-row selection:bg-cyan-500 selection:text-white">
       <AdminSidebar />
       <div className="flex-1 flex flex-col min-w-0">
         <AdminNavbar />

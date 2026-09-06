@@ -184,7 +184,7 @@ export const ForgotPasswordPage: React.FC = () => {
 
   return (
     <div className="min-h-[85vh] flex items-center justify-center p-4 sm:p-6 selection:bg-blue-500 selection:text-white">
-      <div className="w-full max-w-md glass-panel rounded-3xl p-6 sm:p-8 border border-slate-800 shadow-2xl space-y-6 relative overflow-hidden bg-[#0c1222]/90 backdrop-blur-xl">
+      <div className="w-full max-w-md glass-panel rounded-3xl p-6 sm:p-8 border border-slate-800 shadow-2xl space-y-6 relative overflow-hidden backdrop-blur-xl">
         
         {/* Decorative Top Accent Glow */}
         <div className="absolute -top-16 -left-16 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />

@@ -38,8 +38,29 @@ const userSchema = new mongoose.Schema(
         'CS',
         'ACCOUNTANT',
         'ADMIN',
+        'ORDER_MANAGER',
+        'DRIVER_MANAGER',
+        'WAREHOUSE_MANAGER',
       ],
       default: 'BUYER',
+    },
+    // Dành riêng cho WAREHOUSE_MANAGER - Gắn với 1 kho/bưu cục cụ thể
+    assignedHubId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Hub',
+      default: null,
+    },
+    // Dành cho DRIVER_MANAGER & DRIVER - Khu vực phụ trách / khu vực hoạt động
+    serviceAreas: [
+      {
+        province: { type: String, required: true },
+        district: { type: String, required: true },
+      },
+    ],
+    // Dành riêng cho DRIVER - Quota từ chối nhận đơn trong ngày
+    rejectionQuota: {
+      remainingToday: { type: Number, default: 3 },
+      lastResetDate: { type: Date, default: Date.now },
     },
     // Dành cho Driver / Line-haul Driver
     vehicleInfo: {

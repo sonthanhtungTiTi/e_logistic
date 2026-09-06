@@ -60,17 +60,17 @@ async function createDemoOrderSgToHp() {
     items: [{ name: 'Áo Thun Cao Cấp', quantity: 2, weight: 1.5 }],
   });
 
-  console.log('\n╔══════════════════════════════════════════════════════════════════════════════╗');
-  console.log('║        🎉 ĐÃ TẠO THÀNH CÔNG ĐƠN HÀNG MẪU: SÀI GÒN ➔ HẢI PHÒNG!               ║');
-  console.log('╚══════════════════════════════════════════════════════════════════════════════╝\n');
+  console.log('\n================================================================================');
+  console.log('         DA TAO THANH CONG DON HANG MAU: SAI GON -> HAI PHONG!                  ');
+  console.log('================================================================================\n');
 
-  console.log(`📦 Mã Vận Đơn (Tracking Code): \x1b[32m\x1b[1m${order.trackingCode}\x1b[0m`);
-  console.log(`📍 Lộ trình luân chuyển:        TP.HCM ➔ Hà Nội ➔ Hải Phòng`);
-  console.log(`📏 Cự ly luân chuyển thực tế:  ${order.routeDistanceKm} km | Vùng cước: ${order.zoneTier}`);
-  console.log(`💰 Cước phí vận chuyển:        ${order.shippingFee.toLocaleString('vi-VN')} đ | Dự kiến: ${order.estimatedDeliveryDays} ngày`);
-  console.log(`🏢 Kho gốc đón hàng:           ${hubSgn.name} (${hubSgn.code})`);
-  console.log(`🏢 Kho đích phát hàng:         ${hubHph.name} (${hubHph.code})`);
-  console.log(`🔄 Trạng thái hiện tại:        \x1b[33m\x1b[1m${order.status}\x1b[0m (Vừa lấy từ Seller, sẵn sàng Nhập kho Sài Gòn)\n`);
+  console.log(`[Package] Ma Van Don (Tracking Code): \x1b[32m\x1b[1m${order.trackingCode}\x1b[0m`);
+  console.log(`[Route] Lo trinh luan chuyen:        TP.HCM -> Ha Noi -> Hai Phong`);
+  console.log(`[Distance] Cu ly luan chuyen thuc te:  ${order.routeDistanceKm} km | Vung cuoc: ${order.zoneTier}`);
+  console.log(`[Fee] Cuoc phi van chuyen:        ${order.shippingFee.toLocaleString('vi-VN')} d | Du kien: ${order.estimatedDeliveryDays} ngay`);
+  console.log(`[Origin] Kho goc don hang:           ${hubSgn.name} (${hubSgn.code})`);
+  console.log(`[Destination] Kho dich phat hang:         ${hubHph.name} (${hubHph.code})`);
+  console.log(`[Status] Trang thai hien tai:        \x1b[33m\x1b[1m${order.status}\x1b[0m (Vua lay tu Seller, san sang Nhap kho Sai Gon)\n`);
 
   await mongoose.disconnect();
 }

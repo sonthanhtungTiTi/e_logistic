@@ -98,7 +98,7 @@ const orderService = {
       console.warn('[OrderService] Hub lookup warning:', hubErr.message);
     }
 
-    // ── THÊM MỚI BƯỚC 7: Tính toán routeNodes Đa Kho ──
+    // ── THÊM MỚI BƯỚC 7: Tính toán routeNodes Đa Kho & Phân loại routeType ──
     let routeNodes = [];
     try {
       if (data.pickupAddress?.province && data.deliveryAddress?.province) {
@@ -106,6 +106,13 @@ const orderService = {
       }
     } catch (routeErr) {
       console.warn('[OrderService] resolveOrderRoute warning:', routeErr.message);
+    }
+
+    let routeType = 'HUB_ROUTED';
+    if (originHubId && destinationHubId && originHubId.toString() === destinationHubId.toString()) {
+      routeType = 'DIRECT';
+    } else if (Array.isArray(routeNodes) && routeNodes.length <= 1) {
+      routeType = 'DIRECT';
     }
 
     const newOrder = new Order({
@@ -117,6 +124,7 @@ const orderService = {
       originHubId,
       destinationHubId,
       routeNodes,
+      routeType,
       currentRouteIndex: 0,
       volumetricWeight: calcFee.volumetricWeight || 0,
       chargeableWeight: calcFee.chargeableWeight || actualWeight,
