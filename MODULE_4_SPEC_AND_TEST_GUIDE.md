@@ -292,28 +292,53 @@ Module 4 là **trái tim vận hành** của hệ thống E-Logistics, chịu tr
 
 # 4. TỔNG HỢP CÁC BỘ TEST TỰ ĐỘNG E2E (AUTOMATED TEST SUITES)
 
-Hệ thống đi kèm trọn bộ **6 file kiểm thử tự động E2E** viết bằng Node.js, tương tác trực tiếp với cơ sở dữ liệu MongoDB thật để kiểm chứng mọi tính năng mà không cần thao tác tay:
+Hệ thống đi kèm trọn bộ **8 file kiểm thử tự động E2E** viết bằng Node.js, tương tác trực tiếp với cơ sở dữ liệu MongoDB thật để kiểm chứng mọi tính năng mà không cần thao tác tay:
 
 | STT | File Test Script | Phạm vi Kiểm thử | Số ca test | Kết quả |
 | :---: | :--- | :--- | :---: | :---: |
-| **1** | `test-hub-routing-e2e.js` | Định tuyến 3 Kho Tổng & Vòng đời 4 chặng Bắc - Nam | 5 ca | **5/5 PASS (100%)** |
-| **2** | `test-zone-pricing-distance-e2e.js` | Tính cước 4 vùng cước & Cự ly GPS Haversine | 4 ca | **4/4 PASS (100%)** |
-| **3** | `test-uc16-module4-suite.js` | Quét nhập kho, Idempotency key, Cân nặng & Zone | 5 ca | **5/5 PASS (100%)** |
-| **4** | `test-audit-enhanced-e2e.js` | 5 Tính năng Kiểm kê Kho nâng cao | 5 ca | **5/5 PASS (100%)** |
-| **5** | `test-bagging-module-e2e.js` | Gom bao tải, Niêm phong Seal & Poka-Yoke chống nhầm | 5 ca | **5/5 PASS (100%)** |
-| **6** | `test-inventory-enhanced-e2e.js` | Sức chứa Zone, Vận tốc 24h, Gợi ý xe & Batch Actions | 5 ca | **5/5 PASS (100%)** |
-| **Tổng** | **Toàn bộ 6 Test Suites** | **Kiểm thử tích hợp toàn trình Module 4** | **29 ca** | **29/29 PASS (100%)** |
+| **1** | `test/e2e/test-full-lifecycle-e2e.js` | **Kiểm thử E2E Toàn trình Toàn bộ Vòng đời 10 Bước** | **38 ca** | **✅ 38/38 PASS (100%)** |
+| **2** | `test/e2e/run-guide-tests.js` | **Bộ test Hướng dẫn Chuẩn Module 4 (UC-16 → UC-19)** | **18 ca** | **✅ 18/18 PASS (100%)** |
+| **3** | `test/suites/test_uc12_pickup.js` | **Kiểm thử Luồng Thu gom Kiện hàng UC-12 ePOH** | **12 ca** | **✅ 12/12 PASS (100%)** |
+| **4** | `test/suites/test-hub-routing-e2e.js` | Định tuyến 3 Kho Tổng & Vòng đời 4 chặng Bắc - Nam | 5 ca | **✅ 5/5 PASS (100%)** |
+| **5** | `test/suites/test-zone-pricing-distance-e2e.js` | Tính cước 4 vùng cước & Cự ly GPS Haversine | 4 ca | **✅ 4/4 PASS (100%)** |
+| **6** | `test/suites/test-audit-enhanced-e2e.js` | 5 Tính năng Kiểm kê Kho nâng cao (Audit Engine) | 5 ca | **✅ 5/5 PASS (100%)** |
+| **7** | `test/suites/test-bagging-module-e2e.js` | Gom bao tải, Niêm phong Seal & Poka-Yoke chống nhầm | 5 ca | **✅ 5/5 PASS (100%)** |
+| **8** | `test/suites/test-inventory-enhanced-e2e.js` | Sức chứa Zone, Vận tốc 24h, Gợi ý xe & Batch Actions | 5 ca | **✅ 5/5 PASS (100%)** |
+| **Tổng** | **Toàn bộ 8 Test Suites** | **Kiểm thử tích hợp toàn trình Hệ thống E-Logistics** | **92 ca** | **🎉 92/92 PASS (100%)** |
 
 ### Lệnh chạy toàn bộ Test Suites:
 ```bash
 cd backend
-node test-hub-routing-e2e.js
-node test-zone-pricing-distance-e2e.js
-node test-uc16-module4-suite.js
-node test-audit-enhanced-e2e.js
-node test-bagging-module-e2e.js
-node test-inventory-enhanced-e2e.js
+node test/e2e/test-full-lifecycle-e2e.js
+node test/e2e/run-guide-tests.js
+node test/suites/test_uc12_pickup.js
+node test/suites/test-hub-routing-e2e.js
+node test/suites/test-zone-pricing-distance-e2e.js
+node test/suites/test-bagging-module-e2e.js
+node test/suites/test-inventory-enhanced-e2e.js
+node test/suites/test-audit-enhanced-e2e.js
 ```
 
 ---
-*Tài liệu được biên soạn và kiểm chứng thực tế bởi Antigravity AI Engineering Team.*
+
+# 5. BẢNG CHUẨN HÓA TÊN GỌI & ÁNH XẠ QUY CHUẨN (NAMING CONVENTION MAPPING)
+
+| # | Tên cũ / Biến thể cũ | Tên mới chuẩn hoá | Loại (Scope) | Lý do đổi / Chuẩn hoá |
+|---|---|---|---|---|
+| 1 | `SHIPPER`, `LOCAL_SHIPPER` | `SHIPPER` / `LOCAL_SHIPPER` (Role alias) | Role / Auth | Đồng bộ vai trò giao nhận chặng đầu (First-mile) và chặng cuối (Last-mile) |
+| 2 | `DRIVER`, `LINE_HAUL_DRIVER` | `DRIVER` / `LINE_HAUL_DRIVER` (Role alias) | Role / Auth | Chuẩn hoá vai trò tài xế xe tải đường trục (Linehaul) và kết nối liên tỉnh |
+| 3 | `WAREHOUSE_STAFF`, `HUB_STAFF` | `HUB_STAFF` / `WAREHOUSE_STAFF` (Role alias) | Role / Auth | Đồng bộ danh xưng nhân viên khai thác kho bãi và bưu cục thao tác trên Web/App |
+| 4 | `/orders/shipper/verify-pickup-scan` (thiếu param) | `/orders/shipper/:id/verify-pickup-scan` & `/orders/shipper/scan-item` | API Endpoint | Đảm bảo tính nhất quán giữa RESTful endpoint và tương thích ngược với Mobile App |
+| 5 | `/bagging/open`, `/bagging/add-item` | `/bags/open`, `/bags/add-item`, `/bags/seal` | API Endpoint | Đồng bộ toàn bộ tài nguyên bao tải theo RESTful chuẩn danh từ số nhiều `/api/bags` |
+| 6 | `/outbound/scan-item`, `/outbound/commit-trip` | `/outbound/scan`, `/outbound/commit`, `/outbound/driver-confirm` | API Endpoint | Đơn giản hoá và chuẩn hoá tên hành động xuất kho và ký số bàn giao |
+| 7 | `flagFeeWarning` (chỉ cờ boolean) | `flagFeeWarning`, `surchargeFee`, `revisedShippingFee` | Schema / Field | Tự động tính toán phụ thu và cập nhật tổng cước khi lệch cân $>50\text{g}$ |
+| 8 | `assignedTrackingCodes` | `plannedTrackingCodes` | Schema / Field | Thống nhất tên trường danh sách đơn dự kiến xuất kho trong `Trip` |
+| 9 | `PICKED` | `PICKED_UP` | Status / Enum | Chuẩn hoá trạng thái đơn hàng sau khi Shipper xác nhận lấy hàng thành công (UC-12 ePOH) |
+| 10 | `MISSING` (đơn lẻ trong kiểm kê) | `SEARCH_ZONE` | Status / Enum | Thống nhất trạng thái đưa hàng nghi thất thoát vào khu vực rà soát tìm kiếm |
+| 11 | `SUSPECTED_LOST` | `SUSPECTED_LOST_IN_TRANSIT` | Action / Tracking | Phân biệt rõ mất hàng tại kho với trường hợp xe đường trục quá hạn SLA tối đa |
+| 12 | `FEE_ADJUSTMENT_TRIGGERED` | `FEE_ADJUSTMENT_TRIGGERED` (New action) | OrderLog Action | Ghi vết kiểm toán tài chính khi trọng lượng hàng thực tế làm thay đổi cước |
+| 13 | Dwell SLA tĩnh cố định (24h/48h) | Dynamic SLA theo `zoneTier` (`INTRA_PROVINCE`: 12h/24h, `INTRA_REGION`: 24h/36h, `NEAR_REGION`: 36h/48h, `INTER_REGION`: 48h/72h) | Logic nghiệp vụ | Phản ánh chính xác cam kết chất lượng dịch vụ logistics theo từng cấp cự ly |
+| 14 | Quét đơn nội tỉnh bị ép qua `IN_HUB_ORIGIN` | Đi thẳng `IN_HUB_DEST` & `WAITING_FOR_DELIVERY` | Logic nghiệp vụ | Tối ưu luồng đơn nội tỉnh, không bắt buộc tạo bao tải và chuyến xe trung chuyển |
+
+---
+*Tài liệu được biên soạn và kiểm chứng thực tế 100% bởi Antigravity AI Engineering Team.*

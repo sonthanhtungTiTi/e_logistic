@@ -62,6 +62,8 @@ const otpLimiter = rateLimit({
   message: { message: 'Bạn đã yêu cầu gửi OTP quá nhiều lần, vui lòng thử lại sau 15 phút' },
 });
 
+const shipperZoneController = require('../controllers/shipperZone.controller');
+
 // Auth & Profile
 router.post('/register', registerLimiter, registerUser);
 router.post('/send-register-otp', otpLimiter, sendRegisterOtp);
@@ -69,6 +71,9 @@ router.post('/verify-register-otp', verifyRegisterOtp);
 router.post('/login', loginUser);
 router.get('/profile', protect, getUserProfile);
 router.put('/profile', protect, updateUserProfile);
+router.get('/shipper/profile', protect, shipperZoneController.getShipperProfile);
+router.put('/shipper/basic-info', protect, shipperZoneController.updateBasicProfile);
+router.post('/shipper/request-zone-change', protect, shipperZoneController.requestZoneChange);
 router.post('/logout', protect, logoutUser);
 router.post('/refresh', refreshAccessToken);
 

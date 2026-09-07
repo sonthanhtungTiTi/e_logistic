@@ -5,7 +5,9 @@ const startAuditSchema = Joi.object({
   scopeType:  Joi.string().valid('ALL','ZONE','DESTINATION','DATE_RANGE').optional(),
   scope_value: Joi.alternatives().try(Joi.string(), Joi.object()).allow(null,'').optional(),
   scopeValue:  Joi.alternatives().try(Joi.string(), Joi.object()).allow(null,'').optional(),
-});
+  notes:       Joi.string().max(500).allow(null, '').optional(),
+  note:        Joi.string().max(500).allow(null, '').optional(),
+}).unknown(true);
 
 const syncAuditSchema = Joi.object({
   session_code:     Joi.string().trim().uppercase().optional(),

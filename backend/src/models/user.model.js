@@ -31,9 +31,15 @@ const userSchema = new mongoose.Schema(
       enum: [
         'SELLER',
         'BUYER',
-        'DRIVER',
-        'LINE_HAUL_DRIVER',
+        'SHIPPER', // Shipper giao nhận chặng đầu / chặng cuối
+        'LOCAL_SHIPPER', // Shipper nội vùng
+        'LINE_HAUL_DRIVER', // Tài xế xe tải liên tỉnh / liên kho
+        'DRIVER', // Tài xế vận chuyển (tương thích ngược)
+        'ORDER_VENDOR_MANAGER', // Quản lý Duyệt đơn & Nhà cung cấp
+        'LAST_MILE_DISPATCHER', // Quản lý Điều phối Shipper nội vùng
+        'LINE_HAUL_DISPATCHER', // Quản lý Điều phối Đội xe tải
         'HUB_STAFF',
+        'WAREHOUSE_STAFF', // Nhân viên kho vận
         'HUB_COORDINATOR',
         'CS',
         'ACCOUNTANT',
@@ -41,7 +47,7 @@ const userSchema = new mongoose.Schema(
       ],
       default: 'BUYER',
     },
-    // Dành cho Driver / Line-haul Driver
+    // Dành cho Shipper / Driver / Line-haul Driver
     vehicleInfo: {
       licensePlate: String,
       vehicleType: String, // Xe máy, xe tải 1.5 tấn...
@@ -50,6 +56,72 @@ const userSchema = new mongoose.Schema(
     isWorking: {
       type: Boolean,
       default: false,
+    },
+    // Phân vùng & Quota dành riêng cho LOCAL_SHIPPER
+    activeGeozoneId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Geozone',
+      default: null,
+    },
+    pickupQuota: {
+      max: { type: Number, default: 25 },
+      current: { type: Number, default: 0 },
+    },
+    deliveryQuota: {
+      max: { type: Number, default: 35 },
+      current: { type: Number, default: 0 },
+    },
+    maxWeightCapacityKg: {
+      type: Number,
+      default: 45,
+    },
+    currentWeightKg: {
+      type: Number,
+      default: 0,
+    },
+    acceptanceRate: {
+      type: Number,
+      default: 100, // Tỷ lệ chấp nhận đơn (%)
+    },
+    dispatchRejectionCount: {
+      type: Number,
+      default: 0,
+    },
+    shiftStartedAt: {
+      type: Date,
+      default: null,
+    },
+    requiresManualRoleReview: {
+      type: Boolean,
+      default: false,
+    },
+    // Khu vực hoạt động chính thức của Shipper (được Admin cấp/duyệt)
+    operatingArea: {
+      province: { type: String, default: '' },
+      district: { type: String, default: '' },
+      ward: { type: String, default: '' },
+      subZone: { type: String, default: '' }, // Cụm tuyến / Khu phố phụ trách (VD: "Khu phố 5", "Tổ 12")
+      detailAddress: { type: String, default: '' },
+    },
+    // Yêu cầu xin chuyển khu vực hoạt động (Cần Admin duyệt)
+    zoneChangeRequest: {
+      requestedArea: {
+        province: { type: String, default: '' },
+        district: { type: String, default: '' },
+        ward: { type: String, default: '' },
+        subZone: { type: String, default: '' },
+        detailAddress: { type: String, default: '' },
+      },
+      reason: { type: String, default: '' },
+      status: {
+        type: String,
+        enum: ['NONE', 'PENDING', 'APPROVED', 'REJECTED'],
+        default: 'NONE',
+      },
+      requestedAt: { type: Date, default: null },
+      reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+      reviewedAt: { type: Date, default: null },
+      rejectionReason: { type: String, default: null },
     },
     // Dành cho Seller & Hồ sơ cá nhân
     companyName: String,

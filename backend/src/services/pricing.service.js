@@ -63,6 +63,30 @@ const resolveHubRouting = (province) => {
  * Calculates Full Order Fees (Base Shipping + Valuation/Insurance - Discount)
  */
 const calculateOrderFees = ({ actualWeight, dimensions, pickupAddress, deliveryAddress, goodsValue = 0, discountCode }) => {
+  // Input Validation
+  const numWeight = Number(actualWeight);
+  if (actualWeight !== undefined && (numWeight <= 0 || isNaN(numWeight))) {
+    const error = new Error('Khối lượng hàng hóa (actualWeight) phải lớn hơn 0 kg');
+    error.statusCode = 400;
+    error.code = 'INVALID_WEIGHT';
+    throw error;
+  }
+  if (dimensions && typeof dimensions === 'object') {
+    const { length = 0, width = 0, height = 0 } = dimensions;
+    if (Number(length) < 0 || Number(width) < 0 || Number(height) < 0) {
+      const error = new Error('Kích thước bưu kiện (Dài x Rộng x Cao) không được âm');
+      error.statusCode = 400;
+      error.code = 'INVALID_DIMENSIONS';
+      throw error;
+    }
+  }
+  if (goodsValue !== undefined && Number(goodsValue) < 0) {
+    const error = new Error('Giá trị khai giá hàng hóa (goodsValue) không được âm');
+    error.statusCode = 400;
+    error.code = 'INVALID_GOODS_VALUE';
+    throw error;
+  }
+
   // 1. Calculate Weights
   const { actualWeight: actW, volumetricWeight: volW, chargeableWeight: chgW } = calculateChargeableWeight(actualWeight, dimensions);
 

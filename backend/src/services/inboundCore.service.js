@@ -94,8 +94,8 @@ async function processInboundSingle({
 
   const hubStr = currentHubId.toString();
 
-  // Tự động gán Kho gốc nếu đơn hàng mới từ Seller chưa có originHubId
-  if (!order.originHubId && (currStatus === 'PICKED_UP' || currStatus === 'PICKED')) {
+  // Tự động gán Kho gốc nếu đơn hàng mới từ Seller nhập Hub lần đầu
+  if (currStatus === 'PICKED_UP' || currStatus === 'PICKED') {
     order.originHubId = currentHubId;
   }
 
@@ -103,10 +103,14 @@ async function processInboundSingle({
   const isDestHub   = !!(order.destinationHubId && order.destinationHubId.toString() === hubStr);
 
   if (currStatus === 'PICKED_UP' || currStatus === 'PICKED') {
-    // Kiện hàng vừa lấy từ Seller đưa về Hub lần đầu -> Gán Hub này là Kho gốc tiếp nhận
-    order.originHubId = currentHubId;
-    nextStatus = 'IN_HUB_ORIGIN';
-    nextAction = 'SORT_FOR_TRANSIT';
+    if (isDestHub) {
+      // Tuyến nội tỉnh (cùng 1 Hub): Đi thẳng vào khu giao hàng chặng cuối (bỏ qua gom bao / linehaul)
+      nextStatus = 'IN_HUB_DEST';
+      nextAction = 'WAITING_FOR_DELIVERY';
+    } else {
+      nextStatus = 'IN_HUB_ORIGIN';
+      nextAction = 'SORT_FOR_TRANSIT';
+    }
   } else if (currStatus === 'IN_TRANSIT') {
     if (isDestHub) {
       nextStatus = 'IN_HUB_DEST';
@@ -138,13 +142,32 @@ async function processInboundSingle({
   const finalStatus = isDamaged ? 'EXCEPTION_INBOUND' : nextStatus;
   const finalNextAction = isDamaged ? 'EXCEPTION_AREA' : nextAction;
 
-  // ── 5. Weight discrepancy check ─────────────────────────────────────────
+  // ── 5. Weight discrepancy check & Automatic Fee Adjustment ───────────────
   let weightDiscrepancyGram = null;
   let flagFeeWarning = order.flagFeeWarning || false;
+  let surchargeFee = order.surchargeFee || 0;
+  let revisedShippingFee = order.shippingFee;
+  let revisedChargeableWeight = order.chargeableWeight || order.actualWeight;
+
   if (hubMeasuredWeight !== null && hubMeasuredWeight !== undefined) {
     weightDiscrepancyGram = Math.round(hubMeasuredWeight - (order.actualWeight * 1000));
     if (Math.abs(weightDiscrepancyGram) > WEIGHT_TOLERANCE_GRAM) {
       flagFeeWarning = true;
+      if (weightDiscrepancyGram > 0) {
+        // Cân thực tế nặng hơn khai báo -> Tự động tính lại cước phụ trội
+        const newActualWeightKg = +(hubMeasuredWeight / 1000).toFixed(2);
+        const dims = order.dimensions || {};
+        const volWeight = (Number(dims.length || 0) * Number(dims.width || 0) * Number(dims.height || 0)) / 5000;
+        revisedChargeableWeight = Math.ceil(Math.max(newActualWeightKg, volWeight) * 2) / 2;
+
+        const baseOldWeight = order.chargeableWeight || order.actualWeight || 1.0;
+        if (revisedChargeableWeight > baseOldWeight) {
+          const extraSteps = Math.ceil((revisedChargeableWeight - baseOldWeight) / 0.5);
+          const stepRate = order.zoneTier === 'INTER_REGION' ? 8500 : order.zoneTier === 'NEAR_REGION' ? 7000 : order.zoneTier === 'INTRA_REGION' ? 6000 : 5000;
+          surchargeFee = (order.surchargeFee || 0) + extraSteps * stepRate;
+          revisedShippingFee = (order.shippingFee || 0) + extraSteps * stepRate;
+        }
+      }
     }
   }
 
@@ -169,15 +192,17 @@ async function processInboundSingle({
       routeCheckSkip = false;
       expectedNodeIndex = matchingNodeIdx;
     } else {
-      // Nếu không khớp chặng tiếp theo nào trong routeNodes
-      const expectedNode = order.routeNodes[currentIndex];
-      const expectedHubIdStr = (expectedNode?.hubId?._id || expectedNode?.hubId || '').toString();
-      if (expectedHubIdStr && expectedHubIdStr !== scannedHubIdStr) {
-        throw {
-          status: 400,
-          message: `Kiện hàng SAI TUYẾN ĐỊNH TUYẾN. Kho quét (${scannedHubIdStr}) không khớp kho dự kiến ở chặng ${currentIndex}`,
-          code: 'INVALID_ROUTE_HOP',
-        };
+      // Nếu kho đang quét chính là Kho gốc hoặc Kho đích của đơn -> cho phép tiếp nhận
+      if (!isOriginHub && !isDestHub) {
+        const expectedNode = order.routeNodes[currentIndex];
+        const expectedHubIdStr = (expectedNode?.hubId?._id || expectedNode?.hubId || '').toString();
+        if (expectedHubIdStr && expectedHubIdStr !== scannedHubIdStr) {
+          throw {
+            status: 400,
+            message: `Kiện hàng SAI TUYẾN ĐỊNH TUYẾN. Kho quét (${scannedHubIdStr}) không khớp kho dự kiến ở chặng ${currentIndex}`,
+            code: 'INVALID_ROUTE_HOP',
+          };
+        }
       }
     }
   }
@@ -201,6 +226,12 @@ async function processInboundSingle({
     atomicSet.hubMeasuredWeight = hubMeasuredWeight;
     atomicSet.weightDiscrepancyGram = weightDiscrepancyGram;
     atomicSet.flagFeeWarning = flagFeeWarning;
+    if (flagFeeWarning && weightDiscrepancyGram > 0) {
+      atomicSet.chargeableWeight = revisedChargeableWeight;
+      atomicSet.surchargeFee = surchargeFee;
+      atomicSet.shippingFee = revisedShippingFee;
+      atomicSet.weightDiscrepancy = true;
+    }
   }
   if (needsManualRouting !== order.needsManualRouting) {
     atomicSet.needsManualRouting = needsManualRouting;
@@ -245,6 +276,12 @@ async function processInboundSingle({
     isOriginHub: isOriginHub,
     weight_discrepancy_gram: weightDiscrepancyGram,
     weightDiscrepancyGram,
+    flag_fee_warning: flagFeeWarning,
+    flagFeeWarning,
+    surcharge_fee: surchargeFee,
+    surchargeFee,
+    revised_shipping_fee: revisedShippingFee,
+    revisedShippingFee,
     needs_manual_routing: needsManualRouting,
     needsManualRouting,
     zone_id: zoneId,
@@ -267,6 +304,26 @@ async function processInboundSingle({
         note: note || `Nhập kho tại Hub ${currentHubId} (${condition})`,
         metadata: { condition, nextAction: finalNextAction, isDamaged, weightDiscrepancyGram, cachedResult: result },
       });
+
+      if (flagFeeWarning) {
+        await OrderLog.create({
+          orderId: order._id,
+          trackingCode: order.trackingCode,
+          preStatus: order.status,
+          postStatus: finalStatus,
+          actionType: 'FEE_ADJUSTMENT_TRIGGERED',
+          actionBy: operator._id || operator.id,
+          hubId: currentHubId,
+          note: `Lệch cân ${weightDiscrepancyGram}g tại kho -> Tự động tính phụ thu cước +${surchargeFee || 0} đ`,
+          metadata: {
+            previousShippingFee: order.shippingFee,
+            revisedShippingFee,
+            surchargeFee,
+            weightDiscrepancyGram,
+            hubMeasuredWeight
+          }
+        });
+      }
 
       await OrderTrackingLog.create({
         orderId: order._id,

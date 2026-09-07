@@ -14,6 +14,9 @@ export const userAdminApi = {
       isActive: u.isActive !== undefined ? u.isActive : true,
       failedLoginAttempts: u.failedLoginAttempts || 0,
       createdAt: u.createdAt ? new Date(u.createdAt).toLocaleDateString('vi-VN') : 'Mới tạo',
+      hubId: u.hubId,
+      vehicleInfo: u.vehicleInfo,
+      operatingArea: u.operatingArea,
     }));
   },
   createUser: async (dto: CreateUserDto): Promise<any> => {

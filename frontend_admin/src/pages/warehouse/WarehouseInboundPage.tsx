@@ -402,6 +402,7 @@ export const WarehouseInboundPage: React.FC = () => {
         {/* ── DỰ PHÒNG: Nhập tay — ẩn mặc định, hiện khi camera không dùng được ── */}
         <div>
           <button
+            id="btn-toggle-manual-inbound"
             type="button"
             onClick={() => setShowManualInput((v) => !v)}
             className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200 transition cursor-pointer select-none"
@@ -425,6 +426,7 @@ export const WarehouseInboundPage: React.FC = () => {
                 </label>
                 <div className="relative">
                   <input
+                    id="input-inbound-barcode"
                     ref={inputRef}
                     type="text"
                     value={barcodeInput}
@@ -437,9 +439,14 @@ export const WarehouseInboundPage: React.FC = () => {
                     }
                     className="w-full text-lg font-mono border-2 border-blue-500/80 rounded-xl px-4 py-3.5 bg-slate-950 text-white placeholder:text-slate-600 focus:outline-none focus:ring-4 focus:ring-blue-500/30 focus:border-cyan-400 transition"
                   />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-cyan-400 bg-blue-500/20 px-2.5 py-1 rounded-lg border border-blue-500/30">
-                    {scanMode === 'seal' ? 'SEAL MODE' : 'MANUAL'}
-                  </span>
+                  <button
+                    id="btn-inbound-scan"
+                    type="button"
+                    onClick={() => executeInboundScan(barcodeInput)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-bold text-cyan-400 bg-blue-500/20 hover:bg-blue-500/30 px-3 py-1.5 rounded-lg border border-blue-500/30 cursor-pointer"
+                  >
+                    Quét Nhập
+                  </button>
                 </div>
               </div>
 
@@ -451,6 +458,7 @@ export const WarehouseInboundPage: React.FC = () => {
                       Tình trạng ngoại quan kiện hàng:
                     </label>
                     <select
+                      id="select-inbound-condition"
                       value={condition}
                       onClick={(e) => e.stopPropagation()}
                       onChange={(e: any) => {
@@ -475,6 +483,7 @@ export const WarehouseInboundPage: React.FC = () => {
                       Cân lại tại kho (kg, tuỳ chọn):
                     </label>
                     <input
+                      id="input-inbound-weight"
                       ref={weightInputRef}
                       type="number"
                       min="0"

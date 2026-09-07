@@ -7,10 +7,22 @@ const bagSchema = new mongoose.Schema(
     destinationHubId: { type: mongoose.Schema.Types.ObjectId, ref: 'Hub', required: true, index: true },
     status: {
       type: String,
-      enum: ['OPEN', 'SEALED', 'IN_TRANSIT', 'ARRIVED', 'BROKEN_SEAL'],
+      enum: ['OPEN', 'SEALED', 'IN_TRANSIT', 'ARRIVED', 'OPENED_SORTED', 'BROKEN_SEAL'],
       default: 'OPEN',
       index: true,
     },
+    tripId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Trip',
+      default: null,
+      index: true,
+    },
+    orderIds: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Order',
+      },
+    ],
     trackingCodes: { type: [String], default: [] },
     totalWeightKg: { type: Number, default: 0 },
     maxCapacity: { type: Number, default: 30 },

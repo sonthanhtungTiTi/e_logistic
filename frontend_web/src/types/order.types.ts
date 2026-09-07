@@ -24,6 +24,7 @@ export interface Address {
   fullName: string;
   phone: string;
   address: string;
+  subZone?: string;
   ward: string;
   district: string;
   province: string;
@@ -127,12 +128,14 @@ export interface QuoteRequestPayload {
     district: string;
     ward?: string;
     address?: string;
+    subZone?: string;
   };
   deliveryAddress: {
     province: string;
     district: string;
     ward?: string;
     address?: string;
+    subZone?: string;
   };
   items: Array<{
     name: string;

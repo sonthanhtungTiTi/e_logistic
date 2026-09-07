@@ -572,6 +572,254 @@ const pickupFailedHandler = async (req, res, next) => {
   }
 };
 
+const getShipperPickupTasks = async (req, res, next) => {
+  try {
+    const user = req.user;
+
+    let query = {
+      status: 'READY_TO_PICK',
+    };
+
+    if (user && user.operatingArea && user.operatingArea.province) {
+      const provRegex = new RegExp(user.operatingArea.province.replace(/^(Tỉnh|Thành phố|TP\.?)\s+/i, '').trim(), 'i');
+      query['pickupAddress.province'] = provRegex;
+    }
+
+    const orders = await Order.find(query)
+      .populate('sellerId', 'fullName companyName phoneNumber email address')
+      .sort({ createdAt: -1 })
+      .limit(30);
+
+    const tasks = orders.map((o) => ({
+      _id: o._id,
+      id: o._id,
+      trackingCode: o.trackingCode,
+      shopName: o.sellerId?.companyName || o.sellerId?.fullName || o.pickupAddress?.fullName || 'Shop Bán Hàng',
+      phone: o.sellerId?.phoneNumber || o.pickupAddress?.phone || '0900000000',
+      address: `${o.pickupAddress?.address || ''}${o.pickupAddress?.subZone ? ', ' + o.pickupAddress.subZone : ''}, ${o.pickupAddress?.ward || ''}, ${o.pickupAddress?.district || ''}, ${o.pickupAddress?.province || ''}`.replace(/^,\s*/, ''),
+      subZone: o.pickupAddress?.subZone || '',
+      ward: o.pickupAddress?.ward || '',
+      district: o.pickupAddress?.district || '',
+      province: o.pickupAddress?.province || '',
+      itemsCount: (o.items || []).length || 1,
+      items: o.items || [],
+      declaredWeight: o.actualWeight || 1.0,
+      codAmount: o.codAmount || 0,
+      isCod: o.isCod || false,
+      status: o.status,
+      createdAt: o.createdAt,
+    }));
+
+    return res.status(200).json({
+      success: true,
+      data: tasks,
+      total: tasks.length,
+      shipperArea: user?.operatingArea || null,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+const getShipperDeliveryTasks = async (req, res, next) => {
+  try {
+    const user = req.user;
+
+    let query = {
+      status: { $in: ['OUT_FOR_DELIVERY', 'DELIVERING', 'IN_HUB_DEST'] },
+    };
+
+    if (user && user.operatingArea && user.operatingArea.province) {
+      const provRegex = new RegExp(user.operatingArea.province.replace(/^(Tỉnh|Thành phố|TP\.?)\s+/i, '').trim(), 'i');
+      query['deliveryAddress.province'] = provRegex;
+    }
+
+    const orders = await Order.find(query)
+      .populate('sellerId', 'fullName companyName phoneNumber email')
+      .sort({ updatedAt: -1, createdAt: -1 })
+      .limit(30);
+
+    const tasks = orders.map((o) => ({
+      _id: o._id,
+      id: o._id,
+      trackingCode: o.trackingCode,
+      buyerName: o.deliveryAddress?.fullName || 'Khách Nhận',
+      phone: o.deliveryAddress?.phone || '0988000000',
+      address: `${o.deliveryAddress?.address || ''}${o.deliveryAddress?.subZone ? ', ' + o.deliveryAddress.subZone : ''}, ${o.deliveryAddress?.ward || ''}, ${o.deliveryAddress?.district || ''}, ${o.deliveryAddress?.province || ''}`.replace(/^,\s*/, ''),
+      subZone: o.deliveryAddress?.subZone || '',
+      ward: o.deliveryAddress?.ward || '',
+      district: o.deliveryAddress?.district || '',
+      province: o.deliveryAddress?.province || '',
+      itemsCount: (o.items || []).length || 1,
+      codAmount: o.codAmount || 0,
+      isCod: o.isCod || false,
+      status: o.status,
+      createdAt: o.createdAt,
+    }));
+
+    return res.status(200).json({
+      success: true,
+      data: tasks,
+      total: tasks.length,
+      shipperArea: user?.operatingArea || null,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+const getShipperAvailableZones = async (req, res, next) => {
+  try {
+    const user = req.user;
+    const province = req.query.province || user?.operatingArea?.province || 'Hà Nội';
+
+    const MASTER_ZONES = {
+      'Hà Nội': [
+        {
+          id: 'z-han-01',
+          code: 'ZONE-HAN-HK',
+          name: 'Cụm Tuyến Hoàn Kiếm - Hà Nội',
+          province: 'Hà Nội',
+          district: 'Quận Hoàn Kiếm',
+          ward: 'Phường Hàng Bài',
+          subZones: ['Khu phố 1', 'Khu phố 2', 'Khu phố 3', 'Đường Tràng Tiền', 'Đường Đinh Tiên Hoàng'],
+          hubCode: 'HUB_HAN_01',
+        },
+        {
+          id: 'z-han-02',
+          code: 'ZONE-HAN-TX',
+          name: 'Cụm Tuyến Thanh Xuân - Hà Nội',
+          province: 'Hà Nội',
+          district: 'Quận Thanh Xuân',
+          ward: 'Phường Thanh Xuân Trung',
+          subZones: ['Khu phố 4', 'Khu phố 5', 'Khu phố 6', 'Đường Nguyễn Trãi', 'Đường Khuất Duy Tiến'],
+          hubCode: 'HUB_HAN_01',
+        },
+        {
+          id: 'z-han-03',
+          code: 'ZONE-HAN-CG',
+          name: 'Cụm Tuyến Cầu Giấy - Hà Nội',
+          province: 'Hà Nội',
+          district: 'Quận Cầu Giấy',
+          ward: 'Phường Dịch Vọng',
+          subZones: ['Khu phố 1', 'Khu phố 2', 'Khu phố 3', 'Đường Cầu Giấy', 'Đường Duy Tân'],
+          hubCode: 'HUB_HAN_01',
+        },
+      ],
+      'TP. Hồ Chí Minh': [
+        {
+          id: 'z-sgn-01',
+          code: 'ZONE-SGN-TB1',
+          name: 'Cụm Tuyến Phường 12 - Tân Bình',
+          province: 'TP. Hồ Chí Minh',
+          district: 'Quận Tân Bình',
+          ward: 'Phường 12',
+          subZones: ['Khu phố 1', 'Khu phố 2', 'Khu phố 3', 'Đường Hoàng Hoa Thám'],
+          hubCode: 'HUB_SGN_01',
+        },
+        {
+          id: 'z-sgn-02',
+          code: 'ZONE-SGN-TB2',
+          name: 'Cụm Tuyến Phường 13 - Tân Bình',
+          province: 'TP. Hồ Chí Minh',
+          district: 'Quận Tân Bình',
+          ward: 'Phường 13',
+          subZones: ['Khu phố 4', 'Khu phố 5', 'Đường Cộng Hòa'],
+          hubCode: 'HUB_SGN_01',
+        },
+        {
+          id: 'z-sgn-03',
+          code: 'ZONE-SGN-Q1',
+          name: 'Cụm Tuyến Trung Tâm Quận 1',
+          province: 'TP. Hồ Chí Minh',
+          district: 'Quận 1',
+          ward: 'Phường Bến Nghé',
+          subZones: ['Khu phố 1', 'Khu phố 2', 'Đường Lê Duẩn', 'Đường Nguyễn Huệ'],
+          hubCode: 'HUB_SGN_01',
+        },
+      ],
+      'Cần Thơ': [
+        {
+          id: 'z-vca-01',
+          code: 'ZONE-VCA-NK',
+          name: 'Cụm Tuyến Ninh Kiều - Cần Thơ',
+          province: 'Cần Thơ',
+          district: 'Quận Ninh Kiều',
+          ward: 'Phường Tân An',
+          subZones: ['Khu phố 1', 'Khu phố 2', 'Khu phố 3', 'Đường Hai Bà Trưng', 'Bến Ninh Kiều'],
+          hubCode: 'HUB_VCA_01',
+        },
+        {
+          id: 'z-vca-02',
+          code: 'ZONE-VCA-CR',
+          name: 'Cụm Tuyến Cái Răng - Cần Thơ',
+          province: 'Cần Thơ',
+          district: 'Quận Cái Răng',
+          ward: 'Phường Lê Bình',
+          subZones: ['Khu phố 1', 'Khu phố 2', 'Đường Quang Trung'],
+          hubCode: 'HUB_VCA_01',
+        },
+      ],
+      'Đà Nẵng': [
+        {
+          id: 'z-dad-01',
+          code: 'ZONE-DAD-HC',
+          name: 'Cụm Tuyến Hải Châu - Đà Nẵng',
+          province: 'Đà Nẵng',
+          district: 'Quận Hải Châu',
+          ward: 'Phường Hải Châu 1',
+          subZones: ['Khu phố 1', 'Khu phố 2', 'Đường Bạch Đằng', 'Đường Nguyễn Văn Linh'],
+          hubCode: 'HUB_DAD_01',
+        },
+      ],
+      'Hải Phòng': [
+        {
+          id: 'z-hph-01',
+          code: 'ZONE-HPH-HB',
+          name: 'Cụm Tuyến Hồng Bàng - Hải Phòng',
+          province: 'Hải Phòng',
+          district: 'Quận Hồng Bàng',
+          ward: 'Phường Hoàng Văn Thụ',
+          subZones: ['Khu phố 1', 'Khu phố 2', 'Đường Đinh Tiên Hoàng'],
+          hubCode: 'HUB_HPH_01',
+        },
+      ],
+    };
+
+    let matchedKey = Object.keys(MASTER_ZONES).find((k) =>
+      province.toLowerCase().includes(k.toLowerCase().replace(/^(tỉnh|thành phố|tp\.?)\s+/i, ''))
+    ) || 'Hà Nội';
+
+    const zones = MASTER_ZONES[matchedKey] || MASTER_ZONES['Hà Nội'];
+
+    const zonesWithCount = await Promise.all(
+      zones.map(async (z) => {
+        const provRegex = new RegExp(z.province.replace(/^(Tỉnh|Thành phố|TP\.?)\s+/i, '').trim(), 'i');
+        const activeOrders = await Order.countDocuments({
+          status: { $in: ['READY_TO_PICK', 'OUT_FOR_DELIVERY', 'DELIVERING'] },
+          $or: [
+            { 'pickupAddress.province': provRegex },
+            { 'deliveryAddress.province': provRegex },
+          ],
+        });
+        return {
+          ...z,
+          activeOrders: Math.max(activeOrders, 1),
+        };
+      })
+    );
+
+    return res.status(200).json({
+      success: true,
+      province: matchedKey,
+      data: zonesWithCount,
+      allProvinces: Object.keys(MASTER_ZONES),
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   getQuote,
   createOrder,
@@ -592,6 +840,9 @@ module.exports = {
   verifyPickupScanHandler,
   confirmPickupHandler,
   pickupFailedHandler,
-  approveOrderHandler
+  approveOrderHandler,
+  getShipperPickupTasks,
+  getShipperDeliveryTasks,
+  getShipperAvailableZones,
 };
 

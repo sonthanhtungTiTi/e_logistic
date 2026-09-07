@@ -231,29 +231,49 @@ async function syncAuditScan({
   const surplusCodes    = [...scannedCodes].filter(c => !snapshotSet.has(c));
   const matchedCount    = [...snapshotSet].filter(c => scannedCodes.has(c)).length;
 
-  // ── 4.1 LOẠI TRỪ HÀNG VỪA XUẤT KHO TRONG THỜI GIAN KIỂM KÊ ────────────────
+  // ── 4.1 LOẠI TRỪ HÀNG VỪA XUẤT KHO TRONG THỜI GIAN KIỂM KÊ (KIỂM TRA CHÉO SLA CHỐNG LỢI DỤNG) ──
   const genuinelyMissingCodes = [];
   const dispatchedOutboundCodes = [];
+  const suspectedLostInTransitCodes = [];
 
   for (const code of rawMissingCodes) {
-    const o = await Order.findOne({ trackingCode: code }, 'status currentTripId updatedAt goodsValue').lean();
+    const o = await Order.findOne({ trackingCode: code }, 'status currentTripId updatedAt goodsValue zoneTier estimatedDeliveryDays').lean();
     if (!o) continue;
 
-    // Nếu đơn đã chuyển sang trạng thái đang vận chuyển hoặc giao hàng
     const isDispatchedStatus = ['IN_TRANSIT', 'OUT_FOR_DELIVERY', 'DELIVERED'].includes(o.status);
     let isDispatchedTrip = false;
+    let isOverdueInTransit = false;
 
     if (o.currentTripId) {
-      const trip = await Trip.findById(o.currentTripId, 'status updatedAt').lean();
+      const trip = await Trip.findById(o.currentTripId, 'status updatedAt driverConfirmedAt estimatedTransitHours').lean();
       if (trip && ['CONFIRMED', 'DEPARTED', 'ARRIVED'].includes(trip.status)) {
         isDispatchedTrip = true;
+        // Kiểm tra thời gian trên đường
+        const departureTime = trip.driverConfirmedAt || trip.updatedAt || o.updatedAt;
+        if (departureTime && o.status === 'IN_TRANSIT') {
+          const transitDurationHours = (Date.now() - new Date(departureTime).getTime()) / 3600_000;
+          // SLA tối đa: 2.5x ETA hoặc 48 giờ
+          const maxAllowedHours = (trip.estimatedTransitHours ? trip.estimatedTransitHours * 2.5 : null) || (o.estimatedDeliveryDays ? o.estimatedDeliveryDays * 24 * 1.5 : 48);
+          if (transitDurationHours > maxAllowedHours) {
+            isOverdueInTransit = true;
+          }
+        }
+      }
+    } else if (o.status === 'IN_TRANSIT') {
+      // Đơn ở trạng thái IN_TRANSIT nhưng không gắn trip
+      const transitDurationHours = (Date.now() - new Date(o.updatedAt).getTime()) / 3600_000;
+      if (transitDurationHours > 48) {
+        isOverdueInTransit = true;
       }
     }
 
-    if (isDispatchedStatus || isDispatchedTrip) {
-      dispatchedOutboundCodes.push(code); // Hàng đã xuất kho hợp lệ -> Bỏ qua
+    if (isOverdueInTransit) {
+      suspectedLostInTransitCodes.push(code);
+      genuinelyMissingCodes.push(code); // Đưa vào diện thất thoát kiểm toán
+    } else if (isDispatchedStatus || isDispatchedTrip) {
+      dispatchedOutboundCodes.push(code); // Hàng đã xuất kho hợp lệ trong SLA -> Bỏ qua
     } else {
-      genuinelyMissingCodes.push(code);   // Hàng thiếu thực tế
+      genuinelyMissingCodes.push(code);   // Hàng thiếu thực tế tại kho
     }
   }
 

@@ -26,7 +26,9 @@ exports.reportDeliveryFailure = async (req, res) => {
       message: result.triggeredReturnProcess
         ? 'Đã đủ số lần giao thất bại, đơn hàng chuyển sang xử lý hoàn hàng.'
         : 'Đã ghi nhận giao thất bại, đơn hàng chuyển sang chờ giao lại.',
-      order: result.order
+      order: result.order,
+      triggeredReturnProcess: result.triggeredReturnProcess,
+      alreadyProcessed: false,
     });
   } catch (err) {
     if (err instanceof DeliveryFailureError) {

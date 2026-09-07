@@ -33,6 +33,15 @@ async function openBag({ sealCode, destinationHubId, maxCapacity = 30, maxWeight
     throw { status: 404, message: 'Bưu cục / Kho đích không tồn tại', code: 'DESTINATION_HUB_NOT_FOUND' };
   }
 
+  const numCapacity = Number(maxCapacity);
+  const numWeight = Number(maxWeightKg);
+  if (numCapacity <= 0 || isNaN(numCapacity)) {
+    throw { status: 400, message: 'Sức chứa tối đa (maxCapacity) phải là số nguyên dương lớn hơn 0', code: 'INVALID_CAPACITY' };
+  }
+  if (numWeight <= 0 || isNaN(numWeight)) {
+    throw { status: 400, message: 'Tải trọng tối đa (maxWeightKg) phải lớn hơn 0', code: 'INVALID_WEIGHT_LIMIT' };
+  }
+
   const bag = await Bag.create({
     sealCode: cleanSealCode,
     originHubId: currentHubId,
@@ -40,8 +49,8 @@ async function openBag({ sealCode, destinationHubId, maxCapacity = 30, maxWeight
     status: 'OPEN',
     trackingCodes: [],
     totalWeightKg: 0,
-    maxCapacity: Number(maxCapacity) || 30,
-    maxWeightKg: Number(maxWeightKg) || 25,
+    maxCapacity: numCapacity,
+    maxWeightKg: numWeight,
     notes: notes || null,
     createdBy: operator._id || operator.id,
   });
@@ -112,7 +121,23 @@ async function addItemToBag({ sealCode, trackingCode, operator }) {
     }
   }
 
-  // 5. ROUTE GUARD: Kiểm tra lộ trình đơn hàng có khớp với Hub đích của Bao tải không
+  // 4.1 POKA-YOKE: Chặn kiện hàng hư hỏng / ngoại lệ hoặc chưa nhập kho
+  if (order.status === 'EXCEPTION_INBOUND' || order.isFlagged) {
+    throw {
+      status: 400,
+      message: `🚨 POKA-YOKE: Kiện hàng [${cleanTrackingCode}] đang ở diện Ngoại lệ / Hư hại (${order.status}), đã bị khóa cách ly và KHÔNG được phép đóng bao luân chuyển!`,
+      code: 'ITEM_FLAGGED_EXCEPTION',
+    };
+  }
+  if (!['IN_HUB_ORIGIN', 'IN_SORTING_HUB'].includes(order.status)) {
+    throw {
+      status: 400,
+      message: `Kiện hàng [${cleanTrackingCode}] đang ở trạng thái [${order.status}], chưa hoàn tất nhập kho để đóng bao!`,
+      code: 'INVALID_ORDER_STATUS',
+    };
+  }
+
+  // 5. ROUTE GUARD: Kiểm tra lộ trình đơn hàng có khớp với Hub đích của Bao tải không (Next-hop Poka-yoke)
   const bagDestHub = await Hub.findById(bag.destinationHubId).lean();
   const orderDestHub = order.destinationHubId ? await Hub.findById(order.destinationHubId).lean() : null;
   const orderOrigHub = order.originHubId ? await Hub.findById(order.originHubId).lean() : null;
@@ -120,24 +145,29 @@ async function addItemToBag({ sealCode, trackingCode, operator }) {
   let isRouteValid = false;
 
   if (bagDestHub && orderDestHub) {
-    // Trường hợp 1: Trùng đúng Kho đích
-    if (bagDestHub._id.toString() === orderDestHub._id.toString()) {
+    const origCode = orderOrigHub ? orderOrigHub.code : 'HUB_HAN_01';
+    const destCode = orderDestHub.code;
+    const path = hubRoutingService.calculateRoutePath(origCode, destCode);
+
+    // Chỉ kiểm tra các Hub nằm SAU Hub hiện tại trên lộ trình
+    const currHub = await Hub.findById(currentHubId).lean();
+    const currCode = currHub ? currHub.code : origCode;
+    const currIndex = path.indexOf(currCode);
+    const downstreamHops = currIndex >= 0 ? path.slice(currIndex + 1) : path.filter(c => c !== currCode);
+
+    // Chặng kế tiếp (next-hop) trực tiếp từ Hub hiện tại
+    const directNextHop = downstreamHops.length > 0 ? downstreamHops[0] : null;
+
+    // Kiện hàng hợp lệ vào bao tải nếu:
+    // 1. Kho đích của bao tải chính là direct next-hop của kiện hàng
+    // 2. Hoặc bao tải đi thẳng đến kho đích cuối cùng (nếu đơn hàng đến đích ở chặng này)
+    // 3. Hoặc bao tải đi đến một Hub nằm trên cùng tuyến trục downstream hợp lệ
+    if (directNextHop && directNextHop === bagDestHub.code) {
       isRouteValid = true;
-    } else {
-      // Trường hợp 2: Bao tải chuyển đến Hub nằm trên hướng đi tiếp theo (downstream) của đơn
-      const origCode = orderOrigHub ? orderOrigHub.code : 'HUB_HAN_01';
-      const destCode = orderDestHub.code;
-      const path = hubRoutingService.calculateRoutePath(origCode, destCode);
-
-      // Chỉ kiểm tra các Hub nằm SAU Hub hiện tại trên lộ trình
-      const currHub = await Hub.findById(currentHubId).lean();
-      const currCode = currHub ? currHub.code : origCode;
-      const currIndex = path.indexOf(currCode);
-      const downstreamHops = currIndex >= 0 ? path.slice(currIndex + 1) : path;
-
-      if (downstreamHops.includes(bagDestHub.code)) {
-        isRouteValid = true;
-      }
+    } else if (bagDestHub._id.toString() === orderDestHub._id.toString() && (downstreamHops.length === 0 || directNextHop === bagDestHub.code)) {
+      isRouteValid = true;
+    } else if (downstreamHops.length > 0 && downstreamHops.includes(bagDestHub.code)) {
+      isRouteValid = true;
     }
   } else {
     isRouteValid = true; // Fallback nếu chưa cấu hình Hub
@@ -177,7 +207,7 @@ async function addItemToBag({ sealCode, trackingCode, operator }) {
         trackingCode: order.trackingCode,
         preStatus: order.status,
         postStatus: order.status,
-        actionType: 'BAG_SEALED',
+        actionType: 'ITEM_ADDED_TO_BAG', // BUG-05 fixed: was 'BAG_SEALED' — chỉ log thực sự là SEALED khi gọi sealBag()
         actionBy: operator._id || operator.id,
         hubId: currentHubId,
         note: `[Đóng bao] Đã gom vào bao tải ${cleanSealCode} (Đích: ${bagDestHub?.name})`,

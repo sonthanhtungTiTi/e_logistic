@@ -74,13 +74,32 @@ const requirePermission = (permission) => {
   };
 };
 
+// Role aliases mapping để chuẩn hóa RBAC xuyên suốt các module
+const ROLE_ALIASES = {
+  'SHIPPER': ['SHIPPER', 'LOCAL_SHIPPER', 'DRIVER'],
+  'LOCAL_SHIPPER': ['LOCAL_SHIPPER', 'SHIPPER', 'DRIVER'],
+  'DRIVER': ['DRIVER', 'LINE_HAUL_DRIVER', 'LOCAL_SHIPPER', 'SHIPPER'],
+  'LINE_HAUL_DRIVER': ['LINE_HAUL_DRIVER', 'DRIVER'],
+  'HUB_STAFF': ['HUB_STAFF', 'WAREHOUSE_STAFF'],
+  'WAREHOUSE_STAFF': ['WAREHOUSE_STAFF', 'HUB_STAFF'],
+  'CS': ['CS', 'CUSTOMER_SERVICE'],
+};
+
 // Middleware phân quyền theo Vai Trò (RBAC)
 const authorize = (...roles) => {
   return (req, res, next) => {
-    if (!req.user || !roles.includes(req.user.role)) {
-      return res.status(403).json({ message: `Quyền hạn '${req.user ? req.user.role : 'GUEST'}' không được phép truy cập tài nguyên này.` });
+    if (!req.user) {
+      return res.status(403).json({ message: 'Quyền hạn GUEST không được phép truy cập tài nguyên này.' });
     }
-    next();
+    const userRole = req.user.role;
+    if (userRole === 'ADMIN' || roles.includes(userRole)) {
+      return next();
+    }
+    const hasAlias = roles.some(r => ROLE_ALIASES[r] && ROLE_ALIASES[r].includes(userRole));
+    if (hasAlias) {
+      return next();
+    }
+    return res.status(403).json({ message: `Quyền hạn '${userRole}' không được phép truy cập tài nguyên này.` });
   };
 };
 
