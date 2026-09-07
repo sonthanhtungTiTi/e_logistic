@@ -56,6 +56,10 @@ const startServer = async () => {
     const { startAuditLostTimeoutJob } = require('./jobs/auditLostTimeout.job');
     startAuditLostTimeoutJob();
 
+    // Khởi động Reset Driver Rejection Quota Job (00:00 hàng ngày)
+    const { startResetDriverRejectionQuotaJob } = require('./jobs/resetDriverRejectionQuota.job');
+    startResetDriverRejectionQuotaJob();
+
     server.listen(PORT, () => {
       console.log(`🚀 E-Logistics Server & WebSocket Gateway running on http://localhost:${PORT}`);
     });

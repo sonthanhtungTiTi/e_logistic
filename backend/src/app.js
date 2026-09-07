@@ -23,6 +23,9 @@ app.use('/api/auth', require('./routes/auth.routes'));
 app.use('/api/orders', require('./routes/order.routes'));
 app.use('/api/admin', require('./routes/admin.routes')); // UC Quản lý người dùng
 app.use('/api/seller', require('./routes/seller.routes')); // Module Quản lý Seller Nâng cao (2FA, KYC, Sub-account, Multi-pickup)
+app.use('/api', require('./routes/orderManager.routes')); // Nghiệp vụ Duyệt đơn cho Seller & Order Manager
+app.use('/api/driver-manager', require('./routes/driverManager.routes')); // Nghiệp vụ Điều phối & Quản lý Tài xế cho Driver Manager
+app.use('/api/driver', require('./routes/driver.routes')); // Nghiệp vụ Từ chối đơn từ phía Tài xế
 app.use('/api/inbound', require('./routes/inbound.routes')); // UC-16 Nhập kho
 app.use('/api/trips', require('./routes/trips.routes'));          // UC-17: Tạo chuyến xe
 app.use('/api/outbound', require('./routes/outbound.routes'));    // UC-17: Xuất kho

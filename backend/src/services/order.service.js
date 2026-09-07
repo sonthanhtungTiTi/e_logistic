@@ -106,7 +106,7 @@ const orderService = {
       console.warn('[OrderService] Hub lookup warning:', hubErr.message);
     }
 
-    // ── THÊM MỚI BƯỚC 7: Tính toán routeNodes Đa Kho ──
+    // ── THÊM MỚI BƯỚC 7: Tính toán routeNodes Đa Kho & Phân loại routeType ──
     let routeNodes = [];
     try {
       if (data.pickupAddress?.province && data.deliveryAddress?.province) {
@@ -148,6 +148,7 @@ const orderService = {
       },
       sellerId
     );
+    let routeType = 'HUB_ROUTED';
 
     const newOrder = new Order({
       ...data,
@@ -164,6 +165,7 @@ const orderService = {
       riskViolationReason: approvalEval.reason,
       status: approvalEval.status,
       routeNodes,
+      routeType,
       currentRouteIndex: 0,
       volumetricWeight: calcFee.volumetricWeight || 0,
       chargeableWeight: calcFee.chargeableWeight || actualWeight,
@@ -198,8 +200,21 @@ const orderService = {
       throw err;
     }
 
-    if (!['DRAFT', 'CREATED', 'PENDING_VERIFICATION'].includes(order.status) && !isAdmin) {
-      const err = new Error(`Không thể chỉnh sửa đơn hàng đang ở trạng thái ${order.status}`);
+    let allowEdit = ['DRAFT', 'CREATED', 'PENDING_VERIFICATION'].includes(order.status);
+    if (!allowEdit && (order.status === 'PENDING_APPROVAL' || order.status === 'READY_TO_PICK')) {
+      const preparedTime = order.sellerPreparedAt || order.readyToPickAt || order.updatedAt;
+      const elapsedSecs = preparedTime ? Math.floor((Date.now() - new Date(preparedTime).getTime()) / 1000) : 9999;
+      if (elapsedSecs <= 300) {
+        allowEdit = true;
+      } else {
+        const err = new Error('Đã hết thời gian 5 phút cho phép chỉnh sửa thông tin đơn hàng.');
+        err.statusCode = 400;
+        throw err;
+      }
+    }
+
+    if (!allowEdit && !isAdmin) {
+      const err = new Error(`Không thể chỉnh sửa đơn hàng đang ở trạng thái ${order.status} (Đơn hàng đã được Admin phê duyệt hoặc đã hết hạn sửa).`);
       err.statusCode = 400;
       throw err;
     }
@@ -224,9 +239,9 @@ const orderService = {
       throw err;
     }
 
-    const unCancellable = ['DELIVERED', 'RETURNED', 'CANCELLED'];
-    if (unCancellable.includes(order.status)) {
-      const err = new Error(`Không thể hủy đơn hàng ở trạng thái ${order.status}`);
+    const unCancellable = ['APPROVED', 'ASSIGNED_TO_PICKUP', 'ASSIGNED_TO_PICKUP_AND_DELIVERY', 'PICKING', 'PICKED_UP', 'IN_TRANSIT', 'DELIVERED', 'RETURNED', 'CANCELLED'];
+    if (unCancellable.includes(order.status) && !isAdmin) {
+      const err = new Error(`Không thể hủy đơn hàng ở trạng thái ${order.status} (Đơn hàng đã được Admin phê duyệt hoặc đang được xử lý)`);
       err.statusCode = 400;
       throw err;
     }
@@ -276,7 +291,7 @@ const orderService = {
   /**
    * Tra cứu & Lọc danh sách đơn hàng cho Admin / Seller
    */
-  async searchSellerOrders(sellerId, isAdmin, query) {
+  async searchSellerOrders(sellerId, isAdmin, query, user) {
     const {
       search,
       status,
@@ -292,7 +307,11 @@ const orderService = {
     }
 
     if (status && status !== 'ALL') {
-      filter.status = status;
+      if (status.includes(',')) {
+        filter.status = { $in: status.split(',').map(s => s.trim()) };
+      } else {
+        filter.status = status;
+      }
     }
 
     if (riskFlag && riskFlag !== 'ANY') {
@@ -302,6 +321,18 @@ const orderService = {
     }
 
     const andConditions = [];
+
+    // Nếu người truy vấn là DRIVER hoặc SHIPPER, chỉ trả về các đơn được phân công cho họ
+    if (user && (user.role === 'DRIVER' || user.role === 'SHIPPER')) {
+      const driverId = user._id || user.id;
+      andConditions.push({
+        $or: [
+          { assignedDriverId: driverId },
+          { assignedShipperId: driverId },
+          { 'pickupAssignment.driverId': driverId }
+        ]
+      });
+    }
 
     if (hub && hub !== 'GLOBAL') {
       const hubOrConditions = [{ pickupHub: hub }, { deliveryHub: hub }];
@@ -468,7 +499,19 @@ const orderService = {
     }
 
     if (order.status === 'CREATED' || order.status === 'DRAFT' || order.status === 'PENDING_VERIFICATION') {
-      const err = new Error(`Không thể lấy hàng! Đơn hàng [${order.trackingCode}] mới ở trạng thái "${order.status}" (Chưa chuẩn bị xong). Yêu cầu Seller bấm "Chuẩn Bị Xong" (READY_TO_PICK) trước.`);
+      const err = new Error(`Không thể lấy hàng! Đơn hàng [${order.trackingCode}] mới ở trạng thái "${order.status}" (Chưa chuẩn bị xong hoặc chưa được duyệt).`);
+      err.statusCode = 400;
+      throw err;
+    }
+
+    if (order.status === 'PENDING_APPROVAL') {
+      const err = new Error(`Không thể lấy hàng! Đơn hàng [${order.trackingCode}] đang chờ Admin kiểm duyệt (PENDING_APPROVAL).`);
+      err.statusCode = 400;
+      throw err;
+    }
+
+    if (order.status === 'APPROVED') {
+      const err = new Error(`Không thể lấy hàng! Đơn hàng [${order.trackingCode}] đã được duyệt nhưng chưa được Admin phân công tài xế thu gom.`);
       err.statusCode = 400;
       throw err;
     }
@@ -479,7 +522,7 @@ const orderService = {
       throw err;
     }
 
-    const allowedStatuses = ['READY_TO_PICK', 'PICKING'];
+    const allowedStatuses = ['ASSIGNED_TO_PICKUP', 'ASSIGNED_TO_PICKUP_AND_DELIVERY', 'READY_TO_PICK', 'PICKING'];
     if (!allowedStatuses.includes(order.status)) {
       const err = new Error(`Đơn hàng [${order.trackingCode}] đang ở trạng thái "${order.status}", không hợp lệ để lấy hàng.`);
       err.statusCode = 400;
@@ -552,7 +595,19 @@ const orderService = {
     }
 
     if (order.status === 'CREATED' || order.status === 'DRAFT' || order.status === 'PENDING_VERIFICATION') {
-      const err = new Error(`Không thể lấy hàng! Đơn hàng [${order.trackingCode}] mới ở trạng thái "${order.status}" (Chưa chuẩn bị xong). Yêu cầu Seller bấm "Chuẩn Bị Xong" (READY_TO_PICK) trước.`);
+      const err = new Error(`Không thể lấy hàng! Đơn hàng [${order.trackingCode}] mới ở trạng thái "${order.status}" (Chưa chuẩn bị xong hoặc chưa được duyệt).`);
+      err.statusCode = 400;
+      throw err;
+    }
+
+    if (order.status === 'PENDING_APPROVAL') {
+      const err = new Error(`Không thể lấy hàng! Đơn hàng [${order.trackingCode}] đang chờ Admin kiểm duyệt (PENDING_APPROVAL).`);
+      err.statusCode = 400;
+      throw err;
+    }
+
+    if (order.status === 'APPROVED') {
+      const err = new Error(`Không thể lấy hàng! Đơn hàng [${order.trackingCode}] đã được duyệt nhưng chưa được Admin phân công tài xế thu gom.`);
       err.statusCode = 400;
       throw err;
     }
@@ -564,8 +619,8 @@ const orderService = {
     }
 
     // 2c. TC_UC12_12: Driver Assignment / Ownership Guard
-    const assignedDriver = order.assignedDriverId || order.assignedShipperId;
-    if (assignedDriver && user && (user.role === 'DRIVER' || user.role === 'SHIPPER') && assignedDriver.toString() !== user._id.toString()) {
+    const assignedDriver = order.assignedDriverId || order.assignedShipperId || order.pickupAssignment?.driverId;
+    if (assignedDriver && user && (user.role === 'DRIVER' || user.role === 'SHIPPER') && assignedDriver.toString() !== (user._id || user.id).toString()) {
       const err = new Error('Đơn hàng không nằm trong danh sách tuyến thu gom được gán cho bạn.');
       err.statusCode = 403;
       throw err;
@@ -586,8 +641,8 @@ const orderService = {
       throw err;
     }
 
-    // 5. Kiểm tra trạng thái đơn hợp lệ (Pre-condition: Đơn phải ở trạng thái READY_TO_PICK / PICKING)
-    const allowedStatuses = ['READY_TO_PICK', 'PICKING'];
+    // 5. Kiểm tra trạng thái đơn hợp lệ (Pre-condition: Đơn phải ở trạng thái ASSIGNED_TO_PICKUP / READY_TO_PICK / PICKING)
+    const allowedStatuses = ['ASSIGNED_TO_PICKUP', 'ASSIGNED_TO_PICKUP_AND_DELIVERY', 'READY_TO_PICK', 'PICKING'];
     if (!allowedStatuses.includes(order.status)) {
       const err = new Error(`Không thể lấy hàng! Đơn hàng [${order.trackingCode}] đang ở trạng thái "${order.status}", không hợp lệ để lấy hàng.`);
       err.statusCode = 400;

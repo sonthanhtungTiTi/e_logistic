@@ -3,6 +3,7 @@ import { ShieldCheck, Lock, Mail, ArrowRight, Loader2, Eye, EyeOff } from 'lucid
 import { useAdminAuth } from '../../hooks/useAdminAuth';
 import { useNavigate } from 'react-router';
 import { UserRole } from '../../types';
+import { ThemeToggleButton } from '../../components/common/ThemeToggleButton';
 
 export const AdminLoginPage: React.FC = () => {
   const [identifier, setIdentifier] = useState('');
@@ -78,7 +79,12 @@ export const AdminLoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#050811] flex items-center justify-center p-4 selection:bg-cyan-500 selection:text-white">
+    <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-4 selection:bg-cyan-500 selection:text-white relative">
+      {/* Nút chuyển chế độ Sáng / Tối nổi bật góc trên bên phải */}
+      <div className="fixed top-5 right-5 z-50">
+        <ThemeToggleButton showLabel />
+      </div>
+
       <div className="w-full max-w-md glass-panel p-8 rounded-3xl border border-cyan-500/30 shadow-2xl space-y-6">
         <div className="text-center space-y-2">
           <div className="w-14 h-14 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 mx-auto shadow-inner">

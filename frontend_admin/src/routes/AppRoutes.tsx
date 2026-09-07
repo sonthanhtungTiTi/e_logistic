@@ -22,6 +22,7 @@ import { UnauthorizedPage } from '@/pages/auth/UnauthorizedPage';
 import { OperationsDashboardPage } from '@/pages/dashboard/OperationsDashboardPage';
 import { GlobalOrderListPage } from '@/pages/orders/GlobalOrderListPage';
 import { RiskReviewPage } from '@/pages/orders/RiskReviewPage';
+import { OrderApprovalPage } from '@/pages/orders/OrderApprovalPage';
 import { UserManagementPage } from '@/pages/users/UserManagementPage';
 import { SecurityAuditPage } from '@/pages/security/SecurityAuditPage';
 import { SlaReportPage } from '@/pages/reports/SlaReportPage';
@@ -168,6 +169,10 @@ export const AppRoutes: React.FC = () => {
 
           <Route path="/admin/orders" element={<RoleBaseRoute allowedRoles={[...ORDER_LIST_ROLES]} />}>
             <Route index element={<GlobalOrderListPage />} />
+          </Route>
+
+          <Route path="/admin/orders/approval" element={<RoleBaseRoute allowedRoles={[UserRole.ADMIN, UserRole.OPERATIONS, UserRole.DISPATCHER]} />}>
+            <Route index element={<OrderApprovalPage />} />
           </Route>
 
           <Route path="/admin/orders/:id/review" element={<RoleBaseRoute allowedRoles={[...ADMIN_ROLES]} />}>

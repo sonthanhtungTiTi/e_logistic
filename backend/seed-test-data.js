@@ -11,12 +11,12 @@ mongoose.connect(process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://
   .catch(err => { console.error('❌ MongoDB error:', err); process.exit(1); });
 
 
-const User  = require('./src/models/user.model');
-const Hub   = require('./src/models/hub.model');
+const User = require('./src/models/user.model');
+const Hub = require('./src/models/hub.model');
 const Order = require('./src/models/order.model');
 let Trip;
 try { Trip = require('./src/models/trip.model'); }
-catch(e) { console.warn('⚠️  trip.model.js không tìm thấy:', e.message); }
+catch (e) { console.warn('⚠️  trip.model.js không tìm thấy:', e.message); }
 
 const ADDR = {
   fullName: 'Nguyễn Văn Test', phone: '0901234567',
@@ -49,19 +49,21 @@ async function main() {
   console.log('  → staff@test.local / coordinator@test.local / driver@test.local / admin@test.local (mật khẩu: Test@123456)');
 
   async function createOrder(trackingCode, status, overrides = {}) {
-    return Order.findOneAndUpdate({ trackingCode }, { $set: {
-      trackingCode, status, sellerId: sellerUser._id,
-      originHubId: hub._id, destinationHubId: hub._id, currentHubId: hub._id,
-      isFlagged: false, pickupAddress: ADDR, deliveryAddress: ADDR,
-      items: [{ name: 'Hàng test', quantity: 1, weight: 1.0 }],
-      dimensions: { length: 20, width: 15, height: 10 },
-      actualWeight: 1.0, volumetricWeight: 0.5, chargeableWeight: 1.0,
-      isCod: false, codAmount: 0, goodsValue: 100000,
-      baseFee: 25000, insuranceFee: 0, discountAmount: 0, shippingFee: 25000,
-      hubInboundAt: ['IN_HUB_ORIGIN','SEARCH_ZONE','SUSPECTED_LOST','SURPLUS'].includes(status)
-        ? new Date(Date.now() - 2 * 3600_000) : null,
-      ...overrides,
-    }}, { upsert: true, new: true });
+    return Order.findOneAndUpdate({ trackingCode }, {
+      $set: {
+        trackingCode, status, sellerId: sellerUser._id,
+        originHubId: hub._id, destinationHubId: hub._id, currentHubId: hub._id,
+        isFlagged: false, pickupAddress: ADDR, deliveryAddress: ADDR,
+        items: [{ name: 'Hàng test', quantity: 1, weight: 1.0 }],
+        dimensions: { length: 20, width: 15, height: 10 },
+        actualWeight: 1.0, volumetricWeight: 0.5, chargeableWeight: 1.0,
+        isCod: false, codAmount: 0, goodsValue: 100000,
+        baseFee: 25000, insuranceFee: 0, discountAmount: 0, shippingFee: 25000,
+        hubInboundAt: ['IN_HUB_ORIGIN', 'SEARCH_ZONE', 'SUSPECTED_LOST', 'SURPLUS'].includes(status)
+          ? new Date(Date.now() - 2 * 3600_000) : null,
+        ...overrides,
+      }
+    }, { upsert: true, new: true });
   }
 
   console.log('\n📦 UC-16 Inbound Orders...');
@@ -85,14 +87,16 @@ async function main() {
 
   if (Trip) {
     const tripCode = `TRIP-${Date.now()}-TEST`;
-    await Trip.findOneAndUpdate({ tripCode }, { $set: {
-      tripCode, tripType: 'LINE_HAUL', status: 'DRAFT',
-      originHubId: hub._id, destinationHubId: hub._id,
-      assignedDriverId: driverUser._id,
-      plannedTrackingCodes: ['TEST-OUTBOUND-001','TEST-OUTBOUND-002','TEST-OUTBOUND-003','TEST-OUTBOUND-004'],
-      scannedItems: [], shortageTrackingCodes: [],
-    }}, { upsert: true, new: true });
-    console.log(`\n🚌 TRIP CODE (ghi lại để dùng test UC-17): ${tripCode}`);
+    await Trip.findOneAndUpdate({ tripCode }, {
+      $set: {
+        tripCode, tripType: 'LINE_HAUL', status: 'DRAFT',
+        originHubId: hub._id, destinationHubId: hub._id,
+        assignedDriverId: driverUser._id,
+        plannedTrackingCodes: ['TEST-OUTBOUND-001', 'TEST-OUTBOUND-002', 'TEST-OUTBOUND-003', 'TEST-OUTBOUND-004'],
+        scannedItems: [], shortageTrackingCodes: [],
+      }
+    }, { upsert: true, new: true });
+    console.log(`\n🚌 TRIP CODE (ghi lại để dùng): ${tripCode}`);
   } else {
     console.warn('  ⚠️  Bỏ qua tạo Trip — trip.model.js không tồn tại');
   }

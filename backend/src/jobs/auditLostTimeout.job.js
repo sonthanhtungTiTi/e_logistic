@@ -33,7 +33,6 @@ async function runAuditLostCheck() {
         { returnDocument: 'after' }
       );
       if (!updated) continue;
-      console.log(`[AUDIT_LOST_JOB] 🔍 SEARCH_ZONE → SUSPECTED_LOST: ${o.trackingCode}`);
       setImmediate(async () => {
         try {
           await OrderLog.create({
@@ -61,7 +60,6 @@ async function runAuditLostCheck() {
         { returnDocument: 'after' }
       );
       if (!updated) continue;
-      console.log(`[AUDIT_LOST_JOB] ⚠️ SUSPECTED_LOST → LOST: ${o.trackingCode}`);
       setImmediate(async () => {
         try {
           await OrderLog.create({
@@ -77,7 +75,7 @@ async function runAuditLostCheck() {
     }
 
     if (toSuspect.length + toLost.length > 0) {
-      console.log(`[AUDIT_LOST_JOB] Chu kỳ xong: ${toSuspect.length} → SUSPECTED_LOST, ${toLost.length} → LOST`);
+      console.log(`[AUDIT_LOST_JOB] ✅ Xử lý xong: ${toSuspect.length} đơn → SUSPECTED_LOST, ${toLost.length} đơn → LOST`);
     }
   } catch (e) {
     console.error('[AUDIT_LOST_JOB_ERROR]', e.message);

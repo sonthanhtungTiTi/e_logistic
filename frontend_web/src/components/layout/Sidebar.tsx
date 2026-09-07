@@ -21,16 +21,22 @@ export const Sidebar: React.FC = () => {
   const { user, logout } = useAuth();
   const location = useLocation();
 
+  // Chỉ hiển thị Sidebar khi người dùng đã ĐĂNG NHẬP và không nằm ở các trang Auth
+  const isAuthRoute = location.pathname.startsWith('/auth');
+  if (!user || isAuthRoute) {
+    return null;
+  }
+
   const displayName = user?.companyName || user?.fullName || 'Công Ty Dược An Bình';
   const roleDisplay = user?.role || 'SELLER';
   const initialLetter = displayName.trim().charAt(0).toUpperCase() || 'U';
 
   return (
-    <aside className="hidden lg:flex flex-col w-64 xl:w-72 shrink-0 border-r border-slate-800/80 bg-[#090d16] h-[calc(100vh-5rem)] sticky top-20 z-30 p-4 space-y-5 overflow-y-auto text-xs select-none">
+    <aside className="hidden lg:flex flex-col w-64 xl:w-72 shrink-0 border-r border-slate-800/80 glass-panel h-[calc(100vh-5rem)] sticky top-20 z-30 p-4 space-y-5 overflow-y-auto text-xs select-none">
       
       {/* User Info Card */}
       {user ? (
-        <div className="p-3.5 rounded-2xl bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 border border-slate-800 space-y-3 shadow-xl">
+        <div className="p-3.5 rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-3">
           <div className="flex items-center gap-3">
             <div className="relative shrink-0">
               {user.avatarUrl ? (
@@ -40,36 +46,36 @@ export const Sidebar: React.FC = () => {
                   className="w-10 h-10 rounded-xl object-cover ring-2 ring-emerald-400/40"
                 />
               ) : (
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white font-black text-sm shadow-inner ring-2 ring-emerald-400/40">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white font-black text-sm ring-2 ring-emerald-400/40">
                   {initialLetter}
                 </div>
               )}
-              <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 border-2 border-slate-900 animate-pulse" />
+              <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 border-2 border-white dark:border-slate-900 animate-pulse" />
             </div>
 
             <div className="overflow-hidden min-w-0">
-              <div className="font-bold text-sm text-white truncate flex items-center gap-1">
+              <div className="font-bold text-sm text-slate-900 dark:text-white truncate flex items-center gap-1">
                 <span className="truncate">{displayName}</span>
-                <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
               </div>
-              <div className="text-[11px] text-slate-400 truncate">{user.email || 'seller@elogistic.vn'}</div>
+              <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate">{user.email || 'seller@elogistic.vn'}</div>
             </div>
           </div>
 
-          <div className="flex items-center justify-between pt-2 border-t border-slate-800/80 text-[10px]">
-            <span className="text-slate-400">Tài khoản:</span>
-            <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 font-extrabold border border-emerald-500/30 uppercase tracking-wider">
+          <div className="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-800 text-[10px]">
+            <span className="text-slate-500 dark:text-slate-400">Tài khoản:</span>
+            <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 font-extrabold border border-emerald-500/30 uppercase tracking-wider">
               {roleDisplay}
             </span>
           </div>
         </div>
       ) : (
-        <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 text-center space-y-2">
-          <p className="font-bold text-slate-300">Chào mừng đến với E-Logistic</p>
-          <p className="text-[11px] text-slate-400">Đăng nhập để trải nghiệm đầy đủ tính năng tạo đơn & quản lý bưu gửi.</p>
+        <div className="p-4 rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center space-y-2">
+          <p className="font-bold text-slate-800 dark:text-slate-300">Chào mừng đến với E-Logistic</p>
+          <p className="text-[11px] text-slate-500 dark:text-slate-400">Đăng nhập để trải nghiệm đầy đủ tính năng tạo đơn & quản lý bưu gửi.</p>
           <Link
             to="/auth/login"
-            className="block w-full py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-md transition"
+            className="block w-full py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition"
           >
             Đăng Nhập Ngay
           </Link>
@@ -78,20 +84,20 @@ export const Sidebar: React.FC = () => {
 
       {/* Main Order Actions Section */}
       <div className="space-y-1.5">
-        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 mb-2 flex items-center justify-between">
+        <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-2 mb-2 flex items-center justify-between">
           <span>Thao Tác Đơn Hàng</span>
-          <Sparkles className="w-3 h-3 text-cyan-400" />
+          <Sparkles className="w-3 h-3 text-cyan-600 dark:text-cyan-400" />
         </div>
 
         <Link
           to="/seller/orders/create"
-          className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-2xl font-bold transition shadow-lg ${
+          className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-2xl font-bold transition ${
             location.pathname === '/seller/orders/create'
-              ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-blue-600/30 ring-1 ring-cyan-400/40'
-              : 'bg-blue-600/10 hover:bg-blue-600/20 text-blue-300 border border-blue-500/30'
+              ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white ring-1 ring-cyan-400/40'
+              : 'bg-blue-500/10 hover:bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-500/30'
           }`}
         >
-          <PlusCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+          <PlusCircle className="w-4 h-4 text-emerald-500 dark:text-emerald-400 shrink-0" />
           <span className="truncate">Tạo Đơn Vận Chuyển Mới</span>
         </Link>
 
@@ -99,11 +105,11 @@ export const Sidebar: React.FC = () => {
           to="/seller/orders/batch"
           className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl font-bold transition ${
             location.pathname === '/seller/orders/batch'
-              ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-lg shadow-cyan-600/20 ring-1 ring-cyan-400/40'
-              : 'bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800'
+              ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white ring-1 ring-cyan-400/40'
+              : 'bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-800'
           }`}
         >
-          <FileSpreadsheet className="w-4 h-4 text-cyan-400 shrink-0" />
+          <FileSpreadsheet className="w-4 h-4 text-cyan-600 dark:text-cyan-400 shrink-0" />
           <span className="truncate">Đăng Đơn Excel Loạt</span>
         </Link>
 
@@ -111,18 +117,18 @@ export const Sidebar: React.FC = () => {
           to="/seller/orders"
           className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl font-semibold transition ${
             location.pathname === '/seller/orders'
-              ? 'bg-slate-800 text-white border border-slate-700'
-              : 'text-slate-300 hover:bg-slate-900 hover:text-white'
+              ? 'bg-blue-600/15 text-blue-700 dark:text-blue-300 border border-blue-500/30 font-bold'
+              : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-900 hover:text-slate-900 dark:hover:text-white'
           }`}
         >
-          <ListFilter className="w-4 h-4 text-purple-400 shrink-0" />
+          <ListFilter className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0" />
           <span className="truncate">Quản Lý Danh Sách Đơn</span>
         </Link>
       </div>
 
       {/* Finance & Management Section */}
-      <div className="space-y-1 pt-2 border-t border-slate-800/80">
-        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 mb-2">
+      <div className="space-y-1 pt-2 border-t border-slate-200 dark:border-slate-800/80">
+        <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-2 mb-2">
           Tài Chính & Hệ Thống
         </div>
 
@@ -130,11 +136,11 @@ export const Sidebar: React.FC = () => {
           to="/seller/dashboard"
           className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold transition ${
             location.pathname === '/seller/dashboard'
-              ? 'bg-blue-600/20 text-blue-300 border border-blue-500/30'
-              : 'text-slate-300 hover:bg-slate-900 hover:text-white'
+              ? 'bg-blue-600/15 text-blue-700 dark:text-blue-300 border border-blue-500/30 font-bold'
+              : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-900 hover:text-slate-900 dark:hover:text-white'
           }`}
         >
-          <LayoutDashboard className="w-4 h-4 text-cyan-400 shrink-0" />
+          <LayoutDashboard className="w-4 h-4 text-cyan-600 dark:text-cyan-400 shrink-0" />
           <span>Dashboard Kênh Seller</span>
         </Link>
 
@@ -142,11 +148,11 @@ export const Sidebar: React.FC = () => {
           to="/seller/wallet"
           className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold transition ${
             location.pathname === '/seller/wallet'
-              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-              : 'text-slate-300 hover:bg-slate-900 hover:text-white'
+              ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 font-bold'
+              : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-900 hover:text-slate-900 dark:hover:text-white'
           }`}
         >
-          <CreditCard className="w-4 h-4 text-amber-400 shrink-0" />
+          <CreditCard className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
           <span>Ví COD & Doanh Thu</span>
         </Link>
 
@@ -154,11 +160,11 @@ export const Sidebar: React.FC = () => {
           to="/seller/tickets"
           className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold transition ${
             location.pathname.startsWith('/seller/tickets')
-              ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
-              : 'text-slate-300 hover:bg-slate-900 hover:text-white'
+              ? 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30 font-bold'
+              : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-900 hover:text-slate-900 dark:hover:text-white'
           }`}
         >
-          <Ticket className="w-4 h-4 text-rose-400 shrink-0" />
+          <Ticket className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
           <span>Khiếu Nại & Hỗ Trợ Ticket</span>
         </Link>
 
@@ -166,11 +172,11 @@ export const Sidebar: React.FC = () => {
           to="/seller/profile"
           className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold transition ${
             location.pathname === '/seller/profile'
-              ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
-              : 'text-slate-300 hover:bg-slate-900 hover:text-white'
+              ? 'bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30 font-bold'
+              : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-900 hover:text-slate-900 dark:hover:text-white'
           }`}
         >
-          <User className="w-4 h-4 text-purple-400 shrink-0" />
+          <User className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0" />
           <span>Hồ Sơ Cá Nhân & Cài Đặt</span>
         </Link>
       </div>

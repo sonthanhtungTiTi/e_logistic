@@ -36,10 +36,10 @@ export const EditOrderModal: React.FC<EditOrderModalProps> = ({ order, onClose, 
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
   };
 
-  const readyTime = (order as any).readyToPickAt || order.updatedAt;
+  const readyTime = (order as any).sellerPreparedAt || (order as any).readyToPickAt || order.updatedAt;
   const elapsedSecs = readyTime ? Math.floor((Date.now() - new Date(readyTime).getTime()) / 1000) : 0;
-  const isWithin5MinWindow = order.status === 'READY_TO_PICK' && elapsedSecs < 300;
-  const isEditableStatus = ['CREATED', 'PENDING_VERIFICATION', 'PENDING'].includes(order.status) || isWithin5MinWindow;
+  const isWithin5MinWindow = (order.status === 'PENDING_APPROVAL' || order.status === 'READY_TO_PICK') && elapsedSecs < 300;
+  const isEditableStatus = ['CREATED', 'PENDING_VERIFICATION', 'PENDING', 'DRAFT'].includes(order.status) || isWithin5MinWindow;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

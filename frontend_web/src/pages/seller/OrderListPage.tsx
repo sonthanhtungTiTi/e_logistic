@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Package, Plus, Ban, Search, CheckCircle2, AlertCircle, Eye, Edit3, Filter, RefreshCw, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { Package, Plus, Ban, Search, CheckCircle2, AlertCircle, Eye, Edit3, Filter, RefreshCw, ChevronLeft, ChevronRight, Loader2, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import type { Order } from '../../types/order.types';
 import { CancelOrderModal } from '../../components/orders/CancelOrderModal';
@@ -23,6 +23,13 @@ export const OrderListPage: React.FC = () => {
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isBulkUpdating, setIsBulkUpdating] = useState<boolean>(false);
+  const [now, setNow] = useState<number>(Date.now());
+
+  // Timer để cập nhật đếm ngược thời gian thực cho phép sửa/hủy
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [dateError, setDateError] = useState<string | null>(null);
@@ -178,9 +185,9 @@ export const OrderListPage: React.FC = () => {
   const handleReadyToPick = async (order: Order) => {
     const code = order.trackingCode || order.trackingNumber;
     try {
-      const response = await orderApi.updateOrderStatus(order._id || (order as any).id, 'READY_TO_PICK');
-      if (response.data?.success) {
-        setToastMessage(`Đã xác nhận đơn hàng ${code} đóng gói xong (READY_TO_PICK)! Hệ thống đã tích hợp vào tuyến đường thu gom.`);
+      const response = await orderApi.markPrepared(order._id || (order as any).id);
+      if (response.data) {
+        setToastMessage(`Đã báo chuẩn bị xong đơn hàng ${code}! Đơn đã chuyển sang trạng thái "Chờ duyệt" (PENDING_APPROVAL) để Admin phê duyệt & phân công tài xế.`);
         fetchOrders();
         setTimeout(() => setToastMessage(null), 5000);
       }
@@ -192,7 +199,7 @@ export const OrderListPage: React.FC = () => {
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
       const selectableIds = orders
-        .filter((o) => ['CREATED', 'PENDING_VERIFICATION', 'PENDING'].includes(o.status))
+        .filter((o) => ['CREATED', 'PENDING_VERIFICATION', 'PENDING', 'DRAFT'].includes(o.status))
         .map((o) => o._id || (o as any).id)
         .filter(Boolean);
       setSelectedIds(selectableIds);
@@ -214,13 +221,13 @@ export const OrderListPage: React.FC = () => {
     try {
       for (const id of selectedIds) {
         try {
-          await orderApi.updateOrderStatus(id, 'READY_TO_PICK');
+          await orderApi.markPrepared(id);
           successCount++;
         } catch (err) {
-          console.error(`Lỗi chuyển trạng thái đơn ${id}:`, err);
+          console.error(`Lỗi báo chuẩn bị đơn ${id}:`, err);
         }
       }
-      setToastMessage(`🎉 Đã xác nhận đóng gói xong & chuyển ${successCount}/${selectedIds.length} đơn sang "SẴN SÀNG LẤY" (READY_TO_PICK)! Shippers đã có thể đến thu gom.`);
+      setToastMessage(`🎉 Đã báo chuẩn bị xong ${successCount}/${selectedIds.length} đơn hàng! Đơn đã chuyển sang "CHỜ DUYỆT" (PENDING_APPROVAL) để Admin phê duyệt & phân công tài xế.`);
       setSelectedIds([]);
       fetchOrders();
       setTimeout(() => setToastMessage(null), 5000);
@@ -231,7 +238,7 @@ export const OrderListPage: React.FC = () => {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
-      
+
       {/* Toast Notification */}
       {toastMessage && (
         <div className="p-4 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-bold flex items-center justify-between shadow-lg shadow-emerald-500/10">
@@ -284,7 +291,7 @@ export const OrderListPage: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-          
+
           {/* Keyword Search */}
           <div>
             <label className="block text-slate-400 font-semibold mb-1">Mã vận đơn / Người nhận / SĐT</label>
@@ -444,12 +451,43 @@ export const OrderListPage: React.FC = () => {
               orders.map((o) => {
                 const orderId = o._id || (o as any).id;
                 const isSelected = selectedIds.includes(orderId);
-                const isSelectable = ['CREATED', 'PENDING_VERIFICATION', 'PENDING'].includes(o.status);
-                const readyTime = (o as any).readyToPickAt || o.updatedAt;
-                const elapsedSecs = readyTime ? Math.floor((Date.now() - new Date(readyTime).getTime()) / 1000) : 0;
-                const isWithin5MinWindow = o.status === 'READY_TO_PICK' && elapsedSecs < 300;
+                const isSelectable = ['CREATED', 'PENDING_VERIFICATION', 'PENDING', 'DRAFT'].includes(o.status);
+                const readyTime = (o as any).sellerPreparedAt || (o as any).readyToPickAt || o.updatedAt;
+                const elapsedSecs = readyTime ? Math.floor((now - new Date(readyTime).getTime()) / 1000) : 9999;
+                const remainingSecs = Math.max(0, 300 - elapsedSecs);
+                const isWithin5MinWindow = (o.status === 'PENDING_APPROVAL' || o.status === 'READY_TO_PICK') && remainingSecs > 0;
                 const canEdit = isSelectable || isWithin5MinWindow;
                 const canCancel = isSelectable || isWithin5MinWindow;
+
+                const formatTimer = (secs: number) => {
+                  const m = Math.floor(secs / 60);
+                  const s = secs % 60;
+                  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+                };
+
+                const getStatusBadge = (status: string) => {
+                  switch (status) {
+                    case 'CANCELLED':
+                      return { bg: 'bg-rose-500/20 text-rose-400 border-rose-500/30', label: 'ĐÃ HỦY' };
+                    case 'CREATED':
+                      return { bg: 'bg-slate-500/20 text-slate-300 border-slate-500/30', label: 'MỚI TẠO' };
+                    case 'PENDING_APPROVAL':
+                      return { bg: 'bg-amber-500/20 text-amber-300 border-amber-500/30', label: 'CHỜ ADMIN DUYỆT' };
+                    case 'APPROVED':
+                      return { bg: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30', label: 'ĐÃ DUYỆT (CHỜ GÁN XE)' };
+                    case 'ASSIGNED_TO_PICKUP':
+                    case 'ASSIGNED_TO_PICKUP_AND_DELIVERY':
+                      return { bg: 'bg-purple-500/20 text-purple-300 border-purple-500/30', label: 'Đã phân tài xế gom hàng' };
+                    case 'READY_TO_PICK':
+                      return { bg: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30', label: 'SẴN SÀNG LẤY' };
+                    case 'DELIVERED':
+                      return { bg: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30', label: 'ĐÃ GIAO' };
+                    default:
+                      return { bg: 'bg-blue-500/20 text-blue-300 border-blue-500/30', label: status };
+                  }
+                };
+
+                const badge = getStatusBadge(o.status);
 
                 return (
                   <tr key={orderId || o.trackingCode} className={`transition ${isSelected ? 'bg-cyan-950/30 border-l-2 border-l-cyan-400' : 'hover:bg-slate-800/40'}`}>
@@ -459,10 +497,9 @@ export const OrderListPage: React.FC = () => {
                         checked={isSelected}
                         disabled={!isSelectable}
                         onChange={() => isSelectable && handleSelectOne(orderId)}
-                        title={isSelectable ? "Chọn đơn này để chuyển sang Sẵn Sàng Lấy Hàng" : `Đơn hàng ở trạng thái ${o.status}, không cần chọn đóng gói nữa`}
-                        className={`rounded border-slate-700 bg-slate-950 text-cyan-500 focus:ring-cyan-500 ${
-                          isSelectable ? 'cursor-pointer' : 'opacity-25 cursor-not-allowed'
-                        }`}
+                        title={isSelectable ? "Chọn đơn này để báo chuẩn bị xong gửi Admin duyệt" : `Đơn hàng ở trạng thái ${o.status}, không cần chọn đóng gói nữa`}
+                        className={`rounded border-slate-700 bg-slate-950 text-cyan-500 focus:ring-cyan-500 ${isSelectable ? 'cursor-pointer' : 'opacity-25 cursor-not-allowed'
+                          }`}
                       />
                     </td>
                     <td className="p-3.5 font-mono font-bold text-blue-400">
@@ -481,20 +518,24 @@ export const OrderListPage: React.FC = () => {
                     <td className="p-3.5 font-mono text-emerald-400">{formatCurrency(o.shippingFee || 0)}</td>
                     <td className="p-3.5 font-mono text-amber-400">{formatCurrency(o.codAmount || 0)}</td>
                     <td className="p-3.5">
-                      <span className={`px-2.5 py-1 rounded-full font-bold text-[10px] uppercase border inline-flex items-center gap-1 ${
-                        o.status === 'CANCELLED'
-                          ? 'bg-rose-500/20 text-rose-400 border-rose-500/30'
-                          : o.status === 'CREATED'
-                          ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
-                          : o.status === 'READY_TO_PICK'
-                          ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30'
-                          : o.status === 'DELIVERED'
-                          ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
-                          : 'bg-blue-500/20 text-blue-300 border-blue-500/30'
-                      }`}>
-                        {o.status === 'CANCELLED' && <Ban className="w-3 h-3" />}
-                        {o.status === 'CREATED' ? 'MỚI TẠO' : o.status === 'READY_TO_PICK' ? 'SẴN SÀNG LẤY' : o.status}
-                      </span>
+                      <div className="flex flex-col items-start gap-1">
+                        <span className={`px-2.5 py-1 rounded-full font-bold text-[10px] uppercase border inline-flex items-center gap-1 ${badge.bg}`}>
+                          {o.status === 'CANCELLED' && <Ban className="w-3 h-3" />}
+                          {badge.label}
+                        </span>
+
+                        {(o.status === 'PENDING_APPROVAL' || o.status === 'READY_TO_PICK') && (
+                          remainingSecs > 0 ? (
+                            <span className="text-[10px] font-mono font-bold text-amber-400 bg-amber-950/50 px-2 py-0.5 rounded-lg border border-amber-500/30 flex items-center gap-1 animate-pulse">
+                              <Clock className="w-3 h-3 text-amber-400" /> Sửa trong: {formatTimer(remainingSecs)}
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-mono text-slate-500 px-1 py-0.5">
+                              (Khóa sửa / Hết hạn)
+                            </span>
+                          )
+                        )}
+                      </div>
                     </td>
                     <td className="p-3.5 text-right">
                       <div className="flex items-center justify-end gap-2">
@@ -506,13 +547,13 @@ export const OrderListPage: React.FC = () => {
                           <Eye className="w-3.5 h-3.5" /> Chi Tiết
                         </button>
 
-                        {(o.status === 'CREATED' || o.status === 'PENDING_VERIFICATION' || o.status === 'PENDING') && (
+                        {(o.status === 'CREATED' || o.status === 'PENDING_VERIFICATION' || o.status === 'PENDING' || o.status === 'DRAFT') && (
                           <button
                             onClick={() => handleReadyToPick(o)}
                             className="px-2.5 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-[11px] font-bold flex items-center gap-1 cursor-pointer transition"
-                            title="Xác nhận đã đóng gói xong, sẵn sàng chờ bưu tá thu gom"
+                            title="Xác nhận đã đóng gói xong để gửi Admin kiểm duyệt và điều phối tài xế"
                           >
-                            <CheckCircle2 className="w-3.5 h-3.5 text-cyan-400" /> Chuẩn Bị Xong
+                            <CheckCircle2 className="w-3.5 h-3.5 text-cyan-400" /> Báo Chuẩn Bị Xong
                           </button>
                         )}
 
@@ -520,7 +561,7 @@ export const OrderListPage: React.FC = () => {
                           <button
                             onClick={() => setSelectedOrderToEdit(o)}
                             className="px-2.5 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[11px] font-bold flex items-center gap-1 cursor-pointer transition"
-                            title="Chỉnh sửa thông tin đơn hàng"
+                            title={isWithin5MinWindow ? `Chỉnh sửa thông tin đơn hàng (Còn ${formatTimer(remainingSecs)})` : "Chỉnh sửa thông tin đơn hàng"}
                           >
                             <Edit3 className="w-3.5 h-3.5" /> Sửa
                           </button>
@@ -530,7 +571,7 @@ export const OrderListPage: React.FC = () => {
                           <button
                             onClick={() => setSelectedOrderToCancel(o)}
                             className="px-2.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 text-[11px] font-bold flex items-center gap-1 cursor-pointer transition"
-                            title="Hủy đơn vận này"
+                            title={isWithin5MinWindow ? `Hủy đơn vận này (Còn ${formatTimer(remainingSecs)})` : "Hủy đơn vận này"}
                           >
                             <Ban className="w-3.5 h-3.5" /> Hủy
                           </button>

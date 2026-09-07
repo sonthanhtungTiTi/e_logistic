@@ -189,7 +189,7 @@ const searchOrders = async (req, res, next) => {
     const sellerId = req.effectiveSellerId || req.user._id;
     const isAdmin = req.user.role !== 'SELLER';
 
-    const searchResult = await orderService.searchSellerOrders(sellerId, isAdmin, req.query);
+    const searchResult = await orderService.searchSellerOrders(sellerId, isAdmin, req.query, req.user);
 
     return res.status(200).json({
       success: true,
