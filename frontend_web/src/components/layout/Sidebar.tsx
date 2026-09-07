@@ -9,7 +9,6 @@ import {
   Ticket,
   User,
   LogOut,
-  ShieldCheck,
   LayoutDashboard,
   ChevronRight,
   Sparkles,
@@ -27,61 +26,8 @@ export const Sidebar: React.FC = () => {
     return null;
   }
 
-  const displayName = user?.companyName || user?.fullName || 'Công Ty Dược An Bình';
-  const roleDisplay = user?.role || 'SELLER';
-  const initialLetter = displayName.trim().charAt(0).toUpperCase() || 'U';
-
   return (
     <aside className="hidden lg:flex flex-col w-64 xl:w-72 shrink-0 border-r border-slate-800/80 glass-panel h-[calc(100vh-5rem)] sticky top-20 z-30 p-4 space-y-5 overflow-y-auto text-xs select-none">
-      
-      {/* User Info Card */}
-      {user ? (
-        <div className="p-3.5 rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-3">
-          <div className="flex items-center gap-3">
-            <div className="relative shrink-0">
-              {user.avatarUrl ? (
-                <img
-                  src={user.avatarUrl}
-                  alt={displayName}
-                  className="w-10 h-10 rounded-xl object-cover ring-2 ring-emerald-400/40"
-                />
-              ) : (
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white font-black text-sm ring-2 ring-emerald-400/40">
-                  {initialLetter}
-                </div>
-              )}
-              <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 border-2 border-white dark:border-slate-900 animate-pulse" />
-            </div>
-
-            <div className="overflow-hidden min-w-0">
-              <div className="font-bold text-sm text-slate-900 dark:text-white truncate flex items-center gap-1">
-                <span className="truncate">{displayName}</span>
-                <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-              </div>
-              <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate">{user.email || 'seller@elogistic.vn'}</div>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-800 text-[10px]">
-            <span className="text-slate-500 dark:text-slate-400">Tài khoản:</span>
-            <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 font-extrabold border border-emerald-500/30 uppercase tracking-wider">
-              {roleDisplay}
-            </span>
-          </div>
-        </div>
-      ) : (
-        <div className="p-4 rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center space-y-2">
-          <p className="font-bold text-slate-800 dark:text-slate-300">Chào mừng đến với E-Logistic</p>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400">Đăng nhập để trải nghiệm đầy đủ tính năng tạo đơn & quản lý bưu gửi.</p>
-          <Link
-            to="/auth/login"
-            className="block w-full py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition"
-          >
-            Đăng Nhập Ngay
-          </Link>
-        </div>
-      )}
-
       {/* Main Order Actions Section */}
       <div className="space-y-1.5">
         <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-2 mb-2 flex items-center justify-between">
