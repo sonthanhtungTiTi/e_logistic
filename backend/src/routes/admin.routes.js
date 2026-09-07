@@ -40,4 +40,11 @@ router.patch('/users/:id/status', setUserStatus);
 // PATCH /api/admin/kyc/review/:docId
 router.patch('/kyc/review/:docId', reviewKycDocument);
 
+const shipperZoneController = require('../controllers/shipperZone.controller');
+// Admin xem, duyệt, từ chối hoặc gán trực tiếp khu vực hoạt động cho Shipper
+router.get('/zone-change-requests', shipperZoneController.getZoneChangeRequests);
+router.post('/zone-change-requests/:id/approve', shipperZoneController.approveZoneChangeRequest);
+router.post('/zone-change-requests/:id/reject', shipperZoneController.rejectZoneChangeRequest);
+router.put('/users/:id/assign-zone', shipperZoneController.adminAssignZone);
+
 module.exports = router;

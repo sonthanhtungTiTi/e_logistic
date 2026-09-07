@@ -34,9 +34,15 @@ const orderLogSchema = new mongoose.Schema(
         'PICKUP_FAILED',
         'INBOUND_SCAN',
         'OUTBOUND_SCAN',
-        'BAG_SEALED',
+        'ITEM_ADDED_TO_BAG',     // BUG-05 fix: log đúng khi thêm kiện vào bao
+        'BAG_SEALED',            // Legacy — giữ lại tương thích ngược với DB cũ
+        'BAG_SEALED_CONFIRMED',  // Tên chuẩn cho sự kiện niêm phong bao thật sự
         'DRIVER_CONFIRMED',
         'DRIVER_REJECTED',
+        'FEE_ADJUSTMENT_TRIGGERED',
+        'DELIVERY_SUCCESS',
+        'DELIVERY_FAILED',
+        'RETURNED',
         'AUDIT_SESSION_STARTED',
         'AUDIT_SCAN',
         'AUDIT_SESSION_SUBMITTED',

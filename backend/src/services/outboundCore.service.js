@@ -26,7 +26,7 @@ async function processOutboundScan({ tripCode, trackingCode, operator, clientOff
   // ─ Lấy Trip ─────────────────────────────────────────────────────────────────
   const trip = await Trip.findOne({ tripCode: (tripCode || '').toUpperCase() });
   if (!trip) throw { status: 404, message: `Chuyến xe ${tripCode} không tồn tại`, code: 'TRIP_NOT_FOUND' };
-  if (!['DRAFT','REJECTED'].includes(trip.status)) {
+  if (!['DRAFT', 'PLANNING', 'REJECTED'].includes(trip.status)) {
     throw { status: 409, message: `Chuyến xe đang ở trạng thái [${trip.status}], không thể quét thêm`, code: 'TRIP_NOT_EDITABLE' };
   }
 
@@ -95,7 +95,7 @@ async function commitTrip({ tripCode, isShortage, operator }) {
 
   const trip = await Trip.findOne({ tripCode: (tripCode || '').toUpperCase() });
   if (!trip) throw { status: 404, message: `Chuyến xe ${tripCode} không tồn tại`, code: 'TRIP_NOT_FOUND' };
-  if (trip.status !== 'DRAFT') {
+  if (!['DRAFT', 'PLANNING'].includes(trip.status)) {
     throw { status: 409, message: `Chuyến xe đang ở trạng thái [${trip.status}], không thể commit`, code: 'TRIP_NOT_EDITABLE' };
   }
 
@@ -138,7 +138,7 @@ async function commitTrip({ tripCode, isShortage, operator }) {
 
   // Commit Trip
   const updatedTrip = await Trip.findOneAndUpdate(
-    { _id: trip._id, status: 'DRAFT' }, // OCC
+    { _id: trip._id, status: { $in: ['DRAFT', 'PLANNING'] } }, // OCC
     {
       $set: { status: 'LOCKED_PENDING_DRIVER_CONFIRM', lockedAt: new Date() },
       ...(isShortage && shortageCodes.length ? { $push: { shortageTrackingCodes: { $each: shortageCodes } } } : {}),
@@ -173,10 +173,60 @@ async function processDriverConfirm({ tripCode, action, rejectReason, operator }
       { _id: trip._id, status: 'LOCKED_PENDING_DRIVER_CONFIRM' },
       { $set: { status: 'REJECTED', rejectReason: rejectReason || '', driverRejectedAt: new Date() } }
     );
+
+    // Rollback: Gỡ currentTripId và đảm bảo các đơn hàng đã quét quay lại trạng thái staging an toàn
+    const scannedCodes = trip.scannedItems.map(i => i.trackingCode.toUpperCase());
+    if (scannedCodes.length > 0) {
+      await Order.updateMany(
+        { trackingCode: { $in: scannedCodes } },
+        { $set: { currentTripId: null, updatedAt: new Date() } }
+      );
+    }
+
+    // Rollback các đơn hàng bị đánh dấu SEARCH_ZONE do shortage trong chuyến này
+    if (trip.shortageTrackingCodes && trip.shortageTrackingCodes.length > 0) {
+      for (const shortCode of trip.shortageTrackingCodes) {
+        const orderShort = await Order.findOne({ trackingCode: shortCode.toUpperCase() });
+        if (orderShort && orderShort.status === 'SEARCH_ZONE') {
+          // BUG-03 review: Logic đúng — tên biến gây hiểu nhầm nhưng intent chính xác:
+          // trip.originHubId = Hub nơi chuyến xe XuẤT PHÁT.
+          // isOrigin: Hub xuất phát là Hub GỐC của đơn → rollback về IN_HUB_ORIGIN (chờ gom bao đi tiếp)
+          // isDest:   Hub xuất phát là Hub ĐÍCH của đơn → đây là LAST_MILE_DELIVERY trip → rollback về IN_HUB_DEST
+          const isOrigin = !!(orderShort.originHubId && orderShort.originHubId.toString() === trip.originHubId?.toString());
+          const isDest   = !!(orderShort.destinationHubId && orderShort.destinationHubId.toString() === trip.originHubId?.toString());
+          const rollbackStatus = isDest ? 'IN_HUB_DEST' : isOrigin ? 'IN_HUB_ORIGIN' : 'IN_SORTING_HUB';
+
+          await Order.updateOne(
+            { _id: orderShort._id },
+            { $set: { status: rollbackStatus, currentTripId: null, searchZoneEnteredAt: null, updatedAt: new Date() } }
+          );
+        }
+      }
+    }
+
+    // Async log khi REJECT
+    setImmediate(async () => {
+      try {
+        for (const item of trip.scannedItems) {
+          const o = await Order.findOne({ trackingCode: item.trackingCode }).lean();
+          if (!o) continue;
+          await OrderLog.create({
+            orderId: o._id, trackingCode: o.trackingCode,
+            preStatus: o.status, postStatus: o.status,
+            actionType: 'DRIVER_REJECTED',
+            actionBy: operator._id || operator.id,
+            note: `Tài xế từ chối nhận chuyến xe ${trip.tripCode}: ${rejectReason || 'Không có lý do'}`,
+            metadata: { tripCode: trip.tripCode, rejectReason },
+          });
+        }
+      } catch (e) { console.error('[DRIVER_REJECT_LOG_ERROR]', e.message); }
+    });
+
     return {
       trip_code: trip.tripCode, tripCode: trip.tripCode,
       action: 'REJECT', status: 'REJECTED',
       reject_reason: rejectReason || '', rejectReason: rejectReason || '',
+      message: `Tài xế đã từ chối chuyến xe [${trip.tripCode}], toàn bộ kiện hàng đã được rollback về khu vực chờ.`
     };
   }
 
@@ -191,8 +241,11 @@ async function processDriverConfirm({ tripCode, action, rejectReason, operator }
     const atomicSet = { status: newOrderStatus, currentTripId: trip._id, updatedAt: new Date() };
 
     // ── THÊM MỚI BƯỚC 9: Cập nhật node status = DEPARTED ──
-    if (o.routeNodes && o.routeNodes.length > 0) {
-      let nodeIdxToUpdate = o.currentRouteIndex > 0 ? o.currentRouteIndex - 1 : 0;
+    // BUG-02 fixed: Chỉ đánh dấu DEPARTED khi currentRouteIndex > 0 (nghĩa là đơn đã có ít nhất
+    // 1 lần inbound scan và đã ARRIVED tại node trước đó). Nếu index = 0 thì chưa có node nào
+    // hoàn tất ARRIVED → không đánh dấu để tránh corrupt route timeline.
+    if (o.routeNodes && o.routeNodes.length > 0 && o.currentRouteIndex > 0) {
+      const nodeIdxToUpdate = o.currentRouteIndex - 1;
       if (o.routeNodes[nodeIdxToUpdate]) {
         atomicSet[`routeNodes.${nodeIdxToUpdate}.status`] = 'DEPARTED';
         atomicSet[`routeNodes.${nodeIdxToUpdate}.departedAt`] = new Date();

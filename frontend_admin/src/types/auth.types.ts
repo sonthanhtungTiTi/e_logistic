@@ -3,8 +3,13 @@ export const UserRole = {
   HUB_STAFF: 'HUB_STAFF',
   WAREHOUSE_STAFF: 'WAREHOUSE_STAFF',
   HUB_COORDINATOR: 'HUB_COORDINATOR',
-  DRIVER: 'DRIVER',
-  LINE_HAUL_DRIVER: 'LINE_HAUL_DRIVER',
+  SHIPPER: 'SHIPPER', // Shipper giao nhận nội thành
+  LOCAL_SHIPPER: 'LOCAL_SHIPPER', // Shipper giao nhận nội thành (alias)
+  DRIVER: 'DRIVER', // Tài xế vận chuyển / tương thích ngược
+  LINE_HAUL_DRIVER: 'LINE_HAUL_DRIVER', // Tài xế xe tải liên tỉnh
+  ORDER_VENDOR_MANAGER: 'ORDER_VENDOR_MANAGER', // Quản lý Duyệt đơn & Nhà cung cấp
+  LAST_MILE_DISPATCHER: 'LAST_MILE_DISPATCHER', // Quản lý Điều phối Shipper nội vùng
+  LINE_HAUL_DISPATCHER: 'LINE_HAUL_DISPATCHER', // Quản lý Điều phối Đội xe tải
   ACCOUNTANT: 'ACCOUNTANT',
   CS: 'CS',
   CUSTOMER_SERVICE: 'CUSTOMER_SERVICE',
@@ -31,6 +36,8 @@ export interface AuthUser {
   hubId?: string;
   hub_name?: string;
   avatarUrl?: string;
+  vehicleInfo?: { licensePlate?: string; vehicleType?: string };
+  activeGeozoneId?: string;
 }
 
 export interface AdminUser extends AuthUser {

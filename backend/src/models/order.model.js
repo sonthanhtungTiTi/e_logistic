@@ -42,6 +42,8 @@ const orderSchema = new mongoose.Schema(
         'ASSIGNED_TO_PICKUP_AND_DELIVERY',
         'ASSIGNED_TO_PICKUP',
         'PENDING_VERIFICATION',
+        'SUSPENDED_RISK_REVIEW', // Đơn bị đình chỉ do vi phạm/gian lận
+        'DISPATCH_ESCALATED', // Đơn cạn kiệt shipper/quá hạn retry cần Dispatcher can thiệp
         'READY_TO_PICK',
         'PICKING',
         'PICKED',
@@ -148,12 +150,66 @@ const orderSchema = new mongoose.Schema(
     isFlagged: { type: Boolean, default: false },
     pickupFailReason: { type: String, default: null },
     pickupFailNote: { type: String, default: null },
-    // Liên kết với Seller & Tài xế được gán
+    // Liên kết với Seller & Shipper / Bao hàng / Chuyến xe
     sellerId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,
+      index: true,
     },
+    pickupShipperId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+      index: true,
+    },
+    deliveryShipperId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+      index: true,
+    },
+    pickupGeozoneId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Geozone',
+      default: null,
+      index: true,
+    },
+    deliveryGeozoneId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Geozone',
+      default: null,
+      index: true,
+    },
+    bagId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Bag',
+      default: null,
+      index: true,
+    },
+    currentTripId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Trip',
+      default: null,
+      index: true,
+    },
+    autoApproved: {
+      type: Boolean,
+      default: false,
+    },
+    riskFlags: {
+      type: [String],
+      default: [],
+    },
+    riskViolationReason: {
+      type: String,
+      default: null,
+    },
+    dispatchRetryCount: {
+      type: Number,
+      default: 0,
+    },
+    // Giữ trường cũ để tương thích ngược
     assignedDriverId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
@@ -169,6 +225,7 @@ const orderSchema = new mongoose.Schema(
       fullName: { type: String, required: true },
       phone: { type: String, required: true },
       address: { type: String, required: true },
+      subZone: { type: String, default: '' }, // Khu phố / Tuyến đường
       ward: { type: String, required: true },
       district: { type: String, required: true },
       province: { type: String, required: true },
@@ -182,6 +239,7 @@ const orderSchema = new mongoose.Schema(
       fullName: { type: String, required: true },
       phone: { type: String, required: true },
       address: { type: String, required: true },
+      subZone: { type: String, default: '' }, // Khu phố / Tuyến đường
       ward: { type: String, required: true },
       district: { type: String, required: true },
       province: { type: String, required: true },
@@ -279,11 +337,19 @@ const orderSchema = new mongoose.Schema(
     // Thông tin mốc thời gian chuẩn bị hàng
     readyToPickAt: { type: Date, default: null },
 
-    // Thông tin hủy đơn
+    // Thông tin hủy đơn & Từ chối
     cancelReason: { type: String, default: null },
     cancelNote: { type: String, default: null },
     cancelledBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     cancelledAt: { type: Date, default: null },
+    rejectedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+    rejectedAt: { type: Date, default: null },
+    rejectionReason: { type: String, default: null },
+
+    // Thông tin phê duyệt thủ công của Admin / Vendor Ops
+    approvedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+    approvedAt: { type: Date, default: null },
+    approvalNote: { type: String, default: null },
 
     // Bưu cục hiện tại & Tài xế & Live Tracking & POD Image
     currentHubId: { type: mongoose.Schema.Types.ObjectId, ref: 'Hub', default: null },
@@ -318,8 +384,7 @@ const orderSchema = new mongoose.Schema(
     hubInboundAt: { type: Date, default: null },
     hubMeasuredWeight: { type: Number, default: null },
     weightDiscrepancyGram: { type: Number, default: null },
-    // UC-17: Trip/Outbound
-    currentTripId: { type: mongoose.Schema.Types.ObjectId, ref: 'Trip', default: null },
+    // UC-17: Trip/Outbound — currentTripId được khai báo tại trường chính ở trên (có index:true). Không khai báo lại ở đây.
     // UC-18: Kiểm kê kho
     searchZoneEnteredAt: { type: Date, default: null },
     lostSearchDeadlineAt: { type: Date, default: null },

@@ -7,14 +7,14 @@ const deliveryFailureController = require('../controllers/deliveryFailure.contro
 router.post(
   '/orders/:orderId/delivery-failure',
   protect,
-  authorize('DRIVER', 'SHIPPER', 'ADMIN', 'STAFF', 'HUB_STAFF'),
+  authorize('DRIVER', 'SHIPPER', 'LOCAL_SHIPPER', 'ADMIN', 'STAFF', 'HUB_STAFF'),
   deliveryFailureController.reportDeliveryFailure
 );
 
 router.post(
   '/delivery-failure/sync-offline',
   protect,
-  authorize('DRIVER', 'SHIPPER', 'ADMIN', 'STAFF', 'HUB_STAFF'),
+  authorize('DRIVER', 'SHIPPER', 'LOCAL_SHIPPER', 'ADMIN', 'STAFF', 'HUB_STAFF'),
   deliveryFailureController.syncOfflineFailureReports
 );
 

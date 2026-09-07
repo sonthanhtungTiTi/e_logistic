@@ -20,6 +20,7 @@ import {
   RotateCcw,
   Wallet,
   Zap,
+  Ruler,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { orderApi } from '../../api/order.api';
@@ -39,25 +40,76 @@ interface ProductItem {
   imageUrl?: string;
 }
 
+// Danh mục đơn vị hành chính sau sáp nhập tại các tỉnh thành trọng điểm
+const VIETNAM_ADMIN_UNITS: {
+  [province: string]: {
+    [district: string]: string[];
+  };
+} = {
+  'Hà Nội': {
+    'Quận Hoàn Kiếm': ['Phường Hàng Bài', 'Phường Tràng Tiền', 'Phường Cửa Nam', 'Phường Hàng Trống'],
+    'Quận Thanh Xuân': ['Phường Thanh Xuân Trung', 'Phường Nhân Chính', 'Phường Khương Đình', 'Phường Khương Mai'],
+    'Quận Cầu Giấy': ['Phường Dịch Vọng', 'Phường Nghĩa Tân', 'Phường Mai Dịch', 'Phường Quan Hoa'],
+    'Quận Ba Đình': ['Phường Điện Biên', 'Phường Đội Cấn', 'Phường Kim Mã', 'Phường Liễu Giai'],
+    'Quận Đống Đa': ['Phường Láng Thượng', 'Phường Ô Chợ Dừa', 'Phường Kim Liên'],
+    'Quận Hai Bà Trưng': ['Phường Bạch Đằng', 'Phường Bách Khoa', 'Phường Minh Khai'],
+  },
+  'TP Hồ Chí Minh': {
+    'Quận Tân Bình': ['Phường 12', 'Phường 13', 'Phường 4', 'Phường 2', 'Phường 15'],
+    'Quận 1': ['Phường Bến Nghé', 'Phường Bến Thành', 'Phường Cầu Kho', 'Phường Đa Kao'],
+    'Quận 5': ['Phường 1', 'Phường 2', 'Phường 5', 'Phường 7', 'Phường 11'],
+    'Quận 3': ['Phường Võ Thị Sáu', 'Phường 1', 'Phường 2', 'Phường 3'],
+    'Quận 7': ['Phường Tân Phong', 'Phường Tân Phú', 'Phường Phú Mỹ'],
+    'Thành phố Thủ Đức': ['Phường Thảo Điền', 'Phường An Phú', 'Phường Hiệp Phú', 'Phường Linh Trung'],
+  },
+  'Cần Thơ': {
+    'Quận Ninh Kiều': ['Phường Tân An', 'Phường An Lạc', 'Phường An Hội', 'Phường Xuân Khánh'],
+    'Quận Cái Răng': ['Phường Lê Bình', 'Phường Hưng Phú', 'Phường Hưng Thạnh'],
+    'Quận Bình Thủy': ['Phường Bình Thủy', 'Phường An Thới', 'Phường Trà Nóc'],
+  },
+  'Đà Nẵng': {
+    'Quận Hải Châu': ['Phường Hải Châu 1', 'Phường Hải Châu 2', 'Phường Thạch Thang'],
+    'Quận Thanh Khê': ['Phường Vĩnh Trung', 'Phường Tân Chính', 'Phường Tam Thuận'],
+  },
+  'Hải Phòng': {
+    'Quận Hồng Bàng': ['Phường Hoàng Văn Thụ', 'Phường Minh Khai', 'Phường Phan Bội Châu'],
+    'Quận Ngô Quyền': ['Phường Máy Chai', 'Phường Cầu Tre', 'Phường Lạc Viên'],
+  },
+  'Bình Dương': {
+    'Thành phố Thủ Dầu Một': ['Phường Phú Hòa', 'Phường Phú Cường'],
+    'Thành phố Thuận An': ['Phường Lái Thiêu', 'Phường An Phú'],
+  },
+  'Đồng Nai': {
+    'Thành phố Biên Hòa': ['Phường Trảng Dài', 'Phường Tân Hiệp'],
+  },
+};
+
 export const CreateOrderPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  // Shop Completion Modal state (Tạm thời tắt xác thực thông tin theo yêu cầu)
-  const isShopInfoComplete = true; // Boolean(user?.companyName && user?.phoneNumber && user?.address);
+  // Shop Completion Modal state
+  const isShopInfoComplete = true;
   const [showInfoModal, setShowInfoModal] = useState<boolean>(false);
 
-  // Receiver Info
+  // 1. Receiver Info (Điểm Giao Hàng Cho Người Nhận - Sau sáp nhập)
   const [deliverToShop, setDeliverToShop] = useState<boolean>(false);
   const [receiverPhone, setReceiverPhone] = useState<string>('');
   const [receiverName, setReceiverName] = useState<string>('');
   const [detailAddress, setDetailAddress] = useState<string>('');
+  const [deliveryProvince, setDeliveryProvince] = useState<string>('TP Hồ Chí Minh');
+  const [deliveryDistrict, setDeliveryDistrict] = useState<string>('Quận Tân Bình');
+  const [deliveryWard, setDeliveryWard] = useState<string>('Phường 12');
+  const [deliverySubZone, setDeliverySubZone] = useState<string>('Khu phố 5');
 
-  // 4-level Address Grid
-  const [province, setProvince] = useState<string>('TP Hồ Chí Minh');
-  const [ward, setWard] = useState<string>('Phường 1');
-  const [street, setStreet] = useState<string>('Quận 5');
-  const [specialAddress, setSpecialAddress] = useState<string>('');
+  // 2. Pickup Info (Điểm Lấy Hàng Tại Shop - Sau sáp nhập)
+  const [pickupProvince, setPickupProvince] = useState<string>('TP Hồ Chí Minh');
+  const [pickupDistrict, setPickupDistrict] = useState<string>('Quận Tân Bình');
+  const [pickupWard, setPickupWard] = useState<string>('Phường 12');
+  const [pickupSubZone, setPickupSubZone] = useState<string>('Khu phố 1');
+  const [pickupDetailAddress, setPickupDetailAddress] = useState<string>(
+    user?.address || '123 Đường Tân Bình'
+  );
 
   // Transport & Delivery Options
   const [deliveryMode, setDeliveryMode] = useState<'express' | 'bigsize'>('express');
@@ -65,15 +117,13 @@ export const CreateOrderPage: React.FC = () => {
   const [pickupTimeSlot, setPickupTimeSlot] = useState<string>('Hẹn lấy');
   const [deliveryTimeSlot, setDeliveryTimeSlot] = useState<string>('Hẹn giao');
   const [pickupType, setPickupType] = useState<'cod' | 'post'>('cod');
-  const [warehouseAddress] = useState<string>(
-    user?.address || '123 Nguyễn Văn Cừ, Phường 1, Quận 5, TP Hồ Chí Minh'
-  );
 
   // Receiver Info Touched state for inline validation
   const [touchedFields, setTouchedFields] = useState<{
     phone?: boolean;
     name?: boolean;
     address?: boolean;
+    subZone?: boolean;
   }>({});
 
   const handleFieldBlur = (field: 'phone' | 'name' | 'address') => {
@@ -93,6 +143,31 @@ export const CreateOrderPage: React.FC = () => {
       ...prev,
       [id]: { ...prev[id], [field]: true },
     }));
+  };
+
+  // Package Presets & Dimensions (Dài x Rộng x Cao cm)
+  const [packagePreset, setPackagePreset] = useState<'standard' | 'long' | 'bulky' | 'custom'>('standard');
+  const [dimensions, setDimensions] = useState<{ length: number; width: number; height: number }>({
+    length: 20,
+    width: 15,
+    height: 10,
+  });
+
+  const handlePresetChange = (preset: 'standard' | 'long' | 'bulky' | 'custom') => {
+    setPackagePreset(preset);
+    if (preset === 'standard') {
+      setDimensions({ length: 20, width: 15, height: 10 });
+    } else if (preset === 'long') {
+      setDimensions({ length: 120, width: 10, height: 10 });
+    } else if (preset === 'bulky') {
+      setDimensions({ length: 60, width: 50, height: 40 });
+    }
+  };
+
+  const handleDimensionChange = (field: 'length' | 'width' | 'height', val: string | number) => {
+    const num = Math.max(1, Number(val) || 0);
+    setDimensions((prev) => ({ ...prev, [field]: num }));
+    setPackagePreset('custom');
   };
 
   // Order Pricing Summary
@@ -129,10 +204,15 @@ export const CreateOrderPage: React.FC = () => {
         if (draft.receiverPhone) setReceiverPhone(draft.receiverPhone);
         if (draft.receiverName) setReceiverName(draft.receiverName);
         if (draft.detailAddress) setDetailAddress(draft.detailAddress);
-        if (draft.province) setProvince(draft.province);
-        if (draft.ward) setWard(draft.ward);
-        if (draft.street) setStreet(draft.street);
-        if (draft.specialAddress) setSpecialAddress(draft.specialAddress);
+        if (draft.deliveryProvince) setDeliveryProvince(draft.deliveryProvince);
+        if (draft.deliveryDistrict) setDeliveryDistrict(draft.deliveryDistrict);
+        if (draft.deliveryWard) setDeliveryWard(draft.deliveryWard);
+        if (draft.deliverySubZone) setDeliverySubZone(draft.deliverySubZone);
+        if (draft.pickupProvince) setPickupProvince(draft.pickupProvince);
+        if (draft.pickupDistrict) setPickupDistrict(draft.pickupDistrict);
+        if (draft.pickupWard) setPickupWard(draft.pickupWard);
+        if (draft.pickupSubZone) setPickupSubZone(draft.pickupSubZone);
+        if (draft.pickupDetailAddress) setPickupDetailAddress(draft.pickupDetailAddress);
         if (draft.deliveryMode) setDeliveryMode(draft.deliveryMode);
         if (draft.transportType) setTransportType(draft.transportType);
         if (draft.products && Array.isArray(draft.products) && draft.products.length > 0) {
@@ -143,6 +223,8 @@ export const CreateOrderPage: React.FC = () => {
         if (draft.shippingPayer) setShippingPayer(draft.shippingPayer);
         if (draft.orderNote) setOrderNote(draft.orderNote);
         if (draft.customOrderCode) setCustomOrderCode(draft.customOrderCode);
+        if (draft.dimensions) setDimensions(draft.dimensions);
+        if (draft.packagePreset) setPackagePreset(draft.packagePreset);
         if (draft.isHighValue !== undefined) setIsHighValue(draft.isHighValue);
 
         setHasDraftRestored(true);
@@ -168,13 +250,20 @@ export const CreateOrderPage: React.FC = () => {
         receiverPhone,
         receiverName,
         detailAddress,
-        province,
-        ward,
-        street,
-        specialAddress,
+        deliveryProvince,
+        deliveryDistrict,
+        deliveryWard,
+        deliverySubZone,
+        pickupProvince,
+        pickupDistrict,
+        pickupWard,
+        pickupSubZone,
+        pickupDetailAddress,
         deliveryMode,
         transportType,
         products,
+        dimensions,
+        packagePreset,
         codAmount,
         goodsValue,
         shippingPayer,
@@ -189,13 +278,20 @@ export const CreateOrderPage: React.FC = () => {
     receiverPhone,
     receiverName,
     detailAddress,
-    province,
-    ward,
-    street,
-    specialAddress,
+    deliveryProvince,
+    deliveryDistrict,
+    deliveryWard,
+    deliverySubZone,
+    pickupProvince,
+    pickupDistrict,
+    pickupWard,
+    pickupSubZone,
+    pickupDetailAddress,
     deliveryMode,
     transportType,
     products,
+    dimensions,
+    packagePreset,
     codAmount,
     goodsValue,
     shippingPayer,
@@ -210,13 +306,20 @@ export const CreateOrderPage: React.FC = () => {
     setReceiverPhone('');
     setReceiverName('');
     setDetailAddress('');
-    setProvince('TP Hồ Chí Minh');
-    setWard('Phường 1');
-    setStreet('Quận 5');
-    setSpecialAddress('');
+    setDeliveryProvince('TP Hồ Chí Minh');
+    setDeliveryDistrict('Quận Tân Bình');
+    setDeliveryWard('Phường 12');
+    setDeliverySubZone('Khu phố 5');
+    setPickupProvince('Hà Nội');
+    setPickupDistrict('Quận Hoàn Kiếm');
+    setPickupWard('Phường Hàng Bài');
+    setPickupSubZone('Khu phố 1');
+    setPickupDetailAddress('123 Phố Tràng Tiền');
     setDeliveryMode('express');
     setTransportType('road');
     setProducts([{ id: 1, name: '', price: 0, weight: 0.5, quantity: 1 }]);
+    setDimensions({ length: 20, width: 15, height: 10 });
+    setPackagePreset('standard');
     setCodAmount(0);
     setGoodsValue(0);
     setShippingPayer('buyer');
@@ -263,9 +366,29 @@ export const CreateOrderPage: React.FC = () => {
     0
   );
 
+  const volumetricWeight = useMemo(() => {
+    const l = Number(dimensions.length) || 20;
+    const w = Number(dimensions.width) || 15;
+    const h = Number(dimensions.height) || 10;
+    return Math.round(((l * w * h) / 5000) * 100) / 100;
+  }, [dimensions]);
+
+  const maxDimension = useMemo(() => {
+    return Math.max(
+      Number(dimensions.length) || 0,
+      Number(dimensions.width) || 0,
+      Number(dimensions.height) || 0
+    );
+  }, [dimensions]);
+
+  const isOversized = maxDimension > 80;
+  const isOverweight = totalActualWeight > 20 || volumetricWeight > 25;
+  const isBulky = isOversized || isOverweight;
+  const chargeableWeight = Math.max(totalActualWeight, volumetricWeight);
+
   // Dynamic estimated fee formula (runs automatically whenever options/weight change)
   const estimatedShippingFee = useMemo(() => {
-    const weight = Math.max(0.5, totalActualWeight || 0.5);
+    const weight = Math.max(0.5, chargeableWeight || 0.5);
     let base = 0;
 
     if (deliveryMode === 'express') {
@@ -284,6 +407,10 @@ export const CreateOrderPage: React.FC = () => {
       }
     }
 
+    if (isBulky) {
+      base += 20000; // Phụ phí hàng cồng kềnh / quá khổ
+    }
+
     if (transportType === 'fly') {
       base += 15000;
     }
@@ -294,7 +421,7 @@ export const CreateOrderPage: React.FC = () => {
     }
 
     return base;
-  }, [totalActualWeight, deliveryMode, transportType, goodsValue, isHighValue]);
+  }, [chargeableWeight, deliveryMode, transportType, goodsValue, isHighValue, isBulky]);
 
   // Use official API quote fee if present, otherwise fallback to dynamic estimated fee
   const activeShippingFee = quoteResult ? quoteResult.shippingFee : estimatedShippingFee;
@@ -322,15 +449,17 @@ export const CreateOrderPage: React.FC = () => {
       orderApi
         .getQuote({
           pickupAddress: {
-            province: 'TP Hồ Chí Minh',
-            district: 'Quận 5',
-            ward: 'Phường 1',
-            address: user?.address || '123 Nguyễn Văn Cừ',
+            province: pickupProvince || 'Hà Nội',
+            district: pickupDistrict || 'Quận Hoàn Kiếm',
+            ward: pickupWard || 'Phường Hàng Bài',
+            subZone: pickupSubZone || 'Khu phố 1',
+            address: pickupDetailAddress || '123 Phố Tràng Tiền',
           },
           deliveryAddress: {
-            province: province || 'TP Hồ Chí Minh',
-            district: street || 'Quận 1',
-            ward: ward || 'Phường 1',
+            province: deliveryProvince || 'TP Hồ Chí Minh',
+            district: deliveryDistrict || 'Quận Tân Bình',
+            ward: deliveryWard || 'Phường 12',
+            subZone: deliverySubZone || 'Khu phố 5',
             address: detailAddress,
           },
           items: products.map((p) => ({
@@ -338,7 +467,11 @@ export const CreateOrderPage: React.FC = () => {
             quantity: Number(p.quantity) || 1,
             weight: Number(p.weight) || 0.5,
           })),
-          dimensions: { length: 20, width: 15, height: 10 },
+          dimensions: {
+            length: Number(dimensions.length) || 20,
+            width: Number(dimensions.width) || 15,
+            height: Number(dimensions.height) || 10,
+          },
           goodsValue: Number(goodsValue) || 0,
           discountCode: customOrderCode || undefined,
         })
@@ -357,13 +490,19 @@ export const CreateOrderPage: React.FC = () => {
     receiverPhone,
     receiverName,
     detailAddress,
-    province,
-    ward,
-    street,
+    deliveryProvince,
+    deliveryDistrict,
+    deliveryWard,
+    deliverySubZone,
+    pickupProvince,
+    pickupDistrict,
+    pickupWard,
+    pickupSubZone,
+    pickupDetailAddress,
     products,
+    dimensions,
     goodsValue,
     customOrderCode,
-    user?.address,
   ]);
 
   // Helper to scroll smoothly and set focus on target element
@@ -462,15 +601,17 @@ export const CreateOrderPage: React.FC = () => {
     try {
       const response = await orderApi.getQuote({
         pickupAddress: {
-          province: 'TP Hồ Chí Minh',
-          district: 'Quận 5',
-          ward: 'Phường 1',
-          address: user?.address || '123 Nguyễn Văn Cừ',
+          province: pickupProvince || 'Hà Nội',
+          district: pickupDistrict || 'Quận Hoàn Kiếm',
+          ward: pickupWard || 'Phường Hàng Bài',
+          subZone: pickupSubZone || 'Khu phố 1',
+          address: pickupDetailAddress || '123 Phố Tràng Tiền',
         },
         deliveryAddress: {
-          province: province || 'TP Hồ Chí Minh',
-          district: street || 'Quận 1',
-          ward: ward || 'Phường 1',
+          province: deliveryProvince || 'TP Hồ Chí Minh',
+          district: deliveryDistrict || 'Quận Tân Bình',
+          ward: deliveryWard || 'Phường 12',
+          subZone: deliverySubZone || 'Khu phố 5',
           address: detailAddress,
         },
         items: products.map((p) => ({
@@ -478,7 +619,11 @@ export const CreateOrderPage: React.FC = () => {
           quantity: Number(p.quantity),
           weight: Number(p.weight),
         })),
-        dimensions: { length: 20, width: 15, height: 10 },
+        dimensions: {
+          length: Number(dimensions.length) || 20,
+          width: Number(dimensions.width) || 15,
+          height: Number(dimensions.height) || 10,
+        },
         goodsValue: Number(goodsValue) || 0,
         discountCode: customOrderCode || undefined,
       });
@@ -518,27 +663,33 @@ export const CreateOrderPage: React.FC = () => {
       const payload: CreateOrderPayload = {
         confirmProceedWithoutDiscount: confirmWithoutDiscount,
         pickupAddress: {
-          fullName: user?.fullName || 'Shop An Bình',
+          fullName: user?.companyName || user?.fullName || 'Shop An Bình',
           phone: validPickupPhone,
-          address: user?.address || '123 Nguyễn Văn Cừ',
-          ward: 'Phường 1',
-          district: 'Quận 5',
-          province: 'TP Hồ Chí Minh',
+          address: pickupDetailAddress || '123 Phố Tràng Tiền',
+          subZone: pickupSubZone || 'Khu phố 1',
+          ward: pickupWard || 'Phường Hàng Bài',
+          district: pickupDistrict || 'Quận Hoàn Kiếm',
+          province: pickupProvince || 'Hà Nội',
         },
         deliveryAddress: {
           fullName: receiverName,
           phone: cleanReceiverPhone,
           address: detailAddress,
-          ward: ward || 'Phường 1',
-          district: street || 'Quận 1',
-          province: province || 'TP Hồ Chí Minh',
+          subZone: deliverySubZone || 'Khu phố 5',
+          ward: deliveryWard || 'Phường 12',
+          district: deliveryDistrict || 'Quận Tân Bình',
+          province: deliveryProvince || 'TP Hồ Chí Minh',
         },
         items: products.map((p) => ({
           name: p.name || 'Sản phẩm',
           quantity: Number(p.quantity) || 1,
           weight: Number(p.weight) || 0.5,
         })),
-        dimensions: { length: 20, width: 15, height: 10 },
+        dimensions: {
+          length: Number(dimensions.length) || 20,
+          width: Number(dimensions.width) || 15,
+          height: Number(dimensions.height) || 10,
+        },
         actualWeight: totalActualWeight || 0.5,
         isCod: Number(codAmount) > 0,
         codAmount: Number(codAmount) || 0,
@@ -561,8 +712,8 @@ export const CreateOrderPage: React.FC = () => {
           items: payload.items,
           dimensions: payload.dimensions || { length: 20, width: 15, height: 10 },
           actualWeight: totalActualWeight || 0.5,
-          volumetricWeight: 0.6,
-          chargeableWeight: totalActualWeight || 0.5,
+          volumetricWeight: volumetricWeight,
+          chargeableWeight: chargeableWeight,
           isCod: Boolean(payload.isCod),
           codAmount: Number(codAmount) || 0,
           goodsValue: Number(goodsValue) || 0,
@@ -664,8 +815,8 @@ export const CreateOrderPage: React.FC = () => {
                   <User className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-white">1. Thông Tin Người Nhận</h3>
-                  <p className="text-[11px] text-slate-400">Nhập chính xác số điện thoại và địa chỉ giao hàng</p>
+                  <h3 className="text-base font-bold text-white">1. Thông Tin Người Nhận &amp; Địa Chỉ Giao Hàng</h3>
+                  <p className="text-[11px] text-slate-400">Nhập đầy đủ thông tin chuẩn sau sáp nhập</p>
                 </div>
               </div>
 
@@ -678,6 +829,17 @@ export const CreateOrderPage: React.FC = () => {
                 />
                 <span>Giao về shop</span>
               </label>
+            </div>
+
+            {/* Post-merger notice badge */}
+            <div className="p-3.5 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex items-start gap-2.5 text-xs text-amber-300">
+              <Info className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+              <div>
+                <strong className="block font-bold">Lưu ý: Nhập địa chỉ hành chính sau sáp nhập</strong>
+                <p className="text-[11px] text-slate-300 mt-0.5">
+                  Vui lòng chọn chính xác Tỉnh/Thành, Quận/Huyện, Phường/Xã và nhập Cụm tuyến/Khu phố để hệ thống tự động điều phối Shipper phụ trách phù hợp.
+                </p>
+              </div>
             </div>
 
             {/* Form Fields */}
@@ -717,7 +879,7 @@ export const CreateOrderPage: React.FC = () => {
               {/* Name Input */}
               <div className="space-y-1">
                 <label className="block text-xs font-semibold text-slate-300">
-                  Họ & tên người nhận <span className="text-rose-400">*</span>
+                  Họ &amp; tên người nhận <span className="text-rose-400">*</span>
                 </label>
                 <div className="relative">
                   <User className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
@@ -738,89 +900,119 @@ export const CreateOrderPage: React.FC = () => {
                 </div>
                 {touchedFields.name && !receiverName.trim() && (
                   <p className="text-[10px] text-rose-400 font-medium mt-1 animate-in fade-in duration-200">
-                    ⚠️ Vui lòng nhập họ & tên người nhận
+                    ⚠️ Vui lòng nhập họ &amp; tên người nhận
                   </p>
                 )}
               </div>
 
-              {/* Detail Address Input */}
-              <div className="space-y-1">
-                <label className="block text-xs font-semibold text-slate-300">
-                  Địa chỉ giao hàng chi tiết <span className="text-rose-400">*</span>
-                </label>
-                <div className="relative">
-                  <Home className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
-                  <input
-                    id="input-detail-address"
-                    type="text"
-                    value={detailAddress}
-                    onChange={(e) => setDetailAddress(e.target.value)}
-                    onBlur={() => handleFieldBlur('address')}
-                    placeholder="Số nhà, đường, khu phố..."
-                    className={`w-full glass-input rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder:text-slate-500 bg-slate-900/90 border outline-none transition ${
-                      touchedFields.address && !detailAddress.trim()
-                        ? 'border-rose-500/80 bg-rose-950/20'
-                        : 'border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
-                    }`}
-                  />
-                </div>
-                {touchedFields.address && !detailAddress.trim() && (
-                  <p className="text-[10px] text-rose-400 font-medium mt-1 animate-in fade-in duration-200">
-                    ⚠️ Vui lòng nhập địa chỉ giao hàng chi tiết
-                  </p>
-                )}
-              </div>
-
-              {/* Address 4-Dropdown Grid */}
-              <div className="space-y-1 pt-1">
+              {/* 5-Level Structured Address for Receiver */}
+              <div className="space-y-3 pt-1">
                 <label className="block text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-                  <MapPin className="w-3.5 h-3.5 text-blue-400" /> Chọn Tỉnh / Huyện / Xã hành chính
+                  <MapPin className="w-3.5 h-3.5 text-blue-400" /> Cấu trúc địa chỉ giao hàng (sau sáp nhập) <span className="text-rose-400">*</span>
                 </label>
+
+                {/* Province & District */}
                 <div className="grid grid-cols-2 gap-3 text-xs">
-                  <select
-                    value={specialAddress}
-                    onChange={(e) => setSpecialAddress(e.target.value)}
-                    className="w-full glass-input rounded-xl px-3 py-2.5 text-xs text-slate-200 bg-slate-900 border border-slate-800 outline-none"
-                  >
-                    <option value="">Địa chỉ đặc biệt</option>
-                    <option value="Chung cư">Chung cư</option>
-                    <option value="Tòa nhà văn phòng">Tòa nhà văn phòng</option>
-                    <option value="Khu công nghiệp">Khu công nghiệp</option>
-                  </select>
+                  <div>
+                    <label className="block text-[10px] font-medium text-slate-400 mb-1">Tỉnh / Thành phố</label>
+                    <select
+                      value={deliveryProvince}
+                      onChange={(e) => {
+                        const p = e.target.value;
+                        setDeliveryProvince(p);
+                        const firstDist = Object.keys(VIETNAM_ADMIN_UNITS[p] || {})[0] || '';
+                        setDeliveryDistrict(firstDist);
+                        const firstWard = (VIETNAM_ADMIN_UNITS[p]?.[firstDist] || [])[0] || '';
+                        setDeliveryWard(firstWard);
+                      }}
+                      className="w-full glass-input rounded-xl px-3 py-2.5 text-xs text-slate-200 bg-slate-900 border border-slate-800 outline-none focus:border-blue-500"
+                    >
+                      {Object.keys(VIETNAM_ADMIN_UNITS).map((p) => (
+                        <option key={p} value={p}>
+                          {p}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-                  <select
-                    value={street}
-                    onChange={(e) => setStreet(e.target.value)}
-                    className="w-full glass-input rounded-xl px-3 py-2.5 text-xs text-slate-200 bg-slate-900 border border-slate-800 outline-none"
-                  >
-                    <option value="Đường/Ấp/Khu">Đường/Ấp/Khu</option>
-                    <option value="Đường số 1">Đường số 1</option>
-                    <option value="Đường Nguyễn Văn Cừ">Đường Nguyễn Văn Cừ</option>
-                    <option value="Ấp 1">Ấp 1</option>
-                  </select>
+                  <div>
+                    <label className="block text-[10px] font-medium text-slate-400 mb-1">Quận / Huyện</label>
+                    <select
+                      value={deliveryDistrict}
+                      onChange={(e) => {
+                        const d = e.target.value;
+                        setDeliveryDistrict(d);
+                        const firstWard = (VIETNAM_ADMIN_UNITS[deliveryProvince]?.[d] || [])[0] || '';
+                        setDeliveryWard(firstWard);
+                      }}
+                      className="w-full glass-input rounded-xl px-3 py-2.5 text-xs text-slate-200 bg-slate-900 border border-slate-800 outline-none focus:border-blue-500"
+                    >
+                      {Object.keys(VIETNAM_ADMIN_UNITS[deliveryProvince] || {}).map((d) => (
+                        <option key={d} value={d}>
+                          {d}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
 
-                  <select
-                    value={ward}
-                    onChange={(e) => setWard(e.target.value)}
-                    className="w-full glass-input rounded-xl px-3 py-2.5 text-xs text-slate-200 bg-slate-900 border border-slate-800 outline-none"
-                  >
-                    <option value="Xã Long Hòa">Phường/Xã (Xã Long Hòa)</option>
-                    <option value="Phường 1">Phường 1</option>
-                    <option value="Phường Bến Nghé">Phường Bến Nghé</option>
-                    <option value="Phường Tân Định">Phường Tân Định</option>
-                  </select>
+                {/* Ward & SubZone */}
+                <div className="grid grid-cols-2 gap-3 text-xs">
+                  <div>
+                    <label className="block text-[10px] font-medium text-slate-400 mb-1">Phường / Xã</label>
+                    <select
+                      value={deliveryWard}
+                      onChange={(e) => setDeliveryWard(e.target.value)}
+                      className="w-full glass-input rounded-xl px-3 py-2.5 text-xs text-slate-200 bg-slate-900 border border-slate-800 outline-none focus:border-blue-500"
+                    >
+                      {(VIETNAM_ADMIN_UNITS[deliveryProvince]?.[deliveryDistrict] || []).map((w) => (
+                        <option key={w} value={w}>
+                          {w}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-                  <select
-                    value={province}
-                    onChange={(e) => setProvince(e.target.value)}
-                    className="w-full glass-input rounded-xl px-3 py-2.5 text-xs text-slate-200 bg-slate-900 border border-slate-800 outline-none"
-                  >
-                    <option value="TP Hồ Chí Minh">TP Hồ Chí Minh</option>
-                    <option value="Hà Nội">Hà Nội</option>
-                    <option value="Đà Nẵng">Đà Nẵng</option>
-                    <option value="Cần Thơ">Cần Thơ</option>
-                    <option value="Bình Dương">Bình Dương</option>
-                  </select>
+                  <div>
+                    <label className="block text-[10px] font-medium text-slate-400 mb-1">
+                      Khu phố / Thôn / Cụm tuyến <span className="text-rose-400">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={deliverySubZone}
+                      onChange={(e) => setDeliverySubZone(e.target.value)}
+                      placeholder="VD: Khu phố 5..."
+                      className="w-full glass-input rounded-xl px-3 py-2.5 text-xs text-white placeholder:text-slate-500 bg-slate-900 border border-slate-800 outline-none focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Detail Address Input */}
+                <div className="space-y-1 pt-1">
+                  <label className="block text-xs font-semibold text-slate-300">
+                    Số nhà &amp; Tên đường chi tiết <span className="text-rose-400">*</span>
+                  </label>
+                  <div className="relative">
+                    <Home className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+                    <input
+                      id="input-detail-address"
+                      type="text"
+                      value={detailAddress}
+                      onChange={(e) => setDetailAddress(e.target.value)}
+                      onBlur={() => handleFieldBlur('address')}
+                      placeholder="Số 123/45 đường..."
+                      className={`w-full glass-input rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder:text-slate-500 bg-slate-900/90 border outline-none transition ${
+                        touchedFields.address && !detailAddress.trim()
+                          ? 'border-rose-500/80 bg-rose-950/20'
+                          : 'border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
+                      }`}
+                    />
+                  </div>
+                  {touchedFields.address && !detailAddress.trim() && (
+                    <p className="text-[10px] text-rose-400 font-medium mt-1 animate-in fade-in duration-200">
+                      ⚠️ Vui lòng nhập số nhà và tên đường giao hàng chi tiết
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -833,8 +1025,8 @@ export const CreateOrderPage: React.FC = () => {
                 <Truck className="w-4 h-4" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-white">2. Phương Thức Vận Chuyển & Lấy Hàng</h3>
-                <p className="text-[11px] text-slate-400">Lựa chọn gói giao hàng và kho gửi hàng</p>
+                <h3 className="text-base font-bold text-white">2. Phương Thức Vận Chuyển &amp; Lấy Hàng</h3>
+                <p className="text-[11px] text-slate-400">Lựa chọn gói giao hàng và địa điểm lấy hàng của Shop</p>
               </div>
             </div>
 
@@ -935,11 +1127,13 @@ export const CreateOrderPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Warehouse / Post Office Option */}
+            {/* Warehouse / Pickup Location Configuration */}
             <div className="space-y-3 pt-2">
-              <label className="block text-xs font-semibold text-slate-300">Hình thức gửi/lấy hàng</label>
+              <label className="block text-xs font-semibold text-slate-300">
+                Địa điểm lấy hàng của Shop (First-mile pickup)
+              </label>
 
-              <div className="p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-2">
+              <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3">
                 <div className="flex items-center justify-between">
                   <label className="flex items-center gap-2 text-xs font-bold text-white cursor-pointer">
                     <input
@@ -949,30 +1143,95 @@ export const CreateOrderPage: React.FC = () => {
                       onChange={() => setPickupType('cod')}
                       className="text-blue-500 focus:ring-0 cursor-pointer"
                     />
-                    <span>Lấy hàng tận nơi (Kho Shop)</span>
+                    <span>Lấy hàng tận nơi (Kho Shop / Điểm lấy)</span>
                   </label>
-                  <button
-                    type="button"
-                    onClick={() => navigate('/seller/profile')}
-                    className="text-[11px] font-semibold text-blue-400 hover:underline flex items-center gap-1 cursor-pointer"
-                  >
-                    <MapPin className="w-3.5 h-3.5" /> Sửa địa chỉ kho
-                  </button>
+                  <span className="text-[10px] text-cyan-400 font-mono font-bold bg-cyan-500/10 px-2 py-0.5 rounded">
+                    Địa bàn lấy: {pickupProvince}
+                  </span>
                 </div>
-                <p className="text-xs text-slate-400 pl-5 font-mono truncate">{warehouseAddress}</p>
-              </div>
 
-              <div className="p-3.5 rounded-2xl bg-slate-900/40 border border-slate-800">
-                <label className="flex items-center gap-2 text-xs font-bold text-slate-300 cursor-pointer">
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <label className="block text-[10px] text-slate-400 mb-1">Tỉnh lấy hàng</label>
+                    <select
+                      value={pickupProvince}
+                      onChange={(e) => {
+                        const p = e.target.value;
+                        setPickupProvince(p);
+                        const firstDist = Object.keys(VIETNAM_ADMIN_UNITS[p] || {})[0] || '';
+                        setPickupDistrict(firstDist);
+                        const firstWard = (VIETNAM_ADMIN_UNITS[p]?.[firstDist] || [])[0] || '';
+                        setPickupWard(firstWard);
+                      }}
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-cyan-500"
+                    >
+                      {Object.keys(VIETNAM_ADMIN_UNITS).map((p) => (
+                        <option key={p} value={p}>
+                          {p}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] text-slate-400 mb-1">Quận/Huyện lấy</label>
+                    <select
+                      value={pickupDistrict}
+                      onChange={(e) => {
+                        const d = e.target.value;
+                        setPickupDistrict(d);
+                        const firstWard = (VIETNAM_ADMIN_UNITS[pickupProvince]?.[d] || [])[0] || '';
+                        setPickupWard(firstWard);
+                      }}
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-cyan-500"
+                    >
+                      {Object.keys(VIETNAM_ADMIN_UNITS[pickupProvince] || {}).map((d) => (
+                        <option key={d} value={d}>
+                          {d}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <label className="block text-[10px] text-slate-400 mb-1">Phường/Xã lấy</label>
+                    <select
+                      value={pickupWard}
+                      onChange={(e) => setPickupWard(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-cyan-500"
+                    >
+                      {(VIETNAM_ADMIN_UNITS[pickupProvince]?.[pickupDistrict] || []).map((w) => (
+                        <option key={w} value={w}>
+                          {w}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] text-slate-400 mb-1">Khu phố lấy</label>
+                    <input
+                      type="text"
+                      value={pickupSubZone}
+                      onChange={(e) => setPickupSubZone(e.target.value)}
+                      placeholder="VD: Khu phố 1..."
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-cyan-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] text-slate-400 mb-1">Số nhà / Đường kho lấy</label>
                   <input
-                    type="radio"
-                    name="pickupType"
-                    checked={pickupType === 'post'}
-                    onChange={() => setPickupType('post')}
-                    className="text-blue-500 focus:ring-0 cursor-pointer"
+                    type="text"
+                    value={pickupDetailAddress}
+                    onChange={(e) => setPickupDetailAddress(e.target.value)}
+                    placeholder="VD: 123 Phố Tràng Tiền..."
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-cyan-500"
                   />
-                  <span>Gửi hàng tại Bưu cục gần nhất</span>
-                </label>
+                </div>
               </div>
             </div>
           </div>
@@ -1126,6 +1385,166 @@ export const CreateOrderPage: React.FC = () => {
                 </div>
               ))}
             </div>
+
+            {/* ── BỔ SUNG: KHỐI KÍCH THƯỚC & PHÂN LOẠI HÀNG CỒNG KỀNH ── */}
+            <div className="pt-4 border-t border-slate-800/80 space-y-3.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Ruler className="w-4 h-4 text-amber-400" />
+                  <label className="text-xs font-bold text-slate-200">
+                    Kích Thước & Loại Đóng Gói (Dài x Rộng x Cao cm)
+                  </label>
+                </div>
+                <span className="text-[11px] font-mono text-slate-400">
+                  Thể tích quy đổi: <strong className="text-white">{volumetricWeight} kg</strong>
+                </span>
+              </div>
+
+              {/* Preset Chips */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                <button
+                  type="button"
+                  onClick={() => handlePresetChange('standard')}
+                  className={`px-3 py-2 rounded-xl border text-left flex flex-col gap-0.5 cursor-pointer transition ${
+                    packagePreset === 'standard'
+                      ? 'bg-blue-600/20 border-blue-500 text-white shadow-sm'
+                      : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:border-slate-700'
+                  }`}
+                >
+                  <span className="font-bold text-[11px] flex items-center gap-1">
+                    📦 Tiêu chuẩn
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-mono">20 x 15 x 10 cm</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handlePresetChange('long')}
+                  className={`px-3 py-2 rounded-xl border text-left flex flex-col gap-0.5 cursor-pointer transition ${
+                    packagePreset === 'long'
+                      ? 'bg-amber-600/20 border-amber-500 text-white shadow-sm'
+                      : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:border-slate-700'
+                  }`}
+                >
+                  <span className="font-bold text-[11px] flex items-center gap-1">
+                    📏 Cây / Ống dài
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-mono">120 x 10 x 10 cm</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handlePresetChange('bulky')}
+                  className={`px-3 py-2 rounded-xl border text-left flex flex-col gap-0.5 cursor-pointer transition ${
+                    packagePreset === 'bulky'
+                      ? 'bg-amber-600/20 border-amber-500 text-white shadow-sm'
+                      : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:border-slate-700'
+                  }`}
+                >
+                  <span className="font-bold text-[11px] flex items-center gap-1">
+                    🗃️ Thùng to / Gia dụng
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-mono">60 x 50 x 40 cm</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setPackagePreset('custom')}
+                  className={`px-3 py-2 rounded-xl border text-left flex flex-col gap-0.5 cursor-pointer transition ${
+                    packagePreset === 'custom'
+                      ? 'bg-purple-600/20 border-purple-500 text-white shadow-sm'
+                      : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:border-slate-700'
+                  }`}
+                >
+                  <span className="font-bold text-[11px] flex items-center gap-1">
+                    ⚙️ Tùy chỉnh
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-mono">Tự nhập kích thước</span>
+                </button>
+              </div>
+
+              {/* 3 Inputs: Dài x Rộng x Cao */}
+              <div className="grid grid-cols-3 gap-2.5">
+                <div>
+                  <label className="block text-[10px] font-medium text-slate-400 mb-1">
+                    Chiều Dài (cm) <span className="text-rose-400">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={dimensions.length || ''}
+                    onChange={(e) => handleDimensionChange('length', e.target.value)}
+                    placeholder="Dài"
+                    className="w-full glass-input rounded-xl px-3 py-2 text-xs text-white font-mono placeholder:text-slate-600 bg-slate-950 border border-slate-800 outline-none text-center focus:border-amber-500/80"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-medium text-slate-400 mb-1">
+                    Chiều Rộng (cm) <span className="text-rose-400">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={dimensions.width || ''}
+                    onChange={(e) => handleDimensionChange('width', e.target.value)}
+                    placeholder="Rộng"
+                    className="w-full glass-input rounded-xl px-3 py-2 text-xs text-white font-mono placeholder:text-slate-600 bg-slate-950 border border-slate-800 outline-none text-center focus:border-amber-500/80"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-medium text-slate-400 mb-1">
+                    Chiều Cao (cm) <span className="text-rose-400">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={dimensions.height || ''}
+                    onChange={(e) => handleDimensionChange('height', e.target.value)}
+                    placeholder="Cao"
+                    className="w-full glass-input rounded-xl px-3 py-2 text-xs text-white font-mono placeholder:text-slate-600 bg-slate-950 border border-slate-800 outline-none text-center focus:border-amber-500/80"
+                  />
+                </div>
+              </div>
+
+              {/* Dynamic Vehicle & Bulky Dispatch Warning Alert */}
+              {isBulky ? (
+                <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-3 text-amber-300 text-xs animate-in fade-in duration-200">
+                  <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <p className="font-bold text-amber-200">
+                      ⚠️ Kiện hàng cồng kềnh / Vượt chuẩn xe máy
+                    </p>
+                    <p className="text-[11px] text-amber-300/90 leading-relaxed">
+                      {isOversized && (
+                        <span>
+                          • Kích thước cạnh dài nhất (<strong>{maxDimension} cm</strong>) vượt ngưỡng xe máy (&gt;80 cm).<br />
+                        </span>
+                      )}
+                      {totalActualWeight > 20 && (
+                        <span>
+                          • Khối lượng thực tế (<strong>{totalActualWeight} kg</strong>) vượt chuẩn xe máy (&gt;20 kg).<br />
+                        </span>
+                      )}
+                      {volumetricWeight > 25 && (
+                        <span>
+                          • Thể tích quy đổi (<strong>{volumetricWeight} kg</strong>) vượt ngưỡng (&gt;25 kg).<br />
+                        </span>
+                      )}
+                      👉 Đơn hàng sẽ được chuyển tự động đến <strong>Quản lý 1 (Vendor Ops)</strong> để thẩm duyệt và phân bổ phương tiện chuyên dụng (Xe bán tải / Xe ba gác / Xe tải).
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-2 text-emerald-300 text-[11px]">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>
+                    <strong>Hàng tiêu chuẩn xe máy</strong> (Dưới 20 kg & cạnh dưới 80 cm) — Sẽ được tự động duyệt và gán Shipper xe máy lấy ngay.
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Card 4: Tổng Cước Phí & Báo Giá AI (Quote Breakdown) */}
@@ -1147,6 +1566,7 @@ export const CreateOrderPage: React.FC = () => {
                   Tiền thu hộ COD (VNĐ)
                 </label>
                 <input
+                  id="input-cod-amount"
                   type="text"
                   value={formatNumberWithDots(codAmount)}
                   onChange={(e) => setCodAmount(parseDotsToNumber(e.target.value))}
@@ -1160,6 +1580,7 @@ export const CreateOrderPage: React.FC = () => {
                   Giá trị hàng hóa (Bảo hiểm)
                 </label>
                 <input
+                  id="input-goods-value"
                   type="text"
                   value={formatNumberWithDots(goodsValue)}
                   onChange={(e) => setGoodsValue(parseDotsToNumber(e.target.value))}

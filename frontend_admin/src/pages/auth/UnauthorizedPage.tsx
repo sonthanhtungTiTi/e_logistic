@@ -13,11 +13,36 @@ export const UnauthorizedPage: React.FC = () => {
       navigate('/admin/login');
       return;
     }
-    const role = user.role;
-    if (role === UserRole.DRIVER || role === UserRole.LINE_HAUL_DRIVER) {
-      navigate('/driver/pickup');
-    } else if (role === UserRole.WAREHOUSE_STAFF || role === UserRole.HUB_STAFF) {
+    const role = (user.role || '').toString();
+    if (
+      role === 'SHIPPER' ||
+      role === 'LOCAL_SHIPPER' ||
+      role === UserRole.SHIPPER ||
+      role === UserRole.LOCAL_SHIPPER
+    ) {
+      navigate('/shipper/zone');
+    } else if (
+      role === 'DRIVER' ||
+      role === 'LINE_HAUL_DRIVER' ||
+      role === UserRole.DRIVER ||
+      role === UserRole.LINE_HAUL_DRIVER
+    ) {
+      navigate('/linehaul/trips');
+    } else if (
+      role === UserRole.WAREHOUSE_STAFF ||
+      role === UserRole.HUB_STAFF ||
+      role === UserRole.HUB_COORDINATOR ||
+      role === 'HUB_STAFF' ||
+      role === 'WAREHOUSE_STAFF' ||
+      role === 'HUB_COORDINATOR'
+    ) {
       navigate('/warehouse/inbound');
+    } else if (role === UserRole.ORDER_VENDOR_MANAGER || role === 'ORDER_VENDOR_MANAGER') {
+      navigate('/admin/vendor-ops');
+    } else if (role === UserRole.LAST_MILE_DISPATCHER || role === 'LAST_MILE_DISPATCHER') {
+      navigate('/admin/dispatch/local');
+    } else if (role === UserRole.LINE_HAUL_DISPATCHER || role === 'LINE_HAUL_DISPATCHER') {
+      navigate('/admin/dispatch/linehaul');
     } else if (role === UserRole.SELLER) {
       window.location.href = 'http://localhost:5173/seller/dashboard';
     } else {

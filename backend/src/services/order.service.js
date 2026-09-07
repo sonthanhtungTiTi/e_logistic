@@ -1,12 +1,18 @@
 const mongoose = require('mongoose');
 const Order = require('../models/order.model');
 const OrderLog = require('../models/orderLog.model');
+const OrderTrackingLog = require('../models/orderTrackingLog.model');
 const PickupConfirmation = require('../models/pickupConfirmation.model');
 const PickupManifest = require('../models/pickupManifest.model');
 const pricingService = require('./pricing.service');
 const Hub = require('../models/hub.model');
+const Geozone = require('../models/geozone.model');
+const autoApprovalService = require('./autoApproval.service');
 const hubRoutingService = require('./hubRouting.service');
 const ioSingleton = require('../lib/ioSingleton');
+
+// Bộ nhớ tạm chống brute-force 4 số cuối điện thoại
+const failedPhoneAttempts = new Map();
 
 /**
  * Service xử lý logic đơn hàng (Order Domain Logic)
@@ -16,7 +22,7 @@ const orderService = {
    * Xem trước báo giá cước phí
    */
   async getQuotePreview(data) {
-    const { items, dimensions, actualWeight, isCod, codAmount, goodsValue, discountCode } = data;
+    const { items, dimensions, actualWeight, isCod, codAmount, goodsValue, discountCode, pickupAddress, deliveryAddress } = data;
     return pricingService.calculateShippingFee({
       items,
       dimensions,
@@ -24,7 +30,9 @@ const orderService = {
       isCod,
       codAmount,
       goodsValue,
-      discountCode
+      discountCode,
+      pickupAddress,
+      deliveryAddress,
     });
   },
 
@@ -108,15 +116,39 @@ const orderService = {
       console.warn('[OrderService] resolveOrderRoute warning:', routeErr.message);
     }
 
-    // TẠM THỜI TẮT NHÁNH DIRECT: Toàn bộ đơn hàng đều gom về bưu cục trước
-    let routeType = 'HUB_ROUTED';
-    /*
-    if (originHubId && destinationHubId && originHubId.toString() === destinationHubId.toString()) {
-      routeType = 'DIRECT';
-    } else if (Array.isArray(routeNodes) && routeNodes.length <= 1) {
-      routeType = 'DIRECT';
+    // ── THÊM MỚI BƯỚC 8: Khớp Geozone Lấy và Giao ──
+    let pickupGeozoneId = data.pickupGeozoneId || null;
+    let deliveryGeozoneId = data.deliveryGeozoneId || null;
+
+    try {
+      if (!pickupGeozoneId && data.pickupAddress?.ward) {
+        const pZone = await Geozone.findOne({
+          ward: new RegExp(data.pickupAddress.ward, 'i'),
+          district: new RegExp(data.pickupAddress.district || '', 'i'),
+        });
+        if (pZone) pickupGeozoneId = pZone._id;
+      }
+      if (!deliveryGeozoneId && data.deliveryAddress?.ward) {
+        const dZone = await Geozone.findOne({
+          ward: new RegExp(data.deliveryAddress.ward, 'i'),
+          district: new RegExp(data.deliveryAddress.district || '', 'i'),
+        });
+        if (dZone) deliveryGeozoneId = dZone._id;
+      }
+    } catch (zErr) {
+      console.warn('[OrderService] Geozone lookup warning:', zErr.message);
     }
-    */
+
+    // ── THÊM MỚI BƯỚC 9: Thẩm duyệt đơn tự động (Single-Pass Exclusion) ──
+    const approvalEval = await autoApprovalService.evaluateOrderApproval(
+      {
+        ...data,
+        actualWeight,
+        volumetricWeight: calcFee.volumetricWeight || 0,
+      },
+      sellerId
+    );
+    let routeType = 'HUB_ROUTED';
 
     const newOrder = new Order({
       ...data,
@@ -126,6 +158,12 @@ const orderService = {
       idempotencyKey,
       originHubId,
       destinationHubId,
+      pickupGeozoneId,
+      deliveryGeozoneId,
+      autoApproved: approvalEval.autoApproved,
+      riskFlags: approvalEval.riskFlags,
+      riskViolationReason: approvalEval.reason,
+      status: approvalEval.status,
       routeNodes,
       routeType,
       currentRouteIndex: 0,
@@ -141,7 +179,6 @@ const orderService = {
       zoneTier: calcFee.zoneTier || null,
       routeDistanceKm: calcFee.routeDistanceKm || null,
       estimatedDeliveryDays: calcFee.estimatedDeliveryDays || 1,
-      status: data.status || 'CREATED'
     });
 
     await newOrder.save();
@@ -346,34 +383,74 @@ const orderService = {
   },
 
   /**
-   * Tra cứu công khai cho Khách mua
+   * Tra cứu công khai cho Khách mua (Public Buyer Tracking với bảo mật PII & chống Brute-force)
    */
   async getPublicOrderTracking(trackingCode, phoneLast4) {
-    const order = await Order.findOne({ trackingCode });
-    if (!order) {
-      const err = new Error('Không tìm thấy thông tin vận đơn với mã này');
-      err.statusCode = 404;
+    const cleanCode = (trackingCode || '').trim().toUpperCase();
+    const lockInfo = failedPhoneAttempts.get(cleanCode);
+    if (lockInfo && lockInfo.lockUntil && lockInfo.lockUntil > Date.now()) {
+      const waitMin = Math.ceil((lockInfo.lockUntil - Date.now()) / 60000);
+      const err = new Error(`Bạn đã thử sai 4 số cuối quá nhiều lần. Vui lòng thử lại sau ${waitMin} phút.`);
+      err.statusCode = 429;
+      err.code = 'TOO_MANY_FAILED_ATTEMPTS';
       throw err;
     }
 
+    const order = await Order.findOne({ trackingCode: cleanCode });
+    if (!order) {
+      const err = new Error('Không tìm thấy thông tin vận đơn với mã này');
+      err.statusCode = 404;
+      err.code = 'ORDER_NOT_FOUND';
+      throw err;
+    }
+
+    let isFullVerified = false;
     if (phoneLast4) {
       const receiverPhone = order.deliveryAddress?.phone || '';
       if (!receiverPhone.endsWith(phoneLast4)) {
+        const attempts = (lockInfo?.attempts || 0) + 1;
+        if (attempts >= 5) {
+          failedPhoneAttempts.set(cleanCode, { attempts, lockUntil: Date.now() + 15 * 60 * 1000 });
+        } else {
+          failedPhoneAttempts.set(cleanCode, { attempts, lockUntil: null });
+        }
         const err = new Error('4 số cuối số điện thoại không trùng khớp');
         err.statusCode = 400;
+        err.code = 'PHONE_MISMATCH';
         throw err;
       }
+      // Thành công -> Xóa bộ đếm lỗi
+      failedPhoneAttempts.delete(cleanCode);
+      isFullVerified = true;
     }
+
+    const trackingLogs = await OrderTrackingLog.find({ trackingCode: cleanCode })
+      .sort({ timestamp: 1 })
+      .lean();
 
     return {
       trackingCode: order.trackingCode,
       status: order.status,
       deliveryAddress: {
+        fullName: isFullVerified ? order.deliveryAddress?.fullName : (order.deliveryAddress?.fullName ? `${order.deliveryAddress.fullName.charAt(0)}***` : undefined),
+        phone: isFullVerified ? order.deliveryAddress?.phone : (order.deliveryAddress?.phone ? `***${order.deliveryAddress.phone.slice(-4)}` : undefined),
+        ward: order.deliveryAddress?.ward,
         district: order.deliveryAddress?.district,
         province: order.deliveryAddress?.province
       },
+      zoneTier: order.zoneTier,
+      routeDistanceKm: order.routeDistanceKm,
+      estimatedDeliveryDays: order.estimatedDeliveryDays,
       createdAt: order.createdAt,
-      updatedAt: order.updatedAt
+      updatedAt: order.updatedAt,
+      isFullVerified,
+      events: trackingLogs.map(log => ({
+        eventType: log.eventType,
+        title: log.title,
+        description: log.description,
+        locationName: log.locationName,
+        timestamp: log.timestamp
+      }))
     };
   },
 
@@ -638,7 +715,7 @@ const orderService = {
       confirmedAt: new Date()
     });
 
-    // 10. Ghi nhận Audit Log
+    // 10. Ghi nhận Audit Log & Tracking Timeline
     try {
       await OrderLog.create({
         orderId: order._id,
@@ -654,6 +731,20 @@ const orderService = {
           gpsMissing,
           clientOfflineId
         }
+      });
+      await OrderTrackingLog.create({
+        orderId: order._id,
+        trackingCode: order.trackingCode,
+        eventType: 'PICKED_UP',
+        title: 'Đã lấy hàng thành công',
+        description: `Tài xế/Shipper (${user.fullName || user._id}) đã nhận kiện hàng từ người gửi`,
+        driverInfo: {
+          driverId: user._id,
+          fullName: user.fullName,
+          phone: user.phoneNumber,
+          licensePlate: user.vehicleInfo?.licensePlate
+        },
+        timestamp: new Date()
       });
     } catch (logErr) {
       console.error(`[OrderLog] Failed to log pickup confirmation: ${logErr.message}`);
@@ -703,6 +794,14 @@ const orderService = {
         actionType: 'PICKUP_FAILED',
         trackingCode: order.trackingCode,
         note: `Ghi nhận lấy hàng thất bại: ${failReason}`
+      });
+      await OrderTrackingLog.create({
+        orderId: order._id,
+        trackingCode: order.trackingCode,
+        eventType: 'PICKUP_FAILED',
+        title: 'Lấy hàng không thành công',
+        description: `Lấy hàng thất bại: ${failReason}`,
+        timestamp: new Date()
       });
     } catch (logErr) {
       console.error(`[OrderLog] Failed to log pickup failure: ${logErr.message}`);

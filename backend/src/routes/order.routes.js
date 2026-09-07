@@ -19,7 +19,10 @@ const {
   pickupFailedHandler,
   processItemScanHandler,
   completePickupManifestHandler,
-  approveOrderHandler
+  approveOrderHandler,
+  getShipperPickupTasks,
+  getShipperDeliveryTasks,
+  getShipperAvailableZones
 } = require('../controllers/order.controller');
 const { protect, authorize, resolveSellerContext } = require('../middleware/auth.middleware');
 const { createOrderRateLimiter, trackingRateLimiter } = require('../middleware/rateLimit.middleware');
@@ -31,10 +34,11 @@ router.get('/public-recent', getPublicRecentOrders);
 router.get('/track/:trackingCode', trackingRateLimiter, trackOrderPublic);
 
 // POST /api/orders/driver-location - Ingestion API GPS cho tài xế (Telematics)
-router.post('/driver-location', updateDriverLocation);
+// SEC-01 fixed: Thêm protect + authorize — trước đây endpoint công khai, ai cũng ghi GPS được
+router.post('/driver-location', protect, authorize('DRIVER', 'SHIPPER', 'LINE_HAUL_DRIVER', 'LOCAL_SHIPPER', 'ADMIN'), updateDriverLocation);
 
 // GET /api/orders - Tra cứu & Lọc danh sách đơn hàng của Seller hoặc Nhân viên vận hành
-router.get('/', protect, authorize('SELLER', 'ADMIN', 'MANAGER', 'OPERATOR', 'COORDINATOR', 'HUB_STAFF', 'DRIVER', 'SHIPPER'), resolveSellerContext, searchOrders);
+router.get('/', protect, authorize('SELLER', 'ADMIN', 'MANAGER', 'OPERATOR', 'COORDINATOR', 'HUB_STAFF', 'DRIVER', 'SHIPPER', 'LOCAL_SHIPPER', 'LINE_HAUL_DRIVER'), resolveSellerContext, searchOrders);
 
 // POST /api/orders/quote - Lấy báo giá xem trước (chưa lưu DB)
 router.post('/quote', protect, authorize('SELLER', 'ADMIN'), resolveSellerContext, getQuote);
@@ -58,10 +62,15 @@ router.patch('/:id/status', protect, authorize('SELLER', 'ADMIN'), updateOrderSt
 router.delete('/:id/cancel', protect, authorize('SELLER', 'ADMIN'), cancelOrder);
 
 // UC-12: Shipper Pickup Endpoints (2-Phase Session & Legacy endpoints)
+// UC-12: Shipper Task & Operating Zone Endpoints
+router.get('/shipper/pickup-tasks', protect, authorize('DRIVER', 'SHIPPER', 'LOCAL_SHIPPER', 'LINE_HAUL_DRIVER', 'ADMIN'), getShipperPickupTasks);
+router.get('/shipper/delivery-tasks', protect, authorize('DRIVER', 'SHIPPER', 'LOCAL_SHIPPER', 'LINE_HAUL_DRIVER', 'ADMIN'), getShipperDeliveryTasks);
+router.get('/shipper/zones', protect, authorize('DRIVER', 'SHIPPER', 'LOCAL_SHIPPER', 'LINE_HAUL_DRIVER', 'ADMIN'), getShipperAvailableZones);
 router.post('/shipper/process-scan', protect, authorize('DRIVER', 'SHIPPER', 'SELLER', 'ADMIN'), processItemScanHandler);
 router.post('/shipper/complete-manifest', protect, authorize('DRIVER', 'SHIPPER', 'SELLER', 'ADMIN'), completePickupManifestHandler);
 router.post('/shipper/batch-pickup', protect, authorize('DRIVER', 'SHIPPER', 'SELLER', 'ADMIN'), confirmBatchPickupHandler);
 router.post('/shipper/:id/verify-scan', protect, authorize('DRIVER', 'SHIPPER', 'SELLER', 'ADMIN'), verifyPickupScanHandler);
+router.post('/shipper/:id/verify-pickup-scan', protect, authorize('DRIVER', 'SHIPPER', 'SELLER', 'ADMIN'), verifyPickupScanHandler);
 router.post('/shipper/:id/confirm-pickup', protect, authorize('DRIVER', 'SHIPPER', 'SELLER', 'ADMIN'), confirmPickupHandler);
 router.post('/shipper/:id/pickup-failed', protect, authorize('DRIVER', 'SHIPPER', 'SELLER', 'ADMIN'), pickupFailedHandler);
 

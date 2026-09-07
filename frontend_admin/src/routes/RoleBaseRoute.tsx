@@ -1,6 +1,7 @@
 import React from 'react';
 import { Navigate, Outlet } from 'react-router';
 import { useAdminAuth } from '../hooks/useAdminAuth';
+import { UserRole } from '@/types/auth.types';
 
 interface RoleBaseRouteProps {
   allowedRoles: string[];
@@ -28,14 +29,36 @@ export const RoleBaseRoute: React.FC<RoleBaseRouteProps> = ({ allowedRoles }) =>
 
   const userRole = (user.role || '').toString();
 
-  // 2. Kiểm tra thẩm quyền:
-  // Admin mặc định có quyền trên các route quản trị
-  const isAllowed = allowedRoles.includes(userRole) || userRole === 'ADMIN';
+  // 2. Kiểm tra thẩm quyền — mỗi route chỉ cho phép đúng role được khai báo
+  const isAllowed = allowedRoles.includes(userRole);
 
   // 3. Nếu không có quyền -> Redirect về trang phù hợp với vai trò
   if (!isAllowed) {
-    if (userRole === 'DRIVER' || userRole === 'LINE_HAUL_DRIVER') {
-      return <Navigate to="/driver/pickup" replace />;
+    if (
+      userRole === 'SHIPPER' ||
+      userRole === 'LOCAL_SHIPPER' ||
+      userRole === UserRole.SHIPPER ||
+      userRole === UserRole.LOCAL_SHIPPER
+    ) {
+      return <Navigate to="/shipper/zone" replace />;
+    }
+    if (
+      userRole === 'LINE_HAUL_DRIVER' ||
+      userRole === 'DRIVER' ||
+      userRole === UserRole.LINE_HAUL_DRIVER ||
+      userRole === UserRole.DRIVER
+    ) {
+      return <Navigate to="/linehaul/trips" replace />;
+    }
+    if (
+      userRole === 'HUB_STAFF' ||
+      userRole === 'WAREHOUSE_STAFF' ||
+      userRole === 'HUB_COORDINATOR' ||
+      userRole === UserRole.HUB_STAFF ||
+      userRole === UserRole.WAREHOUSE_STAFF ||
+      userRole === UserRole.HUB_COORDINATOR
+    ) {
+      return <Navigate to="/warehouse/inbound" replace />;
     }
     return <Navigate to="/admin/unauthorized" replace />;
   }

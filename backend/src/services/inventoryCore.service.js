@@ -11,14 +11,29 @@ const Trip = require('../models/trip.model');
 const Hub = require('../models/hub.model');
 const { emitInventoryUpdate } = require('../lib/ioSingleton');
 
-const SLA_WARNING_MS  = (Number(process.env.SLA_WARNING_HOURS_DEFAULT)  || 24) * 3600_000;
-const SLA_CRITICAL_MS = (Number(process.env.SLA_CRITICAL_HOURS_DEFAULT) || 48) * 3600_000;
+const ZONE_SLA_HOURS = {
+  'INTRA_PROVINCE': { warning: 12, critical: 24 },
+  'INTRA_REGION':   { warning: 24, critical: 36 },
+  'NEAR_REGION':    { warning: 36, critical: 48 },
+  'INTER_REGION':   { warning: 48, critical: 72 },
+};
 
-function calcAgingStatus(hubInboundAt) {
+function getOrderSlaHours(orderOrTier) {
+  const tier = typeof orderOrTier === 'string' ? orderOrTier : (orderOrTier?.zoneTier || null);
+  if (tier && ZONE_SLA_HOURS[tier]) {
+    return ZONE_SLA_HOURS[tier];
+  }
+  const defaultWarn = Number(process.env.SLA_WARNING_HOURS_DEFAULT) || 24;
+  const defaultCrit = Number(process.env.SLA_CRITICAL_HOURS_DEFAULT) || 48;
+  return { warning: defaultWarn, critical: defaultCrit };
+}
+
+function calcAgingStatus(hubInboundAt, orderOrTier = null) {
   if (!hubInboundAt) return 'NORMAL';
-  const dwell = Date.now() - new Date(hubInboundAt).getTime();
-  if (dwell >= SLA_CRITICAL_MS) return 'CRITICAL';
-  if (dwell >= SLA_WARNING_MS)  return 'WARNING';
+  const dwellMs = Date.now() - new Date(hubInboundAt).getTime();
+  const { warning, critical } = getOrderSlaHours(orderOrTier);
+  if (dwellMs >= critical * 3600_000) return 'CRITICAL';
+  if (dwellMs >= warning * 3600_000)  return 'WARNING';
   return 'NORMAL';
 }
 
@@ -81,7 +96,8 @@ async function getAgingList({
 
   const items = orders.map(o => {
     const dwellMs = calcDwellMs(o.hubInboundAt);
-    const as = calcAgingStatus(o.hubInboundAt);
+    const as = calcAgingStatus(o.hubInboundAt, o);
+    const slaInfo = getOrderSlaHours(o);
     return {
       tracking_code: o.trackingCode, trackingCode: o.trackingCode,
       status: o.status,
@@ -89,6 +105,9 @@ async function getAgingList({
       dwell_ms: dwellMs, dwellMs,
       dwell_human: formatDwell(dwellMs), dwellHuman: formatDwell(dwellMs),
       aging_status: as, agingStatus: as,
+      zone_tier: o.zoneTier || null, zoneTier: o.zoneTier || null,
+      sla_warning_hours: slaInfo.warning,
+      sla_critical_hours: slaInfo.critical,
       current_zone: o.currentZoneId || null, currentZone: o.currentZoneId || null,
       destination_hub: o.destinationHubId || null, destinationHub: o.destinationHubId || null,
       goods_value: o.goodsValue || 0, goodsValue: o.goodsValue || 0,
@@ -123,6 +142,7 @@ async function getAgingList({
     sla_thresholds: {
       warning_hours: Number(process.env.SLA_WARNING_HOURS_DEFAULT) || 24,
       critical_hours: Number(process.env.SLA_CRITICAL_HOURS_DEFAULT) || 48,
+      tiers: ZONE_SLA_HOURS,
     },
   };
 }
@@ -145,13 +165,13 @@ async function getSummary(hubId) {
   // 2. Đếm theo aging_status
   const allOrders = await Order.find(
     { currentHubId: hubOId, status: { $in: INVENTORY_STATUSES } },
-    'hubInboundAt goodsValue'
+    'hubInboundAt goodsValue zoneTier estimatedDeliveryDays'
   ).lean();
 
   const agingCounts = { NORMAL: 0, WARNING: 0, CRITICAL: 0 };
   let totalStockValueVnd = 0;
   for (const o of allOrders) {
-    agingCounts[calcAgingStatus(o.hubInboundAt)]++;
+    agingCounts[calcAgingStatus(o.hubInboundAt, o)]++;
     totalStockValueVnd += Number(o.goodsValue) || 0;
   }
 

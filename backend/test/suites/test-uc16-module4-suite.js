@@ -117,6 +117,24 @@ async function run() {
 
   try {
     // ── Login user HUB_STAFF HAN_01 ─────────────────────────────────────────
+    let hanStaff = await User.findOne({ email: 'test.hub_staff.han01@elogistic.test' });
+    if (!hanStaff) {
+      hanStaff = await User.create({
+        fullName: 'Nhân viên Kho HAN01 (Test)',
+        email: 'test.hub_staff.han01@elogistic.test',
+        phoneNumber: '098' + Math.floor(1000000 + Math.random() * 9000000),
+        password: 'TestPass123!',
+        role: 'HUB_STAFF',
+        hubId: hubHan._id,
+        isActive: true,
+      });
+    } else {
+      hanStaff.password = 'TestPass123!';
+      hanStaff.hubId = hubHan._id;
+      hanStaff.role = 'HUB_STAFF';
+      hanStaff.isActive = true;
+      await hanStaff.save();
+    }
     const hanToken = await loginAs('test.hub_staff.han01@elogistic.test', 'TestPass123!');
     console.log('🔑 Login HUB_STAFF HAN_01 thành công\n');
 
@@ -126,14 +144,17 @@ async function run() {
       sgnStaff = await User.create({
         fullName: 'Nhân viên Kho SGN01 (Test)',
         email: 'test.hub_staff.sgn01@elogistic.test',
-        phoneNumber: '0900000002',
+        phoneNumber: '097' + Math.floor(1000000 + Math.random() * 9000000),
         password: 'TestPass123!',
         role: 'HUB_STAFF',
         hubId: hubSgn._id,
         isActive: true,
       });
-    } else if (sgnStaff.hubId?.toString() !== hubSgn._id.toString()) {
+    } else {
+      sgnStaff.password = 'TestPass123!';
       sgnStaff.hubId = hubSgn._id;
+      sgnStaff.role = 'HUB_STAFF';
+      sgnStaff.isActive = true;
       await sgnStaff.save();
     }
     const sgnToken = await loginAs('test.hub_staff.sgn01@elogistic.test', 'TestPass123!');

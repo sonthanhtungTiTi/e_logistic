@@ -1,10 +1,28 @@
 const User = require('../models/user.model');
+const Hub = require('../models/hub.model');
 const AuthLog = require('../models/authLog.model');
 const Joi = require('joi');
+const mongoose = require('mongoose');
 const { sendPasswordResetEmail } = require('../services/notification.service');
 
 // Danh sách role hợp lệ trong hệ thống (đồng bộ với user.model.js)
-const VALID_ROLES = ['SELLER', 'BUYER', 'DRIVER', 'LINE_HAUL_DRIVER', 'HUB_STAFF', 'HUB_COORDINATOR', 'CS', 'ACCOUNTANT', 'ADMIN'];
+const VALID_ROLES = [
+  'SHIPPER', // Tài xế giao nhận nội thành (First-Mile & Last-Mile)
+  'LOCAL_SHIPPER',
+  'DRIVER', // Tài xế xe tải liên tỉnh (Line-haul)
+  'LINE_HAUL_DRIVER',
+  'HUB_STAFF',
+  'HUB_COORDINATOR',
+  'WAREHOUSE_STAFF',
+  'ORDER_VENDOR_MANAGER',
+  'LAST_MILE_DISPATCHER',
+  'LINE_HAUL_DISPATCHER',
+  'SELLER',
+  'BUYER',
+  'CS',
+  'ACCOUNTANT',
+  'ADMIN',
+];
 
 // Sinh mật khẩu tạm thời ngẫu nhiên (12 ký tự: chữ hoa + chữ thường + số + ký tự đặc biệt)
 const generateTempPassword = () => {
@@ -23,11 +41,22 @@ const listUsers = async (req, res) => {
     const { role, isActive, page = 1, limit = 20 } = req.query;
 
     const filter = {};
-    if (role) filter.role = role;
+    if (role) {
+      if (role === 'SHIPPER') {
+        filter.role = { $in: ['SHIPPER', 'LOCAL_SHIPPER'] };
+      } else if (role === 'DRIVER') {
+        filter.role = { $in: ['DRIVER', 'LINE_HAUL_DRIVER'] };
+      } else if (role === 'STAFF') {
+        filter.role = { $in: ['HUB_STAFF', 'HUB_COORDINATOR', 'WAREHOUSE_STAFF', 'LAST_MILE_DISPATCHER', 'LINE_HAUL_DISPATCHER', 'ORDER_VENDOR_MANAGER'] };
+      } else {
+        filter.role = role;
+      }
+    }
     if (isActive !== undefined) filter.isActive = isActive === 'true';
 
     const users = await User.find(filter)
       .select('-password -refreshToken')
+      .populate('hubId', 'name code province')
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(Number(limit));
@@ -70,12 +99,24 @@ const createUser = async (req, res) => {
         'any.only': `Vai trò không hợp lệ. Các vai trò được phép: ${VALID_ROLES.join(', ')}`,
         'any.required': 'Vui lòng cung cấp vai trò'
       }),
+      hubId: Joi.string().optional().allow('', null),
+      vehicleInfo: Joi.object({
+        licensePlate: Joi.string().optional().allow(''),
+        vehicleType: Joi.string().optional().allow(''),
+      }).optional(),
+      operatingArea: Joi.object({
+        province: Joi.string().optional().allow(''),
+        district: Joi.string().optional().allow(''),
+        ward: Joi.string().optional().allow(''),
+        subZone: Joi.string().optional().allow(''),
+        detailAddress: Joi.string().optional().allow(''),
+      }).optional(),
     });
 
     const { error } = schema.validate(req.body);
     if (error) return res.status(400).json({ message: error.details[0].message });
 
-    const { fullName, email, phoneNumber, role } = req.body;
+    const { fullName, email, phoneNumber, role, hubId, vehicleInfo, operatingArea } = req.body;
 
     // Bước 7 ĐT: Kiểm tra Email/SĐT không trùng với tài khoản khác
     const existing = await User.findOne({ $or: [{ email }, { phoneNumber }] });
@@ -87,6 +128,16 @@ const createUser = async (req, res) => {
     // Bước 8 ĐT: Sinh mật khẩu tạm thời ngẫu nhiên + đặt cờ mustChangePassword
     const tempPassword = generateTempPassword();
 
+    let resolvedHubId = undefined;
+    if (hubId) {
+      if (mongoose.Types.ObjectId.isValid(hubId)) {
+        resolvedHubId = hubId;
+      } else {
+        const foundHub = await Hub.findOne({ code: hubId });
+        if (foundHub) resolvedHubId = foundHub._id;
+      }
+    }
+
     // Ex 9.2 ĐT: Bắt lỗi CSDL khi tạo tài khoản
     let user;
     try {
@@ -96,6 +147,10 @@ const createUser = async (req, res) => {
         phoneNumber,
         password: tempPassword, // pre-save hook tự hash
         role,
+        hubId: resolvedHubId,
+        vehicleInfo: vehicleInfo || undefined,
+        operatingArea: operatingArea || undefined,
+        isWorking: role === 'SHIPPER' || role === 'DRIVER' || role === 'LOCAL_SHIPPER' || role === 'LINE_HAUL_DRIVER',
         mustChangePassword: true, // Alt 9.1 ĐT: Bắt buộc đổi mật khẩu lần đầu
       });
     } catch (saveError) {

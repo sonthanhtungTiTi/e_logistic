@@ -82,7 +82,10 @@ async function processDeliveryFailureReport(params) {
     }
 
     // ── Validate trạng thái đơn hiện tại (điểm #2) ──
-    if (order.status !== 'DELIVERING') {
+    // BUG-04 fixed: Cho phép báo thất bại từ cả OUT_FOR_DELIVERY (Shipper đang đi giao nhưng chưa cập nhật sang DELIVERING)
+    // và DELIVERING (Shipper đã đến nơi và đang tiến hành giao). Không cho phép ở các trạng thái khác.
+    const DELIVERY_ALLOWED_STATUSES = ['DELIVERING', 'OUT_FOR_DELIVERY', 'IN_HUB_DEST'];
+    if (!DELIVERY_ALLOWED_STATUSES.includes(order.status)) {
       throw new DeliveryFailureError(
         `Đơn hàng đang ở trạng thái "${order.status}", không thể báo giao thất bại.`,
         409

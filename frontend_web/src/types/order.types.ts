@@ -1,29 +1,50 @@
 export type OrderStatus =
   | 'DRAFT'
   | 'CREATED'
+  | 'SELLER_PREPARING'
+  | 'PENDING_APPROVAL'
+  | 'APPROVED'
+  | 'ASSIGNED_TO_PICKUP_AND_DELIVERY'
+  | 'ASSIGNED_TO_PICKUP'
   | 'PENDING_VERIFICATION'
   | 'READY_TO_PICK'
   | 'PICKING'
   | 'PICKED'
+  | 'PICKED_UP'
   | 'INBOUND_HUB'
+  | 'IN_HUB_ORIGIN'
+  | 'INBOUND_ORIGIN_HUB'
   | 'SORTING'
+  | 'IN_SORTING_HUB'
   | 'BAGGED_SEALED'
   | 'IN_TRANSIT'
   | 'INBOUND_HUB_DEST'
+  | 'IN_HUB_DEST'
+  | 'INBOUND_DEST_HUB'
+  | 'PENDING_DELIVERY_ASSIGNMENT'
+  | 'ASSIGNED_TO_DELIVERY'
   | 'OUT_FOR_DELIVERY'
+  | 'DELIVERING'
   | 'DELIVERED'
+  | 'PENDING_REDELIVERY'
+  | 'DELIVERY_FAILED_PENDING_RETURN'
   | 'FAILED'
+  | 'PICKUP_FAILED'
   | 'RETURNING'
+  | 'RETURN_IN_TRANSIT'
   | 'RETURNED'
+  | 'RETURNED_TO_HUB_ORIGIN'
+  | 'EXCEPTION_INBOUND'
   | 'CANCELLED'
   | 'PENDING'
   | 'CONFIRMED'
-  | 'PICKED_UP';
+  | string;
 
 export interface Address {
   fullName: string;
   phone: string;
   address: string;
+  subZone?: string;
   ward: string;
   district: string;
   province: string;
@@ -127,12 +148,14 @@ export interface QuoteRequestPayload {
     district: string;
     ward?: string;
     address?: string;
+    subZone?: string;
   };
   deliveryAddress: {
     province: string;
     district: string;
     ward?: string;
     address?: string;
+    subZone?: string;
   };
   items: Array<{
     name: string;

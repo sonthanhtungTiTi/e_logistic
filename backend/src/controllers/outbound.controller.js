@@ -44,12 +44,23 @@ exports.createTrip = async (req, res) => {
 
 exports.listTrips = async (req, res) => {
   try {
-    const currentHubId = req.user?.hubId || req.user?.hub_id;
-    const query = currentHubId ? { originHubId: currentHubId } : {};
+    const isDriver = req.user?.role === 'DRIVER' || req.user?.role === 'LINE_HAUL_DRIVER';
+    let query = {};
+    if (isDriver) {
+      query = {
+        $or: [
+          { status: { $in: ['LOCKED_PENDING_DRIVER_CONFIRM', 'CONFIRMED', 'DEPARTED'] } },
+          { driverId: req.user._id }
+        ]
+      };
+    } else if (req.user?.hubId) {
+      query = { originHubId: req.user.hubId };
+    }
     const trips = await Trip.find(query)
       .sort({ createdAt: -1 })
       .limit(30)
       .populate('destinationHubId', 'code name')
+      .populate('originHubId', 'code name')
       .lean();
     return res.status(200).json({ success: true, message: 'Danh sách chuyến xe', data: trips });
   } catch (err) {

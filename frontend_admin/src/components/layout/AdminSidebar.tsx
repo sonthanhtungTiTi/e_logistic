@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router';
-import { LayoutDashboard, Package, Truck, Users, ShieldAlert, BarChart3, LogOut, ShieldCheck, ClipboardCheck, Boxes } from 'lucide-react';
+import { LayoutDashboard, Package, Truck, Users, ShieldAlert, BarChart3, LogOut, ShieldCheck, Compass, Building2 } from 'lucide-react';
 import { useAdminAuth } from '../../hooks/useAdminAuth';
 import { UserRole } from '@/types/auth.types';
 import { ThemeToggleButton } from '../common/ThemeToggleButton';
@@ -9,32 +9,8 @@ export const AdminSidebar: React.FC = () => {
   const { user, logout } = useAdminAuth();
   const userRole = (user?.role || '').toString();
 
+  // ─── Chỉ menu QUẢN TRỊ — không có Nhập/Xuất/Đóng bao kho ───────────────────
   const navItems = [
-    {
-      to: '/warehouse/inbound',
-      label: 'Quét Nhập Kho (UC-16)',
-      icon: Package,
-      roles: [UserRole.ADMIN, UserRole.WAREHOUSE_STAFF, UserRole.HUB_STAFF, UserRole.HUB_COORDINATOR],
-    },
-    {
-      to: '/warehouse/bagging',
-      label: 'Gom Bao Niêm Phong',
-      icon: Boxes,
-      roles: [UserRole.ADMIN, UserRole.WAREHOUSE_STAFF, UserRole.HUB_STAFF, UserRole.HUB_COORDINATOR],
-    },
-    {
-      to: '/warehouse/outbound',
-      label: 'Quét Xuất Kho (UC-17)',
-      icon: Truck,
-      roles: [UserRole.ADMIN, UserRole.WAREHOUSE_STAFF, UserRole.HUB_STAFF, UserRole.HUB_COORDINATOR],
-    },
-    {
-      to: '/warehouse/audit',
-      label: 'Kiểm Kê Kho (UC-18)',
-      icon: ClipboardCheck,
-      roles: [UserRole.ADMIN, UserRole.WAREHOUSE_STAFF, UserRole.HUB_STAFF, UserRole.HUB_COORDINATOR],
-    },
-
     {
       to: '/admin/dashboard',
       label: 'Tổng Quan Operations',
@@ -61,12 +37,34 @@ export const AdminSidebar: React.FC = () => {
         UserRole.ADMIN,
         UserRole.OPERATIONS,
         UserRole.DISPATCHER,
-        UserRole.WAREHOUSE_STAFF,
-        UserRole.HUB_STAFF,
         UserRole.ACCOUNTANT,
         UserRole.CS,
         UserRole.CUSTOMER_SERVICE,
       ],
+    },
+    {
+      to: '/admin/vendor-ops',
+      label: 'Duyệt Đơn & NCC (QL 1)',
+      icon: Building2,
+      roles: [UserRole.ADMIN, UserRole.ORDER_VENDOR_MANAGER],
+    },
+    {
+      to: '/admin/dispatch/local',
+      label: 'Điều Phối Shipper (QL 2)',
+      icon: Compass,
+      roles: [UserRole.ADMIN, UserRole.LAST_MILE_DISPATCHER, UserRole.DISPATCHER, UserRole.OPERATIONS],
+    },
+    {
+      to: '/admin/dispatch/linehaul',
+      label: 'Điều Phối Xe Tải (QL 3)',
+      icon: Truck,
+      roles: [UserRole.ADMIN, UserRole.LINE_HAUL_DISPATCHER, UserRole.DISPATCHER, UserRole.OPERATIONS],
+    },
+    {
+      to: '/admin/reports',
+      label: 'Báo Cáo Tỷ Lệ SLA & Vận Hành',
+      icon: BarChart3,
+      roles: [UserRole.ADMIN, UserRole.OPERATIONS],
     },
     {
       to: '/admin/users',
@@ -80,17 +78,13 @@ export const AdminSidebar: React.FC = () => {
       icon: ShieldAlert,
       roles: [UserRole.ADMIN],
     },
-    {
-      to: '/admin/reports',
-      label: 'Báo Cáo Tỷ Lệ SLA & Vận Hành',
-      icon: BarChart3,
-      roles: [UserRole.ADMIN, UserRole.OPERATIONS],
-    },
   ];
 
+  // Lọc theo role — KHÔNG dùng "ADMIN thấy tất cả" fallback nữa
   const visibleNavItems = navItems.filter(
-    (item) => (item.roles as string[]).includes(userRole) || userRole === UserRole.ADMIN
+    (item) => (item.roles as string[]).includes(userRole)
   );
+
 
   return (
     <aside className="w-64 bg-slate-950/90 border-r border-slate-800 p-4 flex flex-col justify-between hidden md:flex shrink-0">
@@ -158,4 +152,3 @@ export const AdminSidebar: React.FC = () => {
     </aside>
   );
 };
-

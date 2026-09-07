@@ -90,7 +90,7 @@ export const OrderSuccessModal: React.FC<OrderSuccessModalProps> = ({
             </div>
 
             <div className="flex items-center justify-between bg-slate-950 p-3 rounded-xl border border-slate-800">
-              <span className="font-mono text-xl font-black text-blue-400 tracking-wider">{trackingCode}</span>
+              <span id="modal-success-tracking-code" className="font-mono text-xl font-black text-blue-400 tracking-wider">{trackingCode}</span>
               {/* Simulated Barcode */}
               <div className="flex items-center gap-0.5 opacity-60">
                 <div className="w-1 h-6 bg-slate-400"></div>

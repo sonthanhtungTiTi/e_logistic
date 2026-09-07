@@ -24,11 +24,11 @@ function generateOfflineId(): string {
 }
 
 const HUBS_LIST = [
-  { id: '6a8016bc2c43f32e6cd53dba', code: 'HUB_HAN_01', name: 'Kho Tổng Hà Nội (Miền Bắc)' },
-  { id: '6a8016bc2c43f32e6cd53dbb', code: 'HUB_DAD_01', name: 'Kho Tổng Đà Nẵng (Miền Trung)' },
   { id: '6a8016bd2c43f32e6cd53dbc', code: 'HUB_SGN_01', name: 'Kho Tổng TP.HCM (Miền Nam)' },
-  { id: '6a8016bd2c43f32e6cd53dbd', code: 'HUB_HPH_01', name: 'Bưu cục Hải Phòng' },
-  { id: '6a8016be2c43f32e6cd53dbe', code: 'HUB_VCA_01', name: 'Bưu cục Cần Thơ' },
+  { id: '6a8016bc2c43f32e6cd53dba', code: 'HUB_HAN_01', name: 'Kho Tổng Hà Nội (Miền Bắc)' },
+  { id: '6a8016bc2c43f32e6cd53db9', code: 'HUB_DAD_01', name: 'Kho Tổng Đà Nẵng (Miền Trung)' },
+  { id: '6a8016bd2c43f32e6cd53dc1', code: 'HUB_HPH_01', name: 'Bưu cục Hải Phòng' },
+  { id: '6a8016bd2c43f32e6cd53dbe', code: 'HUB_VCA_01', name: 'Bưu cục Cần Thơ' },
 ];
 
 interface ScanLog {
@@ -219,6 +219,7 @@ export const WarehouseOutboundPage: React.FC = () => {
 
         <div className="flex flex-wrap items-center gap-2">
           <button
+            id="btn-open-create-trip-modal"
             onClick={() => setShowCreateModal(true)}
             className="px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-lg shadow-orange-600/20 transition cursor-pointer"
           >
@@ -345,6 +346,7 @@ export const WarehouseOutboundPage: React.FC = () => {
 
           <div>
             <button
+              id="btn-toggle-manual-outbound"
               type="button"
               onClick={() => {
                 setShowManualInput(!showManualInput);
@@ -365,6 +367,7 @@ export const WarehouseOutboundPage: React.FC = () => {
                 </label>
                 <div className="relative">
                   <input
+                    id="input-outbound-barcode"
                     ref={inputRef}
                     type="text"
                     value={barcodeInput}
@@ -373,9 +376,14 @@ export const WarehouseOutboundPage: React.FC = () => {
                     placeholder="Quét mã đơn / mã seal rồi bấm Enter..."
                     className="w-full text-lg font-mono border-2 border-orange-500/80 rounded-xl px-4 py-3.5 bg-slate-950 text-white placeholder:text-slate-600 focus:outline-none focus:ring-4 focus:ring-orange-500/30 focus:border-orange-400 transition"
                   />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-orange-400 bg-orange-500/20 px-2.5 py-1 rounded-lg border border-orange-500/30">
-                    OUTBOUND
-                  </span>
+                  <button
+                    id="btn-outbound-scan"
+                    type="button"
+                    onClick={() => executeScan(barcodeInput)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-bold text-orange-400 bg-orange-500/20 hover:bg-orange-500/30 px-3 py-1.5 rounded-lg border border-orange-500/30 cursor-pointer"
+                  >
+                    Quét Xuất
+                  </button>
                 </div>
               </div>
             )}
@@ -399,6 +407,7 @@ export const WarehouseOutboundPage: React.FC = () => {
           </label>
 
           <button
+            id="btn-commit-trip"
             onClick={handleCommit}
             disabled={committing}
             className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white text-xs font-black rounded-xl shadow-lg transition disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
@@ -485,6 +494,7 @@ export const WarehouseOutboundPage: React.FC = () => {
               <div>
                 <label className="block font-semibold text-slate-300 mb-1.5">Loại chuyến xe:</label>
                 <select
+                  id="select-outbound-trip-type"
                   value={tripType}
                   onChange={(e) => setTripType(e.target.value as any)}
                   className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-orange-500"
@@ -497,6 +507,7 @@ export const WarehouseOutboundPage: React.FC = () => {
               <div>
                 <label className="block font-semibold text-slate-300 mb-1.5">Kho Đích Đến (Destination Hub):</label>
                 <select
+                  id="select-outbound-dest-hub"
                   value={destHubId}
                   onChange={(e) => setDestHubId(e.target.value)}
                   className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-orange-500"
@@ -514,6 +525,7 @@ export const WarehouseOutboundPage: React.FC = () => {
                   Danh sách mã vận đơn dự kiến (Mỗi mã 1 dòng hoặc cách nhau dấu phẩy):
                 </label>
                 <textarea
+                  id="textarea-outbound-planned-codes"
                   rows={4}
                   value={plannedInput}
                   onChange={(e) => setPlannedInput(e.target.value)}
@@ -532,6 +544,7 @@ export const WarehouseOutboundPage: React.FC = () => {
                   Hủy
                 </button>
                 <button
+                  id="btn-submit-create-trip"
                   type="submit"
                   disabled={creatingTrip}
                   className="px-5 py-2.5 bg-orange-600 hover:bg-orange-500 text-white font-bold rounded-xl shadow-lg transition disabled:opacity-50 cursor-pointer"

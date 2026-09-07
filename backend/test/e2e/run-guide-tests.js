@@ -148,6 +148,20 @@ async function main() {
   const hubId = hub._id;
   info(`Hub: E2E-TEST-HUB → ${hubId}`);
 
+  let destHub = await Hub.findOne({ code: 'E2E-DEST-HUB' });
+  if (!destHub) {
+    destHub = await Hub.create({
+      code: 'E2E-DEST-HUB',
+      name: 'E2E Dest Hub',
+      address: '2 Dest St',
+      district: 'D2',
+      province: 'Hà Nội',
+      type: 'MIXED',
+      isActive: true,
+    });
+  }
+  const destHubId = destHub._id;
+
   // ── Seed Users ──────────────────────────────────────────────────────────────
   const bcrypt = require('bcryptjs');
   const pw = await bcrypt.hash('E2eTest@123', 10);
@@ -200,11 +214,11 @@ async function main() {
   const CODE_WEIGHT = `E2E-IN-WGT-${Date.now()}`;
   const CODE_BADST = `E2E-IN-BADST-${Date.now()}`;
 
-  await upsertOrder(CODE_OK, { status: 'PICKED_UP', originHubId: hubId, destinationHubId: hubId, currentHubId: null, sellerId: staffUser._id });
-  await upsertOrder(CODE_DAMAGED, { status: 'PICKED_UP', originHubId: hubId, destinationHubId: hubId, currentHubId: null, sellerId: staffUser._id });
-  await upsertOrder(CODE_TORN, { status: 'PICKED_UP', originHubId: hubId, destinationHubId: hubId, currentHubId: null, sellerId: staffUser._id });
-  await upsertOrder(CODE_WEIGHT, { status: 'PICKED_UP', originHubId: hubId, destinationHubId: hubId, currentHubId: null, sellerId: staffUser._id, actualWeight: 2.0 });
-  await upsertOrder(CODE_BADST, { status: 'IN_HUB_ORIGIN', originHubId: hubId, destinationHubId: hubId, currentHubId: hubId, sellerId: staffUser._id });
+  await upsertOrder(CODE_OK, { status: 'PICKED_UP', originHubId: hubId, destinationHubId: destHubId, currentHubId: null, sellerId: staffUser._id });
+  await upsertOrder(CODE_DAMAGED, { status: 'PICKED_UP', originHubId: hubId, destinationHubId: destHubId, currentHubId: null, sellerId: staffUser._id });
+  await upsertOrder(CODE_TORN, { status: 'PICKED_UP', originHubId: hubId, destinationHubId: destHubId, currentHubId: null, sellerId: staffUser._id });
+  await upsertOrder(CODE_WEIGHT, { status: 'PICKED_UP', originHubId: hubId, destinationHubId: destHubId, currentHubId: null, sellerId: staffUser._id, actualWeight: 2.0 });
+  await upsertOrder(CODE_BADST, { status: 'IN_HUB_ORIGIN', originHubId: hubId, destinationHubId: destHubId, currentHubId: hubId, sellerId: staffUser._id });
 
   // Test 16-1: Quét bình thường → IN_HUB_ORIGIN
   await test('UC-16-01: Scan INTACT → status=IN_HUB_ORIGIN', async () => {

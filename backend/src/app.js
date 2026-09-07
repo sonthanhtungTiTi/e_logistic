@@ -36,6 +36,10 @@ app.use('/api/inventory', require('./routes/inventory.routes')); // UC-19: Dashb
 app.use('/api/wallet', require('./routes/wallet.routes'));       // Module 6: Ví COD Seller & Rút tiền
 app.use('/api/seller/wallet', require('./routes/wallet.routes'));// Alias cho sub-account Seller
 app.use('/api', require('./routes/deliveryFailure.routes'));       // Chức năng Báo giao thất bại (Delivery Failure Report)
+app.use('/api/vendor-ops', require('./routes/vendorOps.routes')); // Module Quản trị Đơn hàng & Nhà cung cấp
+app.use('/api/dispatch/local', require('./routes/localDispatch.routes')); // Module Điều phối Shipper Nội vùng
+app.use('/api/dispatch/linehaul', require('./routes/linehaulDispatch.routes')); // Module Điều phối Đội xe tải Liên tỉnh
+app.use('/api/custody', require('./routes/custody.routes')); // Module Chuỗi chuyển giao trách nhiệm (Chain of Custody)
 
 // Error Handling Middleware (luôn phải nằm cuối cùng)
 app.use(errorMiddleware);

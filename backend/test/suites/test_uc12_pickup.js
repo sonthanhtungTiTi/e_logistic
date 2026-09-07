@@ -66,7 +66,7 @@ async function runUC12TestSuite() {
       console.log(`🔑 Shipper Token: ${tokenShipper ? 'OK' : 'FAIL'}\n`);
 
       // Helper function tạo đơn hàng mẫu
-      const createOrder = async (weight = 1.0) => {
+      const createOrder = async (weight = 1.0, isReady = true) => {
         const res = await fetch(`${BASE_URL}/orders`, {
           method: 'POST',
           headers: {
@@ -99,7 +99,21 @@ async function runUC12TestSuite() {
         const data = await res.json();
         if (!data.success) {
           console.error('⚠️ [createOrder Error]:', data);
+          return data.data;
         }
+
+        if (isReady && data.data?._id) {
+          await fetch(`${BASE_URL}/orders/${data.data._id}/status`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${tokenSeller}`
+            },
+            body: JSON.stringify({ status: 'READY_TO_PICK' })
+          });
+          data.data.status = 'READY_TO_PICK';
+        }
+
         return data.data;
       };
 

@@ -18,9 +18,9 @@ import {
 } from 'lucide-react';
 
 const HUBS_LIST = [
-  { id: '6a8016bc2c43f32e6cd53dba', code: 'HUB_HAN_01', name: 'Kho Tổng Hà Nội (Miền Bắc)' },
-  { id: '6a8016bc2c43f32e6cd53dbb', code: 'HUB_DAD_01', name: 'Kho Tổng Đà Nẵng (Miền Trung)' },
   { id: '6a8016bd2c43f32e6cd53dbc', code: 'HUB_SGN_01', name: 'Kho Tổng TP.HCM (Miền Nam)' },
+  { id: '6a8016bc2c43f32e6cd53dba', code: 'HUB_HAN_01', name: 'Kho Tổng Hà Nội (Miền Bắc)' },
+  { id: '6a8016bc2c43f32e6cd53db9', code: 'HUB_DAD_01', name: 'Kho Tổng Đà Nẵng (Miền Trung)' },
   { id: '6a8016bd2c43f32e6cd53dc1', code: 'HUB_HPH_01', name: 'Bưu cục Hải Phòng' },
   { id: '6a8016bd2c43f32e6cd53dbe', code: 'HUB_VCA_01', name: 'Bưu cục Cần Thơ' },
   { id: '6a8016bd2c43f32e6cd53dbf', code: 'HUB_BDG_01', name: 'Bưu cục Bình Dương' },
@@ -226,6 +226,7 @@ export const WarehouseBaggingPage: React.FC = () => {
                 <div className="flex justify-between items-center mb-1">
                   <label className="text-slate-400 font-semibold">Mã Khóa Seal *</label>
                   <button
+                    id="btn-gen-seal-code"
                     type="button"
                     onClick={handleGenerateSealCode}
                     className="text-orange-400 hover:text-orange-300 text-[11px] font-bold underline"
@@ -234,6 +235,7 @@ export const WarehouseBaggingPage: React.FC = () => {
                   </button>
                 </div>
                 <input
+                  id="input-seal-code"
                   type="text"
                   placeholder="VD: SEAL-HAN-001"
                   value={sealCodeInput}
@@ -245,6 +247,7 @@ export const WarehouseBaggingPage: React.FC = () => {
               <div>
                 <label className="text-slate-400 font-semibold block mb-1">Hub Đích Đến *</label>
                 <select
+                  id="select-bag-dest-hub"
                   value={destHubIdInput}
                   onChange={(e) => setDestHubIdInput(e.target.value)}
                   className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white text-xs focus:outline-none focus:border-orange-500 transition"
@@ -264,7 +267,7 @@ export const WarehouseBaggingPage: React.FC = () => {
                     type="number"
                     value={maxCapacityInput}
                     onChange={(e) => setMaxCapacityInput(Number(e.target.value))}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono text-xs focus:outline-none focus:border-orange-500"
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-white font-mono text-xs focus:outline-none focus:border-orange-500"
                   />
                 </div>
                 <div>
@@ -273,12 +276,13 @@ export const WarehouseBaggingPage: React.FC = () => {
                     type="number"
                     value={maxWeightInput}
                     onChange={(e) => setMaxWeightInput(Number(e.target.value))}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono text-xs focus:outline-none focus:border-orange-500"
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-white font-mono text-xs focus:outline-none focus:border-orange-500"
                   />
                 </div>
               </div>
 
               <button
+                id="btn-open-bag"
                 type="submit"
                 disabled={loading}
                 className="w-full py-2.5 bg-orange-600 hover:bg-orange-500 text-white font-bold rounded-xl shadow-lg shadow-orange-600/20 transition flex items-center justify-center gap-2 mt-2"
@@ -355,6 +359,7 @@ export const WarehouseBaggingPage: React.FC = () => {
                   </div>
 
                   <button
+                    id="btn-seal-bag"
                     onClick={handleSealBag}
                     disabled={loading || totalItems === 0}
                     className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-xs rounded-xl shadow-lg shadow-emerald-600/20 transition flex items-center gap-2 cursor-pointer"
@@ -437,6 +442,7 @@ export const WarehouseBaggingPage: React.FC = () => {
                   <div className="relative flex-1">
                     <Keyboard className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
                     <input
+                      id="input-bag-tracking-code"
                       ref={inputRef}
                       type="text"
                       placeholder="Quét mã vạch hoặc nhập mã vận đơn (VD: ELG-VN-123456)..."
@@ -447,6 +453,7 @@ export const WarehouseBaggingPage: React.FC = () => {
                     />
                   </div>
                   <button
+                    id="btn-add-item-to-bag"
                     onClick={() => handleAddItem()}
                     className="px-6 py-3 bg-orange-600 hover:bg-orange-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-orange-600/20 transition cursor-pointer"
                   >
