@@ -21,6 +21,7 @@ import { UnauthorizedPage } from '@/pages/auth/UnauthorizedPage';
 import { OperationsDashboardPage } from '@/pages/dashboard/OperationsDashboardPage';
 import { GlobalOrderListPage } from '@/pages/orders/GlobalOrderListPage';
 import { RiskReviewPage } from '@/pages/orders/RiskReviewPage';
+import { OrderApprovalPage } from '@/pages/orders/OrderApprovalPage';
 import { DispatchControlPage } from '@/pages/dispatch/DispatchControlPage';
 import { UserManagementPage } from '@/pages/users/UserManagementPage';
 import { SecurityAuditPage } from '@/pages/security/SecurityAuditPage';
@@ -82,6 +83,7 @@ export const AppRoutes: React.FC = () => {
           
           <Route path="/admin/dashboard" element={<OperationsDashboardPage />} />
           <Route path="/admin/orders" element={<GlobalOrderListPage />} />
+          <Route path="/admin/orders/approval" element={<OrderApprovalPage />} />
           <Route path="/admin/orders/:id/review" element={<RiskReviewPage />} />
           
           {/* Dispatch Control */}

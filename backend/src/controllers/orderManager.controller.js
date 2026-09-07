@@ -20,7 +20,7 @@ const orderManagerController = {
         return res.status(404).json({ message: 'Không tìm thấy đơn hàng hoặc bạn không có quyền thao tác' });
       }
 
-      if (!['CREATED', 'SELLER_PREPARING'].includes(order.status)) {
+      if (!['CREATED', 'SELLER_PREPARING', 'DRAFT', 'READY_TO_PICK'].includes(order.status)) {
         return res.status(400).json({
           message: `Đơn hàng đang ở trạng thái "${order.status}", không thể đánh dấu chuẩn bị xong.`,
         });

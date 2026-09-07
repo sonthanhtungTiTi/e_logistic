@@ -28,10 +28,11 @@ export const AdminNavbar: React.FC = () => {
         </div>
 
         {/* User Info, Theme Switcher & Logout */}
-        <div className="flex items-center gap-3">
-          <ThemeToggleButton />
+        <div className="flex items-center gap-2.5">
+          <ThemeToggleButton showLabel className="hidden sm:flex" />
+          <ThemeToggleButton className="sm:hidden" />
           {user && (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2.5">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-500/30">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-ping"></span>
                 {user.role} ({user.fullName})

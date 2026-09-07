@@ -3,6 +3,7 @@ import { NavLink } from 'react-router';
 import { LayoutDashboard, Package, Truck, Users, ShieldAlert, BarChart3, LogOut, ShieldCheck, ClipboardCheck, Boxes } from 'lucide-react';
 import { useAdminAuth } from '../../hooks/useAdminAuth';
 import { UserRole } from '@/types/auth.types';
+import { ThemeToggleButton } from '../common/ThemeToggleButton';
 
 export const AdminSidebar: React.FC = () => {
   const { user, logout } = useAdminAuth();
@@ -33,12 +34,7 @@ export const AdminSidebar: React.FC = () => {
       icon: ClipboardCheck,
       roles: [UserRole.ADMIN, UserRole.WAREHOUSE_STAFF, UserRole.HUB_STAFF, UserRole.HUB_COORDINATOR],
     },
-    {
-      to: '/driver/pickup',
-      label: 'Driver Pickup PWA (UC-12)',
-      icon: Truck,
-      roles: [UserRole.ADMIN, UserRole.DRIVER, UserRole.LINE_HAUL_DRIVER],
-    },
+
     {
       to: '/admin/dashboard',
       label: 'Tổng Quan Operations',
@@ -46,8 +42,20 @@ export const AdminSidebar: React.FC = () => {
       roles: [UserRole.ADMIN, UserRole.OPERATIONS, UserRole.DISPATCHER, UserRole.HUB_COORDINATOR],
     },
     {
+      to: '/admin/orders/approval',
+      label: 'Duyệt Đơn Hàng (Approval)',
+      icon: ShieldCheck,
+      roles: [UserRole.ADMIN, UserRole.OPERATIONS, UserRole.DISPATCHER],
+    },
+    {
+      to: '/admin/dispatch',
+      label: 'Điều Phối Gom Hàng (Dispatch)',
+      icon: Truck,
+      roles: [UserRole.ADMIN, UserRole.OPERATIONS, UserRole.DISPATCHER],
+    },
+    {
       to: '/admin/orders',
-      label: 'Global Order List',
+      label: 'Tất Cả Đơn Hàng (Global List)',
       icon: Package,
       roles: [
         UserRole.ADMIN,
@@ -59,12 +67,6 @@ export const AdminSidebar: React.FC = () => {
         UserRole.CS,
         UserRole.CUSTOMER_SERVICE,
       ],
-    },
-    {
-      to: '/admin/dispatch',
-      label: 'Điều Phối Vận Tải (Dispatch)',
-      icon: Truck,
-      roles: [UserRole.ADMIN, UserRole.OPERATIONS, UserRole.DISPATCHER],
     },
     {
       to: '/admin/users',
@@ -111,10 +113,9 @@ export const AdminSidebar: React.FC = () => {
                 key={item.to}
                 to={item.to}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition ${
-                    isActive
-                      ? 'bg-blue-600/15 text-blue-600 dark:text-blue-400 border border-blue-500/30 font-bold'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-900/60'
+                  `flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition ${isActive
+                    ? 'bg-blue-600/15 text-blue-600 dark:text-blue-400 border border-blue-500/30 font-bold'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-900/60'
                   }`
                 }
               >
@@ -127,6 +128,12 @@ export const AdminSidebar: React.FC = () => {
       </div>
 
       <div className="pt-4 border-t border-slate-200 dark:border-slate-800 space-y-3">
+        {/* Nút chuyển đổi Theme nổi bật trong Sidebar */}
+        <div className="p-1 rounded-xl bg-slate-100/80 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 flex items-center justify-between gap-2 px-2.5 py-1.5">
+          <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-400">Giao diện:</span>
+          <ThemeToggleButton showLabel className="py-1 px-2.5 text-[11px]" />
+        </div>
+
         {user && (
           <div className="p-3 rounded-xl bg-slate-100 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 space-y-1">
             <div className="flex items-center justify-between">

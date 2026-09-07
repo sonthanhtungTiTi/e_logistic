@@ -7,7 +7,7 @@ const { protect, authorize } = require('../middleware/auth.middleware');
 router.get(
   '/pending-pickup-assignment',
   protect,
-  authorize('DRIVER_MANAGER', 'ADMIN'),
+  authorize('DRIVER_MANAGER', 'ADMIN', 'DISPATCHER', 'OPERATIONS', 'HUB_COORDINATOR'),
   driverManagerController.getPendingPickupAssignments
 );
 
@@ -15,7 +15,7 @@ router.get(
 router.get(
   '/pending-delivery-assignment',
   protect,
-  authorize('DRIVER_MANAGER', 'ADMIN'),
+  authorize('DRIVER_MANAGER', 'ADMIN', 'DISPATCHER', 'OPERATIONS', 'HUB_COORDINATOR'),
   driverManagerController.getPendingDeliveryAssignments
 );
 
@@ -23,7 +23,7 @@ router.get(
 router.get(
   '/drivers-by-area',
   protect,
-  authorize('DRIVER_MANAGER', 'ADMIN'),
+  authorize('DRIVER_MANAGER', 'ADMIN', 'DISPATCHER', 'OPERATIONS', 'HUB_COORDINATOR'),
   driverManagerController.getDriversByArea
 );
 
@@ -31,7 +31,7 @@ router.get(
 router.post(
   '/assign-pickup',
   protect,
-  authorize('DRIVER_MANAGER', 'ADMIN'),
+  authorize('DRIVER_MANAGER', 'ADMIN', 'DISPATCHER', 'OPERATIONS', 'HUB_COORDINATOR'),
   driverManagerController.assignPickup
 );
 
@@ -39,7 +39,7 @@ router.post(
 router.post(
   '/assign-delivery',
   protect,
-  authorize('DRIVER_MANAGER', 'ADMIN'),
+  authorize('DRIVER_MANAGER', 'ADMIN', 'DISPATCHER', 'OPERATIONS', 'HUB_COORDINATOR'),
   driverManagerController.assignDelivery
 );
 
@@ -47,7 +47,7 @@ router.post(
 router.post(
   '/review-rejection',
   protect,
-  authorize('DRIVER_MANAGER', 'ADMIN'),
+  authorize('DRIVER_MANAGER', 'ADMIN', 'DISPATCHER', 'OPERATIONS', 'HUB_COORDINATOR'),
   driverManagerController.reviewRejection
 );
 
@@ -55,8 +55,24 @@ router.post(
 router.get(
   '/drivers-quota-exhausted',
   protect,
-  authorize('DRIVER_MANAGER', 'ADMIN'),
+  authorize('DRIVER_MANAGER', 'ADMIN', 'DISPATCHER', 'OPERATIONS', 'HUB_COORDINATOR'),
   driverManagerController.getExhaustedQuotaDrivers
+);
+
+// Điều phối tự động: Xem trước phương án phân công (Preview)
+router.post(
+  '/auto-assign-preview',
+  protect,
+  authorize('DRIVER_MANAGER', 'ADMIN', 'DISPATCHER', 'OPERATIONS', 'HUB_COORDINATOR'),
+  driverManagerController.autoAssignPreview
+);
+
+// Điều phối tự động: Xác nhận lưu phân công vào Database (Commit)
+router.post(
+  '/auto-assign-commit',
+  protect,
+  authorize('DRIVER_MANAGER', 'ADMIN', 'DISPATCHER', 'OPERATIONS', 'HUB_COORDINATOR'),
+  driverManagerController.autoAssignCommit
 );
 
 module.exports = router;
