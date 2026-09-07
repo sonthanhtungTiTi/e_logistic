@@ -3,6 +3,7 @@ import { X, MapPin, Truck, Edit3, Trash2, Printer, CheckCircle2, Loader2, Clock,
 import type { Order } from '../../types/order.types';
 import { PrintWaybillModal } from '../orders/PrintWaybillModal';
 import { orderApi } from '../../api/order.api';
+import { getOrderStatusBadge } from '../../lib/orderStatus';
 
 interface TrackingModalProps {
   order: Order | null;
@@ -122,12 +123,8 @@ export const TrackingModal: React.FC<TrackingModalProps> = ({ order, onClose, on
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-mono text-lg font-black text-white">{order.trackingCode || order.trackingNumber}</span>
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded border uppercase ${
-                  isCancelled
-                    ? 'bg-rose-500/20 text-rose-400 border-rose-500/30'
-                    : 'bg-blue-500/20 text-blue-300 border-blue-500/30'
-                }`}>
-                  {order.status}
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded border uppercase ${getOrderStatusBadge(order.status).bg}`}>
+                  {getOrderStatusBadge(order.status).label}
                 </span>
               </div>
               <p className="text-xs text-slate-400">Khởi tạo lúc: {order.createdAt ? new Date(order.createdAt).toLocaleString('vi-VN') : 'Mới tạo'}</p>

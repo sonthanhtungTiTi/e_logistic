@@ -372,10 +372,10 @@ export const OrderApprovalPage: React.FC = () => {
                               <span className="font-mono font-bold text-cyan-400 text-sm">{ord.trackingCode}</span>
                               <div className="flex items-center gap-1.5">
                                 <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                                  PENDING_APPROVAL
+                                  CHỜ DUYỆT
                                 </span>
                                 <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30">
-                                  {ord.routeType || 'HUB_ROUTED'}
+                                  {ord.routeType === 'DIRECT' ? 'GIAO THẲNG' : 'QUA BƯU CỤC'}
                                 </span>
                               </div>
                             </div>

@@ -5,6 +5,7 @@ import { VietnamAddressSelector } from '../shared/VietnamAddressSelector';
 import type { VietnamAddressData } from '../shared/VietnamAddressSelector';
 import { orderApi } from '../../api/order.api';
 import { formatNumberWithDots, parseDotsToNumber } from '../../lib/formatters';
+import { getOrderStatusLabel } from '../../lib/orderStatus';
 
 interface EditOrderModalProps {
   order: Order;
@@ -46,7 +47,7 @@ export const EditOrderModal: React.FC<EditOrderModalProps> = ({ order, onClose, 
     setErrorMessage(null);
 
     if (!isEditableStatus) {
-      setErrorMessage(`Đơn hàng đã chuyển sang trạng thái "${order.status}". Hệ thống không cho phép chỉnh sửa thông tin nữa.`);
+      setErrorMessage(`Đơn hàng đã chuyển sang trạng thái "${getOrderStatusLabel(order.status)}". Hệ thống không cho phép chỉnh sửa thông tin nữa.`);
       return;
     }
 

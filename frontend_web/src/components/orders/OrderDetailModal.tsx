@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Package, X, MapPin, User, Edit3, Printer, CheckCircle2, Clock, Hourglass, Lock } from 'lucide-react';
 import type { Order } from '../../types/order.types';
 import { PrintWaybillModal } from './PrintWaybillModal';
+import { getOrderStatusBadge } from '../../lib/orderStatus';
 
 interface OrderDetailModalProps {
   order: Order;
@@ -118,16 +119,8 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, onClo
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-1">
             <span className="text-[11px] text-slate-400 block font-semibold">Trạng Thái Hiện Tại</span>
-            <span className={`px-3 py-1 rounded-full text-xs font-black uppercase inline-block border ${
-              order.status === 'CANCELLED'
-                ? 'bg-rose-500/20 text-rose-400 border-rose-500/30'
-                : order.status === 'DELIVERED'
-                ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
-                : order.status === 'CREATED'
-                ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
-                : 'bg-blue-500/20 text-blue-300 border-blue-500/30'
-            }`}>
-              {order.status}
+            <span className={`px-3 py-1 rounded-full text-xs font-black uppercase inline-block border ${getOrderStatusBadge(order.status).bg}`}>
+              {getOrderStatusBadge(order.status).label}
             </span>
           </div>
 
