@@ -3,7 +3,6 @@ import { X, MapPin, Truck, Edit3, Trash2, Printer, CheckCircle2, Loader2, Clock,
 import type { Order } from '../../types/order.types';
 import { PrintWaybillModal } from '../orders/PrintWaybillModal';
 import { orderApi } from '../../api/order.api';
-import { getOrderStatusBadge } from '../../lib/orderStatus';
 
 interface TrackingModalProps {
   order: Order | null;
@@ -113,7 +112,7 @@ export const TrackingModal: React.FC<TrackingModalProps> = ({ order, onClose, on
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
       <div className="relative w-full max-w-3xl glass-panel rounded-3xl border border-slate-700/80 shadow-2xl p-6 sm:p-8 space-y-6 my-8 animate-in fade-in zoom-in-95 duration-200">
-        
+
         {/* Top Header */}
         <div className="flex items-center justify-between border-b border-slate-800 pb-4">
           <div className="flex items-center gap-3">
@@ -123,8 +122,11 @@ export const TrackingModal: React.FC<TrackingModalProps> = ({ order, onClose, on
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-mono text-lg font-black text-white">{order.trackingCode || order.trackingNumber}</span>
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded border uppercase ${getOrderStatusBadge(order.status).bg}`}>
-                  {getOrderStatusBadge(order.status).label}
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded border uppercase ${isCancelled
+                    ? 'bg-rose-500/20 text-rose-400 border-rose-500/30'
+                    : 'bg-blue-500/20 text-blue-300 border-blue-500/30'
+                  }`}>
+                  {order.status}
                 </span>
               </div>
               <p className="text-xs text-slate-400">Khởi tạo lúc: {order.createdAt ? new Date(order.createdAt).toLocaleString('vi-VN') : 'Mới tạo'}</p>
@@ -172,15 +174,13 @@ export const TrackingModal: React.FC<TrackingModalProps> = ({ order, onClose, on
 
         {/* READY_TO_PICK Countdown Banner (Đã đóng gói xong - Đếm ngược 5p cho phép Hủy) */}
         {order.status === 'READY_TO_PICK' && (
-          <div className={`p-4 rounded-2xl border text-xs font-semibold flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg ${
-            secondsRemaining > 0 
+          <div className={`p-4 rounded-2xl border text-xs font-semibold flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg ${secondsRemaining > 0
               ? 'bg-amber-500/10 border-amber-500/30 text-amber-300'
               : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
-          }`}>
+            }`}>
             <div className="flex items-center gap-2.5">
-              <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
-                secondsRemaining > 0 ? 'bg-amber-500/20 text-amber-400' : 'bg-rose-500/20 text-rose-400'
-              }`}>
+              <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${secondsRemaining > 0 ? 'bg-amber-500/20 text-amber-400' : 'bg-rose-500/20 text-rose-400'
+                }`}>
                 <Clock className="w-5 h-5" />
               </div>
               <div>
@@ -205,18 +205,16 @@ export const TrackingModal: React.FC<TrackingModalProps> = ({ order, onClose, on
 
         {/* Telematics GPS Live Tracking Banner - Chỉ hiển thị khi đang ở Chặng Giao Cuối (OUT_FOR_DELIVERY / DELIVERING) */}
         {['OUT_FOR_DELIVERY', 'DELIVERING', 'LAST_MILE_DELIVERING'].includes(order.status) && (order as any).live_tracking?.is_active && !(order as any).live_tracking?.hideMap ? (
-          <div className={`p-4 rounded-2xl border text-xs font-medium space-y-2 ${
-            (order as any).live_tracking.status === 'LOST_SIGNAL'
+          <div className={`p-4 rounded-2xl border text-xs font-medium space-y-2 ${(order as any).live_tracking.status === 'LOST_SIGNAL'
               ? 'bg-rose-500/10 border-rose-500/30 text-rose-300'
               : (order as any).live_tracking.status === 'DEGRADED_SIGNAL'
-              ? 'bg-amber-500/10 border-amber-500/30 text-amber-300'
-              : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
-          }`}>
+                ? 'bg-amber-500/10 border-amber-500/30 text-amber-300'
+                : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+            }`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 font-bold">
-                <div className={`w-2.5 h-2.5 rounded-full ${
-                  (order as any).live_tracking.status === 'LIVE' ? 'bg-emerald-400 animate-ping' : 'bg-amber-400'
-                }`} />
+                <div className={`w-2.5 h-2.5 rounded-full ${(order as any).live_tracking.status === 'LIVE' ? 'bg-emerald-400 animate-ping' : 'bg-amber-400'
+                  }`} />
                 <span className="flex items-center gap-1.5">
                   {(order as any).live_tracking.status === 'LIVE' && (
                     <>
@@ -264,7 +262,7 @@ export const TrackingModal: React.FC<TrackingModalProps> = ({ order, onClose, on
         {!isCancelled && (
           <div className="bg-slate-900/80 p-5 rounded-2xl border border-slate-800 space-y-4">
             <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Tiến Trình & Các Mốc Thời Gian Đã Đi Qua</h4>
-            
+
             <div className="grid grid-cols-5 gap-1 relative">
               {steps.map((step, idx) => {
                 const isDone = idx <= currentStepIdx;
@@ -273,13 +271,12 @@ export const TrackingModal: React.FC<TrackingModalProps> = ({ order, onClose, on
                 return (
                   <div key={step.key} className="flex flex-col items-center text-center space-y-2">
                     <div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
-                        isCurrent
+                      className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${isCurrent
                           ? 'bg-blue-600 text-white ring-4 ring-blue-500/30 scale-110'
                           : isDone
-                          ? 'bg-emerald-500 text-slate-950 font-black'
-                          : 'bg-slate-800 text-slate-500'
-                      }`}
+                            ? 'bg-emerald-500 text-slate-950 font-black'
+                            : 'bg-slate-800 text-slate-500'
+                        }`}
                     >
                       {isDone ? <Check className="w-4 h-4 text-slate-950 stroke-[3]" /> : idx + 1}
                     </div>
@@ -312,19 +309,17 @@ export const TrackingModal: React.FC<TrackingModalProps> = ({ order, onClose, on
                     return (
                       <div key={idx} className="relative group">
                         {/* Timeline Node Icon */}
-                        <div className={`absolute -left-6 top-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center text-[10px] font-bold ${
-                          isFirst
+                        <div className={`absolute -left-6 top-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center text-[10px] font-bold ${isFirst
                             ? 'bg-blue-600 border-blue-400 text-white shadow-lg shadow-blue-500/50 scale-110'
                             : 'bg-slate-900 border-slate-700 text-slate-400'
-                        }`}>
+                          }`}>
                           {isFirst ? '●' : '○'}
                         </div>
 
-                        <div className={`p-3.5 rounded-2xl border transition-all ${
-                          isFirst
+                        <div className={`p-3.5 rounded-2xl border transition-all ${isFirst
                             ? 'bg-slate-900/90 border-blue-500/40 shadow-md shadow-blue-500/10'
                             : 'bg-slate-950/40 border-slate-800/80'
-                        }`}>
+                          }`}>
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-1">
                             <h5 className={`text-xs font-bold ${isFirst ? 'text-blue-400' : 'text-slate-200'}`}>
                               {log.title}

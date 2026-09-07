@@ -12,7 +12,6 @@ import {
 import { useNavigate } from 'react-router';
 import { adminOrderApi } from '../../api/order.api';
 import type { Order } from '../../types/order.types';
-import { getOrderStatusBadge } from '../../lib/orderStatus';
 
 export const GlobalOrderListPage: React.FC = () => {
   const navigate = useNavigate();
@@ -235,9 +234,14 @@ export const GlobalOrderListPage: React.FC = () => {
                       {/* Status & Risk Badges (Matching Wireframe 3) */}
                       <td className="py-4 px-4 space-y-1">
                         <span
-                          className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase border ${getOrderStatusBadge(ord.status).bg}`}
+                          className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black ${ord.status === 'PENDING_VERIFICATION'
+                              ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                              : ord.status === 'CANCELLED'
+                                ? 'bg-red-500/20 text-red-400 border border-red-500/30'
+                                : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                            }`}
                         >
-                          {getOrderStatusBadge(ord.status).label}
+                          {ord.status}
                         </span>
 
                         {hasRisk && (

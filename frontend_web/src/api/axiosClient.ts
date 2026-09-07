@@ -13,6 +13,15 @@ axiosClient.interceptors.request.use(
     if (token && token !== 'undefined' && token !== 'null' && token.trim() !== '') {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    // Tự động bỏ Content-Type mặc định khi gửi FormData để trình duyệt tự gán multipart boundary chuẩn
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
+      delete config.headers['content-type'];
+      if (typeof (config.headers as any)?.delete === 'function') {
+        (config.headers as any).delete('Content-Type');
+        (config.headers as any).delete('content-type');
+      }
+    }
     return config;
   },
   (error) => Promise.reject(error)

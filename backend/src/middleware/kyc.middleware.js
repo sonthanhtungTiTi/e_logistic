@@ -1,8 +1,15 @@
-const requireVerifiedKyc = async (req, res, next) => {
+const requireVerifiedKyc = (req, res, next) => {
   if (req.user && req.user.role === 'SELLER') {
-    if (req.user.kycStatus !== 'VERIFIED_KYC') {
+    const isVerified =
+      req.user.kycVerified === true ||
+      req.user.kycStatus === 'APPROVED' ||
+      req.user.kycStatus === 'VERIFIED_KYC';
+
+    if (!isVerified) {
       return res.status(403).json({
-        message: 'Shop chưa hoàn tất xác minh KYC, không thể thực hiện thao tác này.',
+        success: false,
+        code: 'KYC_REQUIRED',
+        message: 'Cần hoàn tất xác minh KYC trước khi tạo đơn',
         kycStatus: req.user.kycStatus || 'NOT_SUBMITTED',
       });
     }
@@ -11,3 +18,4 @@ const requireVerifiedKyc = async (req, res, next) => {
 };
 
 module.exports = { requireVerifiedKyc };
+

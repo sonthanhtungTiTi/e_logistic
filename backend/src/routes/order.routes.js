@@ -26,6 +26,7 @@ const {
 } = require('../controllers/order.controller');
 const { protect, authorize, resolveSellerContext } = require('../middleware/auth.middleware');
 const { createOrderRateLimiter, trackingRateLimiter } = require('../middleware/rateLimit.middleware');
+const { requireVerifiedKyc } = require('../middleware/kyc.middleware');
 
 // GET /api/orders/public-recent - Danh sách vận đơn hiển thị công khai trên LandingPage
 router.get('/public-recent', getPublicRecentOrders);
@@ -47,7 +48,8 @@ router.post('/quote', protect, authorize('SELLER', 'ADMIN'), resolveSellerContex
 router.post('/bulk-cancel', protect, authorize('SELLER', 'ADMIN'), resolveSellerContext, bulkCancelOrders);
 
 // POST /api/orders - Tạo đơn hàng chính thức (UC-06)
-router.post('/', createOrderRateLimiter, protect, authorize('SELLER', 'ADMIN'), resolveSellerContext, createOrder);
+router.post('/', createOrderRateLimiter, protect, authorize('SELLER', 'ADMIN'), requireVerifiedKyc, resolveSellerContext, createOrder);
+
 
 // PUT /api/orders/:id - Cập nhật đơn hàng (UC-07)
 router.put('/:id', protect, authorize('SELLER', 'ADMIN'), updateOrder);

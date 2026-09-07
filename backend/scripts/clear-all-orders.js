@@ -10,6 +10,11 @@ async function clearAllOrders() {
 
     const db = mongoose.connection.db;
 
+    if (process.env.NODE_ENV === 'production' && !process.argv.includes('--force-production')) {
+      console.error('⛔ CẢNH BÁO AN TOÀN: Không thể chạy script xóa dữ liệu trên môi trường PRODUCTION!');
+      process.exit(1);
+    }
+
     console.log('🧹 Bắt đầu xóa sạch toàn bộ đơn hàng và dữ liệu vận hành liên quan...');
 
     // 1. Xóa toàn bộ Orders

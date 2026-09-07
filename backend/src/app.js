@@ -41,6 +41,11 @@ app.use('/api/dispatch/local', require('./routes/localDispatch.routes')); // Mod
 app.use('/api/dispatch/linehaul', require('./routes/linehaulDispatch.routes')); // Module Điều phối Đội xe tải Liên tỉnh
 app.use('/api/custody', require('./routes/custody.routes')); // Module Chuỗi chuyển giao trách nhiệm (Chain of Custody)
 
+// Endpoint bảo vệ truy cập ảnh KYC (Anti-IDOR Image Stream)
+const { protect } = require('./middleware/auth.middleware');
+const { getKycFile } = require('./controllers/kyc.controller');
+app.get('/api/kyc/files/:filename', protect, getKycFile);
+
 // Error Handling Middleware (luôn phải nằm cuối cùng)
 app.use(errorMiddleware);
 

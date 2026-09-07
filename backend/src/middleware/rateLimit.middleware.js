@@ -36,7 +36,31 @@ const trackingRateLimiter = rateLimit({
   }
 });
 
+/**
+ * Rate Limiter for KYC Submission API
+ * Limits each Seller to at most 3 submissions per 24-hour window
+ */
+const kycSubmitRateLimiter = rateLimit({
+  windowMs: 24 * 60 * 60 * 1000, // 24 hours
+  max: 3, // Max 3 submissions per 24 hours
+  standardHeaders: true,
+  legacyHeaders: false,
+  validate: { keyGeneratorIpFallback: false },
+  keyGenerator: (req) => {
+    return req.user?._id ? req.user._id.toString() : 'anonymous';
+  },
+  handler: (req, res) => {
+    return res.status(429).json({
+      success: false,
+      code: 'KYC_RATE_LIMIT_EXCEEDED',
+      message: 'Bạn đã nộp KYC quá số lần cho phép (tối đa 3 lần/ngày). Vui lòng thử lại sau 24 giờ.',
+    });
+  },
+});
+
 module.exports = {
   createOrderRateLimiter,
-  trackingRateLimiter
+  trackingRateLimiter,
+  kycSubmitRateLimiter,
 };
+

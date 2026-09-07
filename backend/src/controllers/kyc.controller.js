@@ -1,157 +1,223 @@
-const KycDocument = require('../models/kyc.model');
-const User = require('../models/user.model');
-const Joi = require('joi');
-const mongoose = require('mongoose');
+const path = require('path');
+const fs = require('fs');
+const kycService = require('../services/kyc.service');
+const { submitKycSchema, rejectKycSchema } = require('../validations/kyc.validation');
+const { KYC_UPLOAD_DIR } = require('../middleware/upload.middleware');
 
-// @desc    Seller nộp hồ sơ KYC
-// @route   POST /api/kyc/submit
+// @desc    Seller nộp hồ sơ KYC (CCCD 2 mặt + GPKD tùy chọn)
+// @route   POST /api/seller/kyc/submit
 // @access  Private (SELLER)
-const submitKycDocument = async (req, res) => {
-  const session = await mongoose.startSession();
+const submitKyc = async (req, res, next) => {
   try {
-    session.startTransaction();
-
-    const schema = Joi.object({
-      documentType: Joi.string()
-        .valid('BUSINESS_LICENSE', 'ID_CARD_FRONT', 'ID_CARD_BACK', 'TAX_CERTIFICATE')
-        .required()
-        .messages({ 'any.required': 'Vui lòng chọn loại giấy tờ KYC' }),
-      fileUrl: Joi.string().required().messages({ 'any.required': 'Vui lòng tải lên tài liệu / ảnh giấy tờ' }),
-    });
-
-    const { error } = schema.validate(req.body);
+    const { error, value } = submitKycSchema.validate(req.body, { abortEarly: false });
     if (error) {
-      await session.abortTransaction();
-      return res.status(400).json({ message: error.details[0].message });
+      return res.status(400).json({
+        success: false,
+        code: 'VALIDATION_ERROR',
+        message: error.details.map((d) => d.message).join('; '),
+      });
     }
 
-    const { documentType, fileUrl } = req.body;
-    const sellerId = req.user._id;
+    const meta = {
+      ipAddress: req.ip || req.headers['x-forwarded-for'],
+      userAgent: req.headers['user-agent'],
+    };
 
-    // Kiểm tra xem đang có bản ghi PENDING cho loại giấy tờ này không
-    const existingPending = await KycDocument.findOne({
-      sellerId,
-      documentType,
-      status: 'PENDING_KYC',
-    }).session(session);
+    const result = await kycService.submitKyc(req.user._id, value, req.files, meta);
 
-    if (existingPending) {
-      await session.abortTransaction();
-      return res.status(409).json({ message: 'Giấy tờ loại này đang chờ Admin duyệt. Không thể nộp lại lúc này.' });
-    }
-
-    const doc = await KycDocument.create(
-      [
-        {
-          sellerId,
-          documentType,
-          fileUrl,
-          status: 'PENDING_KYC',
-          submittedAt: new Date(),
-        },
-      ],
-      { session }
-    );
-
-    // Cập nhật trạng thái tổng quát trên User Schema (denormalized fast check)
-    await User.findByIdAndUpdate(sellerId, { kycStatus: 'PENDING_KYC' }, { session });
-
-    await session.commitTransaction();
-    res.status(201).json(doc[0]);
-  } catch (err) {
-    await session.abortTransaction();
-    console.error(`[KYC] Lỗi nộp hồ sơ KYC:`, err);
-    res.status(500).json({ message: 'Lỗi máy chủ khi nộp hồ sơ KYC' });
-  } finally {
-    session.endSession();
-  }
-};
-
-// @desc    Lấy trạng thái và danh sách tài liệu KYC của Seller
-// @route   GET /api/kyc/status
-// @access  Private (SELLER)
-const getKycStatus = async (req, res) => {
-  try {
-    const sellerId = req.user._id;
-    const documents = await KycDocument.find({ sellerId }).sort({ createdAt: -1 });
-    const user = await User.findById(sellerId).select('kycStatus companyName taxCode');
-
-    res.json({
-      kycStatus: user?.kycStatus || 'NOT_SUBMITTED',
-      documents,
+    return res.status(201).json({
+      success: true,
+      message: 'Nộp hồ sơ xác minh KYC thành công. Đang chờ Admin phê duyệt.',
+      data: result,
     });
   } catch (err) {
-    console.error(`[KYC] Lỗi lấy trạng thái KYC:`, err);
-    res.status(500).json({ message: 'Không thể lấy thông tin KYC.' });
+    next(err);
   }
 };
 
-// @desc    Admin duyệt hoặc từ chối tài liệu KYC (Admin workflow)
-// @route   PATCH /api/kyc/review/:docId
-// @access  Private (ADMIN)
-const reviewKycDocument = async (req, res) => {
-  const session = await mongoose.startSession();
+// @desc    Seller xem trạng thái hồ sơ KYC
+// @route   GET /api/seller/kyc/status
+// @access  Private (SELLER)
+const getKycStatus = async (req, res, next) => {
   try {
-    session.startTransaction();
-
-    const { docId } = req.params;
-    const { decision, rejectReason } = req.body;
-
-    if (!['VERIFIED_KYC', 'REJECTED_KYC'].includes(decision)) {
-      await session.abortTransaction();
-      return res.status(400).json({ message: 'Quyết định duyệt phải là VERIFIED_KYC hoặc REJECTED_KYC' });
-    }
-
-    if (decision === 'REJECTED_KYC' && (!rejectReason || rejectReason.trim() === '')) {
-      await session.abortTransaction();
-      return res.status(400).json({ message: 'Vui lòng cung cấp lý do từ chối hồ sơ' });
-    }
-
-    const doc = await KycDocument.findByIdAndUpdate(
-      docId,
-      {
-        status: decision,
-        rejectReason: decision === 'REJECTED_KYC' ? rejectReason : null,
-        reviewedBy: req.user._id,
-        reviewedAt: new Date(),
-      },
-      { new: true, session }
-    );
-
-    if (!doc) {
-      await session.abortTransaction();
-      return res.status(404).json({ message: 'Không tìm thấy tài liệu KYC' });
-    }
-
-    if (decision === 'VERIFIED_KYC') {
-      const requiredTypes = ['BUSINESS_LICENSE', 'ID_CARD_FRONT', 'ID_CARD_BACK'];
-      const verifiedDocs = await KycDocument.find({
-        sellerId: doc.sellerId,
-        documentType: { $in: requiredTypes },
-        status: 'VERIFIED_KYC',
-      }).session(session);
-
-      const allVerified = requiredTypes.every((t) => verifiedDocs.some((d) => d.documentType === t));
-      if (allVerified) {
-        await User.findByIdAndUpdate(doc.sellerId, { kycStatus: 'VERIFIED_KYC' }, { session });
-      }
-    } else {
-      await User.findByIdAndUpdate(doc.sellerId, { kycStatus: 'REJECTED_KYC' }, { session });
-    }
-
-    await session.commitTransaction();
-    res.json({ message: 'Duyện hồ sơ KYC thành công', document: doc });
+    const result = await kycService.getKycStatus(req.user._id);
+    return res.status(200).json({
+      success: true,
+      message: 'Lấy thông tin trạng thái KYC thành công',
+      data: result,
+    });
   } catch (err) {
-    await session.abortTransaction();
-    console.error(`[KYC Admin] Lỗi duyệt hồ sơ KYC:`, err);
-    res.status(500).json({ message: 'Lỗi khi xử lý duyệt hồ sơ KYC' });
-  } finally {
-    session.endSession();
+    next(err);
+  }
+};
+
+// @desc    Admin/CS xem danh sách hồ sơ KYC đang PENDING (che PII)
+// @route   GET /api/admin/kyc/pending
+// @access  Private (ADMIN, CS)
+const listPendingKyc = async (req, res, next) => {
+  try {
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 10;
+
+    const result = await kycService.listPendingKyc({ page, limit });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Lấy danh sách hồ sơ KYC chờ duyệt thành công',
+      data: result.items,
+      pagination: result.pagination,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// @desc    Admin/CS lấy số lượng hồ sơ KYC đang chờ duyệt (realtime count)
+// @route   GET /api/admin/kyc/pending-count
+// @access  Private (ADMIN, CS)
+const getPendingKycCount = async (req, res, next) => {
+  try {
+    const count = await kycService.countPendingKyc();
+    return res.status(200).json({
+      success: true,
+      count,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// @desc    Admin/CS xem chi tiết 1 hồ sơ KYC (hiện đầy đủ số CCCD và ảnh)
+// @route   GET /api/admin/kyc/:sellerId
+// @access  Private (ADMIN, CS)
+const getKycDetail = async (req, res, next) => {
+  try {
+    const { sellerId } = req.params;
+    const result = await kycService.getKycDetail(sellerId);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Lấy chi tiết hồ sơ KYC thành công',
+      data: result,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// @desc    Admin/CS Duyệt hồ sơ KYC
+// @route   POST /api/admin/kyc/:sellerId/approve
+// @access  Private (ADMIN, CS)
+const approveKyc = async (req, res, next) => {
+  try {
+    const { sellerId } = req.params;
+    const meta = {
+      ipAddress: req.ip || req.headers['x-forwarded-for'],
+      userAgent: req.headers['user-agent'],
+    };
+
+    const result = await kycService.approveKyc(sellerId, req.user._id, meta);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Duyệt hồ sơ KYC thành công. Tài khoản Seller đã được kích hoạt tính năng tạo đơn hàng.',
+      data: {
+        sellerId: result.sellerId,
+        status: result.status,
+        reviewedAt: result.reviewedAt,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// @desc    Admin/CS Từ chối hồ sơ KYC (kèm lý do)
+// @route   POST /api/admin/kyc/:sellerId/reject
+// @access  Private (ADMIN, CS)
+const rejectKyc = async (req, res, next) => {
+  try {
+    const { sellerId } = req.params;
+    const { error, value } = rejectKycSchema.validate(req.body);
+    if (error) {
+      return res.status(400).json({
+        success: false,
+        code: 'VALIDATION_ERROR',
+        message: error.details[0].message,
+      });
+    }
+
+    const meta = {
+      ipAddress: req.ip || req.headers['x-forwarded-for'],
+      userAgent: req.headers['user-agent'],
+    };
+
+    const result = await kycService.rejectKyc(sellerId, req.user._id, value.reason, meta);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Đã từ chối hồ sơ KYC.',
+      data: {
+        sellerId: result.sellerId,
+        status: result.status,
+        rejectionReason: result.rejectionReason,
+        reviewedAt: result.reviewedAt,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// @desc    Truy xuất file ảnh KYC an toàn chống IDOR
+// @route   GET /api/kyc/files/:filename
+// @access  Private (Chỉ Seller sở hữu ảnh HOẶC Admin/CS)
+const getKycFile = async (req, res, next) => {
+  try {
+    const { filename } = req.params;
+
+    // Ngăn chặn path traversal
+    const safeFilename = path.basename(filename);
+    const filePath = path.join(KYC_UPLOAD_DIR, safeFilename);
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({
+        success: false,
+        code: 'FILE_NOT_FOUND',
+        message: 'Không tìm thấy tệp tin tài liệu KYC',
+      });
+    }
+
+    // Kiểm tra quyền truy cập chống IDOR
+    const hasAccess = await kycService.verifyFileAccess(safeFilename, req.user);
+    if (!hasAccess) {
+      return res.status(403).json({
+        success: false,
+        code: 'ACCESS_DENIED',
+        message: 'Bạn không có quyền xem hoặc tải tài liệu của người khác',
+      });
+    }
+
+    // Set Cache-Control private để ngăn chặn proxy/CDN cache dữ liệu nhạy cảm
+    res.setHeader('Cache-Control', 'private, no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+
+    return res.sendFile(filePath);
+  } catch (err) {
+    next(err);
   }
 };
 
 module.exports = {
-  submitKycDocument,
+  submitKyc,
+  submitKycDocument: submitKyc,
   getKycStatus,
-  reviewKycDocument,
+  listPendingKyc,
+  getPendingKycCount,
+  getKycDetail,
+  approveKyc,
+  reviewKycDocument: approveKyc,
+  rejectKyc,
+  getKycFile,
 };

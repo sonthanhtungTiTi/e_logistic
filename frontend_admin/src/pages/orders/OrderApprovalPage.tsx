@@ -160,11 +160,10 @@ export const OrderApprovalPage: React.FC = () => {
         <div className="flex items-center gap-2 bg-slate-900 p-1 rounded-2xl border border-slate-800 text-xs font-bold">
           <button
             onClick={() => setActiveTab('PENDING')}
-            className={`px-3 py-1.5 rounded-xl transition cursor-pointer flex items-center gap-1.5 ${
-              activeTab === 'PENDING'
+            className={`px-3 py-1.5 rounded-xl transition cursor-pointer flex items-center gap-1.5 ${activeTab === 'PENDING'
                 ? 'bg-amber-500 text-slate-950 font-black shadow-md'
                 : 'text-slate-400 hover:text-white'
-            }`}
+              }`}
           >
             <Clock className="w-3.5 h-3.5" />
             <span>Chờ Phê Duyệt</span>
@@ -177,11 +176,10 @@ export const OrderApprovalPage: React.FC = () => {
 
           <button
             onClick={() => setActiveTab('APPROVED')}
-            className={`px-3 py-1.5 rounded-xl transition cursor-pointer flex items-center gap-1.5 ${
-              activeTab === 'APPROVED'
+            className={`px-3 py-1.5 rounded-xl transition cursor-pointer flex items-center gap-1.5 ${activeTab === 'APPROVED'
                 ? 'bg-blue-600 text-white font-black shadow-md'
                 : 'text-slate-400 hover:text-white'
-            }`}
+              }`}
           >
             <CheckCheck className="w-3.5 h-3.5" />
             <span>Đã Duyệt &amp; Lịch Sử</span>
@@ -354,9 +352,8 @@ export const OrderApprovalPage: React.FC = () => {
                       return (
                         <tr
                           key={ord._id}
-                          className={`transition ${
-                            isSelected ? 'bg-amber-950/20 border-l-2 border-l-amber-500' : 'hover:bg-slate-800/40'
-                          }`}
+                          className={`transition ${isSelected ? 'bg-amber-950/20 border-l-2 border-l-amber-500' : 'hover:bg-slate-800/40'
+                            }`}
                         >
                           <td className="p-3.5 text-center">
                             <input
@@ -372,10 +369,10 @@ export const OrderApprovalPage: React.FC = () => {
                               <span className="font-mono font-bold text-cyan-400 text-sm">{ord.trackingCode}</span>
                               <div className="flex items-center gap-1.5">
                                 <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                                  CHỜ DUYỆT
+                                  PENDING_APPROVAL
                                 </span>
                                 <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30">
-                                  {ord.routeType === 'DIRECT' ? 'GIAO THẲNG' : 'QUA BƯU CỤC'}
+                                  {ord.routeType || 'HUB_ROUTED'}
                                 </span>
                               </div>
                             </div>

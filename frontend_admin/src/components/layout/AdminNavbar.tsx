@@ -1,10 +1,13 @@
 import React from 'react';
-import { Cpu, LogOut } from 'lucide-react';
+import { Link } from 'react-router';
+import { Cpu, LogOut, Bell } from 'lucide-react';
 import { useAdminAuth } from '../../hooks/useAdminAuth';
+import { usePendingKycCount } from '../../hooks/usePendingKycCount';
 import { ThemeToggleButton } from '../common/ThemeToggleButton';
 
 export const AdminNavbar: React.FC = () => {
   const { user, logout } = useAdminAuth();
+  const { pendingCount } = usePendingKycCount();
 
   return (
     <header className="sticky top-0 z-40 w-full glass-panel border-b border-slate-800/80 transition-all">
@@ -31,6 +34,23 @@ export const AdminNavbar: React.FC = () => {
         <div className="flex items-center gap-2.5">
           <ThemeToggleButton showLabel className="hidden sm:flex" />
           <ThemeToggleButton className="sm:hidden" />
+
+          {/* KYC Pending Notification Bell */}
+          {user && ['ADMIN', 'CS'].includes(user.role) && (
+            <Link
+              to="/admin/kyc"
+              className="relative p-2 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-900/60 transition cursor-pointer"
+              title={pendingCount > 0 ? `${pendingCount} hồ sơ KYC đang chờ thẩm định` : 'Không có hồ sơ KYC cần duyệt'}
+            >
+              <Bell className="w-4 h-4" />
+              {pendingCount > 0 && (
+                <span className="absolute 1 top-1.5 right-1.5 flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-80"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+                </span>
+              )}
+            </Link>
+          )}
           {user && (
             <div className="flex items-center gap-2.5">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-500/30">

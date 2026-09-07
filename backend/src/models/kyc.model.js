@@ -1,30 +1,78 @@
 const mongoose = require('mongoose');
 
-const kycDocumentSchema = new mongoose.Schema(
+const kycHistorySchema = new mongoose.Schema(
+  {
+    status: {
+      type: String,
+      enum: ['NOT_SUBMITTED', 'PENDING', 'APPROVED', 'REJECTED'],
+      required: true,
+    },
+    idType: {
+      type: String,
+      enum: ['CCCD', 'CMND', 'PASSPORT'],
+    },
+    idNumber: String,
+    idFullName: String,
+    idFrontImageUrl: String,
+    idBackImageUrl: String,
+    businessLicenseImageUrl: String,
+    submittedAt: Date,
+    reviewedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    reviewedAt: Date,
+    rejectionReason: String,
+    recordedAt: {
+      type: Date,
+      default: Date.now,
+    },
+  },
+  { _id: true }
+);
+
+const kycSchema = new mongoose.Schema(
   {
     sellerId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,
-      index: true,
-    },
-    documentType: {
-      type: String,
-      enum: ['BUSINESS_LICENSE', 'ID_CARD_FRONT', 'ID_CARD_BACK', 'TAX_CERTIFICATE'],
-      required: true,
-    },
-    fileUrl: {
-      type: String,
-      required: true,
+      unique: true,
     },
     status: {
       type: String,
-      enum: ['PENDING_KYC', 'VERIFIED_KYC', 'REJECTED_KYC'],
-      default: 'PENDING_KYC',
-      index: true,
+      enum: ['NOT_SUBMITTED', 'PENDING', 'APPROVED', 'REJECTED'],
+      default: 'NOT_SUBMITTED',
     },
-    rejectReason: {
+    idType: {
       type: String,
+      enum: ['CCCD', 'CMND', 'PASSPORT'],
+      default: 'CCCD',
+    },
+    idNumber: {
+      type: String,
+      trim: true,
+    },
+    idFullName: {
+      type: String,
+      trim: true,
+    },
+    idFrontImageUrl: {
+      type: String,
+      trim: true,
+    },
+    idBackImageUrl: {
+      type: String,
+      trim: true,
+    },
+    businessLicenseImageUrl: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+    submittedAt: {
+      type: Date,
       default: null,
     },
     reviewedBy: {
@@ -36,14 +84,23 @@ const kycDocumentSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
-    submittedAt: {
-      type: Date,
-      default: Date.now,
+    rejectionReason: {
+      type: String,
+      default: null,
     },
+    submissionCount: {
+      type: Number,
+      default: 0,
+    },
+    history: [kycHistorySchema],
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+  }
 );
 
-kycDocumentSchema.index({ sellerId: 1, documentType: 1, status: 1 });
+// Tối ưu truy vấn
+kycSchema.index({ status: 1, submittedAt: -1 });
+kycSchema.index({ idNumber: 1 });
 
-module.exports = mongoose.model('KycDocument', kycDocumentSchema);
+module.exports = mongoose.model('Kyc', kycSchema);

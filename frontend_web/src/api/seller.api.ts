@@ -24,6 +24,23 @@ export interface KycDocItem {
   submittedAt: string;
 }
 
+export interface KycStatusResponse {
+  status: 'NOT_SUBMITTED' | 'PENDING' | 'APPROVED' | 'REJECTED';
+  kycVerified: boolean;
+  idType?: 'CCCD' | 'CMND' | 'PASSPORT';
+  idFullName?: string;
+  maskedIdNumber?: string;
+  submittedAt?: string;
+  reviewedAt?: string;
+  rejectionReason?: string;
+  submissionCount?: number;
+  canResubmit?: boolean;
+  hasBusinessLicense?: boolean;
+  idFrontImageUrl?: string;
+  idBackImageUrl?: string;
+  businessLicenseImageUrl?: string | null;
+}
+
 export interface SubAccountItem {
   _id: string;
   fullName: string;
@@ -47,7 +64,10 @@ export const sellerApi = {
 
   // 2. KYC Verification
   getKycStatus: () =>
-    axiosClient.get<{ kycStatus: string; documents: KycDocItem[] }>('/auth/kyc/status'),
+    axiosClient.get<{ success: boolean; message: string; data: KycStatusResponse }>('/seller/kyc/status'),
+  submitKyc: (formData: FormData) =>
+    axiosClient.post<{ success: boolean; message: string; data: any }>('/seller/kyc/submit', formData),
+  // Giữ lại để tương thích ngược nếu có chỗ gọi cũ
   submitKycDoc: (data: { documentType: string; fileUrl: string }) =>
     axiosClient.post<KycDocItem>('/auth/kyc/submit', data),
 

@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Package, X, MapPin, User, Edit3, Printer, CheckCircle2, Clock, Hourglass, Lock } from 'lucide-react';
 import type { Order } from '../../types/order.types';
 import { PrintWaybillModal } from './PrintWaybillModal';
-import { getOrderStatusBadge } from '../../lib/orderStatus';
 
 interface OrderDetailModalProps {
   order: Order;
@@ -60,7 +59,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, onClo
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
       <div className="relative w-full max-w-3xl glass-panel rounded-3xl border border-slate-800 p-6 space-y-6 shadow-2xl overflow-y-auto max-h-[90vh]">
-        
+
         {/* Modal Header */}
         <div className="flex items-center justify-between border-b border-slate-800 pb-4">
           <div className="flex items-center gap-3">
@@ -84,15 +83,13 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, onClo
 
         {/* READY_TO_PICK Countdown Banner */}
         {order.status === 'READY_TO_PICK' && (
-          <div className={`p-4 rounded-2xl border text-xs font-semibold flex items-center justify-between gap-3 shadow-lg ${
-            secondsRemaining > 0 
+          <div className={`p-4 rounded-2xl border text-xs font-semibold flex items-center justify-between gap-3 shadow-lg ${secondsRemaining > 0
               ? 'bg-amber-500/10 border-amber-500/30 text-amber-300'
               : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
-          }`}>
+            }`}>
             <div className="flex items-center gap-2.5">
-              <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
-                secondsRemaining > 0 ? 'bg-amber-500/20 text-amber-400' : 'bg-rose-500/20 text-rose-400'
-              }`}>
+              <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${secondsRemaining > 0 ? 'bg-amber-500/20 text-amber-400' : 'bg-rose-500/20 text-rose-400'
+                }`}>
                 <Clock className="w-5 h-5" />
               </div>
               <div>
@@ -119,8 +116,15 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, onClo
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-1">
             <span className="text-[11px] text-slate-400 block font-semibold">Trạng Thái Hiện Tại</span>
-            <span className={`px-3 py-1 rounded-full text-xs font-black uppercase inline-block border ${getOrderStatusBadge(order.status).bg}`}>
-              {getOrderStatusBadge(order.status).label}
+            <span className={`px-3 py-1 rounded-full text-xs font-black uppercase inline-block border ${order.status === 'CANCELLED'
+                ? 'bg-rose-500/20 text-rose-400 border-rose-500/30'
+                : order.status === 'DELIVERED'
+                  ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                  : order.status === 'CREATED'
+                    ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+                    : 'bg-blue-500/20 text-blue-300 border-blue-500/30'
+              }`}>
+              {order.status}
             </span>
           </div>
 
@@ -137,7 +141,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, onClo
 
         {/* Sender & Receiver Address Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          
+
           {/* Sender / Pickup Address */}
           <div className="p-4 rounded-2xl bg-slate-900/50 border border-slate-800/80 space-y-2">
             <div className="flex items-center gap-2 text-xs font-bold text-slate-300 border-b border-slate-800 pb-2">

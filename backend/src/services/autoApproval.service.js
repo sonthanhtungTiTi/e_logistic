@@ -26,11 +26,6 @@ class AutoApprovalService {
       };
     }
 
-    if (seller.kycStatus !== 'VERIFIED_KYC') {
-      riskFlags.push('UNVERIFIED_SELLER_KYC');
-      reasons.push('Seller chưa hoàn tất xác minh KYC');
-    }
-
     // 2. Rủi ro Tài chính (COD / Khai giá)
     const codAmount = Number(orderData.codAmount || 0);
     const goodsValue = Number(orderData.goodsValue || 0);

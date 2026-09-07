@@ -31,4 +31,15 @@ router.post('/sub-accounts', protect, authorize('SELLER'), createSubAccount);
 router.put('/sub-accounts/:id/permissions', protect, authorize('SELLER'), updateSubAccountPermissions);
 router.delete('/sub-accounts/:id', protect, authorize('SELLER'), deleteSubAccount);
 
+// ==========================================
+// 3. XÁC MINH DANH TÍNH (KYC)
+// ==========================================
+const { submitKyc, getKycStatus } = require('../controllers/kyc.controller');
+const { uploadKycFiles } = require('../middleware/upload.middleware');
+const { kycSubmitRateLimiter } = require('../middleware/rateLimit.middleware');
+
+router.post('/kyc/submit', protect, authorize('SELLER'), kycSubmitRateLimiter, uploadKycFiles, submitKyc);
+router.get('/kyc/status', protect, authorize('SELLER'), getKycStatus);
+
 module.exports = router;
+
