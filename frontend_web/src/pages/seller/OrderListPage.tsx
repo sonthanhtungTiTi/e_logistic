@@ -10,7 +10,6 @@ import { orderApi } from '../../api/order.api';
 import { ExcelImportOrderModal } from '../../components/orders/ExcelImportOrderModal';
 
 import { socket } from '../../api/socket';
-import { getOrderStatusBadge } from '../../lib/orderStatus';
 
 export const OrderListPage: React.FC = () => {
   const navigate = useNavigate();
@@ -317,24 +316,12 @@ export const OrderListPage: React.FC = () => {
               className="w-full glass-input rounded-xl px-3 py-2 text-xs text-white bg-slate-900"
             >
               <option value="ALL">Tất cả trạng thái</option>
-              <option value="CREATED">Mới tạo (CREATED)</option>
-              <option value="PENDING_VERIFICATION">Chờ xác minh rủi ro (PENDING_VERIFICATION)</option>
-              <option value="SELLER_PREPARING">Shop đang đóng gói (SELLER_PREPARING)</option>
-              <option value="PENDING_APPROVAL">Chờ Admin duyệt (PENDING_APPROVAL)</option>
-              <option value="APPROVED">Đã duyệt - Chờ gán xe (APPROVED)</option>
-              <option value="READY_TO_PICK">Sẵn sàng lấy hàng (READY_TO_PICK)</option>
-              <option value="ASSIGNED_TO_PICKUP">Đã phân tài xế gom (ASSIGNED_TO_PICKUP)</option>
-              <option value="PICKING">Tài xế đang lấy (PICKING)</option>
-              <option value="PICKED_UP">Đã lấy hàng về kho (PICKED_UP)</option>
-              <option value="IN_HUB_ORIGIN">Đã nhập kho gốc (IN_HUB_ORIGIN)</option>
-              <option value="IN_TRANSIT">Đang trung chuyển liên tỉnh (IN_TRANSIT)</option>
-              <option value="IN_HUB_DEST">Đã đến kho phát (IN_HUB_DEST)</option>
-              <option value="OUT_FOR_DELIVERY">Đang đi giao (OUT_FOR_DELIVERY)</option>
+              <option value="CREATED">Mới khởi tạo (CREATED)</option>
+              <option value="PENDING_VERIFICATION">Chờ xác minh (PENDING_VERIFICATION)</option>
+              <option value="READY_TO_PICK">Sẵn sàng lấy (READY_TO_PICK)</option>
+              <option value="IN_TRANSIT">Đang vận chuyển (IN_TRANSIT)</option>
+              <option value="OUT_FOR_DELIVERY">Đang giao hàng (OUT_FOR_DELIVERY)</option>
               <option value="DELIVERED">Giao thành công (DELIVERED)</option>
-              <option value="PENDING_REDELIVERY">Chờ giao lại (PENDING_REDELIVERY)</option>
-              <option value="DELIVERY_FAILED_PENDING_RETURN">Giao thất bại (DELIVERY_FAILED)</option>
-              <option value="RETURNED">Đã hoàn hàng về Shop (RETURNED)</option>
-              <option value="EXCEPTION_INBOUND">Sự cố bưu phẩm (EXCEPTION_INBOUND)</option>
               <option value="CANCELLED">Đã hủy đơn (CANCELLED)</option>
             </select>
           </div>
@@ -478,7 +465,29 @@ export const OrderListPage: React.FC = () => {
                   return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
                 };
 
-                const badge = getOrderStatusBadge(o.status);
+                const getStatusBadge = (status: string) => {
+                  switch (status) {
+                    case 'CANCELLED':
+                      return { bg: 'bg-rose-500/20 text-rose-400 border-rose-500/30', label: 'ĐÃ HỦY' };
+                    case 'CREATED':
+                      return { bg: 'bg-slate-500/20 text-slate-300 border-slate-500/30', label: 'MỚI TẠO' };
+                    case 'PENDING_APPROVAL':
+                      return { bg: 'bg-amber-500/20 text-amber-300 border-amber-500/30', label: 'CHỜ ADMIN DUYỆT' };
+                    case 'APPROVED':
+                      return { bg: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30', label: 'ĐÃ DUYỆT (CHỜ GÁN XE)' };
+                    case 'ASSIGNED_TO_PICKUP':
+                    case 'ASSIGNED_TO_PICKUP_AND_DELIVERY':
+                      return { bg: 'bg-purple-500/20 text-purple-300 border-purple-500/30', label: 'Đã phân tài xế gom hàng' };
+                    case 'READY_TO_PICK':
+                      return { bg: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30', label: 'SẴN SÀNG LẤY' };
+                    case 'DELIVERED':
+                      return { bg: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30', label: 'ĐÃ GIAO' };
+                    default:
+                      return { bg: 'bg-blue-500/20 text-blue-300 border-blue-500/30', label: status };
+                  }
+                };
+
+                const badge = getStatusBadge(o.status);
 
                 return (
                   <tr key={orderId || o.trackingCode} className={`transition ${isSelected ? 'bg-cyan-950/30 border-l-2 border-l-cyan-400' : 'hover:bg-slate-800/40'}`}>
@@ -488,7 +497,7 @@ export const OrderListPage: React.FC = () => {
                         checked={isSelected}
                         disabled={!isSelectable}
                         onChange={() => isSelectable && handleSelectOne(orderId)}
-                        title={isSelectable ? "Chọn đơn này để báo chuẩn bị xong gửi Admin duyệt" : `Đơn hàng ở trạng thái ${badge.label}, không cần chọn đóng gói nữa`}
+                        title={isSelectable ? "Chọn đơn này để báo chuẩn bị xong gửi Admin duyệt" : `Đơn hàng ở trạng thái ${o.status}, không cần chọn đóng gói nữa`}
                         className={`rounded border-slate-700 bg-slate-950 text-cyan-500 focus:ring-cyan-500 ${isSelectable ? 'cursor-pointer' : 'opacity-25 cursor-not-allowed'
                           }`}
                       />

@@ -24,6 +24,7 @@
     "jsonwebtoken": "^9.0.3",
     "mogoose": "^0.0.1-security",
     "mongoose": "^9.9.1",
+    "multer": "^2.3.0",
     "nodemailer": "^9.0.5",
     "qrcode": "^1.5.4",
     "socket.io": "^4.8.3",

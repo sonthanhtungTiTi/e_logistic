@@ -69,7 +69,9 @@ Tất cả các tài khoản demo dưới đây được khởi tạo với mậ
 | **4** | **Điều phối Shipper (LAST_MILE_DISPATCHER)** | `dispatcher.demo@elogistic.vn` | **5174** | `http://localhost:5174/admin/login` | Giám sát tuyến bưu tá, phân bổ đơn lấy và đơn giao chặng cuối |
 | **5** | **Điều phối Xe tải (LINE_HAUL_DISPATCHER)** | `linehaul.demo@elogistic.vn` | **5174** | `http://localhost:5174/admin/login` | Lập lịch xe tải đường trục, ghép chuyến xe trung chuyển liên tỉnh |
 | **6** | **Thủ kho / Khai thác (HUB_STAFF)** | `hub.demo@elogistic.vn` | **5174** | `http://localhost:5174/admin/login` | Quét nhập kho UC-16, đóng bao seal Poka-Yoke, xuất kho UC-17, kiểm kê |
-| **7** | **Shipper Nội thành (LOCAL_SHIPPER)** | `shipper.demo@elogistic.vn` | **5174** | `http://localhost:5174/admin/login` | Nhận đơn thu gom, ký ePOH, giao hàng chặng cuối, báo thất bại |
+| **7** | **Shipper Nội thành (LOCAL_SHIPPER)** | `shipper.demo@elogistic.vn` | **5174** | `http://localhost:5174/admin/login` | Nhận đơn thu gom, ký ePOH, giao hàng chặng cuối (Tân Bình) |
+| **7.1** | **Shipper 1 Tân Bình (LOCAL_SHIPPER)** | `shipper1.demo@elogistic.vn` | **5174** | `http://localhost:5174/admin/login` | Cùng zone Tân Bình (Khu phố 1), chia đơn / điều phối tải |
+| **7.2** | **Shipper 2 Tân Bình (LOCAL_SHIPPER)** | `shipper2.demo@elogistic.vn` | **5174** | `http://localhost:5174/admin/login` | Cùng zone Tân Bình (Khu phố 2), chia đơn / điều phối tải |
 | **8** | **Tài xế Đường trục (LINE_HAUL_DRIVER)** | `driver.demo@elogistic.vn` | **5174** | `http://localhost:5174/admin/login` | Nhận chuyến xe đường dài, xác nhận bắt tay kép (Accept/Reject) |
 | **9** | **Người Mua Hàng (PUBLIC BUYER)** | *Không cần đăng nhập* | **5173** | `http://localhost:5173/tracking` | Tra cứu hành trình vận đơn công khai, mở khóa PII bằng 4 số cuối SĐT |
 

@@ -34,5 +34,18 @@ module.exports = {
     } catch (e) {
       console.error('[IO_ORDER_EMIT_ERROR]', e.message);
     }
+  },
+  // Emit realtime notification cho Admin khi có hồ sơ KYC mới hoặc thay đổi trạng thái duyệt
+  emitKycUpdate: (payload) => {
+    if (!_io) return;
+    try {
+      _io.emit('kyc:update', payload);
+      if (payload && payload.sellerId) {
+        _io.to(`seller:${payload.sellerId.toString()}`).emit('kyc:status_updated', payload);
+        _io.emit(`seller:${payload.sellerId.toString()}:kyc`, payload);
+      }
+    } catch (e) {
+      console.error('[IO_KYC_EMIT_ERROR]', e.message);
+    }
   }
 };

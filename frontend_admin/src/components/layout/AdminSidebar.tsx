@@ -2,11 +2,13 @@ import React from 'react';
 import { NavLink } from 'react-router';
 import { LayoutDashboard, Package, Truck, Users, ShieldAlert, BarChart3, LogOut, ShieldCheck, Compass, Building2 } from 'lucide-react';
 import { useAdminAuth } from '../../hooks/useAdminAuth';
+import { usePendingKycCount } from '../../hooks/usePendingKycCount';
 import { UserRole } from '@/types/auth.types';
 import { ThemeToggleButton } from '../common/ThemeToggleButton';
 
 export const AdminSidebar: React.FC = () => {
   const { user, logout } = useAdminAuth();
+  const { pendingCount } = usePendingKycCount();
   const userRole = (user?.role || '').toString();
 
   // ─── Chỉ menu QUẢN TRỊ — không có Nhập/Xuất/Đóng bao kho ───────────────────
@@ -73,6 +75,12 @@ export const AdminSidebar: React.FC = () => {
       roles: [UserRole.ADMIN],
     },
     {
+      to: '/admin/kyc',
+      label: 'Xác Minh Danh Tính (KYC)',
+      icon: ShieldCheck,
+      roles: [UserRole.ADMIN, UserRole.CS, 'ADMIN', 'CS'],
+    },
+    {
       to: '/admin/security',
       label: 'Bảo Mật & Audit Log 2-Lớp',
       icon: ShieldAlert,
@@ -102,19 +110,41 @@ export const AdminSidebar: React.FC = () => {
         <nav className="space-y-1">
           {visibleNavItems.map((item) => {
             const Icon = item.icon;
+            const isKycItem = item.to === '/admin/kyc';
+            const hasPendingKyc = isKycItem && pendingCount > 0;
+
             return (
               <NavLink
                 key={item.to}
                 to={item.to}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition ${isActive
+                  `flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition ${isActive
                     ? 'bg-blue-600/15 text-blue-600 dark:text-blue-400 border border-blue-500/30 font-bold'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-900/60'
                   }`
                 }
               >
-                <Icon className="w-4 h-4" />
-                <span>{item.label}</span>
+                <div className="flex items-center gap-3">
+                  <Icon className="w-4 h-4 shrink-0" />
+                  <span>{item.label}</span>
+                </div>
+
+                {hasPendingKyc && (
+                  <div className="flex items-center gap-1.5 ml-auto pl-2">
+                    {/* Dấu chấm đỏ nhấp nháy báo hiệu hồ sơ mới */}
+                    <span className="relative flex h-2 w-2" title={`${pendingCount} hồ sơ KYC mới đang chờ thẩm định`}>
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-80"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+                    </span>
+                    {/* Badge đếm số lượng hồ sơ PENDING */}
+                    <span
+                      className="px-1.5 py-0.5 rounded-full text-[10px] font-black bg-rose-500 text-white shadow-sm shadow-rose-500/40 leading-none"
+                      title={`${pendingCount} hồ sơ đang chờ duyệt`}
+                    >
+                      {pendingCount > 99 ? '99+' : pendingCount}
+                    </span>
+                  </div>
+                )}
               </NavLink>
             );
           })}

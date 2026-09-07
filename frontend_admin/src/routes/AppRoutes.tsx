@@ -29,6 +29,7 @@ import { SlaReportPage } from '@/pages/reports/SlaReportPage';
 import { VendorOpsPage } from '@/pages/vendorOps/VendorOpsPage';
 import { LocalDispatchPage } from '@/pages/dispatch/LocalDispatchPage';
 import { LineHaulDispatchPage } from '@/pages/dispatch/LineHaulDispatchPage';
+import { AdminKycPage } from '@/pages/kyc/AdminKycPage';
 
 // ── Shipper PWA Pages ─────────────────────────────────────────────────────────
 import { ShipperZonePage } from '@/pages/shipper/ShipperZonePage';
@@ -86,6 +87,8 @@ const ORDER_LIST_ROLES = [
   UserRole.CS,
   UserRole.CUSTOMER_SERVICE,
 ] as const;
+
+const KYC_ROLES = [UserRole.ADMIN, UserRole.CS, 'ADMIN', 'CS'] as const;
 
 const SHIPPER_ROLES = [
   UserRole.SHIPPER,
@@ -160,7 +163,7 @@ export const AppRoutes: React.FC = () => {
           1. ADMIN — Quản trị hệ thống (Dashboard, Users, Security, Reports)
              Không có quyền vào /warehouse/*
           ═══════════════════════════════════════════════════════════════════ */}
-      <Route element={<RoleBaseRoute allowedRoles={[...DASHBOARD_ROLES, ...DISPATCH_ROLES_LOCAL, ...DISPATCH_ROLES_LINEHAUL, ...VENDOR_OPS_ROLES, ...ORDER_LIST_ROLES]} />}>
+      <Route element={<RoleBaseRoute allowedRoles={[...DASHBOARD_ROLES, ...DISPATCH_ROLES_LOCAL, ...DISPATCH_ROLES_LINEHAUL, ...VENDOR_OPS_ROLES, ...ORDER_LIST_ROLES, ...KYC_ROLES]} />}>
         <Route element={<AdminLayout />}>
           {/* Dashboard & Order oversight */}
           <Route path="/admin/dashboard" element={<RoleBaseRoute allowedRoles={[...DASHBOARD_ROLES]} />}>
@@ -200,6 +203,11 @@ export const AppRoutes: React.FC = () => {
           <Route element={<RoleBaseRoute allowedRoles={[...ADMIN_ROLES]} />}>
             <Route path="/admin/users" element={<UserManagementPage />} />
             <Route path="/admin/security" element={<SecurityAuditPage />} />
+          </Route>
+
+          {/* KYC Identity Verification (Admin & CS) */}
+          <Route element={<RoleBaseRoute allowedRoles={[...KYC_ROLES]} />}>
+            <Route path="/admin/kyc" element={<AdminKycPage />} />
           </Route>
 
           {/* SLA Reports */}

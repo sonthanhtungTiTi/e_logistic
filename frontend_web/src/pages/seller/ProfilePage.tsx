@@ -23,15 +23,36 @@ import {
   QrCode,
   UploadCloud,
   FileCheck,
+  RefreshCw,
+  FileText,
+  Check,
 } from 'lucide-react';
 import { useLocation } from 'react-router';
+import { io as socketIO } from 'socket.io-client';
 import { useAuth } from '../../hooks/useAuth';
 import { authApi } from '../../api/auth.api';
 import { sellerApi } from '../../api/seller.api';
-import type { PickupAddressItem, KycDocItem, SubAccountItem } from '../../api/seller.api';
+import type { PickupAddressItem, KycStatusResponse, SubAccountItem } from '../../api/seller.api';
 import { VietnamAddressSelector } from '../../components/shared/VietnamAddressSelector';
 import type { VietnamAddressData } from '../../components/shared/VietnamAddressSelector';
 import { WarehouseMapPicker } from '../../components/shared/WarehouseMapPicker';
+
+const getSellerKycImageUrl = (filenameOrPath: string | undefined | null) => {
+  if (!filenameOrPath) return '';
+  const token = localStorage.getItem('token') || '';
+  const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
+  let path = filenameOrPath;
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    try {
+      const parsed = new URL(path);
+      path = parsed.pathname;
+    } catch {}
+  }
+  if (!path.startsWith('/api/kyc/files/')) {
+    path = `/api/kyc/files/${path.replace(/^\/+/, '')}`;
+  }
+  return `http://${hostname}:5000${path}?token=${encodeURIComponent(token)}`;
+};
 
 type TabType = 'PROFILE' | 'ADDRESS' | 'BANK' | 'KYC' | 'SECURITY' | 'NOTIFICATIONS' | 'SUB_ACCOUNTS';
 
@@ -169,10 +190,19 @@ export const ProfilePage: React.FC = () => {
   const [bankAccountName, setBankAccountName] = useState(user?.bankAccountName || '');
 
   // 3. KYC Verification State
+  const [kycInfo, setKycInfo] = useState<KycStatusResponse | null>(null);
   const [kycStatus, setKycStatus] = useState<string>('NOT_SUBMITTED');
-  const [kycDocs, setKycDocs] = useState<KycDocItem[]>([]);
-  const [uploadDocType, setUploadDocType] = useState<string>('BUSINESS_LICENSE');
-  const [uploadFileUrl, setUploadFileUrl] = useState<string>('');
+  const [kycIdType, setKycIdType] = useState<'CCCD' | 'CMND' | 'PASSPORT'>('CCCD');
+  const [kycIdNumber, setKycIdNumber] = useState('');
+  const [kycIdFullName, setKycIdFullName] = useState('');
+  const [frontImageFile, setFrontImageFile] = useState<File | null>(null);
+  const [backImageFile, setBackImageFile] = useState<File | null>(null);
+  const [licenseImageFile, setLicenseImageFile] = useState<File | null>(null);
+  const [frontPreview, setFrontPreview] = useState<string>('');
+  const [backPreview, setBackPreview] = useState<string>('');
+  const [licensePreview, setLicensePreview] = useState<string>('');
+  const [isSubmittingKyc, setIsSubmittingKyc] = useState(false);
+  const [isEditingKycAfterReject, setIsEditingKycAfterReject] = useState(false);
 
   // 4. Notification Preferences State
   const [notifPreferences, setNotifPreferences] = useState<any>({
@@ -280,12 +310,61 @@ export const ProfilePage: React.FC = () => {
   const fetchKyc = async () => {
     try {
       const res = await sellerApi.getKycStatus();
-      setKycStatus(res.data.kycStatus || 'NOT_SUBMITTED');
-      setKycDocs(res.data.documents || []);
+      if (res.data?.data) {
+        const d = res.data.data;
+        setKycInfo(d);
+        setKycStatus(d.status);
+        if (d.idType) setKycIdType(d.idType);
+        if (d.idFullName) setKycIdFullName(d.idFullName);
+        if (d.maskedIdNumber) setKycIdNumber(d.maskedIdNumber);
+
+        // Đồng bộ cập nhật localStorage 'user' để toàn bộ app nhận diện KYC ngay lập tức
+        const currentUserStr = localStorage.getItem('user');
+        if (currentUserStr) {
+          try {
+            const parsed = JSON.parse(currentUserStr);
+            parsed.kycStatus = d.status;
+            parsed.kycVerified = d.kycVerified ?? (d.status === 'APPROVED');
+            localStorage.setItem('user', JSON.stringify(parsed));
+          } catch {}
+        }
+      }
     } catch (e) {
       console.warn('KYC fetch failed:', e);
     }
   };
+
+  // Lắng nghe cập nhật KYC từ Admin thời gian thực (Realtime Approval/Rejection)
+  useEffect(() => {
+    const currentUserStr = localStorage.getItem('user');
+    let userId = '';
+    if (currentUserStr) {
+      try {
+        const parsed = JSON.parse(currentUserStr);
+        userId = parsed.id || parsed._id || '';
+      } catch {}
+    }
+
+    const socket = socketIO('http://localhost:5000', { transports: ['websocket'] });
+    if (userId) {
+      socket.emit('join_seller_room', userId);
+    }
+
+    socket.on('kyc:status_updated', (data: any) => {
+      console.log('Realtime KYC status update received:', data);
+      if (data?.type === 'APPROVED' || data?.status === 'APPROVED') {
+        showFeedback('🎉 Chúc mừng! Hồ sơ KYC của bạn đã được Admin phê duyệt thành công! Bạn đã có thể tạo đơn hàng.');
+      } else if (data?.type === 'REJECTED' || data?.status === 'REJECTED') {
+        showFeedback(`⚠️ Hồ sơ KYC của bạn đã bị từ chối: ${data.reason || 'Chưa đạt yêu cầu'}. Vui lòng xem lý do và nộp lại.`, true);
+      }
+      fetchKyc();
+      fetchProfileData();
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
 
   const fetchNotificationPref = async () => {
     try {
@@ -420,25 +499,47 @@ export const ProfilePage: React.FC = () => {
     }
   };
 
-  const handleSubmitKyc = async (e: React.FormEvent) => {
+  const handleKycSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!uploadFileUrl) {
-      showFeedback('Vui lòng nhập URL tài liệu / ảnh giấy tờ KYC', true);
+    if (!kycIdNumber.trim() || !kycIdFullName.trim()) {
+      showFeedback('Vui lòng nhập đầy đủ Số giấy tờ và Họ tên trên giấy tờ (*)', true);
       return;
     }
-    setIsLoading(true);
+
+    if (kycIdType === 'CCCD' && !/^\d{12}$/.test(kycIdNumber.trim())) {
+      showFeedback('Số CCCD phải bao gồm đúng 12 chữ số (*)', true);
+      return;
+    }
+    if (kycIdType === 'CMND' && !/^\d{9}$/.test(kycIdNumber.trim())) {
+      showFeedback('Số CMND phải bao gồm đúng 9 chữ số (*)', true);
+      return;
+    }
+
+    if (!frontImageFile || !backImageFile) {
+      showFeedback('Vui lòng tải lên đầy đủ ảnh 2 mặt CCCD/CMND (*)', true);
+      return;
+    }
+
+    setIsSubmittingKyc(true);
     try {
-      await sellerApi.submitKycDoc({
-        documentType: uploadDocType,
-        fileUrl: uploadFileUrl,
-      });
-      showFeedback('Đã gửi tài liệu KYC thành công. Đang chờ Admin phê duyệt!');
-      setUploadFileUrl('');
+      const fd = new FormData();
+      fd.append('idType', kycIdType);
+      fd.append('idNumber', kycIdNumber.trim());
+      fd.append('idFullName', kycIdFullName.trim().toUpperCase());
+      fd.append('idFrontImage', frontImageFile);
+      fd.append('idBackImage', backImageFile);
+      if (licenseImageFile) {
+        fd.append('businessLicenseImage', licenseImageFile);
+      }
+
+      await sellerApi.submitKyc(fd);
+      showFeedback('Nộp hồ sơ KYC thành công! Đang chờ Admin phê duyệt.');
+      setIsEditingKycAfterReject(false);
       fetchKyc();
     } catch (err: any) {
       showFeedback(err.response?.data?.message || 'Không thể nộp hồ sơ KYC', true);
     } finally {
-      setIsLoading(false);
+      setIsSubmittingKyc(false);
     }
   };
 
@@ -788,8 +889,8 @@ export const ProfilePage: React.FC = () => {
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
                   {user?.role || 'SELLER'}
                 </span>
-                <span className={`px-3 py-1 rounded-full text-[11px] font-bold border ${kycStatus === 'VERIFIED_KYC' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : kycStatus === 'PENDING_KYC' ? 'bg-amber-500/10 text-amber-300 border-amber-500/30' : 'bg-slate-800 text-slate-400 border-slate-700'}`}>
-                  KYC: {kycStatus === 'VERIFIED_KYC' ? 'Đã Xác Minh' : kycStatus === 'PENDING_KYC' ? 'Đang Chờ Duyệt' : 'Chưa Nộp'}
+                <span className={`px-3 py-1 rounded-full text-[11px] font-bold border ${kycStatus === 'APPROVED' || kycStatus === 'VERIFIED_KYC' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : kycStatus === 'PENDING' || kycStatus === 'PENDING_KYC' ? 'bg-amber-500/10 text-amber-300 border-amber-500/30' : kycStatus === 'REJECTED' || kycStatus === 'REJECTED_KYC' ? 'bg-rose-500/10 text-rose-300 border-rose-500/30' : 'bg-slate-800 text-slate-400 border-slate-700'}`}>
+                  KYC: {kycStatus === 'APPROVED' || kycStatus === 'VERIFIED_KYC' ? 'Đã Xác Minh ✅' : kycStatus === 'PENDING' || kycStatus === 'PENDING_KYC' ? 'Đang Chờ Duyệt ⏳' : kycStatus === 'REJECTED' || kycStatus === 'REJECTED_KYC' ? 'Bị Từ Chối ❌' : 'Chưa Nộp'}
                 </span>
               </div>
             </div>
@@ -1207,91 +1308,355 @@ export const ProfilePage: React.FC = () => {
 
       {/* TAB 4: KYC VERIFICATION */}
       {activeTab === 'KYC' && (
-        <div className="space-y-6">
+        <div className="space-y-6 animate-in fade-in duration-300">
           <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-slate-800 space-y-6">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
               <div>
                 <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                  <FileCheck className="w-5 h-5 text-emerald-400" /> Xác Minh Hồ Sơ Pháp Lý (KYC)
+                  <FileCheck className="w-5 h-5 text-cyan-400" /> Xác Minh Danh Tính Người Bán (KYC)
                 </h3>
-                <p className="text-xs text-slate-400">Nộp giấy phép ĐKKD và CCCD để kích hoạt tính năng nhận đơn chính thức</p>
+                <p className="text-xs text-slate-400 mt-1">
+                  Cung cấp CCCD/CMND 2 mặt để kích hoạt quyền phát hành đơn hàng vào hệ thống bưu cục
+                </p>
               </div>
-              <span className={`px-4 py-1.5 rounded-full text-xs font-bold border ${kycStatus === 'VERIFIED_KYC' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : kycStatus === 'PENDING_KYC' ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : 'bg-slate-800 text-slate-400 border-slate-700'}`}>
-                {kycStatus === 'VERIFIED_KYC' ? 'ĐÃ ĐƯỢC DUYỆT KYC' : kycStatus === 'PENDING_KYC' ? 'ĐANG CHỜ ADMIN DUYỆT' : 'CHƯA DUYỆT KYC'}
-              </span>
+
+              {/* Status Badge */}
+              <div className="flex items-center gap-2 self-start sm:self-auto">
+                {kycStatus === 'APPROVED' || kycStatus === 'VERIFIED_KYC' ? (
+                  <span className="px-4 py-1.5 rounded-full text-xs font-bold border bg-emerald-500/20 text-emerald-300 border-emerald-500/40 flex items-center gap-1.5 shadow-sm">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400" /> ĐÃ XÁC MINH DANH TÍNH
+                  </span>
+                ) : kycStatus === 'PENDING' || kycStatus === 'PENDING_KYC' ? (
+                  <span className="px-4 py-1.5 rounded-full text-xs font-bold border bg-amber-500/20 text-amber-300 border-amber-500/40 flex items-center gap-1.5 animate-pulse">
+                    <RefreshCw className="w-4 h-4 text-amber-400 animate-spin" /> ĐANG CHỜ ADMIN DUYỆT
+                  </span>
+                ) : kycStatus === 'REJECTED' || kycStatus === 'REJECTED_KYC' ? (
+                  <span className="px-4 py-1.5 rounded-full text-xs font-bold border bg-rose-500/20 text-rose-300 border-rose-500/40 flex items-center gap-1.5">
+                    <AlertCircle className="w-4 h-4 text-rose-400" /> HỒ SƠ BỊ TỪ CHỐI
+                  </span>
+                ) : (
+                  <span className="px-4 py-1.5 rounded-full text-xs font-bold border bg-slate-800 text-slate-400 border-slate-700 flex items-center gap-1.5">
+                    <FileText className="w-4 h-4 text-slate-400" /> CHƯA NỘP HỒ SƠ
+                  </span>
+                )}
+              </div>
             </div>
 
-            {/* Upload Form */}
-            <form onSubmit={handleSubmitKyc} className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-4 text-xs">
-              <h4 className="font-bold text-white text-sm flex items-center gap-2">
-                <UploadCloud className="w-4 h-4 text-cyan-400" /> Nộp / Cập Nhật Tài Liệu Pháp Lý
-              </h4>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Loại Giấy Tờ *</label>
-                  <select
-                    value={uploadDocType}
-                    onChange={(e) => setUploadDocType(e.target.value)}
-                    className="w-full glass-input rounded-xl px-3 py-2 text-white"
-                  >
-                    <option value="BUSINESS_LICENSE" className="bg-slate-900">Giấy phép đăng ký kinh doanh (ĐKKD)</option>
-                    <option value="ID_CARD_FRONT" className="bg-slate-900">Mặt trước CCCD / CMND người đại diện</option>
-                    <option value="ID_CARD_BACK" className="bg-slate-900">Mặt sau CCCD / CMND người đại diện</option>
-                    <option value="TAX_CERTIFICATE" className="bg-slate-900">Giấy chứng nhận Mã số thuế</option>
-                  </select>
+            {/* Rejection Alert Box */}
+            {(kycStatus === 'REJECTED' || kycStatus === 'REJECTED_KYC') && kycInfo?.rejectionReason && (
+              <div className="p-4 sm:p-5 rounded-2xl bg-rose-950/40 border border-rose-500/40 space-y-3 shadow-lg">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <h4 className="text-xs sm:text-sm font-bold text-rose-300">Lý Do Admin Từ Chối Hồ Sơ</h4>
+                    <p className="text-xs text-rose-200/90 leading-relaxed font-medium">{kycInfo.rejectionReason}</p>
+                    {kycInfo.reviewedAt && (
+                      <p className="text-[11px] text-slate-400 pt-1 font-mono">
+                        Thời gian duyệt: {new Date(kycInfo.reviewedAt).toLocaleString('vi-VN')}
+                      </p>
+                    )}
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-slate-300 font-semibold mb-1">URL Ảnh / Tài Liệu (HTTPS) *</label>
-                  <input
-                    type="url"
-                    required
-                    value={uploadFileUrl}
-                    onChange={(e) => setUploadFileUrl(e.target.value)}
-                    placeholder="https://example.com/kyc-doc.jpg"
-                    className="w-full glass-input rounded-xl px-3 py-2 text-white font-mono"
-                  />
+                {!isEditingKycAfterReject && (
+                  <div className="pt-2 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingKycAfterReject(true)}
+                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold text-xs flex items-center gap-2 shadow-md cursor-pointer transition"
+                    >
+                      <RefreshCw className="w-4 h-4" /> Nộp Lại Hồ Sơ Mới
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Approved Summary Box */}
+            {(kycStatus === 'APPROVED' || kycStatus === 'VERIFIED_KYC') && (
+              <div className="p-5 rounded-2xl bg-emerald-950/30 border border-emerald-500/30 space-y-3">
+                <div className="flex items-center gap-3 text-emerald-300">
+                  <CheckCircle2 className="w-6 h-6 text-emerald-400 shrink-0" />
+                  <div>
+                    <h4 className="text-sm font-bold">Hồ Sơ Của Bạn Đã Được Xác Thực Hợp Lệ</h4>
+                    <p className="text-xs text-slate-300 mt-0.5">
+                      Shop đã đủ điều kiện tạo đơn và bàn giao hàng cho tài xế thu gom. Thông tin định danh đã được khóa bảo vệ an toàn.
+                    </p>
+                  </div>
                 </div>
-              </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-xs">
+                  <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
+                    <span className="text-slate-400 block text-[11px]">Loại giấy tờ</span>
+                    <strong className="text-white">{kycInfo?.idType || 'CCCD'}</strong>
+                  </div>
+                  <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
+                    <span className="text-slate-400 block text-[11px]">Họ và tên trên giấy tờ</span>
+                    <strong className="text-white">{kycInfo?.idFullName || fullName}</strong>
+                  </div>
+                  <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
+                    <span className="text-slate-400 block text-[11px]">Số định danh (Đã mã hóa PII)</span>
+                    <strong className="text-cyan-400 font-mono">{kycInfo?.maskedIdNumber || '079099******'}</strong>
+                  </div>
+                </div>
 
-              <div className="flex justify-end">
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg cursor-pointer"
-                >
-                  <Save className="w-4 h-4" /> Nộp Hồ Sơ Duyệt KYC
-                </button>
-              </div>
-            </form>
-
-            {/* Submitted Documents History */}
-            <div className="space-y-3">
-              <h4 className="font-bold text-white text-xs uppercase tracking-wider">Danh Sách Giấy Tờ Đã Nộp</h4>
-              {kycDocs.length === 0 ? (
-                <p className="text-xs text-slate-400 italic">Chưa có tài liệu KYC nào được nộp.</p>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {kycDocs.map((doc) => (
-                    <div key={doc._id} className="p-4 rounded-xl bg-slate-900/40 border border-slate-800 space-y-2 text-xs">
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-slate-200">{doc.documentType}</span>
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${doc.status === 'VERIFIED_KYC' ? 'bg-emerald-500/20 text-emerald-400' : doc.status === 'REJECTED_KYC' ? 'bg-rose-500/20 text-rose-400' : 'bg-amber-500/20 text-amber-300'}`}>
-                          {doc.status}
-                        </span>
-                      </div>
-                      {doc.rejectReason && (
-                        <p className="text-[11px] text-rose-400">Lý do từ chối: {doc.rejectReason}</p>
+                {/* Approved Images Preview */}
+                {(kycInfo?.idFrontImageUrl || kycInfo?.idBackImageUrl) && (
+                  <div className="pt-3 border-t border-emerald-500/20">
+                    <span className="text-[11px] font-bold text-slate-300 block mb-2">Ảnh Giấy Tờ Đã Được Phê Duyệt:</span>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {kycInfo?.idFrontImageUrl && (
+                        <div className="aspect-[4/3] rounded-xl overflow-hidden border border-emerald-500/30 bg-slate-900/80 p-1 flex flex-col items-center justify-center">
+                          <img
+                            src={getSellerKycImageUrl(kycInfo.idFrontImageUrl)}
+                            alt="Mặt trước"
+                            className="w-full h-full object-contain"
+                          />
+                          <span className="text-[10px] text-emerald-400 font-semibold mt-1">Mặt trước {kycInfo.idType}</span>
+                        </div>
                       )}
-                      <a href={doc.fileUrl} target="_blank" rel="noreferrer" className="text-[11px] text-cyan-400 hover:underline block truncate font-mono">
-                        {doc.fileUrl}
-                      </a>
+                      {kycInfo?.idBackImageUrl && (
+                        <div className="aspect-[4/3] rounded-xl overflow-hidden border border-emerald-500/30 bg-slate-900/80 p-1 flex flex-col items-center justify-center">
+                          <img
+                            src={getSellerKycImageUrl(kycInfo.idBackImageUrl)}
+                            alt="Mặt sau"
+                            className="w-full h-full object-contain"
+                          />
+                          <span className="text-[10px] text-emerald-400 font-semibold mt-1">Mặt sau {kycInfo.idType}</span>
+                        </div>
+                      )}
+                      {kycInfo?.businessLicenseImageUrl && (
+                        <div className="aspect-[4/3] rounded-xl overflow-hidden border border-emerald-500/30 bg-slate-900/80 p-1 flex flex-col items-center justify-center">
+                          <img
+                            src={getSellerKycImageUrl(kycInfo.businessLicenseImageUrl)}
+                            alt="GPKD"
+                            className="w-full h-full object-contain"
+                          />
+                          <span className="text-[10px] text-emerald-400 font-semibold mt-1">Giấy phép KD</span>
+                        </div>
+                      )}
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* KYC Upload / Edit Form */}
+            {(kycStatus === 'NOT_SUBMITTED' ||
+              isEditingKycAfterReject ||
+              kycStatus === 'PENDING' ||
+              kycStatus === 'PENDING_KYC') && (
+              <form onSubmit={handleKycSubmit} className="space-y-6 text-xs">
+                {/* Notice for Pending State */}
+                {(kycStatus === 'PENDING' || kycStatus === 'PENDING_KYC') && (
+                  <div className="p-4 rounded-2xl bg-amber-950/30 border border-amber-500/30 flex items-center gap-3 text-amber-300">
+                    <RefreshCw className="w-5 h-5 text-amber-400 shrink-0 animate-spin" />
+                    <span>
+                      Hồ sơ của bạn đang được chuyên viên CS/Admin kiểm duyệt. Form tạm thời khóa để tránh xung đột dữ liệu.
+                    </span>
+                  </div>
+                )}
+
+                <fieldset disabled={kycStatus === 'PENDING' || kycStatus === 'PENDING_KYC'} className="space-y-6">
+                  {/* Step 1: Text Info */}
+                  <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-4">
+                    <h4 className="font-bold text-white text-sm flex items-center gap-2">
+                      <span className="w-6 h-6 rounded-full bg-cyan-600 text-white flex items-center justify-center text-xs">1</span>
+                      Thông Tin Định Danh Người Đại Diện
+                    </h4>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-slate-300 font-semibold mb-1.5">Loại Giấy Tờ *</label>
+                        <select
+                          value={kycIdType}
+                          onChange={(e) => setKycIdType(e.target.value as any)}
+                          className="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-white"
+                        >
+                          <option value="CCCD" className="bg-slate-900">Căn cước công dân (CCCD 12 số)</option>
+                          <option value="CMND" className="bg-slate-900">Chứng minh nhân dân (CMND 9 số)</option>
+                          <option value="PASSPORT" className="bg-slate-900">Hộ chiếu (Passport)</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-300 font-semibold mb-1.5">Số Giấy Tờ Định Danh *</label>
+                        <input
+                          type="text"
+                          required
+                          value={kycIdNumber}
+                          onChange={(e) => setKycIdNumber(e.target.value)}
+                          placeholder={kycIdType === 'CCCD' ? 'Nhập 12 số CCCD' : kycIdType === 'CMND' ? 'Nhập 9 số CMND' : 'Nhập số hộ chiếu'}
+                          className="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-white font-mono"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-300 font-semibold mb-1.5">Họ Và Tên Trên Giấy Tờ (In hoa) *</label>
+                        <input
+                          type="text"
+                          required
+                          value={kycIdFullName}
+                          onChange={(e) => setKycIdFullName(e.target.value.toUpperCase())}
+                          placeholder="NGUYEN VAN A"
+                          className="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-white font-mono uppercase"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Step 2: Photos Upload */}
+                  <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-4">
+                    <h4 className="font-bold text-white text-sm flex items-center gap-2">
+                      <span className="w-6 h-6 rounded-full bg-cyan-600 text-white flex items-center justify-center text-xs">2</span>
+                      Tải Lên Ảnh Giấy Tờ (Tối đa 5MB/ảnh, định dạng .jpg, .png)
+                    </h4>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                      {/* Front Image */}
+                      <div className="space-y-2">
+                        <label className="block text-slate-300 font-semibold">Mặt Trước CCCD/CMND *</label>
+                        <div className="relative border-2 border-dashed border-slate-700 hover:border-cyan-500 rounded-2xl p-4 text-center aspect-[4/3] flex flex-col items-center justify-center bg-slate-950/50 transition group overflow-hidden">
+                          {frontPreview ? (
+                            <img src={frontPreview} alt="Mặt trước" className="w-full h-full object-contain rounded-xl" />
+                          ) : kycInfo?.idFrontImageUrl && (kycStatus === 'PENDING' || kycStatus === 'PENDING_KYC') ? (
+                            <img src={getSellerKycImageUrl(kycInfo.idFrontImageUrl)} alt="Mặt trước đã nộp" className="w-full h-full object-contain rounded-xl" />
+                          ) : (
+                            <div className="space-y-2 flex flex-col items-center">
+                              <UploadCloud className="w-8 h-8 text-slate-500 group-hover:text-cyan-400 transition" />
+                              <span className="text-[11px] text-slate-400 font-medium">Chọn hoặc kéo thả ảnh mặt trước</span>
+                            </div>
+                          )}
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/png,image/jpg"
+                            required={!frontImageFile && !kycInfo?.idFrontImageUrl}
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                if (file.size > 5 * 1024 * 1024) {
+                                  showFeedback('Dung lượng ảnh vượt quá 5MB', true);
+                                  return;
+                                }
+                                setFrontImageFile(file);
+                                setFrontPreview(URL.createObjectURL(file));
+                              }
+                            }}
+                            className="absolute inset-0 opacity-0 cursor-pointer"
+                          />
+                        </div>
+                        {frontImageFile && (
+                          <p className="text-[11px] text-emerald-400 flex items-center gap-1 font-mono truncate">
+                            <Check className="w-3.5 h-3.5 shrink-0" /> {frontImageFile.name}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Back Image */}
+                      <div className="space-y-2">
+                        <label className="block text-slate-300 font-semibold">Mặt Sau CCCD/CMND *</label>
+                        <div className="relative border-2 border-dashed border-slate-700 hover:border-cyan-500 rounded-2xl p-4 text-center aspect-[4/3] flex flex-col items-center justify-center bg-slate-950/50 transition group overflow-hidden">
+                          {backPreview ? (
+                            <img src={backPreview} alt="Mặt sau" className="w-full h-full object-contain rounded-xl" />
+                          ) : kycInfo?.idBackImageUrl && (kycStatus === 'PENDING' || kycStatus === 'PENDING_KYC') ? (
+                            <img src={getSellerKycImageUrl(kycInfo.idBackImageUrl)} alt="Mặt sau đã nộp" className="w-full h-full object-contain rounded-xl" />
+                          ) : (
+                            <div className="space-y-2 flex flex-col items-center">
+                              <UploadCloud className="w-8 h-8 text-slate-500 group-hover:text-cyan-400 transition" />
+                              <span className="text-[11px] text-slate-400 font-medium">Chọn hoặc kéo thả ảnh mặt sau</span>
+                            </div>
+                          )}
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/png,image/jpg"
+                            required={!backImageFile && !kycInfo?.idBackImageUrl}
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                if (file.size > 5 * 1024 * 1024) {
+                                  showFeedback('Dung lượng ảnh vượt quá 5MB', true);
+                                  return;
+                                }
+                                setBackImageFile(file);
+                                setBackPreview(URL.createObjectURL(file));
+                              }
+                            }}
+                            className="absolute inset-0 opacity-0 cursor-pointer"
+                          />
+                        </div>
+                        {backImageFile && (
+                          <p className="text-[11px] text-emerald-400 flex items-center gap-1 font-mono truncate">
+                            <Check className="w-3.5 h-3.5 shrink-0" /> {backImageFile.name}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Business License (Optional) */}
+                      <div className="space-y-2">
+                        <label className="block text-slate-300 font-semibold">
+                          Giấy Phép ĐKKD <span className="text-slate-500 font-normal">(Doanh nghiệp)</span>
+                        </label>
+                        <div className="relative border-2 border-dashed border-slate-700 hover:border-cyan-500 rounded-2xl p-4 text-center aspect-[4/3] flex flex-col items-center justify-center bg-slate-950/50 transition group overflow-hidden">
+                          {licensePreview ? (
+                            <img src={licensePreview} alt="Giấy phép ĐKKD" className="w-full h-full object-contain rounded-xl" />
+                          ) : kycInfo?.businessLicenseImageUrl && (kycStatus === 'PENDING' || kycStatus === 'PENDING_KYC') ? (
+                            <img src={getSellerKycImageUrl(kycInfo.businessLicenseImageUrl)} alt="GPKD đã nộp" className="w-full h-full object-contain rounded-xl" />
+                          ) : (
+                            <div className="space-y-2 flex flex-col items-center">
+                              <UploadCloud className="w-8 h-8 text-slate-500 group-hover:text-cyan-400 transition" />
+                              <span className="text-[11px] text-slate-400 font-medium">Tùy chọn: Tải ảnh GPKD nếu là công ty</span>
+                            </div>
+                          )}
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/png,image/jpg"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                if (file.size > 5 * 1024 * 1024) {
+                                  showFeedback('Dung lượng ảnh vượt quá 5MB', true);
+                                  return;
+                                }
+                                setLicenseImageFile(file);
+                                setLicensePreview(URL.createObjectURL(file));
+                              }
+                            }}
+                            className="absolute inset-0 opacity-0 cursor-pointer"
+                          />
+                        </div>
+                        {licenseImageFile && (
+                          <p className="text-[11px] text-emerald-400 flex items-center gap-1 font-mono truncate">
+                            <Check className="w-3.5 h-3.5 shrink-0" /> {licenseImageFile.name}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-800">
+                    <p className="text-[11px] text-slate-400">
+                      * Giới hạn tối đa 3 lần nộp trong 24 giờ để ngăn chặn spam
+                    </p>
+                    <button
+                      type="submit"
+                      disabled={isSubmittingKyc || kycStatus === 'PENDING' || kycStatus === 'PENDING_KYC'}
+                      className="px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition"
+                    >
+                      {isSubmittingKyc ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 animate-spin" /> Đang Tải Lên...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="w-4 h-4" /> Nộp Hồ Sơ Xác Minh KYC
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </fieldset>
+              </form>
+            )}
           </div>
         </div>
       )}

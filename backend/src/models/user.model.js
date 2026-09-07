@@ -191,8 +191,14 @@ const userSchema = new mongoose.Schema(
     // Trạng thái xác minh KYC
     kycStatus: {
       type: String,
-      enum: ['NOT_SUBMITTED', 'PENDING_KYC', 'VERIFIED_KYC', 'REJECTED_KYC'],
+      enum: ['NOT_SUBMITTED', 'PENDING', 'APPROVED', 'REJECTED', 'PENDING_KYC', 'VERIFIED_KYC', 'REJECTED_KYC'],
       default: 'NOT_SUBMITTED',
+      index: true,
+    },
+    kycVerified: {
+      type: Boolean,
+      default: false,
+      index: true,
     },
     // Bảo mật 2 lớp (2FA TOTP)
     twoFactorSecret: {

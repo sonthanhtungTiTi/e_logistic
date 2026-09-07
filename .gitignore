@@ -18,5 +18,8 @@ frontend_admin/dist/
 # .DS_Store
 # Thumbs.db
 # Documentation
-
 # docs/
+
+# Uploaded user files
+backend/uploads/*
+!backend/uploads/**/.gitkeep

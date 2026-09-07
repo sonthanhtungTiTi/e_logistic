@@ -5,7 +5,6 @@ import { VietnamAddressSelector } from '../shared/VietnamAddressSelector';
 import type { VietnamAddressData } from '../shared/VietnamAddressSelector';
 import { orderApi } from '../../api/order.api';
 import { formatNumberWithDots, parseDotsToNumber } from '../../lib/formatters';
-import { getOrderStatusLabel } from '../../lib/orderStatus';
 
 interface EditOrderModalProps {
   order: Order;
@@ -47,7 +46,7 @@ export const EditOrderModal: React.FC<EditOrderModalProps> = ({ order, onClose, 
     setErrorMessage(null);
 
     if (!isEditableStatus) {
-      setErrorMessage(`Đơn hàng đã chuyển sang trạng thái "${getOrderStatusLabel(order.status)}". Hệ thống không cho phép chỉnh sửa thông tin nữa.`);
+      setErrorMessage(`Đơn hàng đã chuyển sang trạng thái "${order.status}". Hệ thống không cho phép chỉnh sửa thông tin nữa.`);
       return;
     }
 
@@ -122,7 +121,7 @@ export const EditOrderModal: React.FC<EditOrderModalProps> = ({ order, onClose, 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
       <div className="relative w-full max-w-2xl glass-panel rounded-3xl border border-slate-800 p-6 sm:p-8 space-y-6 shadow-2xl overflow-y-auto max-h-[90vh]">
-        
+
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-800 pb-4">
           <div className="flex items-center gap-3">
@@ -161,7 +160,7 @@ export const EditOrderModal: React.FC<EditOrderModalProps> = ({ order, onClose, 
         )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          
+
           {/* Section 1: Recipient Info */}
           <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-4">
             <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">

@@ -5,7 +5,6 @@ import type { Order } from '../types/order.types';
 import heroBg from '../assets/hero_bg.png';
 import { orderApi } from '../api/order.api';
 import { AuthContext } from '../context/AuthContext';
-import { getOrderStatusBadge } from '../lib/orderStatus';
 
 interface HeroTrackingProps {
   orders: Order[];
@@ -364,9 +363,16 @@ export const HeroTracking: React.FC<HeroTrackingProps> = ({
 
                             <td className="py-4 px-4">
                               <span
-                                className={`inline-block text-[10px] font-bold px-2.5 py-1 rounded-full uppercase border ${getOrderStatusBadge(ord.status).bg}`}
+                                className={`inline-block text-[10px] font-bold px-2.5 py-1 rounded-full uppercase border ${ord.status === 'CANCELLED'
+                                  ? 'bg-rose-500/20 text-rose-400 border-rose-500/30'
+                                  : ord.status === 'DELIVERED'
+                                    ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                                    : ord.status === 'IN_TRANSIT' || ord.status === 'OUT_FOR_DELIVERY'
+                                      ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                                      : 'bg-blue-500/20 text-blue-300 border-blue-500/30'
+                                  }`}
                               >
-                                {getOrderStatusBadge(ord.status).label}
+                                {ord.status}
                               </span>
                             </td>
 
@@ -431,9 +437,20 @@ export const HeroTracking: React.FC<HeroTrackingProps> = ({
                           {code}
                         </span>
                         <span
-                          className={`text-[10px] font-extrabold px-2.5 py-1 rounded-full uppercase border ${getOrderStatusBadge(ord.status).bg}`}
+                          className={`text-[10px] font-extrabold px-2.5 py-1 rounded-full uppercase border ${ord.status === 'DELIVERED'
+                            ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                            : ord.status === 'IN_TRANSIT' || ord.status === 'OUT_FOR_DELIVERY'
+                              ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                              : 'bg-blue-500/20 text-blue-300 border-blue-500/30'
+                            }`}
                         >
-                          {getOrderStatusBadge(ord.status).label}
+                          {ord.status === 'IN_TRANSIT'
+                            ? 'Đang vận chuyển'
+                            : ord.status === 'OUT_FOR_DELIVERY'
+                              ? 'Đang phát hàng'
+                              : ord.status === 'DELIVERED'
+                                ? 'Đã giao'
+                                : 'Chờ xử lý'}
                         </span>
                       </div>
 
