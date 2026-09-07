@@ -13,23 +13,25 @@ interface OrderDetailModalProps {
 export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, onClose, onEdit, onReadyToPick }) => {
   const [showPrintModal, setShowPrintModal] = useState(false);
 
-  // Đếm ngược 5 phút cho phép Hủy & Sửa đơn ở trạng thái READY_TO_PICK
-  const readyToPickTime = (order as any).readyToPickAt || order.updatedAt;
+  // Đếm ngược 5 phút cho phép Hủy & Sửa đơn ở trạng thái PENDING_APPROVAL hoặc READY_TO_PICK
+  const readyToPickTime = (order as any).sellerPreparedAt || (order as any).readyToPickAt || order.updatedAt;
+  const isGraceStatus = order.status === 'PENDING_APPROVAL' || order.status === 'READY_TO_PICK';
+
   const [secondsRemaining, setSecondsRemaining] = useState<number>(() => {
-    if (order.status !== 'READY_TO_PICK' || !readyToPickTime) return 300;
+    if (!isGraceStatus || !readyToPickTime) return 300;
     const elapsed = Math.floor((Date.now() - new Date(readyToPickTime).getTime()) / 1000);
     return Math.max(0, 300 - elapsed);
   });
 
   useEffect(() => {
-    if (order.status !== 'READY_TO_PICK' || !readyToPickTime) return;
+    if (!isGraceStatus || !readyToPickTime) return;
     const interval = setInterval(() => {
       const elapsed = Math.floor((Date.now() - new Date(readyToPickTime).getTime()) / 1000);
       const remaining = Math.max(0, 300 - elapsed);
       setSecondsRemaining(remaining);
     }, 1000);
     return () => clearInterval(interval);
-  }, [order.status, readyToPickTime]);
+  }, [isGraceStatus, readyToPickTime]);
 
   const formatCountdown = (secs: number) => {
     const m = Math.floor(secs / 60);
@@ -38,12 +40,12 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, onClo
   };
 
   const isCancelled = order.status === 'CANCELLED';
-  const isWithin5MinWindow = order.status === 'READY_TO_PICK' && secondsRemaining > 0;
+  const isWithin5MinWindow = isGraceStatus && secondsRemaining > 0;
   const isEditable = !isCancelled && (
-    ['CREATED', 'PENDING_VERIFICATION', 'PENDING'].includes(order.status) ||
+    ['CREATED', 'PENDING_VERIFICATION', 'PENDING', 'DRAFT'].includes(order.status) ||
     isWithin5MinWindow
   );
-  const canReadyToPick = !isCancelled && ['CREATED', 'PENDING_VERIFICATION', 'PENDING'].includes(order.status);
+  const canReadyToPick = !isCancelled && ['CREATED', 'PENDING_VERIFICATION', 'PENDING', 'DRAFT'].includes(order.status);
 
   const formatCurrency = (val?: number) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val || 0);

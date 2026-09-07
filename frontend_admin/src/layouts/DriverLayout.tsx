@@ -2,6 +2,7 @@ import React from 'react';
 import { Outlet, NavLink } from 'react-router';
 import { Truck, PackageCheck, LogOut, ClipboardCheck } from 'lucide-react';
 import { useAdminAuth } from '../hooks/useAdminAuth';
+import { ThemeToggleButton } from '../components/common/ThemeToggleButton';
 
 interface DriverLayoutProps {
   children?: React.ReactNode;
@@ -24,13 +25,16 @@ export const DriverLayout: React.FC<DriverLayoutProps> = ({ children }) => {
           </div>
         </div>
 
-        <button
-          onClick={logout}
-          title="Đăng xuất"
-          className="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-rose-400 hover:bg-slate-700 transition cursor-pointer"
-        >
-          <LogOut className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-2">
+          <ThemeToggleButton className="py-1 px-2 text-[11px]" />
+          <button
+            onClick={logout}
+            title="Đăng xuất"
+            className="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-rose-400 hover:bg-slate-700 transition cursor-pointer"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
+        </div>
       </header>
 
       {/* Main Content Area */}

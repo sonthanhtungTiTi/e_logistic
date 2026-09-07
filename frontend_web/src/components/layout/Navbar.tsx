@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router';
 import { useAuth } from '../../hooks/useAuth';
+import { ThemeToggleButton } from '../common/ThemeToggleButton';
 
 export const Navbar: React.FC = () => {
   const { user, logout } = useAuth();
@@ -38,35 +39,36 @@ export const Navbar: React.FC = () => {
   const initialLetter = displayName.trim().charAt(0).toUpperCase() || 'U';
 
   return (
-    <header className="sticky top-0 z-40 w-full glass-panel border-b border-slate-800/80 transition-all backdrop-blur-xl bg-[#090d16]/80">
+    <header className="sticky top-0 z-40 w-full glass-panel border-b border-slate-800/80 transition-all backdrop-blur-xl">
       <div className="w-full px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
         
         {/* Brand Logo */}
         <Link to="/" className="flex items-center gap-3 cursor-pointer group">
-          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-tr from-blue-600 via-cyan-500 to-indigo-500 flex items-center justify-center shadow-lg shadow-blue-500/25 group-hover:scale-105 transition-transform duration-200">
+          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-tr from-blue-600 via-cyan-500 to-indigo-500 flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
             <Truck className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-extrabold text-lg sm:text-xl tracking-tight text-white group-hover:text-blue-400 transition-colors">
+              <span className="font-extrabold text-lg sm:text-xl tracking-tight text-slate-900 dark:text-white group-hover:text-blue-500 transition-colors">
                 E-LOGISTIC
               </span>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 flex items-center gap-1">
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-700 dark:text-cyan-400 border border-cyan-500/30 flex items-center gap-1">
                 <Cpu className="w-3 h-3" /> AI Freight
               </span>
             </div>
-            <p className="text-[10px] sm:text-[11px] text-slate-400 font-medium">Smart Supply Chain & Courier Platform</p>
+            <p className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 font-medium">Smart Supply Chain & Courier Platform</p>
           </div>
         </Link>
 
         {/* Right User Actions / Profile */}
         <div className="flex items-center gap-3 ml-auto">
+          <ThemeToggleButton />
           {user ? (
             <div className="relative" ref={dropdownRef}>
               {/* User Profile Badge & Avatar Button */}
               <button
                 onClick={() => setDropdownOpen(!dropdownOpen)}
-                className="flex items-center gap-2 p-1.5 pl-2.5 pr-2 rounded-2xl bg-slate-900/80 hover:bg-slate-800/90 border border-emerald-500/30 text-left transition-all duration-200 shadow-md group cursor-pointer"
+                className="flex items-center gap-2 p-1.5 pl-2.5 pr-2 rounded-2xl bg-slate-100 dark:bg-slate-900/80 hover:bg-slate-200 dark:hover:bg-slate-800/90 border border-emerald-500/30 text-left transition-all duration-200 group cursor-pointer"
                 title="Nhấn để xem thông tin cá nhân & cài đặt"
               >
                 {/* Avatar with Glow */}
@@ -78,25 +80,25 @@ export const Navbar: React.FC = () => {
                       className="w-8 h-8 rounded-xl object-cover ring-2 ring-emerald-400/40"
                     />
                   ) : (
-                    <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white font-black text-sm shadow-inner ring-2 ring-emerald-400/40 group-hover:scale-105 transition-transform">
+                    <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white font-black text-sm ring-2 ring-emerald-400/40 group-hover:scale-105 transition-transform">
                       {initialLetter}
                     </div>
                   )}
-                  <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-slate-900 animate-pulse" />
+                  <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-white dark:border-slate-900 animate-pulse" />
                 </div>
 
                 {/* User Name Badge Text */}
-                <span className="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 group-hover:bg-emerald-500/20 transition max-w-[180px] md:max-w-[210px]">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping shrink-0"></span>
+                <span className="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 group-hover:bg-emerald-500/20 transition max-w-[180px] md:max-w-[210px]">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-ping shrink-0"></span>
                   <span className="truncate">{displayName} ({roleDisplay})</span>
                 </span>
 
-                <ChevronDown className={`w-4 h-4 text-slate-400 group-hover:text-white transition-transform duration-200 shrink-0 ${dropdownOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`w-4 h-4 text-slate-500 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white transition-transform duration-200 shrink-0 ${dropdownOpen ? 'rotate-180' : ''}`} />
               </button>
 
               {/* User Quick Menu Dropdown */}
               {dropdownOpen && (
-                <div className="absolute right-0 mt-2 w-72 bg-[#0d1322] border border-slate-700/80 rounded-3xl shadow-2xl p-3 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="absolute right-0 mt-2 w-72 glass-panel border border-slate-700/80 rounded-3xl shadow-2xl p-3 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
                   {/* Card Header */}
                   <div className="p-3 rounded-2xl bg-gradient-to-r from-emerald-950/50 via-slate-900 to-slate-900 border border-emerald-500/20 space-y-2 mb-2">
                     <div className="flex items-center gap-3">

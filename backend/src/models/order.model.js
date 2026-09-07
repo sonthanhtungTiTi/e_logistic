@@ -24,12 +24,23 @@ const orderSchema = new mongoose.Schema(
     payloadHash: {
       type: String,
     },
+    // Phân loại luồng định tuyến: DIRECT (Nội tỉnh / Cùng kho - Giao thẳng) hoặc HUB_ROUTED (Liên kho)
+    routeType: {
+      type: String,
+      enum: ['DIRECT', 'HUB_ROUTED'],
+      default: 'HUB_ROUTED',
+    },
     // Trạng thái Vòng đời đơn hàng (Order State Machine)
     status: {
       type: String,
       enum: [
         'DRAFT',
         'CREATED',
+        'SELLER_PREPARING',
+        'PENDING_APPROVAL',
+        'APPROVED',
+        'ASSIGNED_TO_PICKUP_AND_DELIVERY',
+        'ASSIGNED_TO_PICKUP',
         'PENDING_VERIFICATION',
         'READY_TO_PICK',
         'PICKING',
@@ -37,12 +48,16 @@ const orderSchema = new mongoose.Schema(
         'PICKED_UP',
         'INBOUND_HUB',
         'IN_HUB_ORIGIN',
+        'INBOUND_ORIGIN_HUB',
         'SORTING',
         'IN_SORTING_HUB',
         'BAGGED_SEALED',
         'IN_TRANSIT',
         'INBOUND_HUB_DEST',
         'IN_HUB_DEST',
+        'INBOUND_DEST_HUB',
+        'PENDING_DELIVERY_ASSIGNMENT',
+        'ASSIGNED_TO_DELIVERY',
         'OUT_FOR_DELIVERY',
         'DELIVERING',
         'DELIVERED',
@@ -65,6 +80,41 @@ const orderSchema = new mongoose.Schema(
       ],
       default: 'CREATED',
     },
+    // Thời điểm Seller báo đã chuẩn bị xong hàng
+    sellerPreparedAt: { type: Date, default: null },
+
+    // Thông tin Order Manager duyệt đơn hàng
+    orderApproval: {
+      approvedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+      approvedAt: { type: Date, default: null },
+    },
+
+    // Phân công chặng lấy hàng (Pickup) - Gán bởi Driver Manager
+    pickupAssignment: {
+      driverId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+      assignedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+      assignedAt: { type: Date, default: null },
+      status: {
+        type: String,
+        enum: ['ASSIGNED', 'REJECT_REQUESTED', 'REJECTED_CONFIRMED'],
+        default: 'ASSIGNED',
+      },
+      rejectReason: { type: String, default: null },
+    },
+
+    // Phân công chặng giao hàng (Delivery) - Gán bởi Driver Manager
+    deliveryAssignment: {
+      driverId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+      assignedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+      assignedAt: { type: Date, default: null },
+      status: {
+        type: String,
+        enum: ['ASSIGNED', 'REJECT_REQUESTED', 'REJECTED_CONFIRMED'],
+        default: 'ASSIGNED',
+      },
+      rejectReason: { type: String, default: null },
+    },
+
     dispatcherId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     deliveryFailureCount: { type: Number, default: 0 },
     deliveryFailureHistory: [

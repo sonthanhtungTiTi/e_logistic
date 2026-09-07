@@ -95,6 +95,12 @@ export const orderApi = {
       order: Order;
     }>(`/orders/${id}`, payload),
 
+  markPrepared: (id: string) =>
+    axiosClient.patch<{
+      message: string;
+      order: Order;
+    }>(`/orders/${id}/mark-prepared`),
+
   updateOrderStatus: (id: string, status: string, note?: string) =>
     axiosClient.patch<{
       success: boolean;

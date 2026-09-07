@@ -197,7 +197,7 @@ export const RegisterPage: React.FC = () => {
 
   return (
     <div className="min-h-[85vh] flex items-center justify-center p-4 sm:p-6 selection:bg-emerald-500 selection:text-white">
-      <div className="w-full max-w-xl glass-panel rounded-3xl p-6 sm:p-8 border border-slate-800 space-y-6 shadow-2xl bg-[#0c1222]/90 backdrop-blur-xl relative overflow-hidden">
+      <div className="w-full max-w-xl glass-panel rounded-3xl p-6 sm:p-8 border border-slate-800 space-y-6 shadow-2xl backdrop-blur-xl relative overflow-hidden">
         
         {/* Top Decorative Glow */}
         <div className="absolute -top-16 -right-16 w-36 h-36 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />

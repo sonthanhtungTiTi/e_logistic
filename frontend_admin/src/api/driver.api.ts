@@ -55,7 +55,7 @@ export const driverApi = {
 
   getPendingPickupOrders: async (): Promise<any[]> => {
     try {
-      const res = await axiosClient.get('/orders?status=READY_TO_PICK&limit=100');
+      const res = await axiosClient.get('/orders?status=ASSIGNED_TO_PICKUP,ASSIGNED_TO_PICKUP_AND_DELIVERY,READY_TO_PICK&limit=100');
       const list = res.data?.data || res.data?.orders || (Array.isArray(res.data) ? res.data : []);
       return list;
     } catch (err) {
