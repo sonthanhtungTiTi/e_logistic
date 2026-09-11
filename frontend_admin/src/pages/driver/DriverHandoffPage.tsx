@@ -64,11 +64,11 @@ export const DriverHandoffPage: React.FC = () => {
       <div className="bg-slate-900/90 border border-slate-800 p-3.5 rounded-2xl shadow-sm flex items-center justify-between">
         <div>
           <h2 className="font-bold text-sm text-white flex items-center gap-2">
-            <ClipboardCheck className="w-4 h-4 text-orange-400" />
+            <ClipboardCheck className="w-4 h-4 text-blue-400" />
             Nhận Chuyến Xe (Handoff)
           </h2>
           <p className="text-[11px] text-slate-400 mt-0.5 flex items-center gap-1">
-            <Truck className="w-3 h-3 text-orange-400" /> Quét Trip Code — Chấp nhận hoặc Từ chối
+            <Truck className="w-3 h-3 text-blue-400" /> Quét Trip Code — Chấp nhận hoặc Từ chối
           </p>
         </div>
 
@@ -91,12 +91,12 @@ export const DriverHandoffPage: React.FC = () => {
             onChange={e => setManualTripCode(e.target.value.toUpperCase())}
             onKeyDown={e => { if (e.key === 'Enter') handleScanTrip(manualTripCode); }}
             placeholder="VD: TRIP-178678..."
-            className="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm uppercase font-mono text-white placeholder:text-slate-600 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
+            className="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm uppercase font-mono text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
           />
           <button
             onClick={() => handleScanTrip(manualTripCode)}
             disabled={loading || !manualTripCode.trim()}
-            className="bg-orange-600 hover:bg-orange-500 text-white px-4 py-2 rounded-xl text-xs font-bold transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shrink-0 flex items-center gap-1.5"
+            className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-xs font-bold transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shrink-0 flex items-center gap-1.5"
           >
             <Send className="w-3.5 h-3.5" /> Nhận
           </button>
@@ -105,8 +105,8 @@ export const DriverHandoffPage: React.FC = () => {
 
       {/* Confirm / Reject panel */}
       {pendingTrip && (
-        <div className="bg-orange-950/20 border border-orange-700/40 p-4 rounded-2xl space-y-3">
-          <p className="text-xs font-bold text-orange-300">
+        <div className="bg-blue-950/20 border border-blue-700/40 p-4 rounded-2xl space-y-3">
+          <p className="text-xs font-bold text-blue-300">
             Chuyến xe: <span className="font-mono text-white">{pendingTrip}</span>
           </p>
           {!showReject ? (
@@ -173,7 +173,7 @@ export const DriverHandoffPage: React.FC = () => {
       {/* History */}
       <div className="bg-slate-900 border border-slate-800 p-3.5 rounded-2xl shadow-sm flex-1 flex flex-col min-h-[120px]">
         <h3 className="text-xs font-bold text-slate-200 flex items-center gap-1.5 mb-2">
-          <History className="w-3.5 h-3.5 text-orange-400" />
+          <History className="w-3.5 h-3.5 text-blue-400" />
           Lịch sử xác nhận ({history.length})
         </h3>
         {history.length === 0 ? (
@@ -188,7 +188,7 @@ export const DriverHandoffPage: React.FC = () => {
                 className="p-2.5 bg-slate-950/80 border border-slate-800 rounded-xl text-xs flex justify-between items-center transition hover:border-slate-700"
               >
                 <div>
-                  <p className="font-mono font-bold text-orange-400">{item.trip_code || item.tripCode}</p>
+                  <p className="font-mono font-bold text-blue-400">{item.trip_code || item.tripCode}</p>
                   <p className="text-slate-400 text-[10px] mt-0.5">
                     {item.action === 'ACCEPT'
                       ? `✅ ${item.items_confirmed || 0} kiện → ${item.new_order_status || 'IN_TRANSIT'}`

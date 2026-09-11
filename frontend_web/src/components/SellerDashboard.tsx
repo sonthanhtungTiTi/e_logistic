@@ -142,10 +142,10 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
       {/* Top Banner & Title */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 text-xs font-bold uppercase mb-1">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-bold uppercase mb-1">
             <Package className="w-3.5 h-3.5" /> Kênh Thương Mại & Chủ Hàng
           </div>
-          <h2 className="text-3xl font-extrabold text-white">Quản Lý Vận Đơn & Kho Hàng</h2>
+          <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white">Quản Lý Vận Đơn & Kho Hàng</h2>
         </div>
 
         <button
@@ -159,51 +159,51 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="glass-card rounded-2xl p-5 border border-slate-800 space-y-2">
+        <div className="glass-card rounded-2xl p-5 border border-slate-200 dark:border-slate-800 space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-400 font-semibold">Tổng Đơn Đã Tạo</span>
-            <div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center">
+            <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold">Tổng Đơn Đã Tạo</span>
+            <div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-500 dark:text-blue-400 flex items-center justify-center">
               <Package className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl font-black text-white">{totalOrders} <span className="text-xs text-slate-400 font-normal">đơn</span></div>
+          <div className="text-2xl font-black text-slate-900 dark:text-white">{totalOrders} <span className="text-xs text-slate-500 dark:text-slate-400 font-normal">đơn</span></div>
         </div>
 
-        <div className="glass-card rounded-2xl p-5 border border-slate-800 space-y-2">
+        <div className="glass-card rounded-2xl p-5 border border-slate-200 dark:border-slate-800 space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-400 font-semibold">Đang Luân Chuyển</span>
-            <div className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center">
+            <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold">Đang Luân Chuyển</span>
+            <div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
               <Truck className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl font-black text-amber-300">{inTransitCount} <span className="text-xs text-slate-400 font-normal">kiện</span></div>
+          <div className="text-2xl font-black text-blue-600 dark:text-blue-400">{inTransitCount} <span className="text-xs text-slate-500 dark:text-slate-400 font-normal">kiện</span></div>
         </div>
 
-        <div className="glass-card rounded-2xl p-5 border border-slate-800 space-y-2">
+        <div className="glass-card rounded-2xl p-5 border border-slate-200 dark:border-slate-800 space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-400 font-semibold">Đã Giao Thành Công</span>
-            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+            <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold">Đã Giao Thành Công</span>
+            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 flex items-center justify-center">
               <CheckCircle2 className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl font-black text-emerald-400">{deliveredCount} <span className="text-xs text-slate-400 font-normal">kiện</span></div>
+          <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{deliveredCount} <span className="text-xs text-slate-500 dark:text-slate-400 font-normal">kiện</span></div>
         </div>
 
-        <div className="glass-card rounded-2xl p-5 border border-slate-800 space-y-2">
+        <div className="glass-card rounded-2xl p-5 border border-slate-200 dark:border-slate-800 space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-400 font-semibold">Tổng Chi Phí Cước</span>
-            <div className="w-8 h-8 rounded-lg bg-purple-500/10 text-purple-400 flex items-center justify-center">
+            <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold">Tổng Chi Phí Cước</span>
+            <div className="w-8 h-8 rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center">
               <DollarSign className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl font-black text-cyan-300 font-mono">
-            {totalCost.toLocaleString('vi-VN')} <span className="text-xs text-slate-400 font-normal">đ</span>
+          <div className="text-2xl font-black text-sky-600 dark:text-sky-400 font-mono">
+            {totalCost.toLocaleString('vi-VN')} <span className="text-xs text-slate-500 dark:text-slate-400 font-normal">đ</span>
           </div>
         </div>
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="glass-panel p-4 rounded-2xl border border-slate-800 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+      <div className="glass-panel p-4 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
         <div className="relative flex-1">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
           <input
@@ -211,7 +211,7 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Tìm theo mã vận đơn, người nhận, địa phương..."
-            className="w-full glass-input rounded-xl pl-10 pr-4 py-2 text-xs"
+            className="w-full glass-input rounded-xl pl-10 pr-4 py-2 text-xs text-slate-900 dark:text-white bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800"
           />
         </div>
 
@@ -220,23 +220,23 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="glass-input rounded-xl px-3 py-2 text-xs"
+            className="glass-input rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800"
           >
-            <option value="ALL" className="bg-slate-900">Tất Cả Trạng Thái</option>
-            <option value="CREATED" className="bg-slate-900">Khởi Tạo</option>
-            <option value="IN_TRANSIT" className="bg-slate-900">Đang Vận Chuyển</option>
-            <option value="OUT_FOR_DELIVERY" className="bg-slate-900">Đang Phát Hàng</option>
-            <option value="DELIVERED" className="bg-slate-900">Đã Giao</option>
+            <option value="ALL">Tất Cả Trạng Thái</option>
+            <option value="CREATED">Khởi Tạo</option>
+            <option value="IN_TRANSIT">Đang Vận Chuyển</option>
+            <option value="OUT_FOR_DELIVERY">Đang Phát Hàng</option>
+            <option value="DELIVERED">Đã Giao</option>
           </select>
         </div>
       </div>
 
       {/* Orders Table */}
-      <div className="glass-panel rounded-2xl border border-slate-800 overflow-hidden">
+      <div className="glass-panel rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-slate-800 bg-slate-900/60 text-[11px] font-bold text-slate-400 uppercase">
+              <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900/60 text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase">
                 <th className="py-3.5 px-4">Mã Vận Đơn</th>
                 <th className="py-3.5 px-4">Người Nhận & Nơi Giao</th>
                 <th className="py-3.5 px-4">Trọng Lượng (Thực / DIM)</th>
@@ -245,7 +245,7 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
                 <th className="py-3.5 px-4 text-right">Thao Tác</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60 text-xs">
+            <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60 text-xs">
               {filteredOrders.length > 0 ? (
                 filteredOrders.map((ord) => {
                   const code = ord.trackingCode || ord.trackingNumber || '';
@@ -272,31 +272,31 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
                   const canCancel = ['CREATED', 'PENDING_VERIFICATION', 'PENDING'].includes(ord.status) || isWithin5MinWindow;
 
                   return (
-                    <tr key={ord._id || ord.id} className="hover:bg-slate-800/40 transition">
-                      <td className="py-4 px-4 font-mono font-bold text-blue-400">
+                    <tr key={ord._id || ord.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
+                      <td className="py-4 px-4 font-mono font-bold text-blue-600 dark:text-blue-400">
                         {code}
-                        <span className="block text-[10px] font-normal text-slate-500">{ord.serviceType || 'EXPRESS'}</span>
+                        <span className="block text-[10px] font-normal text-slate-500 dark:text-slate-400">{ord.serviceType || 'EXPRESS'}</span>
                       </td>
                       <td className="py-4 px-4">
-                        <div className="font-bold text-white">{recipientName}</div>
-                        <div className="text-[11px] text-slate-400 truncate max-w-xs">{recipientAddress}</div>
+                        <div className="font-bold text-slate-900 dark:text-white">{recipientName}</div>
+                        <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-xs">{recipientAddress}</div>
                       </td>
                       <td className="py-4 px-4">
-                        <div className="text-slate-200 font-mono">{actualWeight} kg (Thực)</div>
-                        <div className="text-cyan-400 text-[11px] font-mono">➡ {chargeableWeightVal} kg (Tính cước)</div>
+                        <div className="text-slate-700 dark:text-slate-200 font-mono">{actualWeight} kg (Thực)</div>
+                        <div className="text-sky-600 dark:text-sky-400 text-[11px] font-mono">➡ {chargeableWeightVal} kg (Tính cước)</div>
                       </td>
-                      <td className="py-4 px-4 font-mono font-bold text-emerald-400">
+                      <td className="py-4 px-4 font-mono font-bold text-emerald-600 dark:text-emerald-400">
                         {fee.toLocaleString('vi-VN')} đ
                       </td>
                       <td className="py-4 px-4">
                         <span
                           className={`inline-block text-[10px] font-bold px-2.5 py-1 rounded-full uppercase ${ord.status === 'DELIVERED'
-                              ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                              ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
                               : ord.status === 'READY_TO_PICK'
-                              ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
+                              ? 'bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-500/30'
                               : ord.status === 'IN_TRANSIT' || ord.status === 'OUT_FOR_DELIVERY'
-                                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                                : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                                ? 'bg-sky-500/20 text-sky-700 dark:text-sky-300 border border-sky-500/30'
+                                : 'bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-500/30'
                             }`}
                         >
                           {ord.status === 'READY_TO_PICK' ? 'READY_TO_PICK' : ord.status}
@@ -306,24 +306,24 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
                         <div className="flex items-center justify-end gap-1.5">
                           <button
                             onClick={() => onOpenOrderDetails(ord)}
-                            className="px-2.5 py-1 rounded-lg bg-blue-600/20 hover:bg-blue-600 text-blue-300 hover:text-white border border-blue-500/30 text-xs font-semibold transition cursor-pointer"
+                            className="px-2.5 py-1 rounded-lg bg-blue-600/20 hover:bg-blue-600 text-blue-600 dark:text-blue-300 hover:text-white border border-blue-500/30 text-xs font-semibold transition cursor-pointer"
                           >
                             Chi Tiết
                           </button>
                           {(ord.status === 'CREATED' || ord.status === 'PENDING_VERIFICATION' || ord.status === 'PENDING') && onReadyToPick && (
                             <button
                               onClick={() => onReadyToPick(ord)}
-                              className="px-2.5 py-1 rounded-lg bg-cyan-600/20 hover:bg-cyan-600 text-cyan-300 hover:text-white border border-cyan-500/30 text-xs font-semibold transition cursor-pointer flex items-center gap-1"
+                              className="px-2.5 py-1 rounded-lg bg-blue-600/20 hover:bg-blue-600 text-blue-700 dark:text-blue-300 hover:text-white border border-blue-500/30 text-xs font-semibold transition cursor-pointer flex items-center gap-1"
                               title="Xác nhận đã đóng gói hàng xong, sẵn sàng chờ bưu tá thu gom"
                             >
-                              <CheckCircle2 className="w-3.5 h-3.5 text-cyan-400" />
+                              <CheckCircle2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                               Chuẩn Bị Xong
                             </button>
                           )}
                           {isEditable && onEditOrder && (
                             <button
                               onClick={() => onEditOrder(ord)}
-                              className="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-600 text-amber-300 hover:text-white border border-amber-500/30 text-xs font-semibold transition cursor-pointer"
+                              className="px-2.5 py-1 rounded-lg bg-sky-500/20 hover:bg-sky-600 text-sky-700 dark:text-sky-300 hover:text-white border border-sky-500/30 text-xs font-semibold transition cursor-pointer"
                               title={ord.status === 'READY_TO_PICK' ? `Sửa đơn trong thời hạn 5 phút (Còn ${formatCd(remainingSecs)})` : "Chỉnh sửa đơn hàng"}
                             >
                               Sửa {ord.status === 'READY_TO_PICK' && remainingSecs > 0 && `(${formatCd(remainingSecs)})`}
@@ -332,7 +332,7 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
                           {canCancel && onCancelOrder && (
                             <button
                               onClick={() => onCancelOrder(ord)}
-                              className="px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 text-xs font-semibold transition cursor-pointer"
+                              className="px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-600 text-rose-700 dark:text-rose-300 hover:text-white border border-rose-500/30 text-xs font-semibold transition cursor-pointer"
                               title={ord.status === 'READY_TO_PICK' ? `Hủy đơn trong thời hạn 5 phút (Còn ${formatCd(remainingSecs)})` : "Hủy đơn hàng"}
                             >
                               Hủy {ord.status === 'READY_TO_PICK' && remainingSecs > 0 && `(${formatCd(remainingSecs)})`}
@@ -345,9 +345,9 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
                 })
               ) : (
                 <tr>
-                  <td colSpan={6} className="py-12 px-4 text-center text-slate-400 space-y-2">
-                    <Package className="w-10 h-10 text-slate-600 mx-auto" />
-                    <p className="font-bold text-sm text-slate-200">Chưa có đơn hàng nào trong MongoDB</p>
+                  <td colSpan={6} className="py-12 px-4 text-center text-slate-500 dark:text-slate-400 space-y-2">
+                    <Package className="w-10 h-10 text-slate-400 dark:text-slate-600 mx-auto" />
+                    <p className="font-bold text-sm text-slate-800 dark:text-slate-200">Chưa có đơn hàng nào trong MongoDB</p>
                     <p className="text-xs text-slate-500">Bấm "Tạo Đơn Hàng Mới" hoặc "Đăng Đơn Lẻ" để khởi tạo đơn hàng đầu tiên.</p>
                   </td>
                 </tr>

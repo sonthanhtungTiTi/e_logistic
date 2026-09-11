@@ -889,7 +889,7 @@ export const ProfilePage: React.FC = () => {
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
                   {user?.role || 'SELLER'}
                 </span>
-                <span className={`px-3 py-1 rounded-full text-[11px] font-bold border ${kycStatus === 'APPROVED' || kycStatus === 'VERIFIED_KYC' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : kycStatus === 'PENDING' || kycStatus === 'PENDING_KYC' ? 'bg-amber-500/10 text-amber-300 border-amber-500/30' : kycStatus === 'REJECTED' || kycStatus === 'REJECTED_KYC' ? 'bg-rose-500/10 text-rose-300 border-rose-500/30' : 'bg-slate-800 text-slate-400 border-slate-700'}`}>
+                <span className={`px-3 py-1 rounded-full text-[11px] font-bold border ${kycStatus === 'APPROVED' || kycStatus === 'VERIFIED_KYC' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : kycStatus === 'PENDING' || kycStatus === 'PENDING_KYC' ? 'bg-blue-500/15 text-blue-300 border-blue-500/30' : kycStatus === 'REJECTED' || kycStatus === 'REJECTED_KYC' ? 'bg-rose-500/10 text-rose-300 border-rose-500/30' : 'bg-slate-800 text-slate-400 border-slate-700'}`}>
                   KYC: {kycStatus === 'APPROVED' || kycStatus === 'VERIFIED_KYC' ? 'Đã Xác Minh ✅' : kycStatus === 'PENDING' || kycStatus === 'PENDING_KYC' ? 'Đang Chờ Duyệt ⏳' : kycStatus === 'REJECTED' || kycStatus === 'REJECTED_KYC' ? 'Bị Từ Chối ❌' : 'Chưa Nộp'}
                 </span>
               </div>
@@ -1252,7 +1252,7 @@ export const ProfilePage: React.FC = () => {
       {activeTab === 'BANK' && (
         <form onSubmit={handleSaveBank} className="glass-panel p-6 sm:p-8 rounded-3xl border border-slate-800 space-y-6">
           <h3 className="text-lg font-bold text-white flex items-center gap-2 border-b border-slate-800 pb-4">
-            <CreditCard className="w-5 h-5 text-amber-400" /> Tài Khoản Ngân Hàng Đối Soát COD
+            <CreditCard className="w-5 h-5 text-blue-400" /> Tài Khoản Ngân Hàng Đối Soát COD
           </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 text-xs">
@@ -1328,8 +1328,8 @@ export const ProfilePage: React.FC = () => {
                     <CheckCircle2 className="w-4 h-4 text-emerald-400" /> ĐÃ XÁC MINH DANH TÍNH
                   </span>
                 ) : kycStatus === 'PENDING' || kycStatus === 'PENDING_KYC' ? (
-                  <span className="px-4 py-1.5 rounded-full text-xs font-bold border bg-amber-500/20 text-amber-300 border-amber-500/40 flex items-center gap-1.5 animate-pulse">
-                    <RefreshCw className="w-4 h-4 text-amber-400 animate-spin" /> ĐANG CHỜ ADMIN DUYỆT
+                  <span className="px-4 py-1.5 rounded-full text-xs font-bold border bg-blue-500/20 text-blue-300 border-blue-500/40 flex items-center gap-1.5 animate-pulse">
+                    <RefreshCw className="w-4 h-4 text-blue-400 animate-spin" /> ĐANG CHỜ ADMIN DUYỆT
                   </span>
                 ) : kycStatus === 'REJECTED' || kycStatus === 'REJECTED_KYC' ? (
                   <span className="px-4 py-1.5 rounded-full text-xs font-bold border bg-rose-500/20 text-rose-300 border-rose-500/40 flex items-center gap-1.5">
@@ -1449,8 +1449,8 @@ export const ProfilePage: React.FC = () => {
               <form onSubmit={handleKycSubmit} className="space-y-6 text-xs">
                 {/* Notice for Pending State */}
                 {(kycStatus === 'PENDING' || kycStatus === 'PENDING_KYC') && (
-                  <div className="p-4 rounded-2xl bg-amber-950/30 border border-amber-500/30 flex items-center gap-3 text-amber-300">
-                    <RefreshCw className="w-5 h-5 text-amber-400 shrink-0 animate-spin" />
+                  <div className="p-4 rounded-2xl bg-blue-950/40 border border-blue-500/30 flex items-center gap-3 text-blue-300">
+                    <RefreshCw className="w-5 h-5 text-blue-400 shrink-0 animate-spin" />
                     <span>
                       Hồ sơ của bạn đang được chuyên viên CS/Admin kiểm duyệt. Form tạm thời khóa để tránh xung đột dữ liệu.
                     </span>
@@ -1666,7 +1666,7 @@ export const ProfilePage: React.FC = () => {
         <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-slate-800 space-y-6">
           <div className="border-b border-slate-800 pb-4">
             <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              <Bell className="w-5 h-5 text-amber-400" /> Tùy Chỉnh Kênh Nhận Thông Báo
+              <Bell className="w-5 h-5 text-blue-400" /> Tùy Chỉnh Kênh Nhận Thông Báo
             </h3>
             <p className="text-xs text-slate-400">Bật/Tắt các kênh nhận thông báo Email, SMS và Push cho từng loại sự kiện</p>
           </div>

@@ -15,10 +15,8 @@ export const AdminNavbar: React.FC = () => {
         
         {/* Mobile Brand Title */}
         <div className="flex items-center gap-2 md:hidden">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white font-black text-xs">
-            E
-          </div>
-          <span className="font-bold text-sm text-slate-900 dark:text-white">ADMIN OPERATIONS</span>
+          <img src="/logo.png" alt="GIAO HÀNG Logo" className="h-7 w-auto object-contain" />
+          <span className="font-bold text-sm text-slate-900 dark:text-white">GIAO HÀNG ADMIN</span>
         </div>
 
         {/* System Breadcrumb / Title */}
@@ -27,7 +25,7 @@ export const AdminNavbar: React.FC = () => {
             <Cpu className="w-4 h-4 text-cyan-600 dark:text-cyan-400" /> Trung Tâm Điều Hành & Vận Hành Logistics
           </span>
           <span>•</span>
-          <span className="text-cyan-600 dark:text-cyan-400 font-mono text-[11px]">Realtime System Node #VN-SGN-01</span>
+          <span className="text-cyan-600 dark:text-cyan-400 font-mono text-[11px]">Hệ Thống Trực Tuyến #VN-SGN-01</span>
         </div>
 
         {/* User Info, Theme Switcher & Logout */}

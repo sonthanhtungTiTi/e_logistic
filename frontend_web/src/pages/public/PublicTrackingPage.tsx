@@ -135,11 +135,11 @@ export const PublicTrackingPage: React.FC = () => {
       
       {/* Header Banner */}
       <div className="text-center space-y-3">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 text-xs font-bold uppercase">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20 text-xs font-bold uppercase">
           <ShieldCheck className="w-4 h-4" /> Bảo Mật Thông Tin Cá Nhân (PII Masking)
         </div>
-        <h1 className="text-3xl sm:text-4xl font-black text-white">Tra Cứu Hành Trình Đơn Hàng</h1>
-        <p className="text-xs sm:text-sm text-slate-400 max-w-xl mx-auto">
+        <h1 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white">Tra Cứu Hành Trình Đơn Hàng</h1>
+        <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-xl mx-auto">
           Nhập mã vận đơn để theo dõi tiến trình xử lý, thời gian giao hàng & tọa độ GPS thời gian thực (Real-time WebSocket).
         </p>
       </div>
@@ -147,25 +147,25 @@ export const PublicTrackingPage: React.FC = () => {
       {/* Search Input Box with 2-Factor Lookup (Tracking Code + Phone 4 Digits) */}
       <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Search className="w-5 h-5 text-slate-500 absolute left-4 top-3.5" />
+          <Search className="w-5 h-5 text-slate-400 absolute left-4 top-3.5" />
           <input
             type="text"
             value={trackingNumber}
             onChange={(e) => setTrackingNumber(e.target.value)}
             placeholder="Mã vận đơn (VD: ELG559535153VN)..."
-            className="w-full glass-input rounded-2xl pl-12 pr-4 py-3.5 text-sm font-mono text-white placeholder:text-slate-600 focus:border-blue-500"
+            className="w-full glass-input rounded-2xl pl-12 pr-4 py-3.5 text-sm font-mono text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-blue-500"
           />
         </div>
 
         <div className="relative w-full sm:w-48">
-          <Phone className="w-4 h-4 text-emerald-400 absolute left-4 top-4" />
+          <Phone className="w-4 h-4 text-emerald-500 dark:text-emerald-400 absolute left-4 top-4" />
           <input
             type="text"
             maxLength={4}
             value={phoneLast4}
             onChange={(e) => setPhoneLast4(e.target.value.replace(/\D/g, '').slice(0, 4))}
             placeholder="4 số cuối SĐT nhận"
-            className="w-full glass-input rounded-2xl pl-10 pr-4 py-3.5 text-sm font-mono text-white placeholder:text-slate-600 focus:border-emerald-500"
+            className="w-full glass-input rounded-2xl pl-10 pr-4 py-3.5 text-sm font-mono text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-emerald-500"
           />
         </div>
 
@@ -186,21 +186,21 @@ export const PublicTrackingPage: React.FC = () => {
 
       {/* Error Message Alert */}
       {errorMsg && (
-        <div className="p-4 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs font-bold flex items-center gap-3 shadow-lg">
-          <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0" />
+        <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-500/15 border border-rose-200 dark:border-rose-500/30 text-rose-700 dark:text-rose-300 text-xs font-bold flex items-center gap-3 shadow-sm dark:shadow-lg">
+          <AlertTriangle className="w-5 h-5 text-rose-500 dark:text-rose-400 shrink-0" />
           <span>{errorMsg}</span>
         </div>
       )}
 
       {/* Result Display Box */}
       {orderData && (
-        <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-slate-800 space-y-6 shadow-2xl">
+        <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-6 shadow-sm dark:shadow-2xl">
           
           {/* Top Bar: Tracking Code & Status */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
             <div>
-              <span className="text-[11px] text-slate-400 block font-semibold">Mã Vận Đơn Bưu Gửi</span>
-              <h2 className="text-xl sm:text-2xl font-mono font-black text-blue-400">
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 block font-semibold">Mã Vận Đơn Bưu Gửi</span>
+              <h2 className="text-xl sm:text-2xl font-mono font-black text-blue-600 dark:text-blue-400">
                 {orderData.tracking_number}
               </h2>
             </div>
@@ -208,10 +208,10 @@ export const PublicTrackingPage: React.FC = () => {
             <div className="flex items-center gap-2">
               <span className={`px-3.5 py-1.5 rounded-full font-extrabold text-xs uppercase border ${
                 orderData.status === 'DELIVERED'
-                  ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                  ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
                   : ['OUT_FOR_DELIVERY', 'DELIVERING'].includes(orderData.status)
-                  ? 'bg-amber-500/20 text-amber-400 border-amber-500/30 animate-pulse'
-                  : 'bg-blue-500/20 text-blue-300 border-blue-500/30'
+                  ? 'bg-sky-500/20 text-sky-700 dark:text-sky-300 border-sky-500/30 animate-pulse'
+                  : 'bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-500/30'
               }`}>
                 {orderData.status_text || orderData.status}
               </span>
@@ -219,10 +219,10 @@ export const PublicTrackingPage: React.FC = () => {
           </div>
 
           {/* Masked PII Receiver Box */}
-          <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3">
-            <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
-              <span className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
-                <User className="w-4 h-4 text-blue-400" /> Thông Tin Người Nhận (Đã Che Mờ - Masked PII)
+          <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 space-y-3">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800/80 pb-2">
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                <User className="w-4 h-4 text-blue-500 dark:text-blue-400" /> Thông Tin Người Nhận (Đã Che Mờ - Masked PII)
               </span>
               <span className="text-[10px] font-mono text-slate-500">Quyền riêng tư được bảo vệ</span>
             </div>
@@ -230,33 +230,33 @@ export const PublicTrackingPage: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
               <div>
                 <span className="text-slate-500 block text-[10px]">Tên người nhận:</span>
-                <strong className="text-white font-mono">{orderData.receiver.name}</strong>
+                <strong className="text-slate-900 dark:text-white font-mono">{orderData.receiver.name}</strong>
               </div>
               <div>
                 <span className="text-slate-500 block text-[10px]">Số điện thoại:</span>
-                <strong className="text-white font-mono">{orderData.receiver.phone}</strong>
+                <strong className="text-slate-900 dark:text-white font-mono">{orderData.receiver.phone}</strong>
               </div>
               <div>
                 <span className="text-slate-500 block text-[10px]">Địa chỉ giao hàng:</span>
-                <strong className="text-slate-300 block truncate">{orderData.receiver.address}</strong>
+                <strong className="text-slate-800 dark:text-slate-300 block truncate">{orderData.receiver.address}</strong>
               </div>
             </div>
           </div>
 
           {/* Timeline Section */}
           <div className="space-y-4">
-            <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
-              <Clock className="w-4 h-4 text-amber-400" /> Lịch Sử Hành Trình Bưu Bưu Cục
+            <h3 className="text-xs font-bold text-slate-800 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
+              <Clock className="w-4 h-4 text-blue-500 dark:text-blue-400" /> Lịch Sử Hành Trình Bưu Cục
             </h3>
 
-            <div className="relative pl-6 space-y-6 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-800">
+            <div className="relative pl-6 space-y-6 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200 dark:before:bg-slate-800">
               {orderData.timeline.map((item, idx) => (
                 <div key={idx} className="relative flex items-start gap-3">
-                  <div className="absolute -left-6 top-0.5 w-4 h-4 rounded-full bg-blue-600 border-2 border-slate-950 flex items-center justify-center text-[10px] text-white font-bold">
+                  <div className="absolute -left-6 top-0.5 w-4 h-4 rounded-full bg-blue-600 border-2 border-white dark:border-slate-950 flex items-center justify-center text-[10px] text-white font-bold">
                     ✓
                   </div>
                   <div>
-                    <div className="text-xs font-bold text-white">{item.title}</div>
+                    <div className="text-xs font-bold text-slate-900 dark:text-white">{item.title}</div>
                     <div className="text-[11px] text-slate-500 font-mono">
                       {new Date(item.time).toLocaleString('vi-VN')}
                     </div>
@@ -268,21 +268,21 @@ export const PublicTrackingPage: React.FC = () => {
 
           {/* Live GPS Tracking (WebSocket Room Pattern) */}
           {orderData.live_tracking?.is_active && (
-            <div className="p-5 rounded-2xl bg-blue-950/30 border border-blue-500/30 space-y-4">
+            <div className="p-5 rounded-2xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-500/30 space-y-4">
               
-              <div className="flex items-center justify-between border-b border-blue-500/20 pb-3">
+              <div className="flex items-center justify-between border-b border-blue-200 dark:border-blue-500/20 pb-3">
                 <div className="flex items-center gap-2">
                   <div className="relative flex h-3 w-3">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
                   </div>
-                  <h4 className="font-bold text-sm text-white">Đang Giao Hàng Chặng Cuối (Live GPS Real-time)</h4>
+                  <h4 className="font-bold text-sm text-slate-900 dark:text-white">Đang Giao Hàng Chặng Cuối (Live GPS Real-time)</h4>
                 </div>
 
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handleSimulateDriverMove}
-                    className="px-3 py-1 rounded-lg bg-blue-600/30 hover:bg-blue-600/50 text-blue-300 border border-blue-500/40 text-[11px] font-bold cursor-pointer transition flex items-center gap-1"
+                    className="px-3 py-1 rounded-lg bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white dark:bg-blue-600/30 dark:hover:bg-blue-600/50 dark:text-blue-300 border border-blue-300 dark:border-blue-500/40 text-[11px] font-bold cursor-pointer transition flex items-center gap-1"
                   >
                     <Navigation className="w-3.5 h-3.5" /> Mô phỏng tài xế di chuyển GPS
                   </button>
@@ -291,28 +291,28 @@ export const PublicTrackingPage: React.FC = () => {
 
               {/* Graceful Degradation Warning (8.2) */}
               {isGpsStale && (
-                <div className="p-3.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-bold flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+                <div className="p-3.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-500/30 text-blue-800 dark:text-blue-300 text-xs font-bold flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-blue-500 dark:text-blue-400 shrink-0" />
                   <span>{staleWarning || 'Vị trí cập nhật vài phút trước. Tín hiệu GPS từ Shipper tạm thời gián đoạn.'}</span>
                 </div>
               )}
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
                 
-                <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1">
-                  <span className="text-[10px] text-slate-400 block">Tài Xế Phụ Trách:</span>
-                  <strong className="text-white flex items-center gap-1">
-                    <User className="w-3.5 h-3.5 text-blue-400" /> {orderData.live_tracking.driver_name}
+                <div className="p-3 rounded-xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 space-y-1 shadow-sm dark:shadow-none">
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Tài Xế Phụ Trách:</span>
+                  <strong className="text-slate-900 dark:text-white flex items-center gap-1">
+                    <User className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400" /> {orderData.live_tracking.driver_name}
                   </strong>
                   <span className="text-[10px] text-slate-500 font-mono block">
                     <Phone className="w-3 h-3 inline mr-1" /> {orderData.live_tracking.driver_phone}
                   </span>
                 </div>
 
-                <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1">
-                  <span className="text-[10px] text-slate-400 block">Tọa Độ GPS Shipper:</span>
+                <div className="p-3 rounded-xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 space-y-1 shadow-sm dark:shadow-none">
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Tọa Độ GPS Shipper:</span>
                   {driverGps ? (
-                    <strong className="text-cyan-400 font-mono">
+                    <strong className="text-cyan-600 dark:text-cyan-400 font-mono">
                       {driverGps.lat.toFixed(6)}, {driverGps.lng.toFixed(6)}
                     </strong>
                   ) : (
@@ -320,12 +320,12 @@ export const PublicTrackingPage: React.FC = () => {
                   )}
                 </div>
 
-                <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1">
-                  <span className="text-[10px] text-slate-400 block">Dự Kiến Giao Đến (ETA):</span>
+                <div className="p-3 rounded-xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 space-y-1 shadow-sm dark:shadow-none">
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Dự Kiến Giao Đến (ETA):</span>
                   {isGpsStale ? (
-                    <span className="text-amber-400 font-bold">Tạm ngưng tính ETA</span>
+                    <span className="text-slate-500 dark:text-slate-400 font-bold">Tạm ngưng tính ETA</span>
                   ) : (
-                    <strong className="text-emerald-400 font-mono text-sm">
+                    <strong className="text-emerald-600 dark:text-emerald-400 font-mono text-sm">
                       ~{etaMinutes || 12} phút
                     </strong>
                   )}

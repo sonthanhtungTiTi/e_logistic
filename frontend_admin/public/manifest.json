@@ -1,10 +1,10 @@
 {
-  "short_name": "Driver PWA",
-  "name": "E-Logistic Driver Mobile App",
+  "short_name": "GIAO HÀNG PWA",
+  "name": "GIAO HÀNG Driver Mobile App",
   "icons": [
     {
-      "src": "/favicon.svg",
-      "type": "image/svg+xml",
+      "src": "/logo.png",
+      "type": "image/png",
       "sizes": "192x192 512x512"
     }
   ],

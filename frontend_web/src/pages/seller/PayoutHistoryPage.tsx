@@ -9,17 +9,17 @@ export const PayoutHistoryPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="border-b border-slate-800 pb-4">
-        <h3 className="text-2xl font-black text-white flex items-center gap-2">
-          <History className="w-6 h-6 text-purple-400" /> Lịch Sử Chuyển Khoản Payout
+      <div className="border-b border-slate-200 dark:border-slate-800 pb-4">
+        <h3 className="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+          <History className="w-6 h-6 text-blue-500 dark:text-blue-400" /> Lịch Sử Chuyển Khoản Payout
         </h3>
-        <p className="text-xs text-slate-400">Các giao dịch đối soát tiền COD đã chuyển về tài khoản ngân hàng của bạn</p>
+        <p className="text-xs text-slate-500 dark:text-slate-400">Các giao dịch đối soát tiền COD đã chuyển về tài khoản ngân hàng của bạn</p>
       </div>
 
-      <div className="glass-panel rounded-2xl border border-slate-800 overflow-hidden">
+      <div className="glass-panel rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xl">
         <table className="w-full text-left text-xs border-collapse">
           <thead>
-            <tr className="bg-slate-900 border-b border-slate-800 text-slate-400 font-bold uppercase text-[10px]">
+            <tr className="bg-slate-100 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-bold uppercase text-[10px]">
               <th className="p-3">Mã Giao Dịch</th>
               <th className="p-3">Số Tiền</th>
               <th className="p-3">Ngân Hàng Nhận</th>
@@ -27,15 +27,15 @@ export const PayoutHistoryPage: React.FC = () => {
               <th className="p-3">Trạng Thái</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-800/60 font-mono">
+          <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60 font-mono">
             {payouts.map((p) => (
-              <tr key={p.id} className="hover:bg-slate-800/40">
-                <td className="p-3 font-bold text-purple-400">{p.id}</td>
-                <td className="p-3 font-extrabold text-emerald-400">{p.amount.toLocaleString('vi-VN')} ₫</td>
-                <td className="p-3 text-slate-300 font-sans">{p.bank} ({p.account})</td>
-                <td className="p-3 text-slate-400">{p.date}</td>
+              <tr key={p.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
+                <td className="p-3 font-bold text-blue-600 dark:text-blue-400">{p.id}</td>
+                <td className="p-3 font-extrabold text-emerald-600 dark:text-emerald-400">{p.amount.toLocaleString('vi-VN')} ₫</td>
+                <td className="p-3 text-slate-700 dark:text-slate-300 font-sans">{p.bank} ({p.account})</td>
+                <td className="p-3 text-slate-500 dark:text-slate-400">{p.date}</td>
                 <td className="p-3">
-                  <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
                     <CheckCircle2 className="w-3 h-3" /> Thành Công
                   </span>
                 </td>

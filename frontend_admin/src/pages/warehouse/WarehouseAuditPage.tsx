@@ -184,7 +184,7 @@ export const WarehouseAuditPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-xl gap-4">
         <div className="flex items-center gap-2.5">
-          <div className="p-2.5 bg-violet-600/20 border border-violet-500/30 rounded-xl text-violet-400">
+          <div className="p-2.5 bg-blue-600/20 border border-blue-500/30 rounded-xl text-blue-400">
             <ClipboardList className="w-6 h-6" />
           </div>
           <div>
@@ -202,9 +202,9 @@ export const WarehouseAuditPage: React.FC = () => {
             <p className="text-[10px] text-slate-400 uppercase font-bold">Snapshot</p>
             <p className="text-xl font-black text-slate-100">{snapshotCount}</p>
           </div>
-          <div className="text-center px-4 py-2 bg-violet-950/40 border border-violet-800/60 rounded-xl">
-            <p className="text-[10px] text-violet-400 uppercase font-bold">Đã quét</p>
-            <p className="text-xl font-black text-violet-300">{totalScanned}</p>
+          <div className="text-center px-4 py-2 bg-blue-950/40 border border-blue-800/60 rounded-xl">
+            <p className="text-[10px] text-blue-400 uppercase font-bold">Đã quét</p>
+            <p className="text-xl font-black text-blue-300">{totalScanned}</p>
           </div>
         </div>
       </div>
@@ -212,7 +212,7 @@ export const WarehouseAuditPage: React.FC = () => {
       {/* ── IDLE: Start panel ── */}
       {phase === 'IDLE' && (
         <div className="bg-slate-900 border border-slate-800 p-8 rounded-2xl shadow-xl text-center space-y-4">
-          <ClipboardList className="w-14 h-14 text-violet-400 mx-auto opacity-60" />
+          <ClipboardList className="w-14 h-14 text-blue-400 mx-auto opacity-60" />
           <h2 className="text-lg font-bold text-slate-200">Bắt đầu phiên kiểm kê kho</h2>
           <p className="text-xs text-slate-400 max-w-md mx-auto">
             Hệ thống sẽ chụp snapshot toàn bộ kiện hàng đang tồn kho tại Hub của bạn (scope ALL).
@@ -221,7 +221,7 @@ export const WarehouseAuditPage: React.FC = () => {
           <button
             onClick={handleStart}
             disabled={loading}
-            className="inline-flex items-center gap-2 px-8 py-3.5 bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white font-bold text-sm rounded-2xl transition cursor-pointer shadow-lg shadow-violet-600/20"
+            className="inline-flex items-center gap-2 px-8 py-3.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-bold text-sm rounded-2xl transition cursor-pointer shadow-lg shadow-blue-600/20"
           >
             <Play className="w-4 h-4" />
             {loading ? 'Đang tạo phiên...' : 'Bắt đầu Kiểm kê'}
@@ -261,7 +261,7 @@ export const WarehouseAuditPage: React.FC = () => {
               {showManualInput && (
                 <div className="relative mt-3 animate-in fade-in slide-in-from-top-2 duration-200">
                   <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
-                    <Barcode className="w-4 h-4 text-violet-400" />
+                    <Barcode className="w-4 h-4 text-blue-400" />
                     {phase === 'IN_PROGRESS' ? 'Bắn mã vạch kiện hàng (Súng USB & Enter):' : '⏸ Phiên đang tạm dừng'}
                   </label>
                   <div className="relative">
@@ -273,9 +273,9 @@ export const WarehouseAuditPage: React.FC = () => {
                       onKeyDown={handleKeyDown}
                       disabled={phase === 'PAUSED'}
                       placeholder={phase === 'IN_PROGRESS' ? 'Quét hoặc nhập mã vận đơn...' : 'Đang tạm dừng...'}
-                      className="w-full text-lg font-mono border-2 border-violet-500/80 rounded-xl px-4 py-3.5 bg-slate-950 text-white placeholder:text-slate-600 focus:outline-none focus:ring-4 focus:ring-violet-500/30 focus:border-violet-400 transition disabled:opacity-40"
+                      className="w-full text-lg font-mono border-2 border-blue-500/80 rounded-xl px-4 py-3.5 bg-slate-950 text-white placeholder:text-slate-600 focus:outline-none focus:ring-4 focus:ring-blue-500/30 focus:border-blue-400 transition disabled:opacity-40"
                     />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-violet-400 bg-violet-500/20 px-2.5 py-1 rounded-lg border border-violet-500/30">
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-blue-400 bg-blue-500/20 px-2.5 py-1 rounded-lg border border-blue-500/30">
                       AUDIT
                     </span>
                   </div>
@@ -288,7 +288,7 @@ export const WarehouseAuditPage: React.FC = () => {
           <div className="flex gap-3 flex-wrap">
             {phase === 'IN_PROGRESS' ? (
               <button onClick={handlePause}
-                className="flex items-center gap-2 px-5 py-2.5 bg-amber-600/80 hover:bg-amber-500 text-white text-xs font-bold rounded-xl transition cursor-pointer">
+                className="flex items-center gap-2 px-5 py-2.5 bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold rounded-xl transition cursor-pointer">
                 <Pause className="w-3.5 h-3.5" /> Tạm dừng
               </button>
             ) : (
@@ -300,13 +300,13 @@ export const WarehouseAuditPage: React.FC = () => {
             <button
               onClick={handleFinish}
               disabled={loading || totalScanned === 0}
-              className="flex items-center gap-2 px-5 py-2.5 bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl transition cursor-pointer"
+              className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl transition cursor-pointer"
             >
               <Send className="w-3.5 h-3.5" />
               {loading ? 'Đang tính...' : 'Hoàn tất & Nộp kết quả'}
             </button>
             <button onClick={handleReset}
-              className="flex items-center gap-2 px-5 py-2.5 bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold rounded-xl transition cursor-pointer">
+              className="flex items-center gap-2 px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-xl transition cursor-pointer">
               <RotateCcw className="w-3.5 h-3.5" /> Huỷ phiên
             </button>
           </div>
@@ -316,7 +316,7 @@ export const WarehouseAuditPage: React.FC = () => {
             <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-xl overflow-hidden">
               <div className="px-5 py-3.5 border-b border-slate-800 bg-slate-950/60 flex items-center justify-between">
                 <h2 className="text-sm font-bold text-slate-200 flex items-center gap-2">
-                  <Barcode className="w-4 h-4 text-violet-400" />
+                  <Barcode className="w-4 h-4 text-blue-400" />
                   Lịch sử quét ({totalScanned} tổng)
                 </h2>
                 <span className="text-[11px] text-slate-400">50 gần nhất</span>
@@ -334,7 +334,7 @@ export const WarehouseAuditPage: React.FC = () => {
                     {scanLog.map(log => (
                       <tr key={log.id} className={`transition ${log.ok ? 'hover:bg-slate-800/30' : 'bg-rose-950/20'}`}>
                         <td className="py-2.5 px-4 text-xs font-mono text-slate-400">{log.time}</td>
-                        <td className="py-2.5 px-4 font-mono font-bold text-violet-400">{log.code}</td>
+                        <td className="py-2.5 px-4 font-mono font-bold text-blue-400">{log.code}</td>
                         <td className={`py-2.5 px-4 text-xs font-bold ${log.ok ? 'text-emerald-400' : 'text-rose-400'}`}>{log.msg}</td>
                       </tr>
                     ))}
@@ -356,29 +356,29 @@ export const WarehouseAuditPage: React.FC = () => {
               <p className="text-[10px] text-emerald-400 uppercase font-bold mb-1">Khớp</p>
               <p className="text-3xl font-black text-emerald-300">{result.matchedCount}</p>
             </div>
-            <div className="bg-amber-950/30 border border-amber-700/40 p-5 rounded-2xl text-center">
-              <PackageSearch className="w-8 h-8 text-amber-400 mx-auto mb-2" />
-              <p className="text-[10px] text-amber-400 uppercase font-bold mb-1">Thiếu → SEARCH_ZONE</p>
-              <p className="text-3xl font-black text-amber-300">{result.missingCount}</p>
+            <div className="bg-sky-950/30 border border-sky-700/40 p-5 rounded-2xl text-center">
+              <PackageSearch className="w-8 h-8 text-sky-400 mx-auto mb-2" />
+              <p className="text-[10px] text-sky-400 uppercase font-bold mb-1">Thiếu → SEARCH_ZONE</p>
+              <p className="text-3xl font-black text-sky-300">{result.missingCount}</p>
             </div>
-            <div className="bg-violet-950/30 border border-violet-700/40 p-5 rounded-2xl text-center">
-              <PackageX className="w-8 h-8 text-violet-400 mx-auto mb-2" />
-              <p className="text-[10px] text-violet-400 uppercase font-bold mb-1">Dư → SURPLUS</p>
-              <p className="text-3xl font-black text-violet-300">{result.surplusCount}</p>
+            <div className="bg-blue-950/30 border border-blue-700/40 p-5 rounded-2xl text-center">
+              <PackageX className="w-8 h-8 text-blue-400 mx-auto mb-2" />
+              <p className="text-[10px] text-blue-400 uppercase font-bold mb-1">Dư → SURPLUS</p>
+              <p className="text-3xl font-black text-blue-300">{result.surplusCount}</p>
             </div>
           </div>
 
           {/* Missing list */}
           {result.missingCodes.length > 0 && (
-            <div className="bg-slate-900 border border-amber-800/30 rounded-2xl overflow-hidden">
-              <div className="px-5 py-3 border-b border-amber-800/30 bg-amber-950/20">
-                <h3 className="text-sm font-bold text-amber-300 flex items-center gap-2">
+            <div className="bg-slate-900 border border-sky-800/30 rounded-2xl overflow-hidden">
+              <div className="px-5 py-3 border-b border-sky-800/30 bg-sky-950/20">
+                <h3 className="text-sm font-bold text-sky-300 flex items-center gap-2">
                   <PackageSearch className="w-4 h-4" /> Hàng thiếu ({result.missingCount}) — đã chuyển SEARCH_ZONE
                 </h3>
               </div>
               <div className="p-4 flex flex-wrap gap-2">
                 {result.missingCodes.map(c => (
-                  <span key={c} className="font-mono text-xs px-2 py-1 bg-amber-500/10 border border-amber-500/30 text-amber-300 rounded-lg">{c}</span>
+                  <span key={c} className="font-mono text-xs px-2 py-1 bg-sky-500/10 border border-sky-500/30 text-sky-300 rounded-lg">{c}</span>
                 ))}
               </div>
             </div>
@@ -386,20 +386,20 @@ export const WarehouseAuditPage: React.FC = () => {
 
           {/* Surplus list */}
           {result.surplusCodes.length > 0 && (
-            <div className="bg-slate-900 border border-violet-800/30 rounded-2xl overflow-hidden">
-              <div className="px-5 py-3 border-b border-violet-800/30 bg-violet-950/20">
-                <h3 className="text-sm font-bold text-violet-300 flex items-center gap-2">
+            <div className="bg-slate-900 border border-blue-800/30 rounded-2xl overflow-hidden">
+              <div className="px-5 py-3 border-b border-blue-800/30 bg-blue-950/20">
+                <h3 className="text-sm font-bold text-blue-300 flex items-center gap-2">
                   <PackageX className="w-4 h-4" /> Hàng dư ({result.surplusCount}) — đã chuyển SURPLUS
                 </h3>
               </div>
               <div className="p-4 flex flex-wrap gap-2">
                 {result.surplusCodes.map(c => (
-                  <span key={c} className="font-mono text-xs px-2 py-1 bg-violet-500/10 border border-violet-500/30 text-violet-300 rounded-lg">{c}</span>
+                  <span key={c} className="font-mono text-xs px-2 py-1 bg-blue-500/10 border border-blue-500/30 text-blue-300 rounded-lg">{c}</span>
                 ))}
               </div>
               <div className="px-5 pb-4">
                 <p className="text-[11px] text-slate-400">
-                  💡 Hàng dư: nhân viên gọi <code className="text-violet-300 bg-violet-900/30 px-1 rounded">/api/inbound/scan-single</code> để nhập kho lại bình thường.
+                  💡 Hàng dư: nhân viên gọi <code className="text-blue-300 bg-blue-900/30 px-1 rounded">/api/inbound/scan-single</code> để nhập kho lại bình thường.
                 </p>
               </div>
             </div>

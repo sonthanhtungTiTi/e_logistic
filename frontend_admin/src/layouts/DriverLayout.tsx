@@ -16,11 +16,9 @@ export const DriverLayout: React.FC<DriverLayoutProps> = ({ children }) => {
       {/* TopBar Compact */}
       <header className="sticky top-0 z-40 bg-slate-900/95 backdrop-blur border-b border-slate-800 px-4 py-3 flex items-center justify-between shadow-md">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white font-black text-sm shadow-md shadow-cyan-500/20">
-            D
-          </div>
+          <img src="/logo.png" alt="GIAO HÀNG Logo" className="h-7 w-auto object-contain" />
           <div>
-            <h1 className="text-xs font-black text-white tracking-wide">Driver Mobile PWA</h1>
+            <h1 className="text-xs font-black text-white tracking-wide">Ứng Dụng Bưu Tá GIAO HÀNG</h1>
             <span className="text-[10px] text-cyan-400 font-semibold block">{user?.fullName || 'Tài xế v2.4'}</span>
           </div>
         </div>

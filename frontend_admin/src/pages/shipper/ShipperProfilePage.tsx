@@ -281,7 +281,7 @@ export const ShipperProfilePage: React.FC = () => {
       {/* SECTION 2: GỬI YÊU CẦU ĐỔI KHU VỰC */}
       <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl space-y-3">
         <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
-          <div className="flex items-center gap-2 text-amber-400 font-bold text-xs">
+          <div className="flex items-center gap-2 text-blue-400 font-bold text-xs">
             <Send className="w-4 h-4" />
             <span>Xin Chuyển Khu Vực Hoạt Động Mới</span>
           </div>
@@ -293,7 +293,7 @@ export const ShipperProfilePage: React.FC = () => {
           <div
             className={`p-3 rounded-xl text-xs space-y-1 ${
               profile.zoneChangeRequest.status === 'PENDING'
-                ? 'bg-amber-500/10 border border-amber-500/30 text-amber-300'
+                ? 'bg-blue-500/10 border border-blue-500/30 text-blue-300'
                 : profile.zoneChangeRequest.status === 'APPROVED'
                 ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-300'
                 : 'bg-rose-500/10 border border-rose-500/30 text-rose-300'
@@ -301,7 +301,7 @@ export const ShipperProfilePage: React.FC = () => {
           >
             <div className="flex items-center justify-between font-bold">
               <div className="flex items-center gap-1.5">
-                {profile.zoneChangeRequest.status === 'PENDING' && <Clock className="w-3.5 h-3.5 text-amber-400" />}
+                {profile.zoneChangeRequest.status === 'PENDING' && <Clock className="w-3.5 h-3.5 text-blue-400" />}
                 {profile.zoneChangeRequest.status === 'APPROVED' && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />}
                 {profile.zoneChangeRequest.status === 'REJECTED' && <XCircle className="w-3.5 h-3.5 text-rose-400" />}
                 <span>
@@ -341,7 +341,7 @@ export const ShipperProfilePage: React.FC = () => {
                   const firstWard = provinceOptions[p]?.districts[firstDist]?.[0] || '';
                   setReqWard(firstWard);
                 }}
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
+                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
               >
                 {Object.keys(provinceOptions).map((p) => (
                   <option key={p} value={p}>
@@ -361,7 +361,7 @@ export const ShipperProfilePage: React.FC = () => {
                   const firstWard = currentDistricts[d]?.[0] || '';
                   setReqWard(firstWard);
                 }}
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
+                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
               >
                 {Object.keys(currentDistricts).map((d) => (
                   <option key={d} value={d}>
@@ -378,7 +378,7 @@ export const ShipperProfilePage: React.FC = () => {
               <select
                 value={reqWard}
                 onChange={(e) => setReqWard(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
+                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
               >
                 {currentWards.map((w) => (
                   <option key={w} value={w}>
@@ -395,14 +395,14 @@ export const ShipperProfilePage: React.FC = () => {
                 value={reqSubZone}
                 onChange={(e) => setReqSubZone(e.target.value)}
                 placeholder="VD: Khu phố 5"
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-amber-500 font-mono"
+                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-blue-500 font-mono"
               />
             </div>
           </div>
 
           <div>
             <label className="block text-[11px] font-bold text-slate-400 mb-1">
-              Lý Do Xin Chuyển Khu Vực <span className="text-amber-400">*</span>
+              Lý Do Xin Chuyển Khu Vực <span className="text-rose-400">*</span>
             </label>
             <textarea
               rows={2}
@@ -410,14 +410,14 @@ export const ShipperProfilePage: React.FC = () => {
               value={reqReason}
               onChange={(e) => setReqReason(e.target.value)}
               placeholder="VD: Chuyển nơi cư trú gần khu vực Hoàn Kiếm, xin hỗ trợ tăng cường địa bàn..."
-              className="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-amber-500"
+              className="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-500"
             />
           </div>
 
           <button
             type="submit"
             disabled={submittingReq || !reqReason.trim()}
-            className="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md transition disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer"
+            className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-md transition disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer"
           >
             {submittingReq ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
             Gửi Yêu Cầu Xin Đổi Khu Vực

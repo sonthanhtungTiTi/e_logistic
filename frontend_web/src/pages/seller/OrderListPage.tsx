@@ -260,31 +260,31 @@ export const OrderListPage: React.FC = () => {
       )}
 
       {/* Header Bar */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
         <div>
-          <h3 className="text-2xl font-black text-white flex items-center gap-2">
-            <Package className="w-6 h-6 text-blue-400" /> Tra Cứu & Quản Lý Đơn Hàng
+          <h3 className="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+            <Package className="w-6 h-6 text-blue-500" /> Tra Cứu & Quản Lý Đơn Hàng
             {isRealtimeActive && (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 animate-pulse ml-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Realtime Active
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 animate-pulse ml-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400"></span> Realtime Active
               </span>
             )}
           </h3>
-          <p className="text-xs text-slate-400">Tìm kiếm, lọc chi tiết theo mã vận đơn, người nhận, chỉnh sửa & quản lý bưu gửi từ MongoDB</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Tìm kiếm, lọc chi tiết theo mã vận đơn, người nhận, chỉnh sửa & quản lý bưu gửi từ MongoDB</p>
         </div>
 
         <OrderSubNav activeTab="list" />
       </div>
 
       {/* Advanced Filter Control Panel */}
-      <div className="p-5 rounded-2xl glass-panel border border-slate-800 space-y-4 shadow-xl">
-        <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
-          <span className="text-xs font-bold text-slate-300 flex items-center gap-2">
-            <Filter className="w-4 h-4 text-blue-400" /> Bộ Lọc Tra Cứu Đa Tiêu Chí
+      <div className="p-5 rounded-2xl glass-panel border border-slate-200 dark:border-slate-800 space-y-4 shadow-xl">
+        <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800/80 pb-3">
+          <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+            <Filter className="w-4 h-4 text-blue-500" /> Bộ Lọc Tra Cứu Đa Tiêu Chí
           </span>
           <button
             onClick={handleResetFilters}
-            className="text-[11px] font-semibold text-slate-400 hover:text-blue-400 flex items-center gap-1 transition cursor-pointer"
+            className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 hover:text-blue-500 flex items-center gap-1 transition cursor-pointer"
           >
             <RefreshCw className="w-3.5 h-3.5" /> Xóa bộ lọc
           </button>
@@ -294,26 +294,26 @@ export const OrderListPage: React.FC = () => {
 
           {/* Keyword Search */}
           <div>
-            <label className="block text-slate-400 font-semibold mb-1">Mã vận đơn / Người nhận / SĐT</label>
+            <label className="block text-slate-700 dark:text-slate-400 font-semibold mb-1">Mã vận đơn / Người nhận / SĐT</label>
             <div className="relative">
-              <Search className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
               <input
                 type="text"
                 placeholder="Nhập mã, tên hoặc SĐT..."
                 value={searchTerm}
                 onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-                className="w-full glass-input rounded-xl pl-9 pr-3 py-2 text-xs text-white"
+                className="w-full glass-input rounded-xl pl-9 pr-3 py-2 text-xs text-slate-900 dark:text-white bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800"
               />
             </div>
           </div>
 
           {/* Status Filter */}
           <div>
-            <label className="block text-slate-400 font-semibold mb-1">Trạng thái bưu gửi</label>
+            <label className="block text-slate-700 dark:text-slate-400 font-semibold mb-1">Trạng thái bưu gửi</label>
             <select
               value={statusFilter}
               onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
-              className="w-full glass-input rounded-xl px-3 py-2 text-xs text-white bg-slate-900"
+              className="w-full glass-input rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800"
             >
               <option value="ALL">Tất cả trạng thái</option>
               <option value="CREATED">Mới khởi tạo (CREATED)</option>
@@ -328,38 +328,38 @@ export const OrderListPage: React.FC = () => {
 
           {/* From Date */}
           <div>
-            <label className="block text-slate-400 font-semibold mb-1">Từ ngày (From Date)</label>
+            <label className="block text-slate-700 dark:text-slate-400 font-semibold mb-1">Từ ngày (From Date)</label>
             <input
               type="date"
               value={fromDate}
               onChange={(e) => handleDateChange('from', e.target.value)}
-              className="w-full glass-input rounded-xl px-3 py-2 text-xs text-white bg-slate-900"
+              className="w-full glass-input rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800"
             />
           </div>
 
           {/* To Date */}
           <div>
-            <label className="block text-slate-400 font-semibold mb-1">Đến ngày (To Date)</label>
+            <label className="block text-slate-700 dark:text-slate-400 font-semibold mb-1">Đến ngày (To Date)</label>
             <input
               type="date"
               value={toDate}
               onChange={(e) => handleDateChange('to', e.target.value)}
-              className="w-full glass-input rounded-xl px-3 py-2 text-xs text-white bg-slate-900"
+              className="w-full glass-input rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800"
             />
           </div>
 
         </div>
 
-        <div className="flex items-center justify-between pt-2 border-t border-slate-800/80 text-xs text-slate-400">
+        <div className="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-800/80 text-xs text-slate-500 dark:text-slate-400">
           <div>
-            Tìm thấy <strong className="text-blue-400">{totalOrders}</strong> đơn hàng phù hợp
+            Tìm thấy <strong className="text-blue-600 dark:text-blue-400">{totalOrders}</strong> đơn hàng phù hợp
           </div>
           <div className="flex items-center gap-2">
             <span>Sắp xếp:</span>
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="glass-input rounded-xl px-2.5 py-1 text-xs text-white bg-slate-900"
+              className="glass-input rounded-xl px-2.5 py-1 text-xs text-slate-900 dark:text-white bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800"
             >
               <option value="createdAt_desc">Mới nhất trước</option>
               <option value="createdAt_asc">Cũ nhất trước</option>
@@ -410,10 +410,10 @@ export const OrderListPage: React.FC = () => {
       )}
 
       {/* Orders Table */}
-      <div className="glass-panel rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
+      <div className="glass-panel rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xl">
         <table className="w-full text-left text-xs border-collapse">
           <thead>
-            <tr className="bg-slate-900 border-b border-slate-800 text-slate-400 font-bold uppercase text-[10px]">
+            <tr className="bg-slate-100 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-bold uppercase text-[10px]">
               <th className="p-3.5 w-10 text-center">
                 {(() => {
                   const selectableOrders = orders.filter((o) => ['CREATED', 'PENDING_VERIFICATION', 'PENDING'].includes(o.status));
@@ -425,7 +425,7 @@ export const OrderListPage: React.FC = () => {
                       disabled={selectableOrders.length === 0}
                       onChange={handleSelectAll}
                       title={selectableOrders.length > 0 ? "Chọn tất cả các đơn MỚI TẠO để chuyển hàng loạt sang Sẵn Sàng Lấy" : "Không có đơn MỚI TẠO nào để chọn"}
-                      className="rounded border-slate-700 bg-slate-950 text-cyan-500 focus:ring-cyan-500 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                      className="rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-cyan-500 focus:ring-cyan-500 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                     />
                   );
                 })()}
@@ -439,12 +439,12 @@ export const OrderListPage: React.FC = () => {
               <th className="p-3.5 text-right">Thao Tác</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-800/60">
+          <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
             {loading ? (
               <tr>
-                <td colSpan={8} className="p-12 text-center text-slate-400">
+                <td colSpan={8} className="p-12 text-center text-slate-500 dark:text-slate-400">
                   <Loader2 className="w-8 h-8 text-blue-500 animate-spin mx-auto mb-2" />
-                  <p className="font-semibold text-xs text-slate-300">Đang tải danh sách đơn hàng thực từ MongoDB...</p>
+                  <p className="font-semibold text-xs text-slate-600 dark:text-slate-300">Đang tải danh sách đơn hàng thực từ MongoDB...</p>
                 </td>
               </tr>
             ) : orders.length > 0 ? (
@@ -468,29 +468,29 @@ export const OrderListPage: React.FC = () => {
                 const getStatusBadge = (status: string) => {
                   switch (status) {
                     case 'CANCELLED':
-                      return { bg: 'bg-rose-500/20 text-rose-400 border-rose-500/30', label: 'ĐÃ HỦY' };
+                      return { bg: 'bg-rose-500/20 text-rose-600 dark:text-rose-400 border-rose-500/30', label: 'ĐÃ HỦY' };
                     case 'CREATED':
-                      return { bg: 'bg-slate-500/20 text-slate-300 border-slate-500/30', label: 'MỚI TẠO' };
+                      return { bg: 'bg-slate-500/20 text-slate-700 dark:text-slate-300 border-slate-500/30', label: 'MỚI TẠO' };
                     case 'PENDING_APPROVAL':
-                      return { bg: 'bg-amber-500/20 text-amber-300 border-amber-500/30', label: 'CHỜ ADMIN DUYỆT' };
+                      return { bg: 'bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-500/30', label: 'CHỜ ADMIN DUYỆT' };
                     case 'APPROVED':
-                      return { bg: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30', label: 'ĐÃ DUYỆT (CHỜ GÁN XE)' };
+                      return { bg: 'bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border-indigo-500/30', label: 'ĐÃ DUYỆT (CHỜ GÁN XE)' };
                     case 'ASSIGNED_TO_PICKUP':
                     case 'ASSIGNED_TO_PICKUP_AND_DELIVERY':
-                      return { bg: 'bg-purple-500/20 text-purple-300 border-purple-500/30', label: 'Đã phân tài xế gom hàng' };
+                      return { bg: 'bg-sky-500/20 text-sky-700 dark:text-sky-300 border-sky-500/30', label: 'Đã phân tài xế gom hàng' };
                     case 'READY_TO_PICK':
-                      return { bg: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30', label: 'SẴN SÀNG LẤY' };
+                      return { bg: 'bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-500/30', label: 'SẴN SÀNG LẤY' };
                     case 'DELIVERED':
-                      return { bg: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30', label: 'ĐÃ GIAO' };
+                      return { bg: 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/30', label: 'ĐÃ GIAO' };
                     default:
-                      return { bg: 'bg-blue-500/20 text-blue-300 border-blue-500/30', label: status };
+                      return { bg: 'bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-500/30', label: status };
                   }
                 };
 
                 const badge = getStatusBadge(o.status);
 
                 return (
-                  <tr key={orderId || o.trackingCode} className={`transition ${isSelected ? 'bg-cyan-950/30 border-l-2 border-l-cyan-400' : 'hover:bg-slate-800/40'}`}>
+                  <tr key={orderId || o.trackingCode} className={`transition ${isSelected ? 'bg-blue-50/80 dark:bg-blue-950/30 border-l-2 border-l-blue-500' : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'}`}>
                     <td className="p-3.5 text-center">
                       <input
                         type="checkbox"
@@ -498,11 +498,11 @@ export const OrderListPage: React.FC = () => {
                         disabled={!isSelectable}
                         onChange={() => isSelectable && handleSelectOne(orderId)}
                         title={isSelectable ? "Chọn đơn này để báo chuẩn bị xong gửi Admin duyệt" : `Đơn hàng ở trạng thái ${o.status}, không cần chọn đóng gói nữa`}
-                        className={`rounded border-slate-700 bg-slate-950 text-cyan-500 focus:ring-cyan-500 ${isSelectable ? 'cursor-pointer' : 'opacity-25 cursor-not-allowed'
+                        className={`rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-blue-600 focus:ring-blue-500 ${isSelectable ? 'cursor-pointer' : 'opacity-25 cursor-not-allowed'
                           }`}
                       />
                     </td>
-                    <td className="p-3.5 font-mono font-bold text-blue-400">
+                    <td className="p-3.5 font-mono font-bold text-blue-600 dark:text-blue-400">
                       <button
                         onClick={() => setSelectedOrderView(o)}
                         className="hover:underline cursor-pointer"
@@ -510,13 +510,13 @@ export const OrderListPage: React.FC = () => {
                         {o.trackingCode}
                       </button>
                     </td>
-                    <td className="p-3.5 text-white">
+                    <td className="p-3.5 text-slate-900 dark:text-white">
                       <span className="font-bold block">{o.deliveryAddress?.fullName}</span>
-                      <span className="text-[10px] text-slate-400 block font-mono">{o.deliveryAddress?.phone}</span>
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-mono">{o.deliveryAddress?.phone}</span>
                     </td>
-                    <td className="p-3.5 text-slate-300 font-mono">{o.chargeableWeight || o.actualWeight || 0} kg</td>
-                    <td className="p-3.5 font-mono text-emerald-400">{formatCurrency(o.shippingFee || 0)}</td>
-                    <td className="p-3.5 font-mono text-amber-400">{formatCurrency(o.codAmount || 0)}</td>
+                    <td className="p-3.5 text-slate-700 dark:text-slate-300 font-mono">{o.chargeableWeight || o.actualWeight || 0} kg</td>
+                    <td className="p-3.5 font-mono text-emerald-600 dark:text-emerald-400">{formatCurrency(o.shippingFee || 0)}</td>
+                    <td className="p-3.5 font-mono text-slate-800 dark:text-slate-200 font-medium">{formatCurrency(o.codAmount || 0)}</td>
                     <td className="p-3.5">
                       <div className="flex flex-col items-start gap-1">
                         <span className={`px-2.5 py-1 rounded-full font-bold text-[10px] uppercase border inline-flex items-center gap-1 ${badge.bg}`}>
@@ -526,8 +526,8 @@ export const OrderListPage: React.FC = () => {
 
                         {(o.status === 'PENDING_APPROVAL' || o.status === 'READY_TO_PICK') && (
                           remainingSecs > 0 ? (
-                            <span className="text-[10px] font-mono font-bold text-amber-400 bg-amber-950/50 px-2 py-0.5 rounded-lg border border-amber-500/30 flex items-center gap-1 animate-pulse">
-                              <Clock className="w-3 h-3 text-amber-400" /> Sửa trong: {formatTimer(remainingSecs)}
+                            <span className="text-[10px] font-mono font-bold text-sky-700 dark:text-sky-300 bg-sky-500/10 dark:bg-sky-950/50 px-2 py-0.5 rounded-lg border border-sky-500/30 flex items-center gap-1 animate-pulse">
+                              <Clock className="w-3 h-3 text-sky-600 dark:text-sky-400" /> Sửa trong: {formatTimer(remainingSecs)}
                             </span>
                           ) : (
                             <span className="text-[10px] font-mono text-slate-500 px-1 py-0.5">
@@ -541,7 +541,7 @@ export const OrderListPage: React.FC = () => {
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => setSelectedOrderView(o)}
-                          className="px-2.5 py-1.5 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30 text-[11px] font-bold flex items-center gap-1 cursor-pointer transition"
+                          className="px-2.5 py-1.5 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-500/30 text-[11px] font-bold flex items-center gap-1 cursor-pointer transition"
                           title="Xem chi tiết đơn hàng"
                         >
                           <Eye className="w-3.5 h-3.5" /> Chi Tiết
@@ -550,17 +550,17 @@ export const OrderListPage: React.FC = () => {
                         {(o.status === 'CREATED' || o.status === 'PENDING_VERIFICATION' || o.status === 'PENDING' || o.status === 'DRAFT') && (
                           <button
                             onClick={() => handleReadyToPick(o)}
-                            className="px-2.5 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-[11px] font-bold flex items-center gap-1 cursor-pointer transition"
+                            className="px-2.5 py-1.5 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-500/30 text-[11px] font-bold flex items-center gap-1 cursor-pointer transition"
                             title="Xác nhận đã đóng gói xong để gửi Admin kiểm duyệt và điều phối tài xế"
                           >
-                            <CheckCircle2 className="w-3.5 h-3.5 text-cyan-400" /> Báo Chuẩn Bị Xong
+                            <CheckCircle2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" /> Báo Chuẩn Bị Xong
                           </button>
                         )}
 
                         {canEdit && (
                           <button
                             onClick={() => setSelectedOrderToEdit(o)}
-                            className="px-2.5 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[11px] font-bold flex items-center gap-1 cursor-pointer transition"
+                            className="px-2.5 py-1.5 rounded-xl bg-sky-500/10 hover:bg-sky-500/20 text-sky-700 dark:text-sky-300 border border-sky-500/30 text-[11px] font-bold flex items-center gap-1 cursor-pointer transition"
                             title={isWithin5MinWindow ? `Chỉnh sửa thông tin đơn hàng (Còn ${formatTimer(remainingSecs)})` : "Chỉnh sửa thông tin đơn hàng"}
                           >
                             <Edit3 className="w-3.5 h-3.5" /> Sửa
@@ -570,7 +570,7 @@ export const OrderListPage: React.FC = () => {
                         {canCancel && (
                           <button
                             onClick={() => setSelectedOrderToCancel(o)}
-                            className="px-2.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 text-[11px] font-bold flex items-center gap-1 cursor-pointer transition"
+                            className="px-2.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30 text-[11px] font-bold flex items-center gap-1 cursor-pointer transition"
                             title={isWithin5MinWindow ? `Hủy đơn vận này (Còn ${formatTimer(remainingSecs)})` : "Hủy đơn vận này"}
                           >
                             <Ban className="w-3.5 h-3.5" /> Hủy
@@ -583,10 +583,10 @@ export const OrderListPage: React.FC = () => {
               })
             ) : (
               <tr>
-                <td colSpan={8} className="p-12 text-center text-slate-400 space-y-3">
-                  <Package className="w-12 h-12 text-slate-600 mx-auto" />
+                <td colSpan={8} className="p-12 text-center text-slate-500 dark:text-slate-400 space-y-3">
+                  <Package className="w-12 h-12 text-slate-400 dark:text-slate-600 mx-auto" />
                   <div>
-                    <p className="font-bold text-sm text-slate-200">Chưa có đơn hàng nào trong MongoDB</p>
+                    <p className="font-bold text-sm text-slate-800 dark:text-slate-200">Chưa có đơn hàng nào trong MongoDB</p>
                     <p className="text-xs text-slate-500 mt-1">Các đơn hàng mới khởi tạo sẽ hiển thị tại đây theo dữ liệu thật của tài khoản này.</p>
                   </div>
                   <button
@@ -603,20 +603,20 @@ export const OrderListPage: React.FC = () => {
 
         {/* Pagination Footer */}
         {totalPages > 1 && (
-          <div className="p-3.5 bg-slate-900/90 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
+          <div className="p-3.5 bg-slate-50 dark:bg-slate-900/90 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs text-slate-600 dark:text-slate-400">
             <span>Trang {currentPage} / {totalPages} (Tổng {totalOrders} đơn hàng)</span>
             <div className="flex items-center gap-2">
               <button
                 disabled={currentPage === 1}
                 onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-white flex items-center gap-1 font-bold cursor-pointer"
+                className="px-3 py-1.5 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-slate-800 dark:text-white flex items-center gap-1 font-bold cursor-pointer transition"
               >
                 <ChevronLeft className="w-4 h-4" /> Trước
               </button>
               <button
                 disabled={currentPage === totalPages}
                 onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-white flex items-center gap-1 font-bold cursor-pointer"
+                className="px-3 py-1.5 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-slate-800 dark:text-white flex items-center gap-1 font-bold cursor-pointer transition"
               >
                 Sau <ChevronRight className="w-4 h-4" />
               </button>

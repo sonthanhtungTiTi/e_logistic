@@ -41,22 +41,22 @@ export const Navbar: React.FC = () => {
   return (
     <header className="sticky top-0 z-40 w-full glass-panel border-b border-slate-800/80 transition-all backdrop-blur-xl">
       <div className="w-full px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
-        
+
         {/* Brand Logo */}
         <Link to="/" className="flex items-center gap-3 cursor-pointer group">
-          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-tr from-blue-600 via-cyan-500 to-indigo-500 flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
-            <Truck className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+          <div className="h-12 sm:h-14 flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
+            <img src="/logo.png" alt="GIAO HÀNG Logo" className="h-12 sm:h-14 w-auto object-contain drop-shadow-md" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <span className="font-extrabold text-lg sm:text-xl tracking-tight text-slate-900 dark:text-white group-hover:text-blue-500 transition-colors">
-                E-LOGISTIC
-              </span>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-700 dark:text-cyan-400 border border-cyan-500/30 flex items-center gap-1">
-                <Cpu className="w-3 h-3" /> AI Freight
-              </span>
-            </div>
-            <p className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 font-medium">Smart Supply Chain & Courier Platform</p>
+            <span className="font-black text-xl sm:text-2xl tracking-tight text-blue-600 dark:text-blue-400 group-hover:text-blue-500 transition-colors block leading-tight">
+              GIAO HÀNG
+            </span>
+            <p className="text-[11px] text-slate-600 dark:text-slate-300 font-medium leading-none mt-0.5">
+              giao hàng tận tay bạn
+            </p>
+            <p className="text-[9px] font-bold tracking-wider text-slate-400 dark:text-slate-400 uppercase mt-0.5">
+              NHANH CHÓNG • TIN CẬY • MỌI NƠI
+            </p>
           </div>
         </Link>
 

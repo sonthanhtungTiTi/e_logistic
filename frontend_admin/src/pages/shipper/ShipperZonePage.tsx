@@ -111,11 +111,11 @@ export const ShipperZonePage: React.FC = () => {
         <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800 text-center">
           <div className="bg-slate-950/70 p-2.5 rounded-xl border border-slate-850">
             <span className="text-[10px] text-slate-400 block">Hạn Mức Lấy Hàng</span>
-            <span className="text-sm font-black text-amber-400">0 / 25 đơn</span>
+            <span className="text-sm font-black text-blue-400">0 / 25 đơn</span>
           </div>
           <div className="bg-slate-950/70 p-2.5 rounded-xl border border-slate-850">
             <span className="text-[10px] text-slate-400 block">Hạn Mức Giao Hàng</span>
-            <span className="text-sm font-black text-cyan-400">0 / 35 đơn</span>
+            <span className="text-sm font-black text-sky-400">0 / 35 đơn</span>
           </div>
         </div>
       </div>
@@ -127,15 +127,15 @@ export const ShipperZonePage: React.FC = () => {
       )}
 
       {/* Official Assigned Area Banner */}
-      <div className="bg-cyan-950/40 border border-cyan-500/30 p-3.5 rounded-2xl space-y-2">
+      <div className="bg-blue-950/40 border border-blue-500/30 p-3.5 rounded-2xl space-y-2">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5 text-xs font-bold text-cyan-300">
-            <ShieldCheck className="w-4 h-4 text-cyan-400" />
+          <div className="flex items-center gap-1.5 text-xs font-bold text-blue-300">
+            <ShieldCheck className="w-4 h-4 text-blue-400" />
             <span>Địa Bàn Hoạt Động Được Cấp Phép</span>
           </div>
           <button
             onClick={() => navigate('/shipper/profile')}
-            className="text-[11px] font-bold text-amber-400 hover:underline flex items-center gap-1 cursor-pointer"
+            className="text-[11px] font-bold text-blue-400 hover:underline flex items-center gap-1 cursor-pointer"
           >
             <Send className="w-3 h-3" /> Xin Đổi Khu Vực
           </button>

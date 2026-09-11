@@ -17,10 +17,8 @@ export const WarehouseLayout: React.FC = () => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
             {/* Mobile brand */}
             <div className="flex items-center gap-2 md:hidden">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-600 flex items-center justify-center text-white font-black text-xs">
-                W
-              </div>
-              <span className="font-bold text-sm text-white">KHO VẬN</span>
+              <img src="/logo.png" alt="GIAO HÀNG Logo" className="h-7 w-auto object-contain" />
+              <span className="font-bold text-sm text-white">GIAO HÀNG KHO</span>
             </div>
 
             {/* Desktop breadcrumb */}
@@ -64,7 +62,7 @@ export const WarehouseLayout: React.FC = () => {
         </main>
 
         <footer className="w-full glass-panel border-t border-slate-800/80 py-4 text-center text-xs text-slate-500">
-          <p>© 2026 E-Logistic Warehouse Operations. Bộ phận Kho Vận & Tác Nghiệp.</p>
+          <p>© 2026 GIAO HÀNG Warehouse Operations. Bộ phận Kho Vận & Tác Nghiệp Hub.</p>
         </footer>
       </div>
     </div>

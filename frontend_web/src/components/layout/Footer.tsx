@@ -6,16 +6,14 @@ export const Footer: React.FC = () => {
     <footer className="w-full glass-panel border-t border-slate-800/80 pt-12 pb-8 mt-auto">
       <div className="w-full px-4 sm:px-6 lg:px-8 space-y-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          
+
           <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white">
-                <Truck className="w-4 h-4" />
-              </div>
-              <span className="font-bold text-lg text-white">E-LOGISTIC</span>
+            <div className="flex items-center gap-3">
+              <img src="/logo.png" alt="GIAO HÀNG Logo" className="h-9 w-auto object-contain" />
+              <span className="font-black text-xl text-blue-500 tracking-tight">GIAO HÀNG</span>
             </div>
             <p className="text-xs text-slate-400 leading-relaxed">
-              Nền tảng vận tải & chuỗi cung ứng thông minh áp dụng công nghệ AI tối ưu tuyến đường và tính cước tự động.
+              Nền tảng giao hàng & chuỗi cung ứng thông minh. Giao hàng tận tay bạn — Nhanh chóng • Tin cậy • Mọi nơi.
             </p>
           </div>
 
@@ -34,7 +32,7 @@ export const Footer: React.FC = () => {
             <ul className="space-y-2 text-xs text-slate-400">
               <li className="flex items-center gap-2"><MapPin className="w-3.5 h-3.5 text-blue-400" /> Hub Tân Bình, TP. Hồ Chí Minh</li>
               <li className="flex items-center gap-2"><Phone className="w-3.5 h-3.5 text-blue-400" /> 1900-888-999 (Hotline 24/7)</li>
-              <li className="flex items-center gap-2"><Mail className="w-3.5 h-3.5 text-blue-400" /> support@elogistic.vn</li>
+              <li className="flex items-center gap-2"><Mail className="w-3.5 h-3.5 text-blue-400" /> cskh@giaohang.vn</li>
             </ul>
           </div>
 
@@ -51,7 +49,7 @@ export const Footer: React.FC = () => {
         </div>
 
         <div className="border-t border-slate-800/80 pt-6 text-center text-xs text-slate-500">
-          <p>© 2026 E-Logistic Web Platform. Hệ Thống Quản Lý Logistics Khách Hàng & Seller.</p>
+          <p>© 2026 GIAO HÀNG Platform. Hệ Thống Giao Hàng & Quản Lý Logistics Thông Minh.</p>
         </div>
       </div>
     </footer>

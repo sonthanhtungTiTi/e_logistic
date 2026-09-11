@@ -21,7 +21,7 @@ export const PricingPage: React.FC = () => {
 
   const rateCards = [
     {
-      icon: <Zap className="w-6 h-6 text-amber-400" />,
+      icon: <Zap className="w-6 h-6 text-blue-400" />,
       name: 'Nội Tỉnh Hỏa Tốc',
       deliveryTime: '6h - 12h',
       basePrice: '22.000đ',
@@ -29,7 +29,7 @@ export const PricingPage: React.FC = () => {
       nextKgPrice: '+3.500đ / kg',
       desc: 'Áp dụng khu vực nội thành TP.HCM, Hà Nội, Đà Nẵng. Giao siêu tốc trong ngày.',
       badge: 'Phổ biến nhất',
-      color: 'from-amber-500/20 to-orange-500/10 border-amber-500/30',
+      color: 'from-blue-600/20 to-sky-600/10 border-blue-500/30',
     },
     {
       icon: <Truck className="w-6 h-6 text-blue-400" />,
@@ -54,7 +54,7 @@ export const PricingPage: React.FC = () => {
       color: 'from-cyan-500/20 to-teal-500/10 border-cyan-500/30',
     },
     {
-      icon: <Layers className="w-6 h-6 text-purple-400" />,
+      icon: <Layers className="w-6 h-6 text-sky-400" />,
       name: 'Hàng Khối Lượng Lớn (LTL)',
       deliveryTime: '48h - 72h',
       basePrice: '18.000đ / kg',
@@ -62,7 +62,7 @@ export const PricingPage: React.FC = () => {
       nextKgPrice: 'Giảm giá theo lô',
       desc: 'Vận chuyển hàng nguyên lô, pallet kho vận với cước phí cực ưu đãi cho Doanh nghiệp.',
       badge: 'B2B Wholesale',
-      color: 'from-purple-500/20 to-pink-500/10 border-purple-500/30',
+      color: 'from-sky-600/20 to-blue-600/10 border-sky-500/30',
     },
   ];
 
@@ -86,7 +86,7 @@ export const PricingPage: React.FC = () => {
       orders: '200 - 1.000 đơn / ngày',
       discount: 'Giảm 12% Cước',
       benefits: ['Chiết khấu 12% toàn bộ cước phí', 'Miễn phí lưu kho GSP 7 ngày', 'Đối soát COD hàng ngày T+1', 'Quản lý tài khoản riêng (Key Account Manager)'],
-      color: 'border-amber-500/40 bg-amber-950/20',
+      color: 'border-blue-500/40 bg-blue-950/20',
     },
     {
       tier: 'Hạng Bạch Kim (Platinum)',
@@ -113,7 +113,7 @@ export const PricingPage: React.FC = () => {
           </span>
         </h1>
         <p className="text-slate-400 text-sm sm:text-base max-w-3xl mx-auto leading-relaxed">
-          E-Logistic áp dụng quy đổi trọng lượng thể tích theo chuẩn IATA{' '}
+          GIAO HÀNG áp dụng quy đổi trọng lượng thể tích theo chuẩn IATA{' '}
           <code className="text-cyan-300 font-mono bg-slate-900 px-2 py-0.5 rounded">(D x R x C) / 5000</code>{' '}
           kết hợp thuật toán chiết khấu tự động theo sản lượng đơn hàng của Doanh Nghiệp.
         </p>
@@ -131,11 +131,10 @@ export const PricingPage: React.FC = () => {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                activeTab === tab.id
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === tab.id
                   ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'
                   : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-              }`}
+                }`}
             >
               {tab.icon} {tab.label}
             </button>
@@ -210,7 +209,7 @@ export const PricingPage: React.FC = () => {
         <div className="space-y-8 animate-in fade-in duration-300">
           <div className="text-center space-y-2 max-w-2xl mx-auto">
             <h2 className="text-2xl font-extrabold text-white flex items-center justify-center gap-2">
-              <Award className="w-6 h-6 text-amber-400" /> Phân Hạng Khách Hàng & Mức Chiết Khấu Cước
+              <Award className="w-6 h-6 text-blue-400" /> Phân Hạng Khách Hàng & Mức Chiết Khấu Cước
             </h2>
             <p className="text-xs text-slate-400">
               Thuật toán hệ thống tự động tổng hợp sản lượng đơn hàng cuối tháng để áp dụng chính sách chiết khấu trực tiếp vào ví COD.
@@ -287,7 +286,7 @@ export const PricingPage: React.FC = () => {
             <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-2">
               <div className="font-bold text-white text-sm flex items-center justify-between">
                 <span>3. Phí Hoàn Hàng Về Kho Seller</span>
-                <span className="text-amber-400 font-mono">50% Cước Lượt Đi</span>
+                <span className="text-sky-400 font-mono">50% Cước Lượt Đi</span>
               </div>
               <p className="text-slate-400">
                 Hệ thống tự động phát hàng 3 lần trước khi chuyển sang trạng thái Hoàn Hàng. Cước phí hoàn hàng tính 50% cước giao ban đầu.

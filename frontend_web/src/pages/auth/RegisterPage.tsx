@@ -203,15 +203,18 @@ export const RegisterPage: React.FC = () => {
         <div className="absolute -top-16 -right-16 w-36 h-36 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
 
         {/* Form Title & Login Redirect Link */}
-        <div className="space-y-1">
+        <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <h2 className="text-3xl font-black text-white tracking-tight">Đăng ký dịch vụ</h2>
+            <div className="flex items-center gap-3">
+              <img src="/logo.png" alt="GIAO HÀNG Logo" className="h-10 w-auto object-contain" />
+              <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">Đăng ký GIAO HÀNG</h2>
+            </div>
             <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
-              <ShieldCheck className="w-3.5 h-3.5" /> Gmail OTP Protected
+              <ShieldCheck className="w-3.5 h-3.5" /> Xác Thực Bảo Mật Mã OTP Gmail
             </span>
           </div>
           <p className="text-xs text-slate-400">
-            Bạn đã có tài khoản E-Logistic?{' '}
+            Bạn đã có tài khoản GIAO HÀNG?{' '}
             <Link to="/auth/login" className="text-emerald-400 font-bold hover:underline">
               Đăng nhập ngay
             </Link>

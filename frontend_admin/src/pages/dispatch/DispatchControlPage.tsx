@@ -328,10 +328,10 @@ export const DispatchControlPage: React.FC = () => {
               <button
                 onClick={handleOpenAutoAssignPreview}
                 disabled={loadingPreview || approvedOrders.length === 0}
-                className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-emerald-400 hover:from-amber-400 hover:to-emerald-300 text-slate-950 font-black text-xs flex items-center gap-2 shadow-lg shadow-amber-500/20 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                className="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-sky-600 hover:from-blue-500 hover:to-sky-500 text-white font-black text-xs flex items-center gap-2 shadow-lg shadow-blue-500/20 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                 title="Tự động chia đơn công bằng (Weighted Round-Robin) theo khu vực và tải trọng"
               >
-                <Zap className="w-4 h-4 text-slate-950 fill-slate-950" />
+                <Zap className="w-4 h-4 text-white fill-white" />
                 <span>
                   {selectedOrderIds.length > 0
                     ? `⚡ Phân Công Tự Động (${selectedOrderIds.length} đơn)`
@@ -459,7 +459,7 @@ export const DispatchControlPage: React.FC = () => {
                           <td className="p-3.5">
                             <div className="space-y-0.5">
                               <div className="flex items-center gap-1 text-slate-200 font-bold">
-                                <Store className="w-3.5 h-3.5 text-amber-400" />
+                                <Store className="w-3.5 h-3.5 text-blue-400" />
                                 {ord.pickupAddress?.fullName || ord.sellerId?.fullName}
                               </div>
                               <div className="text-[11px] text-slate-400 flex items-center gap-1">
@@ -488,7 +488,7 @@ export const DispatchControlPage: React.FC = () => {
                           <td className="p-3.5">
                             <div className="space-y-0.5 font-mono">
                               <div className="text-slate-200">TL: {ord.chargeableWeight || 0} kg</div>
-                              <div className="text-amber-400">
+                              <div className="text-blue-400">
                                 COD: {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(ord.codAmount || 0)}
                               </div>
                             </div>
@@ -525,19 +525,19 @@ export const DispatchControlPage: React.FC = () => {
       {/* AUTO-ASSIGN PREVIEW & COMMIT MODAL */}
       {isPreviewOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
-          <div className="bg-slate-900 border border-purple-500/40 rounded-3xl w-full max-w-5xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+          <div className="bg-slate-900 border border-blue-500/40 rounded-3xl w-full max-w-5xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
             {/* Modal Header */}
-            <div className="p-6 border-b border-slate-800 flex items-center justify-between bg-gradient-to-r from-purple-950/60 via-slate-900 to-slate-900">
+            <div className="p-6 border-b border-slate-800 flex items-center justify-between bg-gradient-to-r from-blue-950/60 via-slate-900 to-slate-900">
               <div className="flex items-center gap-3">
-                <span className="p-2.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400">
-                  <Zap className="w-6 h-6 fill-amber-400 text-amber-400" />
+                <span className="p-2.5 rounded-2xl bg-blue-500/10 border border-blue-500/30 text-blue-400">
+                  <Zap className="w-6 h-6 fill-blue-400 text-blue-400" />
                 </span>
                 <div>
                   <div className="flex items-center gap-2">
                     <h2 className="text-lg font-black text-white">
                       Phương Án Phân Công Xe Máy Gom Hàng Tự Động
                     </h2>
-                    <span className="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[10px] font-bold">
+                    <span className="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30 text-[10px] font-bold">
                       Weighted Round-Robin
                     </span>
                   </div>
@@ -559,7 +559,7 @@ export const DispatchControlPage: React.FC = () => {
             <div className="p-6 flex-1 overflow-y-auto space-y-6">
               {loadingPreview ? (
                 <div className="py-20 text-center space-y-3">
-                  <RefreshCw className="w-10 h-10 text-amber-400 animate-spin mx-auto" />
+                  <RefreshCw className="w-10 h-10 text-blue-400 animate-spin mx-auto" />
                   <p className="font-bold text-sm text-slate-200">Đang tính toán phân bổ tối ưu...</p>
                   <p className="text-xs text-slate-400">
                     Hệ thống đang quét khu vực serviceAreas, kiểm tra giới hạn an toàn xe máy và quota của từng tài xế

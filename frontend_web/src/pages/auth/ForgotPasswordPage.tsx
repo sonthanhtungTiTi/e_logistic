@@ -192,11 +192,11 @@ export const ForgotPasswordPage: React.FC = () => {
 
         {/* Form Title & Icon Header */}
         <div className="text-center space-y-3 relative z-10">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-600/30 to-teal-500/20 border border-emerald-500/30 flex items-center justify-center mx-auto text-emerald-400 shadow-lg shadow-emerald-500/10">
-            <KeyRound className="w-7 h-7" />
+          <div className="flex justify-center mb-1">
+            <img src="/logo.png" alt="GIAO HÀNG Logo" className="h-14 w-auto object-contain" />
           </div>
           <div>
-            <h2 className="text-2xl font-black tracking-tight text-white">Khôi Phục Mật Khẩu</h2>
+            <h2 className="text-2xl font-black tracking-tight text-white">Khôi Phục Mật Khẩu GIAO HÀNG</h2>
             <p className="text-xs text-slate-400 mt-1 font-medium">Xác thực Google Email / SMS OTP bảo mật 3 bước</p>
           </div>
 

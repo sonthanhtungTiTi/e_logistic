@@ -37,7 +37,7 @@ export const ShipperWalletPage: React.FC = () => {
             className={`text-[10px] px-2.5 py-1 rounded-full font-bold border ${
               isHandedOver
                 ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
-                : 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                : 'bg-blue-500/20 text-blue-300 border-blue-500/30'
             }`}
           >
             {isHandedOver ? 'Đã Nộp Quầy' : 'Chưa Nộp Bưu Cục'}

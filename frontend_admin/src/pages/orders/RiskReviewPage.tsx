@@ -135,7 +135,7 @@ export const RiskReviewPage: React.FC = () => {
             <h1 className="text-3xl font-black text-white tracking-tight">
               Review Order: {order.trackingCode}
             </h1>
-            <span className="px-3 py-1 rounded-full text-xs font-black bg-amber-500/20 text-amber-400 border border-amber-500/30">
+            <span className="px-3 py-1 rounded-full text-xs font-black bg-blue-500/20 text-blue-400 border border-blue-500/30">
               ● {order.status}
             </span>
           </div>
@@ -194,12 +194,12 @@ export const RiskReviewPage: React.FC = () => {
             {/* Risk Sub-Cards */}
             <div className="space-y-3">
               {/* Flag 1: COD Anomaly */}
-              <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 flex gap-3">
-                <div className="p-2 rounded-xl bg-amber-500/20 text-amber-400 h-fit">
+              <div className="bg-blue-500/10 border border-blue-500/30 rounded-2xl p-4 flex gap-3">
+                <div className="p-2 rounded-xl bg-blue-500/20 text-blue-400 h-fit">
                   <DollarSign className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="font-bold text-xs text-amber-300">COD Anomaly Detected</h4>
+                  <h4 className="font-bold text-xs text-blue-300">COD Anomaly Detected</h4>
                   <p className="text-xs text-slate-300 mt-0.5">
                     Declared COD amount ({formatCurrency(order.codAmount)}) exceeds normal threshold relative to goods declared value ({formatCurrency(order.goodsValue)}).
                   </p>
@@ -207,12 +207,12 @@ export const RiskReviewPage: React.FC = () => {
               </div>
 
               {/* Flag 2: Fee Ratio Warning */}
-              <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 flex gap-3">
-                <div className="p-2 rounded-xl bg-amber-500/20 text-amber-400 h-fit">
+              <div className="bg-sky-500/10 border border-sky-500/30 rounded-2xl p-4 flex gap-3">
+                <div className="p-2 rounded-xl bg-sky-500/20 text-sky-400 h-fit">
                   <Percent className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="font-bold text-xs text-amber-300">Fee Ratio Warning</h4>
+                  <h4 className="font-bold text-xs text-sky-300">Fee Ratio Warning</h4>
                   <p className="text-xs text-slate-300 mt-0.5">
                     Logistics fee ({formatCurrency(order.shippingFee)}) represents less than standard ratio for medical high-value cargo.
                   </p>

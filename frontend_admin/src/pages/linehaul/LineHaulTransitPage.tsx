@@ -32,7 +32,7 @@ export const LineHaulTransitPage: React.FC = () => {
         <div className="flex items-center justify-between">
           <div>
             <span className="text-[10px] text-slate-400 font-semibold block">Chuyến Xe Đang Chạy</span>
-            <h2 className="text-base font-black text-orange-400 font-mono mt-0.5">TRIP-SGN-DAD-01</h2>
+            <h2 className="text-base font-black text-blue-400 font-mono mt-0.5">TRIP-SGN-DAD-01</h2>
           </div>
 
           <button
@@ -55,11 +55,11 @@ export const LineHaulTransitPage: React.FC = () => {
           </div>
           <div className="bg-slate-950/70 p-2.5 rounded-xl border border-slate-850">
             <span className="text-[10px] text-slate-500 block">Còn Lại</span>
-            <span className="font-bold text-cyan-400">540 km</span>
+            <span className="font-bold text-sky-400">540 km</span>
           </div>
           <div className="bg-slate-950/70 p-2.5 rounded-xl border border-slate-850">
             <span className="text-[10px] text-slate-500 block">Dự Kiến Đến (ETA)</span>
-            <span className="font-bold text-amber-400">06:30 Sáng mai</span>
+            <span className="font-bold text-blue-400">06:30 Sáng mai</span>
           </div>
         </div>
 

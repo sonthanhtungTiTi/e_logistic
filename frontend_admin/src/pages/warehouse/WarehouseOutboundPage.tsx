@@ -208,7 +208,7 @@ export const WarehouseOutboundPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-xl gap-4">
         <div className="flex items-center gap-2.5">
-          <div className="p-2.5 bg-orange-600/20 border border-orange-500/30 rounded-xl text-orange-400">
+          <div className="p-2.5 bg-blue-600/20 border border-blue-500/30 rounded-xl text-blue-400">
             <Truck className="w-6 h-6" />
           </div>
           <div>
@@ -221,7 +221,7 @@ export const WarehouseOutboundPage: React.FC = () => {
           <button
             id="btn-open-create-trip-modal"
             onClick={() => setShowCreateModal(true)}
-            className="px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-lg shadow-orange-600/20 transition cursor-pointer"
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-lg shadow-blue-600/20 transition cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             Tạo Chuyến Xe Mới
@@ -248,18 +248,16 @@ export const WarehouseOutboundPage: React.FC = () => {
             <p className="text-lg font-black text-slate-100">{stats.total}</p>
           </div>
           <div className="text-center px-3.5 py-1.5 bg-emerald-950/40 border border-emerald-800/60 rounded-xl">
-            <p className="text-[10px] text-emerald-400 uppercase font-bold flex items-center gap-1">
-              <CheckCircle2 className="w-3 h-3" />
-              OK
-            </p>
-            <p className="text-lg font-black text-emerald-300">{stats.success}</p>
+            <p className="text-[10px] text-emerald-400 uppercase font-bold">Hợp lệ</p>
+            <p className="text-lg font-black text-emerald-400">{stats.success}</p>
           </div>
           <div className="text-center px-3.5 py-1.5 bg-rose-950/40 border border-rose-800/60 rounded-xl">
-            <p className="text-[10px] text-rose-400 uppercase font-bold flex items-center gap-1">
-              <XCircle className="w-3 h-3" />
-              Lỗi
-            </p>
-            <p className="text-lg font-black text-rose-300">{stats.failed}</p>
+            <p className="text-[10px] text-rose-400 uppercase font-bold">Lỗi</p>
+            <p className="text-lg font-black text-rose-400">{stats.failed}</p>
+          </div>
+          <div className="text-center px-3.5 py-1.5 bg-slate-900 border border-slate-700 rounded-xl">
+            <p className="text-[10px] text-slate-400 uppercase font-bold">Trùng</p>
+            <p className="text-lg font-black text-slate-400">{stats.duplicate}</p>
           </div>
         </div>
       </div>
@@ -282,12 +280,12 @@ export const WarehouseOutboundPage: React.FC = () => {
             onKeyDown={handleKeyDownTrip}
             placeholder="VD: TRIP-HPH-HAN-9042..."
             disabled={isTripActive}
-            className="flex-1 font-mono text-sm border border-slate-700 rounded-xl px-4 py-3 bg-slate-950 text-white placeholder:text-slate-600 focus:outline-none focus:border-orange-500 disabled:opacity-50"
+            className="flex-1 font-mono text-sm border border-slate-700 rounded-xl px-4 py-3 bg-slate-950 text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-500 disabled:opacity-50"
           />
           {!isTripActive ? (
             <button
               onClick={() => activateTrip()}
-              className="px-6 py-3 bg-orange-600 hover:bg-orange-500 text-white text-xs font-bold rounded-xl transition cursor-pointer shadow"
+              className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl transition cursor-pointer shadow shadow-blue-600/20"
             >
               Kích hoạt
             </button>
@@ -314,9 +312,9 @@ export const WarehouseOutboundPage: React.FC = () => {
                 <button
                   key={t._id}
                   onClick={() => activateTrip(t.tripCode)}
-                  className="px-3 py-1.5 bg-slate-950 hover:bg-orange-950/40 border border-slate-800 hover:border-orange-500/50 rounded-lg text-xs font-mono text-slate-300 hover:text-orange-300 transition flex items-center gap-1.5"
+                  className="px-3 py-1.5 bg-slate-950 hover:bg-blue-950/40 border border-slate-800 hover:border-blue-500/50 rounded-lg text-xs font-mono text-slate-300 hover:text-blue-300 transition flex items-center gap-1.5"
                 >
-                  <Truck className="w-3 h-3 text-orange-400" />
+                  <Truck className="w-3 h-3 text-blue-400" />
                   <span className="font-bold">{t.tripCode}</span>
                   <span className="text-[10px] text-slate-500">({t.status})</span>
                 </button>
@@ -326,8 +324,8 @@ export const WarehouseOutboundPage: React.FC = () => {
         )}
 
         {isTripActive && (
-          <div className="flex items-center gap-2 text-xs font-bold text-orange-300 bg-orange-500/10 border border-orange-500/20 px-3.5 py-2.5 rounded-xl">
-            <Truck className="w-4 h-4 text-orange-400" />
+          <div className="flex items-center gap-2 text-xs font-bold text-blue-300 bg-blue-500/10 border border-blue-500/20 px-3.5 py-2.5 rounded-xl">
+            <Truck className="w-4 h-4 text-blue-400" />
             Đang quét xuất kho cho chuyến: <span className="font-mono text-white text-sm">{activeTripCode}</span>
           </div>
         )}
@@ -362,7 +360,7 @@ export const WarehouseOutboundPage: React.FC = () => {
             {showManualInput && (
               <div className="relative mt-3 animate-in fade-in slide-in-from-top-2 duration-200">
                 <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
-                  <Barcode className="w-4 h-4 text-orange-400" />
+                  <Barcode className="w-4 h-4 text-blue-400" />
                   Nhập mã vận đơn hoặc mã Seal (rồi Enter):
                 </label>
                 <div className="relative">
@@ -374,13 +372,13 @@ export const WarehouseOutboundPage: React.FC = () => {
                     onChange={(e) => setBarcodeInput(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder="Quét mã đơn / mã seal rồi bấm Enter..."
-                    className="w-full text-lg font-mono border-2 border-orange-500/80 rounded-xl px-4 py-3.5 bg-slate-950 text-white placeholder:text-slate-600 focus:outline-none focus:ring-4 focus:ring-orange-500/30 focus:border-orange-400 transition"
+                    className="w-full text-lg font-mono border-2 border-blue-500/80 rounded-xl px-4 py-3.5 bg-slate-950 text-white placeholder:text-slate-600 focus:outline-none focus:ring-4 focus:ring-blue-500/30 focus:border-blue-400 transition"
                   />
                   <button
                     id="btn-outbound-scan"
                     type="button"
                     onClick={() => executeScan(barcodeInput)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-bold text-orange-400 bg-orange-500/20 hover:bg-orange-500/30 px-3 py-1.5 rounded-lg border border-orange-500/30 cursor-pointer"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-bold text-blue-400 bg-blue-500/20 hover:bg-blue-500/30 px-3 py-1.5 rounded-lg border border-blue-500/30 cursor-pointer"
                   >
                     Quét Xuất
                   </button>
@@ -399,10 +397,10 @@ export const WarehouseOutboundPage: React.FC = () => {
               type="checkbox"
               checked={isShortage}
               onChange={(e) => setIsShortage(e.target.checked)}
-              className="w-4 h-4 rounded text-orange-600 focus:ring-orange-500 border-slate-700 bg-slate-950"
+              className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-700 bg-slate-950"
             />
             <span>
-              Ghi nhận hàng thiếu (Các đơn chưa quét sẽ tự động đưa vào <b className="text-orange-400">SEARCH_ZONE</b>)
+              Ghi nhận hàng thiếu (Các đơn chưa quét sẽ tự động đưa vào <b className="text-blue-400">SEARCH_ZONE</b>)
             </span>
           </label>
 
@@ -410,7 +408,7 @@ export const WarehouseOutboundPage: React.FC = () => {
             id="btn-commit-trip"
             onClick={handleCommit}
             disabled={committing}
-            className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white text-xs font-black rounded-xl shadow-lg transition disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full sm:w-auto px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-xl shadow-lg shadow-blue-600/30 transition disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
           >
             <Truck className="w-4 h-4" />
             {committing ? 'Đang chốt...' : 'Chốt Chuyến Xe (Commit Trip)'}
@@ -430,7 +428,7 @@ export const WarehouseOutboundPage: React.FC = () => {
             <b className="text-rose-400">{commitResult.shortage_count}</b>
           </p>
           {commitResult.shortage_codes?.length > 0 && (
-            <p className="text-xs text-amber-300">
+            <p className="text-xs text-blue-300">
               Đơn thiếu chuyển vào SEARCH_ZONE: {commitResult.shortage_codes.join(', ')}
             </p>
           )}
@@ -479,7 +477,7 @@ export const WarehouseOutboundPage: React.FC = () => {
           <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl w-full max-w-lg p-6 space-y-5">
             <div className="flex justify-between items-center border-b border-slate-800 pb-3">
               <h3 className="font-bold text-white text-base flex items-center gap-2">
-                <Truck className="w-5 h-5 text-orange-500" />
+                <Truck className="w-5 h-5 text-blue-500" />
                 Tạo Chuyến Xe Mới (Outbound Trip)
               </h3>
               <button
@@ -497,7 +495,7 @@ export const WarehouseOutboundPage: React.FC = () => {
                   id="select-outbound-trip-type"
                   value={tripType}
                   onChange={(e) => setTripType(e.target.value as any)}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-orange-500"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-blue-500"
                 >
                   <option value="MID_MILE_TRANSFER">Trung chuyển liên kho (MID_MILE_TRANSFER)</option>
                   <option value="LAST_MILE_DELIVERY">Bàn giao phát hàng (LAST_MILE_DELIVERY)</option>
@@ -510,7 +508,7 @@ export const WarehouseOutboundPage: React.FC = () => {
                   id="select-outbound-dest-hub"
                   value={destHubId}
                   onChange={(e) => setDestHubId(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-orange-500"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-blue-500"
                 >
                   {HUBS_LIST.map((h) => (
                     <option key={h.id} value={h.id}>
@@ -530,7 +528,7 @@ export const WarehouseOutboundPage: React.FC = () => {
                   value={plannedInput}
                   onChange={(e) => setPlannedInput(e.target.value)}
                   placeholder="VD: ELG-SG-HP-2702&#10;ELG-HP-HAN-01&#10;ELG-HP-HAN-02"
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white font-mono placeholder:text-slate-600 focus:outline-none focus:border-orange-500 resize-none"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white font-mono placeholder:text-slate-600 focus:outline-none focus:border-blue-500 resize-none"
                   required
                 />
               </div>
@@ -547,7 +545,7 @@ export const WarehouseOutboundPage: React.FC = () => {
                   id="btn-submit-create-trip"
                   type="submit"
                   disabled={creatingTrip}
-                  className="px-5 py-2.5 bg-orange-600 hover:bg-orange-500 text-white font-bold rounded-xl shadow-lg transition disabled:opacity-50 cursor-pointer"
+                  className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg shadow-blue-600/20 transition disabled:opacity-50 cursor-pointer"
                 >
                   {creatingTrip ? 'Đang tạo...' : 'Xác nhận Tạo Chuyến'}
                 </button>

@@ -103,36 +103,88 @@ export const LineHaulDispatchPage: React.FC = () => {
     }
   };
 
+  const totalTrips = trips.length;
+  const totalBags = sealedBags.length;
+  const activeDriversCount = drivers.filter(d => d.isWorking).length;
+  const activeTripsCount = trips.filter(t => t.status === 'IN_TRANSIT' || t.status === 'CREATED').length;
+
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900 border border-slate-800 p-5 rounded-2xl">
-        <div>
-          <div className="flex items-center gap-2">
-            <Truck className="w-6 h-6 text-orange-400" />
-            <h1 className="text-xl font-black text-white">Điều Phối Vận Tải & Đội Xe Tải (Line-Haul Dispatch)</h1>
+    <div className="space-y-6 pb-12">
+      {/* TẦNG 1: Page Header & KPI Summary Grid */}
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400">
+              <Truck className="w-6 h-6" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-black text-white tracking-tight">Điều Phối Xe Tải (QL 3)</h1>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Gom bao niêm phong (Bagging), lập kế hoạch tuyến đường &amp; điều động tài xế xe tải chặng trung chuyển
+              </p>
+            </div>
           </div>
-          <p className="text-xs text-slate-400 mt-1">
-            Gom bao niêm phong (Bagging), lập kế hoạch chuyến xe (Trip Planning) và điều động tài xế xe tải liên tỉnh
-          </p>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                setTripCode(`TRIP-${Math.floor(100000 + Math.random() * 900000)}`);
+                setIsModalOpen(true);
+              }}
+              className="px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-cyan-600/20 transition cursor-pointer"
+            >
+              <Plus className="w-4 h-4" /> Lập Chuyến Xe Mới
+            </button>
+            <button
+              onClick={loadLinehaulData}
+              className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 text-xs font-semibold flex items-center gap-2 transition cursor-pointer"
+            >
+              <RefreshCw className={`w-4 h-4 text-cyan-400 ${loading ? 'animate-spin' : ''}`} /> Tải Lại Dữ Liệu
+            </button>
+          </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => {
-              setTripCode(`TRIP-${Math.floor(100000 + Math.random() * 900000)}`);
-              setIsModalOpen(true);
-            }}
-            className="px-4 py-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-slate-950 font-bold text-xs flex items-center gap-2 shadow-lg shadow-orange-500/20 transition cursor-pointer"
-          >
-            <Plus className="w-4 h-4" /> Lập Chuyến Xe Mới
-          </button>
-          <button
-            onClick={loadLinehaulData}
-            className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          </button>
+        {/* 4 Thẻ KPI Grid */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800/80 shadow-lg flex items-center justify-between">
+            <div>
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Tổng Chuyến Xe</span>
+              <span className="text-2xl font-black text-white mt-1 block font-mono">{totalTrips}</span>
+            </div>
+            <div className="p-3 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
+              <Truck className="w-5 h-5" />
+            </div>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800/80 shadow-lg flex items-center justify-between">
+            <div>
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Bao Niêm Phong Chờ</span>
+              <span className="text-2xl font-black text-amber-400 mt-1 block font-mono">{totalBags}</span>
+            </div>
+            <div className="p-3 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+              <Boxes className="w-5 h-5" />
+            </div>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800/80 shadow-lg flex items-center justify-between">
+            <div>
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Tài Xế Khả Dụng</span>
+              <span className="text-2xl font-black text-emerald-400 mt-1 block font-mono">{activeDriversCount}</span>
+            </div>
+            <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              <Truck className="w-5 h-5" />
+            </div>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800/80 shadow-lg flex items-center justify-between">
+            <div>
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Chuyến Đang Chạy</span>
+              <span className="text-2xl font-black text-cyan-400 mt-1 block font-mono">{activeTripsCount}</span>
+            </div>
+            <div className="p-3 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+              <ArrowRight className="w-5 h-5" />
+            </div>
+          </div>
         </div>
       </div>
 
@@ -155,7 +207,7 @@ export const LineHaulDispatchPage: React.FC = () => {
       <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Boxes className="w-5 h-5 text-amber-400" />
+            <Boxes className="w-5 h-5 text-blue-400" />
             <h2 className="font-bold text-white text-sm">Bao Hàng Niêm Phong Sẵn Sàng Xếp Lên Xe</h2>
           </div>
           <span className="text-xs text-slate-400 font-mono">{sealedBags.length} bao chờ chuyến</span>
@@ -168,7 +220,7 @@ export const LineHaulDispatchPage: React.FC = () => {
               className="bg-slate-950/70 border border-slate-800 p-3.5 rounded-xl space-y-2"
             >
               <div className="flex items-center justify-between">
-                <span className="font-mono text-xs font-bold text-amber-400">{bag.sealCode}</span>
+                <span className="font-mono text-xs font-bold text-blue-400">{bag.sealCode}</span>
                 <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded font-bold">
                   SEALED
                 </span>
@@ -191,7 +243,7 @@ export const LineHaulDispatchPage: React.FC = () => {
       <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
         <div className="p-4 border-b border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Truck className="w-5 h-5 text-orange-400" />
+            <Truck className="w-5 h-5 text-blue-400" />
             <h2 className="font-bold text-white text-sm">Danh Sách Chuyến Xe Trung Chuyển (Trips)</h2>
           </div>
           <span className="text-xs text-slate-400 font-mono">Tổng: {trips.length} chuyến</span>
@@ -246,7 +298,7 @@ export const LineHaulDispatchPage: React.FC = () => {
                       trip.status === 'DEPARTED'
                         ? 'bg-blue-500/20 text-blue-300 border-blue-500/30'
                         : trip.status === 'LOCKED_PENDING_DRIVER_CONFIRM'
-                        ? 'bg-orange-500/20 text-orange-300 border-orange-500/30'
+                        ? 'bg-sky-500/20 text-sky-300 border-sky-500/30'
                         : 'bg-slate-800 text-slate-400 border-slate-700'
                     }`}
                   >
@@ -265,7 +317,7 @@ export const LineHaulDispatchPage: React.FC = () => {
           <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 space-y-4 shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <h3 className="text-sm font-black text-white flex items-center gap-2">
-                <Truck className="w-5 h-5 text-orange-400" />
+                <Truck className="w-5 h-5 text-blue-400" />
                 Lập Chuyến Xe Trung Chuyển Mới
               </h3>
               <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-white">
@@ -280,7 +332,7 @@ export const LineHaulDispatchPage: React.FC = () => {
                   type="text"
                   value={tripCode}
                   onChange={(e) => setTripCode(e.target.value.toUpperCase())}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono uppercase focus:outline-none focus:border-orange-500"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono uppercase focus:outline-none focus:border-blue-500"
                   required
                 />
               </div>
@@ -291,7 +343,7 @@ export const LineHaulDispatchPage: React.FC = () => {
                   <select
                     value={originHub}
                     onChange={(e) => setOriginHub(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-orange-500"
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-blue-500"
                   >
                     <option value="">Kho Tổng Sài Gòn (HUB_SGN)</option>
                     <option value="hub_tb">Kho Tân Bình (HUB_TB)</option>
@@ -302,7 +354,7 @@ export const LineHaulDispatchPage: React.FC = () => {
                   <select
                     value={destHub}
                     onChange={(e) => setDestHub(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-orange-500"
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-blue-500"
                   >
                     <option value="">Kho Tổng Hà Nội (HUB_HAN)</option>
                     <option value="hub_dad">Kho Đà Nẵng (HUB_DAD)</option>
@@ -315,7 +367,7 @@ export const LineHaulDispatchPage: React.FC = () => {
                 <select
                   value={selectedDriverId}
                   onChange={(e) => setSelectedDriverId(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-orange-500"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-blue-500"
                 >
                   <option value="">-- Chọn tài xế xe tải trực ca --</option>
                   {drivers.map((d) => (
@@ -336,7 +388,7 @@ export const LineHaulDispatchPage: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-slate-950 font-bold transition shadow-lg shadow-orange-500/20"
+                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold transition shadow-lg shadow-blue-600/20"
                 >
                   Xác Nhận Tạo Chuyến
                 </button>

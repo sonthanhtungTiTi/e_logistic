@@ -193,7 +193,7 @@ export const WarehouseBaggingPage: React.FC = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/90 border border-slate-800 p-5 rounded-2xl shadow-xl backdrop-blur">
         <div>
           <h1 className="text-xl font-black tracking-tight text-white flex items-center gap-3">
-            <Boxes className="w-6 h-6 text-orange-500" />
+            <Boxes className="w-6 h-6 text-blue-500" />
             Gom Bao & Niêm Phong Seal (Bagging Engine)
           </h1>
           <p className="text-xs text-slate-400 mt-1">
@@ -217,7 +217,7 @@ export const WarehouseBaggingPage: React.FC = () => {
           {/* Card: Mở Bao Mới */}
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
             <h2 className="text-sm font-bold text-slate-200 flex items-center gap-2 border-b border-slate-800 pb-3">
-              <Plus className="w-4 h-4 text-orange-400" />
+              <Plus className="w-4 h-4 text-blue-400" />
               1. Mở Bao Tải Mới
             </h2>
 
@@ -229,7 +229,7 @@ export const WarehouseBaggingPage: React.FC = () => {
                     id="btn-gen-seal-code"
                     type="button"
                     onClick={handleGenerateSealCode}
-                    className="text-orange-400 hover:text-orange-300 text-[11px] font-bold underline"
+                    className="text-blue-400 hover:text-blue-300 text-[11px] font-bold underline"
                   >
                     Tạo mã nhanh
                   </button>
@@ -240,7 +240,7 @@ export const WarehouseBaggingPage: React.FC = () => {
                   placeholder="VD: SEAL-HAN-001"
                   value={sealCodeInput}
                   onChange={(e) => setSealCodeInput(e.target.value.toUpperCase())}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-mono text-xs focus:outline-none focus:border-orange-500 transition"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-mono text-xs focus:outline-none focus:border-blue-500 transition"
                 />
               </div>
 
@@ -250,7 +250,7 @@ export const WarehouseBaggingPage: React.FC = () => {
                   id="select-bag-dest-hub"
                   value={destHubIdInput}
                   onChange={(e) => setDestHubIdInput(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white text-xs focus:outline-none focus:border-orange-500 transition"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white text-xs focus:outline-none focus:border-blue-500 transition"
                 >
                   {HUBS_LIST.map((hub) => (
                     <option key={hub.id} value={hub.id}>
@@ -267,7 +267,7 @@ export const WarehouseBaggingPage: React.FC = () => {
                     type="number"
                     value={maxCapacityInput}
                     onChange={(e) => setMaxCapacityInput(Number(e.target.value))}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-white font-mono text-xs focus:outline-none focus:border-orange-500"
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-white font-mono text-xs focus:outline-none focus:border-blue-500"
                   />
                 </div>
                 <div>
@@ -276,7 +276,7 @@ export const WarehouseBaggingPage: React.FC = () => {
                     type="number"
                     value={maxWeightInput}
                     onChange={(e) => setMaxWeightInput(Number(e.target.value))}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-white font-mono text-xs focus:outline-none focus:border-orange-500"
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-white font-mono text-xs focus:outline-none focus:border-blue-500"
                   />
                 </div>
               </div>
@@ -285,7 +285,7 @@ export const WarehouseBaggingPage: React.FC = () => {
                 id="btn-open-bag"
                 type="submit"
                 disabled={loading}
-                className="w-full py-2.5 bg-orange-600 hover:bg-orange-500 text-white font-bold rounded-xl shadow-lg shadow-orange-600/20 transition flex items-center justify-center gap-2 mt-2"
+                className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg shadow-blue-600/20 transition flex items-center justify-center gap-2 mt-2"
               >
                 <Plus className="w-4 h-4" />
                 Mở Bao Tải Mới
@@ -311,12 +311,12 @@ export const WarehouseBaggingPage: React.FC = () => {
                       onClick={() => setActiveBag(bag)}
                       className={`p-3 rounded-xl border transition cursor-pointer flex items-center justify-between ${
                         isCurrent
-                          ? 'bg-orange-950/40 border-orange-500/50 text-white'
+                          ? 'bg-blue-950/40 border-blue-500/50 text-white'
                           : 'bg-slate-950/60 border-slate-800 text-slate-300 hover:bg-slate-800/40'
                       }`}
                     >
                       <div>
-                        <p className="text-xs font-mono font-bold text-orange-400 flex items-center gap-1.5">
+                        <p className="text-xs font-mono font-bold text-blue-400 flex items-center gap-1.5">
                           <Package className="w-3.5 h-3.5" />
                           {bag.sealCode || bag.seal_code}
                         </p>
@@ -340,19 +340,19 @@ export const WarehouseBaggingPage: React.FC = () => {
           {activeBag ? (
             <>
               {/* Active Bag Status Banner */}
-              <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border border-orange-500/40 p-5 rounded-2xl shadow-xl space-y-4">
+              <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border border-blue-500/40 p-5 rounded-2xl shadow-xl space-y-4">
                 <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
                   <div>
-                    <span className="text-[10px] uppercase font-bold tracking-widest text-orange-400 bg-orange-950/60 px-2.5 py-0.5 rounded-full border border-orange-800/60">
+                    <span className="text-[10px] uppercase font-bold tracking-widest text-blue-400 bg-blue-950/60 px-2.5 py-0.5 rounded-full border border-blue-800/60">
                       BAO ĐANG GOM HÀNG
                     </span>
                     <h2 className="text-2xl font-mono font-black text-white mt-1">
                       {activeBag.sealCode || activeBag.seal_code}
                     </h2>
                     <p className="text-xs text-slate-300 flex items-center gap-1.5 mt-0.5">
-                      <Truck className="w-3.5 h-3.5 text-orange-400" />
+                      <Truck className="w-3.5 h-3.5 text-blue-400" />
                       Điểm đến:{' '}
-                      <span className="font-bold text-orange-300">
+                      <span className="font-bold text-blue-300">
                         {activeBag.destinationHubId?.name || activeBag.destination_hub_name || 'Kho đích'}
                       </span>
                     </p>
@@ -379,7 +379,7 @@ export const WarehouseBaggingPage: React.FC = () => {
                   </div>
                   <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-3">
                     <p className="text-[10px] text-slate-400 font-bold uppercase">TỔNG KHỐI LƯỢNG</p>
-                    <p className="text-xl font-black text-orange-400 font-mono mt-0.5">
+                    <p className="text-xl font-black text-blue-400 font-mono mt-0.5">
                       {totalWeight.toFixed(1)}{' '}
                       <span className="text-xs text-slate-400 font-normal">/ {maxWeight} kg</span>
                     </p>
@@ -401,10 +401,10 @@ export const WarehouseBaggingPage: React.FC = () => {
                   <div
                     className={`h-full transition-all duration-300 ${
                       progressPercent >= 100
-                        ? 'bg-rose-500'
+                        ? 'bg-blue-600'
                         : progressPercent >= 80
-                        ? 'bg-amber-500'
-                        : 'bg-orange-500'
+                        ? 'bg-sky-400'
+                        : 'bg-blue-500'
                     }`}
                     style={{ width: `${progressPercent}%` }}
                   />
@@ -415,14 +415,14 @@ export const WarehouseBaggingPage: React.FC = () => {
               <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-xl space-y-4">
                 <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                   <h3 className="text-sm font-bold text-slate-200 flex items-center gap-2">
-                    <Barcode className="w-4 h-4 text-orange-400" />
+                    <Barcode className="w-4 h-4 text-blue-400" />
                     2. Quét Thả Kiện Hàng Vào Bao
                   </h3>
                   <button
                     onClick={() => setIsCameraActive(!isCameraActive)}
                     className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-lg border border-slate-700 flex items-center gap-1.5 transition"
                   >
-                    <Camera className="w-3.5 h-3.5 text-orange-400" />
+                    <Camera className="w-3.5 h-3.5 text-blue-400" />
                     {isCameraActive ? 'Tắt Camera' : 'Bật Camera'}
                   </button>
                 </div>
@@ -449,13 +449,13 @@ export const WarehouseBaggingPage: React.FC = () => {
                       value={trackingCodeInput}
                       onChange={(e) => setTrackingCodeInput(e.target.value.toUpperCase())}
                       onKeyDown={(e) => e.key === 'Enter' && handleAddItem()}
-                      className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-10 pr-4 py-3 text-white font-mono text-sm focus:outline-none focus:border-orange-500 transition shadow-inner"
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-10 pr-4 py-3 text-white font-mono text-sm focus:outline-none focus:border-blue-500 transition shadow-inner"
                     />
                   </div>
                   <button
                     id="btn-add-item-to-bag"
                     onClick={() => handleAddItem()}
-                    className="px-6 py-3 bg-orange-600 hover:bg-orange-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-orange-600/20 transition cursor-pointer"
+                    className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-blue-600/20 transition cursor-pointer"
                   >
                     Thêm vào bao
                   </button>
@@ -484,7 +484,7 @@ export const WarehouseBaggingPage: React.FC = () => {
               <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-xl overflow-hidden">
                 <div className="px-5 py-3.5 border-b border-slate-800 bg-slate-950/60 flex items-center justify-between">
                   <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
-                    <Package className="w-3.5 h-3.5 text-orange-400" />
+                    <Package className="w-3.5 h-3.5 text-blue-400" />
                     Danh sách kiện hàng trong bao ({totalItems})
                   </h3>
                 </div>
@@ -502,7 +502,7 @@ export const WarehouseBaggingPage: React.FC = () => {
                       >
                         <div className="flex items-center gap-3 font-mono">
                           <span className="text-slate-500 font-bold w-5">{idx + 1}.</span>
-                          <span className="font-bold text-orange-400">{code}</span>
+                          <span className="font-bold text-blue-400">{code}</span>
                         </div>
                         <button
                           onClick={() => handleRemoveItem(code)}
