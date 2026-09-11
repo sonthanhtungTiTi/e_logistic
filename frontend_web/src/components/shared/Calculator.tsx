@@ -137,11 +137,10 @@ export const Calculator: React.FC<CalculatorProps> = ({ onApplyToNewOrder }) => 
                   key={svc.id}
                   type="button"
                   onClick={() => setServiceType(svc.id as any)}
-                  className={`p-3 rounded-xl text-left border transition cursor-pointer ${
-                    serviceType === svc.id
+                  className={`p-3 rounded-xl text-left border transition cursor-pointer ${serviceType === svc.id
                       ? 'bg-blue-600/20 border-blue-500 text-white shadow-md shadow-blue-500/10'
                       : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:border-slate-700'
-                  }`}
+                    }`}
                 >
                   <div className="text-xs font-bold text-white">{svc.label}</div>
                   <div className="text-[10px] text-slate-400">{svc.desc}</div>
@@ -165,9 +164,8 @@ export const Calculator: React.FC<CalculatorProps> = ({ onApplyToNewOrder }) => 
               placeholder="VD: 3.5"
               value={weightInput}
               onChange={(e) => setWeightInput(e.target.value)}
-              className={`w-full glass-input rounded-xl px-4 py-2.5 text-sm font-mono transition ${
-                !weightInput.trim() || numWeight <= 0 ? 'border-amber-500/60 bg-amber-950/20' : ''
-              }`}
+              className={`w-full glass-input rounded-xl px-4 py-2.5 text-sm font-mono transition ${!weightInput.trim() || numWeight <= 0 ? 'border-amber-500/60 bg-amber-950/20' : ''
+                }`}
             />
             {(!weightInput.trim() || numWeight <= 0) && (
               <p className="text-[11px] text-amber-400 font-medium mt-1.5 flex items-center gap-1">
@@ -196,9 +194,8 @@ export const Calculator: React.FC<CalculatorProps> = ({ onApplyToNewOrder }) => 
                   placeholder="40"
                   value={lengthInput}
                   onChange={(e) => setLengthInput(e.target.value)}
-                  className={`w-full glass-input rounded-xl px-3 py-2 text-sm font-mono text-center transition ${
-                    !lengthInput.trim() || numLength <= 0 ? 'border-amber-500/60 bg-amber-950/20' : ''
-                  }`}
+                  className={`w-full glass-input rounded-xl px-3 py-2 text-sm font-mono text-center transition ${!lengthInput.trim() || numLength <= 0 ? 'border-amber-500/60 bg-amber-950/20' : ''
+                    }`}
                 />
               </div>
 
@@ -211,9 +208,8 @@ export const Calculator: React.FC<CalculatorProps> = ({ onApplyToNewOrder }) => 
                   placeholder="30"
                   value={widthInput}
                   onChange={(e) => setWidthInput(e.target.value)}
-                  className={`w-full glass-input rounded-xl px-3 py-2 text-sm font-mono text-center transition ${
-                    !widthInput.trim() || numWidth <= 0 ? 'border-amber-500/60 bg-amber-950/20' : ''
-                  }`}
+                  className={`w-full glass-input rounded-xl px-3 py-2 text-sm font-mono text-center transition ${!widthInput.trim() || numWidth <= 0 ? 'border-amber-500/60 bg-amber-950/20' : ''
+                    }`}
                 />
               </div>
 
@@ -226,9 +222,8 @@ export const Calculator: React.FC<CalculatorProps> = ({ onApplyToNewOrder }) => 
                   placeholder="25"
                   value={heightInput}
                   onChange={(e) => setHeightInput(e.target.value)}
-                  className={`w-full glass-input rounded-xl px-3 py-2 text-sm font-mono text-center transition ${
-                    !heightInput.trim() || numHeight <= 0 ? 'border-amber-500/60 bg-amber-950/20' : ''
-                  }`}
+                  className={`w-full glass-input rounded-xl px-3 py-2 text-sm font-mono text-center transition ${!heightInput.trim() || numHeight <= 0 ? 'border-amber-500/60 bg-amber-950/20' : ''
+                    }`}
                 />
               </div>
             </div>

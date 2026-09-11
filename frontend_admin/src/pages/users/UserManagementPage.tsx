@@ -162,29 +162,86 @@ export const UserManagementPage: React.FC = () => {
     }
   };
 
+  const totalUserCount = users.length;
+  const shipperCount = users.filter(u => u.role === 'SHIPPER' || u.role === 'LOCAL_SHIPPER').length;
+  const driverCount = users.filter(u => u.role === 'LINE_HAUL_DRIVER' || u.role === 'DRIVER').length;
+  const lockedCount = users.filter(u => u.isLocked || u.status === 'LOCKED').length;
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-white">Quản Lý Người Dùng &amp; Phân Quyền Vận Hành</h2>
-          <p className="text-xs text-slate-400">
-            Phân định rõ ràng giữa Shipper nội thành (First/Last Mile) và Tài xế xe tải liên tỉnh (Line-haul Driver)
-          </p>
+    <div className="space-y-6 pb-12">
+      {/* TẦNG 1: Page Header & KPI Summary Grid */}
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400">
+              <Shield className="w-6 h-6" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-black text-white tracking-tight">Quản Lý Người Dùng &amp; Khóa</h1>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Phân quyền tài khoản hệ thống, tạo tài khoản vận hành &amp; kiểm soát trạng thái khóa 2 lớp
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-cyan-600/20 transition cursor-pointer"
+            >
+              <UserPlus className="w-4 h-4" /> Tạo Tài Khoản Mới
+            </button>
+            <button
+              onClick={loadUsers}
+              disabled={loading}
+              className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 text-xs font-semibold flex items-center gap-2 transition cursor-pointer"
+            >
+              <RefreshCw className={`w-4 h-4 text-cyan-400 ${loading ? 'animate-spin' : ''}`} /> Tải Lại Dữ Liệu
+            </button>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={loadUsers}
-            disabled={loading}
-            className="px-3 py-2 rounded-xl glass-panel hover:bg-slate-800 text-slate-300 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /> Tải Lại
-          </button>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="px-4 py-2 rounded-xl shimmer-btn text-white text-xs font-bold flex items-center gap-1.5 shadow-lg shadow-cyan-600/20 cursor-pointer"
-          >
-            <UserPlus className="w-3.5 h-3.5" /> Tạo Tài Khoản Mới
-          </button>
+
+        {/* 4 Thẻ KPI Grid */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800/80 shadow-lg flex items-center justify-between">
+            <div>
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Tổng Tài Khoản</span>
+              <span className="text-2xl font-black text-white mt-1 block font-mono">{totalUserCount}</span>
+            </div>
+            <div className="p-3 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
+              <Shield className="w-5 h-5" />
+            </div>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800/80 shadow-lg flex items-center justify-between">
+            <div>
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Shipper Nội Thành</span>
+              <span className="text-2xl font-black text-cyan-400 mt-1 block font-mono">{shipperCount}</span>
+            </div>
+            <div className="p-3 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+              <Navigation className="w-5 h-5" />
+            </div>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800/80 shadow-lg flex items-center justify-between">
+            <div>
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Tài Xế Line-Haul</span>
+              <span className="text-2xl font-black text-emerald-400 mt-1 block font-mono">{driverCount}</span>
+            </div>
+            <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              <Truck className="w-5 h-5" />
+            </div>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800/80 shadow-lg flex items-center justify-between">
+            <div>
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Tài Khoản Bị Khóa</span>
+              <span className="text-2xl font-black text-rose-400 mt-1 block font-mono">{lockedCount}</span>
+            </div>
+            <div className="p-3 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20">
+              <Building2 className="w-5 h-5" />
+            </div>
+          </div>
         </div>
       </div>
 
@@ -284,10 +341,10 @@ export const UserManagementPage: React.FC = () => {
                   <option value="DRIVER" className="bg-slate-900 text-indigo-300">
                     🚛 DRIVER (Tài Xế Xe Tải Liên Tỉnh - Trung Chuyển Tuyến Đường Trục)
                   </option>
-                  <option value="HUB_STAFF" className="bg-slate-900 text-amber-300">
+                  <option value="HUB_STAFF" className="bg-slate-900 text-sky-300">
                     🏢 HUB_STAFF (Nhân Viên Kho Vận)
                   </option>
-                  <option value="HUB_COORDINATOR" className="bg-slate-900 text-amber-300">
+                  <option value="HUB_COORDINATOR" className="bg-slate-900 text-blue-300">
                     📋 HUB_COORDINATOR (Điều Phối Viên Bưu Cục)
                   </option>
                   <option value="ADMIN" className="bg-slate-900 text-purple-300">
@@ -303,7 +360,7 @@ export const UserManagementPage: React.FC = () => {
               {(formData.role === 'SHIPPER' || formData.role === 'DRIVER' || formData.role === 'HUB_STAFF' || formData.role === 'HUB_COORDINATOR') && (
                 <div>
                   <label className="block font-bold text-slate-300 mb-1 flex items-center gap-1.5">
-                    <Building2 className="w-3.5 h-3.5 text-amber-400" /> Bưu Cục / Hub Trực Thuộc
+                    <Building2 className="w-3.5 h-3.5 text-blue-400" /> Bưu Cục / Hub Trực Thuộc
                   </label>
                   <select
                     value={formData.hubId}

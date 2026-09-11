@@ -35,7 +35,7 @@ import { toast } from 'sonner';
 function AgingBadge({ status }: { status: AgingStatus }) {
   const cls = {
     CRITICAL: 'bg-rose-500/20 border-rose-500/40 text-rose-300',
-    WARNING:  'bg-amber-500/20 border-amber-500/40 text-amber-300',
+    WARNING:  'bg-sky-500/20 border-sky-500/40 text-sky-300',
     NORMAL:   'bg-emerald-500/20 border-emerald-500/40 text-emerald-300',
     ALL:      'bg-slate-500/20 border-slate-500/40 text-slate-300',
   }[status] || 'bg-slate-700 text-slate-400';
@@ -76,8 +76,8 @@ function MovementHistoryPanel({ trackingCode, onClose }: { trackingCode: string;
         <div className="flex justify-between items-center px-5 py-4 border-b border-slate-800">
           <div>
             <h3 className="font-bold text-white flex items-center gap-2">
-              <History className="w-4 h-4 text-orange-400" />
-              Lịch sử: <span className="text-orange-300 font-mono">{trackingCode}</span>
+              <History className="w-4 h-4 text-blue-400" />
+              Lịch sử: <span className="text-blue-300 font-mono">{trackingCode}</span>
             </h3>
             {history && (
               <p className="text-xs text-slate-400 mt-0.5">
@@ -100,12 +100,12 @@ function MovementHistoryPanel({ trackingCode, onClose }: { trackingCode: string;
               key={log._id}
               className="flex gap-3 items-start p-3 bg-slate-950/60 border border-slate-800 rounded-xl hover:border-slate-700 transition"
             >
-              <div className="w-1.5 h-1.5 mt-2 rounded-full bg-orange-400 shrink-0" />
+              <div className="w-1.5 h-1.5 mt-2 rounded-full bg-blue-400 shrink-0" />
               <div className="flex-1 min-w-0">
                 <p className="text-xs text-slate-300">
                   <span className="font-mono text-slate-500">{log.preStatus}</span>
                   {' → '}
-                  <span className="font-mono text-orange-300 font-bold">{log.postStatus}</span>
+                  <span className="font-mono text-blue-300 font-bold">{log.postStatus}</span>
                   {' · '}
                   <span className="text-slate-400">{log.actionType}</span>
                 </p>
@@ -155,7 +155,7 @@ function ActionMenu({
       <div className="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-md p-5 space-y-4">
         <div className="flex justify-between items-center border-b border-slate-800 pb-3">
           <h3 className="font-bold text-white text-sm">
-            Thao tác OCC Tồn kho: <span className="text-orange-400 font-mono">{item.tracking_code}</span>
+            Thao tác OCC Tồn kho: <span className="text-blue-400 font-mono">{item.tracking_code}</span>
           </h3>
           <button onClick={onClose} className="text-slate-500 hover:text-slate-300">
             <XCircle className="w-5 h-5" />
@@ -170,13 +170,13 @@ function ActionMenu({
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           rows={2}
-          className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-orange-500 resize-none"
+          className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-blue-500 resize-none"
         />
         <div className="grid grid-cols-2 gap-2 pt-1">
           <button
             onClick={() => doAction('RETURN')}
             disabled={loading}
-            className="py-2.5 px-3 bg-amber-600/80 hover:bg-amber-500 text-white font-semibold text-xs rounded-xl flex items-center justify-center gap-1.5 transition"
+            className="py-2.5 px-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs rounded-xl flex items-center justify-center gap-1.5 transition"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             Chuyển hoàn
@@ -339,7 +339,7 @@ export const WarehouseInventoryDashboardPage: React.FC = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/90 border border-slate-800 p-5 rounded-2xl shadow-xl">
         <div>
           <h1 className="text-xl font-black tracking-tight text-white flex items-center gap-3">
-            <BarChart3 className="w-6 h-6 text-orange-500" />
+            <BarChart3 className="w-6 h-6 text-blue-500" />
             Dashboard Quản Lý Tồn Kho & Aging SLA (UC-19)
           </h1>
           <p className="text-xs text-slate-400 mt-1">
@@ -352,7 +352,7 @@ export const WarehouseInventoryDashboardPage: React.FC = () => {
             onClick={() => handleExport('csv')}
             className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl flex items-center gap-1.5 border border-slate-700 transition"
           >
-            <Download className="w-3.5 h-3.5 text-orange-400" />
+            <Download className="w-3.5 h-3.5 text-blue-400" />
             CSV
           </button>
           <button
@@ -371,11 +371,11 @@ export const WarehouseInventoryDashboardPage: React.FC = () => {
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-bold text-slate-400 uppercase">TỔNG TỒN KHO</span>
-            <Package className="w-4 h-4 text-orange-400" />
+            <Package className="w-4 h-4 text-blue-400" />
           </div>
           <p className="text-2xl font-black text-white font-mono mt-1">{summary?.total || 0}</p>
           <p className="text-[11px] text-slate-400 mt-0.5">
-            Giá trị: <span className="text-orange-300 font-semibold">{((summary?.total_stock_value_vnd || 0) / 1e6).toFixed(1)} tr đ</span>
+            Giá trị: <span className="text-blue-300 font-semibold">{((summary?.total_stock_value_vnd || 0) / 1e6).toFixed(1)} tr đ</span>
           </p>
         </div>
 
@@ -390,13 +390,13 @@ export const WarehouseInventoryDashboardPage: React.FC = () => {
         </div>
 
         {/* Warning SLA */}
-        <div className="bg-amber-950/30 border border-amber-800/40 rounded-2xl p-4 shadow-xl">
+        <div className="bg-sky-950/30 border border-sky-800/40 rounded-2xl p-4 shadow-xl">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-amber-400 uppercase">WARNING (24-48H)</span>
-            <AlertTriangle className="w-4 h-4 text-amber-400" />
+            <span className="text-[10px] font-bold text-sky-400 uppercase">WARNING (24-48H)</span>
+            <AlertTriangle className="w-4 h-4 text-sky-400" />
           </div>
-          <p className="text-2xl font-black text-amber-300 font-mono mt-1">{summary?.by_aging?.WARNING || 0}</p>
-          <p className="text-[11px] text-amber-400/80 mt-0.5">Cần ưu tiên xuất</p>
+          <p className="text-2xl font-black text-sky-300 font-mono mt-1">{summary?.by_aging?.WARNING || 0}</p>
+          <p className="text-[11px] text-sky-400/80 mt-0.5">Cần ưu tiên xuất</p>
         </div>
 
         {/* Critical SLA */}
@@ -416,14 +416,14 @@ export const WarehouseInventoryDashboardPage: React.FC = () => {
         <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
           <div className="flex items-center justify-between border-b border-slate-800 pb-3">
             <h2 className="text-sm font-bold text-white flex items-center gap-2">
-              <Package className="w-4 h-4 text-orange-400" />
+              <Package className="w-4 h-4 text-blue-400" />
               Sức Chứa Khu Vực (Zone Utilization & Bottleneck Warning)
             </h2>
             {summary?.throughput_24h && (
               <span className="text-[11px] font-semibold text-slate-400 flex items-center gap-1.5">
                 <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
                 Vận tốc 24h: <b className="text-white">{summary.throughput_24h.inbound_count} Nhập</b> /{' '}
-                <b className="text-orange-400">{summary.throughput_24h.outbound_count} Xuất</b> ({summary.throughput_24h.turnover_ratio}%)
+                <b className="text-blue-400">{summary.throughput_24h.outbound_count} Xuất</b> ({summary.throughput_24h.turnover_ratio}%)
               </span>
             )}
           </div>
@@ -439,7 +439,7 @@ export const WarehouseInventoryDashboardPage: React.FC = () => {
                     isOver
                       ? 'bg-rose-950/30 border-rose-600/50'
                       : isWarn
-                      ? 'bg-amber-950/20 border-amber-600/40'
+                      ? 'bg-sky-950/20 border-sky-600/40'
                       : 'bg-slate-950/60 border-slate-800'
                   }`}
                 >
@@ -447,7 +447,7 @@ export const WarehouseInventoryDashboardPage: React.FC = () => {
                     <span className="font-bold text-slate-200 truncate">{z.zone_name || z.zone_code}</span>
                     <span
                       className={`font-mono font-bold text-[11px] ${
-                        isOver ? 'text-rose-400' : isWarn ? 'text-amber-400' : 'text-emerald-400'
+                        isOver ? 'text-rose-400' : isWarn ? 'text-sky-400' : 'text-emerald-400'
                       }`}
                     >
                       {z.current_count} / {z.capacity} ({z.utilization_percent}%)
@@ -457,7 +457,7 @@ export const WarehouseInventoryDashboardPage: React.FC = () => {
                   <div className="w-full bg-slate-900 rounded-full h-2 overflow-hidden border border-slate-800">
                     <div
                       className={`h-full transition-all duration-300 ${
-                        isOver ? 'bg-rose-500' : isWarn ? 'bg-amber-500' : 'bg-emerald-500'
+                        isOver ? 'bg-rose-500' : isWarn ? 'bg-sky-500' : 'bg-emerald-500'
                       }`}
                       style={{ width: `${z.utilization_percent}%` }}
                     />
@@ -478,7 +478,7 @@ export const WarehouseInventoryDashboardPage: React.FC = () => {
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-3.5 flex flex-col justify-between">
           <div>
             <h3 className="text-sm font-bold text-white flex items-center gap-2 border-b border-slate-800 pb-3">
-              <Zap className="w-4 h-4 text-orange-400" />
+              <Zap className="w-4 h-4 text-blue-400" />
               Gợi Ý Gom Chuyến Xe (Smart Auto-Trip)
             </h3>
             <p className="text-xs text-slate-400 mt-1">
@@ -497,7 +497,7 @@ export const WarehouseInventoryDashboardPage: React.FC = () => {
                     className="p-3 bg-slate-950/80 border border-slate-800 rounded-xl flex items-center justify-between text-xs"
                   >
                     <div>
-                      <p className="font-bold text-orange-400 flex items-center gap-1">
+                      <p className="font-bold text-blue-400 flex items-center gap-1">
                         <Truck className="w-3.5 h-3.5" />
                         {sug.destination_hub_name}
                       </p>
@@ -507,7 +507,7 @@ export const WarehouseInventoryDashboardPage: React.FC = () => {
                     </div>
                     <button
                       onClick={() => handleCreateTripFromSuggestion(sug)}
-                      className="px-2.5 py-1.5 bg-orange-600 hover:bg-orange-500 text-white font-bold text-[11px] rounded-lg shadow transition flex items-center gap-1"
+                      className="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-[11px] rounded-lg shadow shadow-blue-600/20 transition flex items-center gap-1 cursor-pointer"
                     >
                       ⚡ Tạo xe
                     </button>
@@ -530,7 +530,7 @@ export const WarehouseInventoryDashboardPage: React.FC = () => {
               placeholder="Tìm theo mã vận đơn (ELG-VN-...)"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-9 pr-3.5 py-2 text-white text-xs focus:outline-none focus:border-orange-500"
+              className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-9 pr-3.5 py-2 text-white text-xs focus:outline-none focus:border-blue-500"
             />
           </div>
 
@@ -541,7 +541,7 @@ export const WarehouseInventoryDashboardPage: React.FC = () => {
                 key={tab}
                 onClick={() => setAgingFilter(tab)}
                 className={`px-3 py-1.5 rounded-lg font-bold transition ${
-                  agingFilter === tab ? 'bg-orange-600 text-white' : 'text-slate-400 hover:text-white'
+                  agingFilter === tab ? 'bg-blue-600 text-white shadow shadow-blue-600/30' : 'text-slate-400 hover:text-white'
                 }`}
               >
                 {tab}
@@ -553,7 +553,7 @@ export const WarehouseInventoryDashboardPage: React.FC = () => {
           <select
             value={dwellRangeFilter}
             onChange={(e) => setDwellRangeFilter(e.target.value)}
-            className="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-orange-500"
+            className="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-blue-500"
           >
             <option value="ALL">Mọi thời gian lưu kho</option>
             <option value="<12h">&lt; 12 giờ</option>
@@ -566,7 +566,7 @@ export const WarehouseInventoryDashboardPage: React.FC = () => {
           <select
             value={selectedZone}
             onChange={(e) => setSelectedZone(e.target.value)}
-            className="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-orange-500"
+            className="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-blue-500"
           >
             <option value="">Tất cả khu vực (Zones)</option>
             {summary?.by_zone?.map((z) => (
@@ -579,15 +579,15 @@ export const WarehouseInventoryDashboardPage: React.FC = () => {
 
         {/* Batch Operations Bar (Khi có chọn checkbox) */}
         {selectedCodes.length > 0 && (
-          <div className="flex items-center justify-between bg-orange-950/40 border border-orange-600/50 p-3 rounded-xl text-xs">
-            <span className="font-bold text-orange-300">
+          <div className="flex items-center justify-between bg-blue-950/40 border border-blue-600/50 p-3 rounded-xl text-xs">
+            <span className="font-bold text-blue-300">
               Đã chọn: {selectedCodes.length} kiện hàng
             </span>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => handleBatchAction('RETURN')}
                 disabled={batchLoading}
-                className="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-lg transition flex items-center gap-1"
+                className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg shadow shadow-blue-600/20 transition flex items-center gap-1 cursor-pointer"
               >
                 <RotateCcw className="w-3 h-3" />
                 Chuyển hoàn hàng loạt
@@ -595,7 +595,7 @@ export const WarehouseInventoryDashboardPage: React.FC = () => {
               <button
                 onClick={() => handleBatchAction('LIQUIDATE')}
                 disabled={batchLoading}
-                className="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-lg transition flex items-center gap-1"
+                className="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-lg transition flex items-center gap-1 cursor-pointer"
               >
                 <Trash2 className="w-3 h-3" />
                 Thanh lý hàng loạt
@@ -614,7 +614,7 @@ export const WarehouseInventoryDashboardPage: React.FC = () => {
                 <th className="py-3 px-4 w-10">
                   <button onClick={toggleSelectAll} className="text-slate-400 hover:text-white">
                     {selectedCodes.length > 0 && selectedCodes.length === agingData.length ? (
-                      <CheckSquare className="w-4 h-4 text-orange-400" />
+                      <CheckSquare className="w-4 h-4 text-blue-400" />
                     ) : (
                       <Square className="w-4 h-4" />
                     )}
@@ -642,18 +642,18 @@ export const WarehouseInventoryDashboardPage: React.FC = () => {
                   return (
                     <tr
                       key={item.tracking_code}
-                      className={`transition ${isSelected ? 'bg-orange-950/20' : 'hover:bg-slate-800/40'}`}
+                      className={`transition ${isSelected ? 'bg-blue-950/30' : 'hover:bg-slate-800/40'}`}
                     >
                       <td className="py-3 px-4">
                         <button onClick={() => toggleSelectOne(item.tracking_code)}>
                           {isSelected ? (
-                            <CheckSquare className="w-4 h-4 text-orange-400" />
+                            <CheckSquare className="w-4 h-4 text-blue-400" />
                           ) : (
                             <Square className="w-4 h-4 text-slate-600" />
                           )}
                         </button>
                       </td>
-                      <td className="py-3 px-4 font-mono font-bold text-orange-400">
+                      <td className="py-3 px-4 font-mono font-bold text-blue-400">
                         {item.tracking_code}
                       </td>
                       <td className="py-3 px-4">
@@ -680,7 +680,7 @@ export const WarehouseInventoryDashboardPage: React.FC = () => {
                         </button>
                         <button
                           onClick={() => setActionItem(item)}
-                          className="px-2.5 py-1 bg-orange-600/90 hover:bg-orange-500 text-white font-semibold rounded-lg shadow transition"
+                          className="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg shadow shadow-blue-600/20 transition cursor-pointer"
                         >
                           Xử lý
                         </button>

@@ -24,7 +24,7 @@ export const OrderSubNav: React.FC<OrderSubNavProps> = ({ activeTab, layout = 'v
   return (
     <div
       className={`flex ${isVertical ? 'flex-col items-stretch w-full' : 'flex-row items-center'
-        } gap-1.5 bg-slate-900/90 p-1.5 rounded-2xl border border-slate-800 shadow-xl`}
+        } gap-1.5 bg-slate-100 dark:bg-slate-900/90 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl`}
     >
       <button
         type="button"
@@ -32,7 +32,7 @@ export const OrderSubNav: React.FC<OrderSubNavProps> = ({ activeTab, layout = 'v
         className={`px-4 py-2.5 rounded-xl text-xs font-extrabold flex items-center ${isVertical ? 'justify-start' : 'justify-center'
           } gap-2.5 transition cursor-pointer ${currentTab === 'single'
             ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-md shadow-blue-600/30'
-            : 'bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 border border-emerald-500/30'
+            : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20 border border-emerald-500/30'
           }`}
       >
         <Plus className="w-4 h-4 text-emerald-400 shrink-0" />

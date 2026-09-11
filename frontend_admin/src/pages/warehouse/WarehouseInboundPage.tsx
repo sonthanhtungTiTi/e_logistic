@@ -548,8 +548,8 @@ export const WarehouseInboundPage: React.FC = () => {
 
         {/* Cảnh báo tình trạng hư hỏng */}
         {condition !== 'INTACT' && (
-          <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-300 text-xs flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+          <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded-xl text-blue-300 text-xs flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-blue-400 shrink-0" />
             <span>
               Cảnh báo: Kiện hàng được chọn tình trạng <strong>{condition}</strong>. Hệ thống sẽ dán cờ{' '}
               <strong>is_flagged = true</strong> và chuyển luồng xử lý sang khu vực kiểm tra ngoại lệ!

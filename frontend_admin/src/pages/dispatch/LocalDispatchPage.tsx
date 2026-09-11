@@ -167,28 +167,90 @@ export const LocalDispatchPage: React.FC = () => {
 
   const pendingRequestsCount = zoneRequests.filter((r) => r.zoneChangeRequest?.status === 'PENDING').length;
 
+  const totalActiveShippers = shippers.filter(s => s.isWorking).length;
+  const totalEscalated = escalatedOrders.length;
+  const totalGeozones = geozones.length;
+
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
-      {/* Header & Tabs */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900 border border-slate-800 p-5 rounded-2xl">
-        <div>
-          <div className="flex items-center gap-2">
-            <Compass className="w-6 h-6 text-cyan-400" />
-            <h1 className="text-xl font-black text-white">Điều Phối Giao Nhận Nội Vùng (Last-Mile Dispatch)</h1>
+    <div className="space-y-6 pb-12">
+      {/* TẦNG 1: Page Header & KPI Summary Grid */}
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
+              <Compass className="w-6 h-6" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-black text-white tracking-tight">Điều Phối Shipper (QL 2)</h1>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Quản trị phân tuyến theo Phường/Khu phố, duyệt đổi địa bàn Shipper &amp; giải tỏa điểm nghẽn First/Last-mile
+              </p>
+            </div>
           </div>
-          <p className="text-xs text-slate-400 mt-1">
-            Quản trị phân tuyến theo Phường/Khu phố, duyệt đổi địa bàn Shipper và giải tỏa điểm nghẽn
-          </p>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={activeTab === 'DISPATCH' ? loadDashboardData : loadZoneRequests}
+              className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 text-xs font-semibold flex items-center gap-2 transition cursor-pointer"
+            >
+              <RefreshCw className={`w-4 h-4 text-cyan-400 ${loading ? 'animate-spin' : ''}`} /> Tải Lại Dữ Liệu
+            </button>
+          </div>
         </div>
 
-        {/* Tab switcher */}
-        <div className="flex items-center gap-2 bg-slate-950/80 p-1.5 rounded-xl border border-slate-800">
+        {/* 4 Thẻ KPI Grid */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800/80 shadow-lg flex items-center justify-between">
+            <div>
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Khu Vực Tuyến (Geozone)</span>
+              <span className="text-2xl font-black text-white mt-1 block font-mono">{totalGeozones}</span>
+            </div>
+            <div className="p-3 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
+              <Compass className="w-5 h-5" />
+            </div>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800/80 shadow-lg flex items-center justify-between">
+            <div>
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Shipper Đang Trực</span>
+              <span className="text-2xl font-black text-emerald-400 mt-1 block font-mono">{totalActiveShippers}</span>
+            </div>
+            <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              <Users className="w-5 h-5" />
+            </div>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800/80 shadow-lg flex items-center justify-between">
+            <div>
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Đơn Cần Can Thiệp</span>
+              <span className="text-2xl font-black text-rose-400 mt-1 block font-mono">{totalEscalated}</span>
+            </div>
+            <div className="p-3 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20">
+              <AlertTriangle className="w-5 h-5" />
+            </div>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800/80 shadow-lg flex items-center justify-between">
+            <div>
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Đổi Khu Vực Chờ Duyệt</span>
+              <span className="text-2xl font-black text-amber-400 mt-1 block font-mono">{pendingRequestsCount}</span>
+            </div>
+            <div className="p-3 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+              <Send className="w-5 h-5" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Top Controls & Navigation Tabs */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900/90 border border-slate-800 p-4 rounded-2xl shadow-xl backdrop-blur-md">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => setActiveTab('DISPATCH')}
-            className={`px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
               activeTab === 'DISPATCH'
-                ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20 font-black'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
             }`}
           >
             <Compass className="w-4 h-4" />
@@ -197,10 +259,10 @@ export const LocalDispatchPage: React.FC = () => {
 
           <button
             onClick={() => setActiveTab('ZONE_REQUESTS')}
-            className={`px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
               activeTab === 'ZONE_REQUESTS'
-                ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20 font-black'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
             }`}
           >
             <Send className="w-4 h-4" />
@@ -210,13 +272,6 @@ export const LocalDispatchPage: React.FC = () => {
                 {pendingRequestsCount}
               </span>
             )}
-          </button>
-
-          <button
-            onClick={activeTab === 'DISPATCH' ? loadDashboardData : loadZoneRequests}
-            className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
         </div>
       </div>
@@ -242,7 +297,7 @@ export const LocalDispatchPage: React.FC = () => {
           {/* Spillover Routing Toggle */}
           <div className="flex items-center justify-between bg-slate-900 border border-slate-800 p-4 rounded-2xl">
             <div className="flex items-center gap-2.5">
-              <Zap className="w-4 h-4 text-amber-400" />
+              <Zap className="w-4 h-4 text-blue-400" />
               <div>
                 <h3 className="text-xs font-bold text-white">Cơ Chế Phân Luồng Tràn Cụm Tuyến (Spillover Routing)</h3>
                 <p className="text-[11px] text-slate-400">
@@ -333,7 +388,7 @@ export const LocalDispatchPage: React.FC = () => {
                   </div>
                   <div>
                     <div className="text-[10px] text-slate-500">Chờ Lấy</div>
-                    <div className="text-sm font-black text-amber-400">{zone.stats?.pendingPickups || 0}</div>
+                    <div className="text-sm font-black text-blue-400">{zone.stats?.pendingPickups || 0}</div>
                   </div>
                   <div>
                     <div className="text-[10px] text-slate-500">Chờ Giao</div>
@@ -388,14 +443,14 @@ export const LocalDispatchPage: React.FC = () => {
                         <span>
                           {s.pickupQuota.current} / {s.pickupQuota.max} đơn
                         </span>
-                        <span className={s.pickupQuota.percent > 85 ? 'text-rose-400' : 'text-amber-400'}>
+                        <span className={s.pickupQuota.percent > 85 ? 'text-rose-400' : 'text-blue-400'}>
                           {s.pickupQuota.percent}%
                         </span>
                       </div>
                       <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
                         <div
                           className={`h-full rounded-full ${
-                            s.pickupQuota.percent > 85 ? 'bg-rose-500' : 'bg-amber-400'
+                            s.pickupQuota.percent > 85 ? 'bg-rose-500' : 'bg-blue-500'
                           }`}
                           style={{ width: `${Math.min(s.pickupQuota.percent, 100)}%` }}
                         />
@@ -457,7 +512,7 @@ export const LocalDispatchPage: React.FC = () => {
           <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
             <div className="p-4 border-b border-slate-800 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <ShieldCheck className="w-5 h-5 text-amber-400" />
+                <ShieldCheck className="w-5 h-5 text-blue-400" />
                 <h2 className="font-bold text-white text-sm">Danh Sách Yêu Cầu Xin Chuyển Địa Bàn Của Shipper</h2>
               </div>
               <span className="text-xs text-slate-400 font-mono">
@@ -507,7 +562,7 @@ export const LocalDispatchPage: React.FC = () => {
                         </td>
 
                         <td className="p-3.5">
-                          <div className="font-bold text-amber-300">{reqArea?.subZone || 'Tất cả cụm'}</div>
+                          <div className="font-bold text-blue-300">{reqArea?.subZone || 'Tất cả cụm'}</div>
                           <div className="text-[11px] text-slate-300 font-medium">
                             {reqArea?.ward ? `${reqArea.ward}, ` : ''}{reqArea?.district || ''}, {reqArea?.province || ''}
                           </div>
@@ -526,7 +581,7 @@ export const LocalDispatchPage: React.FC = () => {
 
                         <td className="p-3.5">
                           {status === 'PENDING' ? (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-full">
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30 px-2 py-0.5 rounded-full">
                               <Clock className="w-3 h-3" /> Chờ Duyệt
                             </span>
                           ) : status === 'APPROVED' ? (

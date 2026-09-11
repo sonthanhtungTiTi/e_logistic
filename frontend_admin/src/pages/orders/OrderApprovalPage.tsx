@@ -144,7 +144,7 @@ export const OrderApprovalPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400">
+            <span className="p-2 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-400">
               <ShieldCheck className="w-6 h-6" />
             </span>
             <div>
@@ -161,14 +161,14 @@ export const OrderApprovalPage: React.FC = () => {
           <button
             onClick={() => setActiveTab('PENDING')}
             className={`px-3 py-1.5 rounded-xl transition cursor-pointer flex items-center gap-1.5 ${activeTab === 'PENDING'
-                ? 'bg-amber-500 text-slate-950 font-black shadow-md'
+                ? 'bg-blue-600 text-white font-bold shadow-md'
                 : 'text-slate-400 hover:text-white'
               }`}
           >
             <Clock className="w-3.5 h-3.5" />
             <span>Chờ Phê Duyệt</span>
             {pendingCount > 0 && (
-              <span className="px-1.5 py-0.2 rounded-full bg-amber-950 text-amber-200 text-[10px] font-mono">
+              <span className="px-1.5 py-0.2 rounded-full bg-blue-900 text-blue-200 text-[10px] font-mono">
                 {pendingCount}
               </span>
             )}
@@ -177,7 +177,7 @@ export const OrderApprovalPage: React.FC = () => {
           <button
             onClick={() => setActiveTab('APPROVED')}
             className={`px-3 py-1.5 rounded-xl transition cursor-pointer flex items-center gap-1.5 ${activeTab === 'APPROVED'
-                ? 'bg-blue-600 text-white font-black shadow-md'
+                ? 'bg-blue-600 text-white font-bold shadow-md'
                 : 'text-slate-400 hover:text-white'
               }`}
           >
@@ -194,39 +194,39 @@ export const OrderApprovalPage: React.FC = () => {
 
       {/* KPI Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-slate-900/90 border border-amber-500/30 rounded-2xl p-4 shadow-lg flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+        <div className="bg-slate-900/90 border border-blue-500/30 rounded-2xl p-4 shadow-lg flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-400">
             <Clock className="w-6 h-6" />
           </div>
           <div>
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
               1. Đang Chờ Admin Duyệt
             </span>
-            <div className="text-2xl font-black text-amber-400 font-mono">{pendingCount} <span className="text-xs font-normal text-slate-500">đơn</span></div>
+            <div className="text-2xl font-black text-blue-400 font-mono">{pendingCount} <span className="text-xs font-normal text-slate-500">đơn</span></div>
           </div>
         </div>
 
-        <div className="bg-slate-900/90 border border-indigo-500/30 rounded-2xl p-4 shadow-lg flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+        <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-lg flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
             <CheckCircle2 className="w-6 h-6" />
           </div>
           <div>
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
               2. Đã Duyệt (Chờ Gán Xe)
             </span>
-            <div className="text-2xl font-black text-indigo-400 font-mono">{approvedWaitingDispatchCount} <span className="text-xs font-normal text-slate-500">đơn</span></div>
+            <div className="text-2xl font-black text-slate-200 font-mono">{approvedWaitingDispatchCount} <span className="text-xs font-normal text-slate-500">đơn</span></div>
           </div>
         </div>
 
-        <div className="bg-slate-900/90 border border-purple-500/30 rounded-2xl p-4 shadow-lg flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400">
+        <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-lg flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400">
             <Truck className="w-6 h-6" />
           </div>
           <div>
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
               3. Đã Gán Tài Xế Thu Gom
             </span>
-            <div className="text-2xl font-black text-purple-400 font-mono">{assignedDriverCount} <span className="text-xs font-normal text-slate-500">đơn</span></div>
+            <div className="text-2xl font-black text-sky-400 font-mono">{assignedDriverCount} <span className="text-xs font-normal text-slate-500">đơn</span></div>
           </div>
         </div>
       </div>
@@ -240,7 +240,7 @@ export const OrderApprovalPage: React.FC = () => {
             placeholder="Tìm theo mã vận đơn, tên Shop, SĐT, người nhận..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-200 focus:border-amber-500 outline-none placeholder:text-slate-600 font-mono"
+            className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-200 focus:border-blue-500 outline-none placeholder:text-slate-600 font-mono"
           />
         </div>
 
@@ -250,7 +250,7 @@ export const OrderApprovalPage: React.FC = () => {
             placeholder="Lọc theo Tỉnh/Thành..."
             value={provinceFilter}
             onChange={(e) => setProvinceFilter(e.target.value)}
-            className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:border-amber-500 outline-none placeholder:text-slate-600"
+            className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:border-blue-500 outline-none placeholder:text-slate-600"
           />
         </div>
 
@@ -268,14 +268,14 @@ export const OrderApprovalPage: React.FC = () => {
         <div className="space-y-4">
           {/* Floating Bulk Action Bar */}
           {selectedIds.length > 0 && (
-            <div className="p-4 bg-gradient-to-r from-amber-950/80 via-slate-900 to-slate-950 border border-amber-500/40 rounded-2xl flex items-center justify-between shadow-2xl animate-fade-in">
+            <div className="p-4 bg-gradient-to-r from-blue-950 via-slate-900 to-slate-950 border border-blue-500/40 rounded-2xl flex items-center justify-between shadow-2xl animate-fade-in">
               <div className="flex items-center gap-3">
-                <span className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-300 font-black text-xs flex items-center justify-center border border-amber-500/40">
+                <span className="w-8 h-8 rounded-xl bg-blue-500/20 text-blue-300 font-black text-xs flex items-center justify-center border border-blue-500/40">
                   {selectedIds.length}
                 </span>
                 <div>
                   <p className="text-xs font-bold text-white">
-                    Đã chọn <span className="text-amber-400 font-black">{selectedIds.length}</span> đơn hàng chờ duyệt
+                    Đã chọn <span className="text-blue-400 font-black">{selectedIds.length}</span> đơn hàng chờ duyệt
                   </p>
                   <p className="text-[10px] text-slate-400">Phê duyệt đồng loạt để chuyển sang danh sách điều phối gom hàng</p>
                 </div>
@@ -285,7 +285,7 @@ export const OrderApprovalPage: React.FC = () => {
                 <button
                   onClick={handleBulkApprove}
                   disabled={isApproving}
-                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-emerald-600 hover:from-amber-400 hover:to-emerald-500 text-slate-950 font-black text-xs flex items-center gap-2 shadow-lg transition cursor-pointer disabled:opacity-50"
+                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg transition cursor-pointer disabled:opacity-50"
                 >
                   <CheckCheck className="w-4 h-4" />
                   <span>{isApproving ? 'Đang duyệt...' : `Duyệt ${selectedIds.length} Đơn Đã Chọn`}</span>
@@ -313,7 +313,7 @@ export const OrderApprovalPage: React.FC = () => {
                         checked={orders.length > 0 && selectedIds.length === orders.length}
                         onChange={handleSelectAll}
                         disabled={orders.length === 0}
-                        className="rounded border-slate-700 bg-slate-950 text-amber-500 focus:ring-amber-500 cursor-pointer"
+                        className="rounded border-slate-700 bg-slate-950 text-blue-500 focus:ring-blue-500 cursor-pointer"
                       />
                     </th>
                     <th className="p-3.5">Mã Vận Đơn</th>
@@ -328,14 +328,14 @@ export const OrderApprovalPage: React.FC = () => {
                   {loading ? (
                     <tr>
                       <td colSpan={7} className="p-12 text-center text-slate-400">
-                        <RefreshCw className="w-8 h-8 text-amber-500 animate-spin mx-auto mb-2" />
+                        <RefreshCw className="w-8 h-8 text-blue-500 animate-spin mx-auto mb-2" />
                         <p className="font-semibold text-xs text-slate-300">Đang tải danh sách đơn chờ duyệt...</p>
                       </td>
                     </tr>
                   ) : orders.length === 0 ? (
                     <tr>
                       <td colSpan={7} className="p-16 text-center text-slate-500 space-y-3">
-                        <div className="w-14 h-14 rounded-2xl bg-slate-800 flex items-center justify-center text-emerald-400 mx-auto">
+                        <div className="w-14 h-14 rounded-2xl bg-slate-800 flex items-center justify-center text-blue-400 mx-auto">
                           <CheckCircle2 className="w-8 h-8" />
                         </div>
                         <div>
@@ -352,7 +352,7 @@ export const OrderApprovalPage: React.FC = () => {
                       return (
                         <tr
                           key={ord._id}
-                          className={`transition ${isSelected ? 'bg-amber-950/20 border-l-2 border-l-amber-500' : 'hover:bg-slate-800/40'
+                          className={`transition ${isSelected ? 'bg-blue-950/20 border-l-2 border-l-blue-500' : 'hover:bg-slate-800/40'
                             }`}
                         >
                           <td className="p-3.5 text-center">
@@ -360,18 +360,18 @@ export const OrderApprovalPage: React.FC = () => {
                               type="checkbox"
                               checked={isSelected}
                               onChange={() => handleSelectOne(ord._id)}
-                              className="rounded border-slate-700 bg-slate-950 text-amber-500 focus:ring-amber-500 cursor-pointer"
+                              className="rounded border-slate-700 bg-slate-950 text-blue-500 focus:ring-blue-500 cursor-pointer"
                             />
                           </td>
 
                           <td className="p-3.5">
                             <div className="flex flex-col gap-1">
-                              <span className="font-mono font-bold text-cyan-400 text-sm">{ord.trackingCode}</span>
+                              <span className="font-mono font-bold text-blue-400 text-sm">{ord.trackingCode}</span>
                               <div className="flex items-center gap-1.5">
-                                <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                                <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-500/15 text-blue-300 border border-blue-500/30">
                                   PENDING_APPROVAL
                                 </span>
-                                <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                                <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-sky-500/20 text-sky-300 border border-sky-500/30">
                                   {ord.routeType || 'HUB_ROUTED'}
                                 </span>
                               </div>
@@ -381,7 +381,7 @@ export const OrderApprovalPage: React.FC = () => {
                           <td className="p-3.5">
                             <div className="space-y-0.5">
                               <div className="flex items-center gap-1 text-slate-200 font-bold">
-                                <Store className="w-3.5 h-3.5 text-amber-400" />
+                                <Store className="w-3.5 h-3.5 text-blue-400" />
                                 {ord.pickupAddress?.fullName || ord.sellerId?.fullName}
                               </div>
                               <div className="text-[11px] text-slate-400 flex items-center gap-1">
@@ -410,7 +410,7 @@ export const OrderApprovalPage: React.FC = () => {
                           <td className="p-3.5">
                             <div className="space-y-0.5 font-mono">
                               <div className="text-emerald-400 font-bold">Cước: {formatCurrency(ord.shippingFee)}</div>
-                              <div className="text-amber-400">COD: {formatCurrency(ord.codAmount)}</div>
+                              <div className="text-slate-200">COD: {formatCurrency(ord.codAmount)}</div>
                               <div className="text-[11px] text-slate-400">TL: {ord.chargeableWeight || 0} kg</div>
                             </div>
                           </td>
@@ -437,7 +437,7 @@ export const OrderApprovalPage: React.FC = () => {
                               <button
                                 onClick={() => handleApproveSingle(ord)}
                                 disabled={isApproving}
-                                className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs flex items-center gap-1 shadow-md shadow-amber-500/20 transition cursor-pointer disabled:opacity-50"
+                                className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-1 shadow-md shadow-blue-600/20 transition cursor-pointer disabled:opacity-50"
                               >
                                 <CheckCircle2 className="w-3.5 h-3.5" /> Duyệt Đơn
                               </button>
@@ -521,7 +521,7 @@ export const OrderApprovalPage: React.FC = () => {
                           <td className="p-3.5">
                             <div className="space-y-0.5">
                               <div className="flex items-center gap-1 text-slate-200 font-bold">
-                                <Store className="w-3.5 h-3.5 text-amber-400" />
+                                <Store className="w-3.5 h-3.5 text-blue-400" />
                                 {ord.pickupAddress?.fullName || ord.sellerId?.fullName}
                               </div>
                               <div className="text-[11px] text-slate-400">
@@ -541,7 +541,7 @@ export const OrderApprovalPage: React.FC = () => {
 
                           <td className="p-3.5 font-mono">
                             <div className="text-emerald-400 font-bold">{formatCurrency(ord.shippingFee)}</div>
-                            <div className="text-amber-400">COD: {formatCurrency(ord.codAmount)}</div>
+                            <div className="text-blue-400">COD: {formatCurrency(ord.codAmount)}</div>
                           </td>
 
                           <td className="p-3.5 text-right">
@@ -557,7 +557,7 @@ export const OrderApprovalPage: React.FC = () => {
                               {!isAssigned && (
                                 <button
                                   onClick={() => navigate('/admin/dispatch')}
-                                  className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex items-center gap-1 shadow-md shadow-purple-600/30 transition cursor-pointer"
+                                  className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-1 shadow-md shadow-blue-600/30 transition cursor-pointer"
                                   title="Chuyển sang màn hình điều phối để gán tài xế"
                                 >
                                   <Truck className="w-3.5 h-3.5" /> Phân Tài Xế Ngay
@@ -582,7 +582,7 @@ export const OrderApprovalPage: React.FC = () => {
           <div className="w-full max-w-xl bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-5 text-xs">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <div className="flex items-center gap-2">
-                <Package className="w-5 h-5 text-amber-400" />
+                <Package className="w-5 h-5 text-blue-400" />
                 <h3 className="text-base font-black text-white font-mono">
                   Chi Tiết Đơn Hàng #{selectedOrderDetail.trackingCode}
                 </h3>
@@ -597,14 +597,14 @@ export const OrderApprovalPage: React.FC = () => {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-1">
-                <span className="text-[10px] font-bold text-amber-400 uppercase">Thông tin Shop (Người Gửi)</span>
+                <span className="text-[10px] font-bold text-blue-400 uppercase">Thông tin Shop (Người Gửi)</span>
                 <p className="font-bold text-white text-xs">{selectedOrderDetail.pickupAddress?.fullName}</p>
                 <p className="text-slate-400 font-mono">{selectedOrderDetail.pickupAddress?.phone}</p>
                 <p className="text-slate-400">{selectedOrderDetail.pickupAddress?.address}, {selectedOrderDetail.pickupAddress?.district}, {selectedOrderDetail.pickupAddress?.province}</p>
               </div>
 
               <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-1">
-                <span className="text-[10px] font-bold text-cyan-400 uppercase">Thông tin Người Nhận</span>
+                <span className="text-[10px] font-bold text-sky-400 uppercase">Thông tin Người Nhận</span>
                 <p className="font-bold text-white text-xs">{selectedOrderDetail.deliveryAddress?.fullName}</p>
                 <p className="text-slate-400 font-mono">{selectedOrderDetail.deliveryAddress?.phone}</p>
                 <p className="text-slate-400">{selectedOrderDetail.deliveryAddress?.address}, {selectedOrderDetail.deliveryAddress?.district}, {selectedOrderDetail.deliveryAddress?.province}</p>
@@ -632,11 +632,11 @@ export const OrderApprovalPage: React.FC = () => {
               </div>
               <div>
                 <span className="text-slate-500 block text-[10px]">TIỀN THU HỘ (COD)</span>
-                <span className="text-amber-400 font-bold text-sm">{formatCurrency(selectedOrderDetail.codAmount)}</span>
+                <span className="text-blue-400 font-bold text-sm">{formatCurrency(selectedOrderDetail.codAmount)}</span>
               </div>
               <div>
                 <span className="text-slate-500 block text-[10px]">TRỌNG LƯỢNG</span>
-                <span className="text-cyan-400 font-bold text-sm">{selectedOrderDetail.chargeableWeight || 0} kg</span>
+                <span className="text-sky-400 font-bold text-sm">{selectedOrderDetail.chargeableWeight || 0} kg</span>
               </div>
             </div>
 
@@ -654,7 +654,7 @@ export const OrderApprovalPage: React.FC = () => {
                     setSelectedOrderDetail(null);
                     handleApproveSingle(target);
                   }}
-                  className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black flex items-center gap-1 cursor-pointer"
+                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold flex items-center gap-1 cursor-pointer shadow"
                 >
                   <CheckCircle2 className="w-4 h-4" /> Phê Duyệt Đơn Này
                 </button>

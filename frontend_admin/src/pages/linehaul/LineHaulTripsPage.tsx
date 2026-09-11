@@ -73,7 +73,7 @@ export const LineHaulTripsPage: React.FC = () => {
       <div className="bg-slate-900 border border-slate-800 p-3.5 rounded-2xl flex items-center justify-between">
         <div>
           <h2 className="font-bold text-sm text-white flex items-center gap-1.5">
-            <Truck className="w-4 h-4 text-orange-400" />
+            <Truck className="w-4 h-4 text-blue-400" />
             Lịch Trình Chuyến Xe Liên Tỉnh
           </h2>
           <p className="text-[11px] text-slate-400 mt-0.5">Xác nhận chuyến xe được Điều Phối Vận Tải gán</p>
@@ -86,7 +86,7 @@ export const LineHaulTripsPage: React.FC = () => {
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
           </button>
-          <span className="text-[10px] bg-orange-500/20 text-orange-300 font-bold px-2 py-1 rounded-lg border border-orange-500/30 font-mono">
+          <span className="text-[10px] bg-blue-500/20 text-blue-300 font-bold px-2 py-1 rounded-lg border border-blue-500/30 font-mono">
             {trips.length} chuyến
           </span>
         </div>
@@ -112,12 +112,12 @@ export const LineHaulTripsPage: React.FC = () => {
         {trips.map((trip) => (
           <div key={trip.id} className="bg-slate-900 border border-slate-800 p-4 rounded-2xl space-y-3">
             <div className="flex items-center justify-between">
-              <span className="font-mono text-sm font-black text-orange-400">{trip.tripCode}</span>
+              <span className="font-mono text-sm font-black text-blue-400">{trip.tripCode}</span>
               <span
                 className={`text-[10px] px-2 py-0.5 rounded font-bold border ${
                   trip.status === 'CONFIRMED'
                     ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
-                    : 'bg-orange-500/20 text-orange-300 border-orange-500/30'
+                    : 'bg-blue-500/20 text-blue-300 border-blue-500/30'
                 }`}
               >
                 {trip.status === 'CONFIRMED' ? 'Đã Chấp Nhận' : 'Chờ Bạn Xác Nhận'}
@@ -128,12 +128,12 @@ export const LineHaulTripsPage: React.FC = () => {
               <div className="flex items-center gap-1.5 font-bold text-white">
                 <span>{trip.originHub}</span>
                 <ArrowRight className="w-4 h-4 text-slate-500" />
-                <span className="text-cyan-400">{trip.destHub}</span>
+                <span className="text-blue-400">{trip.destHub}</span>
               </div>
               <div className="text-[11px] text-slate-400 flex items-center gap-2">
                 <span>Khoảng cách: ~{trip.distance}</span>
                 <span>•</span>
-                <span className="text-amber-400 font-semibold">Giờ chạy: {trip.departureTime}</span>
+                <span className="text-blue-400 font-semibold">Giờ chạy: {trip.departureTime}</span>
               </div>
             </div>
 
@@ -144,7 +144,7 @@ export const LineHaulTripsPage: React.FC = () => {
               </div>
               <div className="bg-slate-950/50 p-2 rounded-xl border border-slate-850">
                 <span className="text-[10px] text-slate-500 block">Tổng số bưu kiện</span>
-                <span className="font-bold text-cyan-400">{trip.itemsCount} kiện hàng</span>
+                <span className="font-bold text-blue-400">{trip.itemsCount} kiện hàng</span>
               </div>
             </div>
 
@@ -158,7 +158,7 @@ export const LineHaulTripsPage: React.FC = () => {
                 </button>
                 <button
                   onClick={() => handleConfirmTrip(trip.tripCode)}
-                  className="py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-slate-950 font-bold text-xs transition shadow-lg shadow-orange-500/20"
+                  className="py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition shadow-lg shadow-blue-600/20"
                 >
                   Chấp Nhận Chuyến
                 </button>

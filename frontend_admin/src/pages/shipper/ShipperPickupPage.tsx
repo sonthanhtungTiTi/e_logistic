@@ -149,12 +149,12 @@ export const ShipperPickupPage: React.FC = () => {
       <div className="bg-slate-900 border border-slate-800 p-3.5 rounded-2xl flex items-center justify-between">
         <div>
           <h2 className="font-bold text-sm text-white flex items-center gap-1.5">
-            <Truck className="w-4 h-4 text-amber-400" />
+            <Truck className="w-4 h-4 text-blue-400" />
             Nhiệm Vụ Lấy Hàng Tại Shop (First-Mile)
           </h2>
           <p className="text-[11px] text-slate-400 mt-0.5">
             Khu vực phụ trách:{' '}
-            <strong className="text-cyan-400">
+            <strong className="text-blue-400">
               {shipperArea?.subZone ? `${shipperArea.subZone}, ` : ''}{shipperArea?.district || ''}{' '}
               {shipperArea?.province || 'Hà Nội'}
             </strong>
@@ -169,7 +169,7 @@ export const ShipperPickupPage: React.FC = () => {
           >
             <RefreshCw className={`w-3.5 h-3.5 ${fetchingTasks ? 'animate-spin' : ''}`} />
           </button>
-          <span className="text-[10px] bg-amber-500/20 text-amber-300 font-bold px-2 py-1 rounded-lg border border-amber-500/30 font-mono">
+          <span className="text-[10px] bg-blue-500/20 text-blue-300 font-bold px-2 py-1 rounded-lg border border-blue-500/30 font-mono">
             {pickupTasks.length} đơn chờ
           </span>
         </div>
@@ -207,7 +207,7 @@ export const ShipperPickupPage: React.FC = () => {
             value={manualCode}
             onChange={(e) => setManualCode(e.target.value.toUpperCase())}
             placeholder="VD: ELG-VN-71247720..."
-            className="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs uppercase font-mono text-white placeholder:text-slate-600 focus:outline-none focus:border-amber-500"
+            className="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs uppercase font-mono text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-500"
           />
           <input
             id="input-pickup-weight"
@@ -217,13 +217,13 @@ export const ShipperPickupPage: React.FC = () => {
             onChange={(e) => setMeasuredWeight(e.target.value)}
             placeholder="Cân (kg)"
             title="Để trống nếu lấy theo cân nặng Shop đã khai báo"
-            className="w-24 bg-slate-950 border border-slate-700 rounded-xl px-2 py-2 text-xs font-mono text-white placeholder:text-slate-600 focus:outline-none focus:border-amber-500 text-center"
+            className="w-24 bg-slate-950 border border-slate-700 rounded-xl px-2 py-2 text-xs font-mono text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-500 text-center"
           />
           <button
             id="btn-pickup-manual"
             onClick={() => handleConfirmPickup(manualCode)}
             disabled={loading || !manualCode.trim()}
-            className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs transition disabled:opacity-50 cursor-pointer"
+            className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition disabled:opacity-50 cursor-pointer"
           >
             {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : 'Lấy Hàng'}
           </button>
@@ -238,7 +238,7 @@ export const ShipperPickupPage: React.FC = () => {
         <span className="text-xs font-bold text-slate-300 block px-1">Danh Sách Điểm Cần Đến Lấy Tại Khu Vực:</span>
         {fetchingTasks ? (
           <div className="p-6 text-center text-slate-500 text-xs space-y-1">
-            <RefreshCw className="w-5 h-5 animate-spin mx-auto text-amber-400" />
+            <RefreshCw className="w-5 h-5 animate-spin mx-auto text-blue-400" />
             <p>Đang quét đơn hàng cần lấy tại địa bàn...</p>
           </div>
         ) : pickupTasks.length === 0 ? (
@@ -251,7 +251,7 @@ export const ShipperPickupPage: React.FC = () => {
           pickupTasks.map((task) => (
             <div key={task.id || task._id} className="bg-slate-900 border border-slate-800 p-3.5 rounded-2xl space-y-2.5">
               <div className="flex items-center justify-between">
-                <span className="font-mono text-xs font-bold text-amber-400">{task.trackingCode}</span>
+                <span className="font-mono text-xs font-bold text-blue-400">{task.trackingCode}</span>
                 <span className="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded font-mono font-semibold">
                   Khai báo: {task.declaredWeight} kg
                 </span>
@@ -260,7 +260,7 @@ export const ShipperPickupPage: React.FC = () => {
               <div>
                 <h3 className="font-bold text-white text-xs">{task.shopName}</h3>
                 <p className="text-[11px] text-slate-400 flex items-start gap-1 mt-0.5">
-                  <MapPin className="w-3.5 h-3.5 text-cyan-400 shrink-0 mt-0.5" />
+                  <MapPin className="w-3.5 h-3.5 text-blue-400 shrink-0 mt-0.5" />
                   <span>{task.address}</span>
                 </p>
               </div>
@@ -268,7 +268,7 @@ export const ShipperPickupPage: React.FC = () => {
               <div className="flex items-center justify-between pt-2 border-t border-slate-800">
                 <a
                   href={`tel:${task.phone}`}
-                  className="text-[11px] font-bold text-cyan-400 flex items-center gap-1 hover:underline"
+                  className="text-[11px] font-bold text-blue-400 flex items-center gap-1 hover:underline"
                 >
                   <Phone className="w-3 h-3" /> Gọi: {task.phone}
                 </a>
@@ -284,7 +284,7 @@ export const ShipperPickupPage: React.FC = () => {
                   <button
                     onClick={() => handleConfirmPickup(task.trackingCode)}
                     disabled={loading}
-                    className="px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 font-bold text-[11px] transition cursor-pointer"
+                    className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-[11px] transition cursor-pointer shadow"
                   >
                     Xác Nhận Đã Lấy
                   </button>

@@ -90,15 +90,21 @@ export const LoginPage: React.FC = () => {
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center p-4">
-      <div className="w-full max-w-md glass-panel rounded-3xl p-8 border border-slate-800 space-y-6">
+      <div className="w-full max-w-md glass-panel rounded-3xl p-8 border border-slate-200 dark:border-slate-800 space-y-6 shadow-2xl">
         <div className="text-center space-y-2">
-          <div className="w-12 h-12 rounded-2xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center mx-auto text-blue-400">
-            {requiresTwoFactor ? <QrCode className="w-6 h-6 text-indigo-400" /> : <Truck className="w-6 h-6" />}
-          </div>
-          <h2 className="text-2xl font-black text-white">
-            {requiresTwoFactor ? 'Xác Thực 2FA TOTP' : 'Đăng Nhập Seller Hub'}
+          {requiresTwoFactor ? (
+            <div className="w-12 h-12 rounded-2xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center mx-auto text-blue-500 dark:text-blue-400">
+              <QrCode className="w-6 h-6 text-indigo-500 dark:text-indigo-400" />
+            </div>
+          ) : (
+            <div className="flex justify-center mb-1">
+              <img src="/logo.png" alt="GIAO HÀNG Logo" className="h-16 w-auto object-contain" />
+            </div>
+          )}
+          <h2 className="text-2xl font-black text-slate-900 dark:text-white">
+            {requiresTwoFactor ? 'Xác Thực 2FA TOTP' : 'Đăng Nhập GIAO HÀNG Hub'}
           </h2>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             {requiresTwoFactor
               ? 'Nhập mã 6 chữ số từ app Authenticator hoặc mã dự phòng'
               : 'Quản lý bưu gửi, theo dõi COD & tài chính đối tác'}
@@ -106,7 +112,7 @@ export const LoginPage: React.FC = () => {
         </div>
 
         {error && (
-          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-center gap-2">
+          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs flex items-center gap-2">
             <AlertCircle className="w-4 h-4 flex-shrink-0" /> <span>{error}</span>
           </div>
         )}
@@ -114,14 +120,14 @@ export const LoginPage: React.FC = () => {
         {!requiresTwoFactor ? (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-bold text-slate-300 mb-1">Email / Số Điện Thoại</label>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Email / Số Điện Thoại</label>
               <div className="relative">
-                <Mail className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
+                <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
                 <input
                   type="text"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full glass-input rounded-xl pl-9 pr-3 py-2.5 text-xs font-mono"
+                  className="w-full glass-input rounded-xl pl-9 pr-3 py-2.5 text-xs font-mono text-slate-900 dark:text-white bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800"
                   placeholder="sont48873@gmail.com"
                   disabled={loading}
                 />
@@ -130,16 +136,16 @@ export const LoginPage: React.FC = () => {
 
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="block text-xs font-bold text-slate-300">Mật Khẩu</label>
-                <Link to="/auth/forgot-password" className="text-[11px] text-blue-400 hover:underline">Quên mật khẩu?</Link>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">Mật Khẩu</label>
+                <Link to="/auth/forgot-password" className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline">Quên mật khẩu?</Link>
               </div>
               <div className="relative">
-                <Lock className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
+                <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full glass-input rounded-xl pl-9 pr-3 py-2.5 text-xs font-mono"
+                  className="w-full glass-input rounded-xl pl-9 pr-3 py-2.5 text-xs font-mono text-slate-900 dark:text-white bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800"
                   disabled={loading}
                 />
               </div>
@@ -157,7 +163,7 @@ export const LoginPage: React.FC = () => {
         ) : (
           <form onSubmit={handleVerify2FALogin} className="space-y-4">
             <div>
-              <label className="block text-xs font-bold text-slate-300 mb-1 text-center">Mã TOTP 6 Số / Mã Dự Phòng</label>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1 text-center">Mã TOTP 6 Số / Mã Dự Phòng</label>
               <input
                 type="text"
                 autoFocus
@@ -165,7 +171,7 @@ export const LoginPage: React.FC = () => {
                 value={totpCode}
                 onChange={(e) => setTotpCode(e.target.value)}
                 placeholder="123456"
-                className="w-full glass-input rounded-xl py-3 text-center text-xl font-mono text-cyan-400 tracking-widest"
+                className="w-full glass-input rounded-xl py-3 text-center text-xl font-mono text-blue-600 dark:text-cyan-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 tracking-widest"
                 disabled={loading}
               />
             </div>
@@ -173,7 +179,7 @@ export const LoginPage: React.FC = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-lg cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
+              className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-lg cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 transition"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <KeyRound className="w-4 h-4" />}
               {loading ? 'Đang xác minh 2FA...' : 'Xác Nhận Đăng Nhập'}
@@ -182,16 +188,16 @@ export const LoginPage: React.FC = () => {
             <button
               type="button"
               onClick={() => setRequiresTwoFactor(false)}
-              className="w-full text-center text-xs text-slate-400 hover:text-white pt-2 cursor-pointer"
+              className="w-full text-center text-xs text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white pt-2 cursor-pointer transition"
             >
               Quay lại đăng nhập bằng mật khẩu
             </button>
           </form>
         )}
 
-        <div className="text-center text-xs text-slate-400 pt-2 border-t border-slate-800">
+        <div className="text-center text-xs text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-200 dark:border-slate-800">
           Chưa có tài khoản đối tác?{' '}
-          <Link to="/auth/register" className="text-blue-400 font-bold hover:underline">Đăng ký ngay</Link>
+          <Link to="/auth/register" className="text-blue-600 dark:text-blue-400 font-bold hover:underline">Đăng ký ngay</Link>
         </div>
       </div>
     </div>

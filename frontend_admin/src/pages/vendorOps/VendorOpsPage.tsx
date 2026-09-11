@@ -111,27 +111,27 @@ const RISK_FLAG_LABELS: Record<string, { label: string; bg: string; text: string
   },
   OVERSIZED_VOLUMETRIC: {
     label: 'Quá thể tích (>25kg)',
-    bg: 'bg-amber-500/15',
-    text: 'text-amber-800 dark:text-amber-300',
-    border: 'border-amber-500/30',
+    bg: 'bg-blue-500/15',
+    text: 'text-blue-800 dark:text-blue-300',
+    border: 'border-blue-500/30',
   },
   OVERSIZED_DIMENSION: {
     label: 'Quá khổ kiện (>80cm)',
-    bg: 'bg-amber-500/15',
-    text: 'text-amber-800 dark:text-amber-300',
-    border: 'border-amber-500/30',
+    bg: 'bg-blue-500/15',
+    text: 'text-blue-800 dark:text-blue-300',
+    border: 'border-blue-500/30',
   },
   HIGH_COD_VALUE: {
     label: 'COD cao (>10tr)',
-    bg: 'bg-orange-500/15',
-    text: 'text-orange-800 dark:text-orange-300',
-    border: 'border-orange-500/30',
+    bg: 'bg-sky-500/15',
+    text: 'text-sky-800 dark:text-sky-300',
+    border: 'border-sky-500/30',
   },
   HIGH_DECLARED_VALUE: {
     label: 'Khai giá lớn (>20tr)',
-    bg: 'bg-purple-500/15',
-    text: 'text-purple-800 dark:text-purple-300',
-    border: 'border-purple-500/30',
+    bg: 'bg-sky-500/15',
+    text: 'text-sky-800 dark:text-sky-300',
+    border: 'border-sky-500/30',
   },
   HIGH_ORDER_VELOCITY: {
     label: 'Tần suất đơn cao (>50/h)',
@@ -173,7 +173,7 @@ const renderKycBadge = (status?: string) => {
   }
   if (isPending) {
     return (
-      <span className="text-[10px] inline-flex items-center gap-1 px-1.5 py-0.5 rounded mt-1 font-bold bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30">
+      <span className="text-[10px] inline-flex items-center gap-1 px-1.5 py-0.5 rounded mt-1 font-bold bg-blue-500/15 text-blue-800 dark:text-blue-300 border border-blue-500/30">
         KYC: CHỜ DUYỆT
       </span>
     );
@@ -376,32 +376,89 @@ export const VendorOpsPage: React.FC = () => {
   });
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-sm">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-500 dark:text-amber-400">
-              <ShieldAlert className="w-6 h-6" />
+    <div className="space-y-6 pb-12">
+      {/* TẦNG 1: Page Header & KPI Summary Grid */}
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400">
+              <Building2 className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-xl font-black text-slate-900 dark:text-white">Quản Lý Đơn Hàng &amp; Nhà Cung Cấp (Vendor Ops)</h1>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Thẩm duyệt đơn hàng, theo dõi đơn đã duyệt, đơn từ chối kèm lý do và giám sát SLA Seller
+              <h1 className="text-2xl font-black text-white tracking-tight">Duyệt Đơn & NCC (QL 1)</h1>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Thẩm duyệt đơn hàng seller, theo dõi đơn đã duyệt, từ chối kèm lý do & giám sát SLA NCC
               </p>
             </div>
           </div>
+          <button
+            onClick={() => {
+              if (activeTab === 'PENDING') loadPendingOrders();
+              else if (activeTab === 'APPROVED') loadApprovedOrders();
+              else if (activeTab === 'REJECTED') loadRejectedOrders();
+              else loadSlaReport();
+              fetchCounts();
+            }}
+            className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 text-xs font-semibold flex items-center gap-2 transition cursor-pointer self-start sm:self-auto"
+          >
+            <RefreshCw className={`w-4 h-4 text-cyan-400 ${loading ? 'animate-spin' : ''}`} /> Tải Lại Dữ Liệu
+          </button>
         </div>
 
-        {/* Navigation Tabs */}
-        <div className="flex flex-wrap items-center gap-2 bg-slate-100 dark:bg-slate-950/70 p-1.5 rounded-xl border border-slate-200 dark:border-slate-800">
+        {/* 4 Thẻ KPI Grid */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800/80 shadow-lg flex items-center justify-between">
+            <div>
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Chờ Thẩm Duyệt</span>
+              <span className="text-2xl font-black text-amber-400 mt-1 block font-mono">{counts.pendingCount}</span>
+            </div>
+            <div className="p-3 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+              <FileText className="w-5 h-5" />
+            </div>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800/80 shadow-lg flex items-center justify-between">
+            <div>
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Đã Phê Duyệt</span>
+              <span className="text-2xl font-black text-emerald-400 mt-1 block font-mono">{counts.approvedCount}</span>
+            </div>
+            <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              <CheckCircle2 className="w-5 h-5" />
+            </div>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800/80 shadow-lg flex items-center justify-between">
+            <div>
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Đã Từ Chối</span>
+              <span className="text-2xl font-black text-rose-400 mt-1 block font-mono">{counts.rejectedCount}</span>
+            </div>
+            <div className="p-3 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20">
+              <XCircle className="w-5 h-5" />
+            </div>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800/80 shadow-lg flex items-center justify-between">
+            <div>
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Tổng Seller Quản Lý</span>
+              <span className="text-2xl font-black text-cyan-400 mt-1 block font-mono">{counts.sellerCount}</span>
+            </div>
+            <div className="p-3 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+              <Building2 className="w-5 h-5" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Top Controls & Navigation Tabs */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900/90 border border-slate-800 p-4 rounded-2xl shadow-xl backdrop-blur-md">
+        <div className="flex flex-wrap items-center gap-2">
           {/* Tab 1: Pending */}
           <button
             onClick={() => setActiveTab('PENDING')}
-            className={`px-3.5 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
               activeTab === 'PENDING'
-                ? 'bg-amber-500 text-slate-950 shadow-md font-black'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/80 dark:hover:bg-slate-800/50'
+                ? 'bg-blue-600 text-white shadow-md font-black'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
             }`}
           >
             <FileText className="w-4 h-4" />
@@ -409,7 +466,7 @@ export const VendorOpsPage: React.FC = () => {
             {counts.pendingCount > 0 && (
               <span
                 className={`px-1.5 py-0.2 text-[10px] rounded-full font-black ${
-                  activeTab === 'PENDING' ? 'bg-slate-950 text-amber-400' : 'bg-amber-500/15 text-amber-700 dark:text-amber-300'
+                  activeTab === 'PENDING' ? 'bg-blue-900 text-white' : 'bg-blue-500/20 text-blue-300'
                 }`}
               >
                 {counts.pendingCount}
@@ -506,7 +563,7 @@ export const VendorOpsPage: React.FC = () => {
                 placeholder="Tìm theo mã vận đơn, tên shop, người bán, cảnh báo rủi ro..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl pl-9 pr-4 py-2.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-amber-500"
+                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl pl-9 pr-4 py-2.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-blue-500"
               />
             </div>
 
@@ -514,7 +571,7 @@ export const VendorOpsPage: React.FC = () => {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-300 focus:outline-none focus:border-amber-500"
+                className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-300 focus:outline-none focus:border-blue-500"
               >
                 <option value="">Tất cả trạng thái chờ</option>
                 <option value="PENDING_VERIFICATION">Chờ Duyệt (PENDING_VERIFICATION)</option>
@@ -547,7 +604,7 @@ export const VendorOpsPage: React.FC = () => {
                 {loading ? (
                   <tr>
                     <td colSpan={5} className="p-8 text-center text-slate-400">
-                      <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-amber-400" />
+                      <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-blue-500" />
                       Đang tải danh sách đơn cần thẩm duyệt...
                     </td>
                   </tr>
@@ -572,7 +629,7 @@ export const VendorOpsPage: React.FC = () => {
                           className={`inline-block mt-1 text-[10px] px-2 py-0.5 rounded font-bold ${
                             order.status === 'SUSPENDED_RISK_REVIEW'
                               ? 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30'
-                              : 'bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30'
+                              : 'bg-blue-500/15 text-blue-800 dark:text-blue-300 border border-blue-500/30'
                           }`}
                         >
                           {order.status}
@@ -643,7 +700,7 @@ export const VendorOpsPage: React.FC = () => {
                                 </div>
                               )}
                               {cleanReason && (
-                                <p className="text-[11px] text-amber-900 dark:text-amber-300 leading-snug bg-amber-50 dark:bg-amber-500/10 p-2 rounded-lg border border-amber-200 dark:border-amber-500/20 font-medium">
+                                <p className="text-[11px] text-blue-900 dark:text-blue-300 leading-snug bg-blue-50 dark:bg-blue-500/10 p-2 rounded-lg border border-blue-200 dark:border-blue-500/20 font-medium">
                                   {cleanReason}
                                 </p>
                               )}
@@ -1011,7 +1068,7 @@ export const VendorOpsPage: React.FC = () => {
                           className={`font-bold text-[10px] px-2 py-0.5 rounded border inline-flex items-center gap-1 ${
                             s.kycStatus === 'VERIFIED_KYC' || s.kycStatus === 'APPROVED'
                               ? 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-400 border-emerald-500/30'
-                              : 'bg-amber-500/15 text-amber-800 dark:text-amber-400 border-amber-500/30'
+                              : 'bg-blue-500/15 text-blue-800 dark:text-blue-300 border-blue-500/30'
                           }`}
                         >
                           {s.kycStatus === 'APPROVED' || s.kycStatus === 'VERIFIED_KYC' ? 'ĐÃ DUYỆT' : s.kycStatus}
@@ -1020,7 +1077,7 @@ export const VendorOpsPage: React.FC = () => {
                       <td className="p-3.5 font-bold text-slate-900 dark:text-slate-200">{s.totalOrders} đơn</td>
                       <td className="p-3.5">
                         <span className="text-rose-700 dark:text-rose-400 font-semibold">{s.cancelledOrders} hủy</span> /{' '}
-                        <span className="text-amber-700 dark:text-amber-400 font-semibold">{s.suspendedOrders} đình chỉ</span>
+                        <span className="text-blue-700 dark:text-blue-400 font-semibold">{s.suspendedOrders} đình chỉ</span>
                       </td>
                       <td className="p-3.5">
                         <span

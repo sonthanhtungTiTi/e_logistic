@@ -33,30 +33,27 @@ body {
 }
 
 /* ==========================================================================
-   Ultra-Synchronized 0.15s Theme Transition (Color, Background, Border, Shadow)
+   Smooth 0.25s Theme Transition (Background, Color, Border)
    ========================================================================== */
 body,
+#root,
 aside,
 header,
 footer,
 main,
-div,
+nav,
 section,
 article,
-nav,
-p,
-span,
-h1, h2, h3, h4, h5, h6,
-button,
-a,
+.glass-panel,
+.glass-card,
 input,
 select,
 textarea,
-table, tr, th, td,
-svg, path {
-  transition-property: background-color, color, border-color, fill, stroke, box-shadow;
-  transition-duration: 0.15s !important;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1) !important;
+button,
+a,
+h1, h2, h3, h4, h5, h6,
+p, label, span, strong, td, th {
+  transition: background-color 0.25s ease-out, color 0.25s ease-out, border-color 0.25s ease-out;
 }
 
 /* ==========================================================================
@@ -71,7 +68,7 @@ body.light-theme {
 }
 
 body.light-theme #root,
-body.light-theme #root > div {
+body.light-theme #root>div {
   background-color: #f8fafc !important;
   color: #0f172a !important;
 }
@@ -455,39 +452,47 @@ body.light-theme .bg-blue-500\/20 {
 }
 
 /* SOLID PRIMARY BUTTONS: MUST PRESERVE WHITE TEXT IN LIGHT MODE */
-body.light-theme .bg-blue-600,
-body.light-theme .bg-blue-500,
-body.light-theme .bg-cyan-600,
-body.light-theme .bg-cyan-500,
-body.light-theme .bg-emerald-600,
-body.light-theme .bg-emerald-500,
-body.light-theme .bg-indigo-600,
-body.light-theme .bg-purple-600,
-body.light-theme .bg-rose-600,
+body.light-theme button.bg-blue-600,
+body.light-theme button.bg-blue-500,
+body.light-theme button.bg-cyan-600,
+body.light-theme button.bg-cyan-500,
+body.light-theme button.bg-emerald-600,
+body.light-theme button.bg-emerald-500,
+body.light-theme button.bg-indigo-600,
+body.light-theme button.bg-purple-600,
+body.light-theme button.bg-rose-600,
 body.light-theme .shimmer-btn,
-body.light-theme [class*="from-blue-"],
-body.light-theme [class*="from-cyan-"],
-body.light-theme [class*="from-emerald-"] {
+body.light-theme button[class*="from-"],
+body.light-theme a[class*="from-"] {
   color: #ffffff !important;
 }
 
-body.light-theme .bg-blue-600 *,
-body.light-theme .bg-blue-500 *,
-body.light-theme .bg-cyan-600 *,
-body.light-theme .bg-cyan-500 *,
-body.light-theme .bg-emerald-600 *,
-body.light-theme .bg-emerald-500 *,
-body.light-theme .bg-indigo-600 *,
-body.light-theme .bg-purple-600 *,
-body.light-theme .bg-rose-600 *,
+body.light-theme button.bg-blue-600 *,
+body.light-theme button.bg-blue-500 *,
+body.light-theme button.bg-cyan-600 *,
+body.light-theme button.bg-cyan-500 *,
+body.light-theme button.bg-emerald-600 *,
+body.light-theme button.bg-emerald-500 *,
+body.light-theme button.bg-indigo-600 *,
+body.light-theme button.bg-purple-600 *,
+body.light-theme button.bg-rose-600 *,
 body.light-theme .shimmer-btn *,
-body.light-theme [class*="from-blue-"] *,
-body.light-theme [class*="from-cyan-"] * {
+body.light-theme button[class*="from-"] *,
+body.light-theme a[class*="from-"] * {
   color: #ffffff !important;
+}
+
+/* Gradient text headings: MUST retain clipping & transparent fill in light mode */
+body.light-theme .text-transparent,
+body.light-theme [class*="text-transparent"],
+body.light-theme .bg-clip-text,
+body.light-theme .hero-gradient-text {
+  -webkit-text-fill-color: transparent !important;
+  color: transparent !important;
 }
 
 /* Inputs, Selects & Options */
-body.light-theme input,
+body.light-theme input:not(.bg-transparent),
 body.light-theme select,
 body.light-theme textarea,
 body.light-theme .glass-input {
@@ -496,11 +501,18 @@ body.light-theme .glass-input {
   color: #0f172a !important;
 }
 
-body.light-theme input[type="text"],
-body.light-theme input[type="number"],
-body.light-theme input[type="password"],
-body.light-theme input[type="email"],
-body.light-theme input[type="tel"] {
+body.light-theme input.bg-transparent {
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: #0f172a !important;
+}
+
+body.light-theme input[type="text"]:not(.bg-transparent),
+body.light-theme input[type="number"]:not(.bg-transparent),
+body.light-theme input[type="password"]:not(.bg-transparent),
+body.light-theme input[type="email"]:not(.bg-transparent),
+body.light-theme input[type="tel"]:not(.bg-transparent) {
   color: #0f172a !important;
   background-color: #ffffff !important;
 }
@@ -513,6 +525,35 @@ body.light-theme option {
 body.light-theme input::placeholder,
 body.light-theme textarea::placeholder {
   color: #94a3b8 !important;
+}
+
+/* Hero Section Dedicated Styling in Light Mode */
+body.light-theme .hero-search-card {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  color: #0f172a !important;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.07) !important;
+}
+
+body.light-theme .hero-search-card h1 {
+  color: #0f172a !important;
+}
+
+body.light-theme .hero-search-card p {
+  color: #475569 !important;
+}
+
+body.light-theme .hero-search-card .search-box-wrapper {
+  background-color: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+
+body.light-theme .hero-search-card .stat-number {
+  color: #0f172a !important;
+}
+
+body.light-theme .hero-search-card .stat-label {
+  color: #64748b !important;
 }
 
 /* Tables & Grid Overrides */
@@ -543,23 +584,40 @@ body.light-theme tr:hover {
 }
 
 /* General Text Overrides for Light Theme */
+body.light-theme .text-white:not(button *):not(a.bg-gradient-to-r *):not(.bg-blue-600 *):not(.bg-blue-500 *):not(.bg-emerald-600 *):not(.bg-emerald-500 *):not(.bg-cyan-600 *):not(.bg-indigo-600 *):not(.bg-purple-600 *):not(.bg-rose-600 *):not(.shimmer-btn *):not(.text-transparent):not([class*="text-transparent"]):not(.bg-blue-600):not(.bg-emerald-600):not(.bg-rose-600):not(.bg-purple-600):not(.bg-indigo-600) {
+  color: #0f172a !important;
+}
+
+body.light-theme strong.text-white,
+body.light-theme span.text-white:not(button *):not(a.bg-gradient-to-r *):not(.bg-blue-600 *):not(.bg-blue-500 *):not(.bg-emerald-600 *):not(.bg-emerald-500 *):not(.bg-cyan-600 *):not(.bg-indigo-600 *):not(.bg-purple-600 *):not(.bg-rose-600 *):not(.shimmer-btn *):not(.text-transparent):not([class*="text-transparent"]),
+body.light-theme p.text-white,
+body.light-theme div.text-white:not(button *):not(a.bg-gradient-to-r *):not(.bg-blue-600 *):not(.bg-blue-500 *):not(.bg-emerald-600 *):not(.bg-emerald-500 *):not(.bg-cyan-600 *):not(.bg-indigo-600 *):not(.bg-purple-600 *):not(.bg-rose-600 *):not(.shimmer-btn *):not(.text-transparent):not([class*="text-transparent"]),
+body.light-theme td.text-white,
+body.light-theme th.text-white,
+body.light-theme label.text-white {
+  color: #0f172a !important;
+}
+
 body.light-theme .text-slate-100,
 body.light-theme .text-slate-200,
 body.light-theme .text-slate-300 {
   color: #0f172a !important;
 }
 
-body.light-theme .text-slate-400,
-body.light-theme .text-slate-500 {
+body.light-theme .text-slate-400 {
   color: #475569 !important;
 }
 
-body.light-theme h1, 
-body.light-theme h2, 
-body.light-theme h3, 
-body.light-theme h4, 
-body.light-theme h5, 
-body.light-theme h6 {
+body.light-theme .text-slate-500 {
+  color: #64748b !important;
+}
+
+body.light-theme h1:not(.text-transparent):not([class*="text-transparent"]),
+body.light-theme h2:not(.text-transparent):not([class*="text-transparent"]),
+body.light-theme h3:not(.text-transparent):not([class*="text-transparent"]),
+body.light-theme h4:not(.text-transparent):not([class*="text-transparent"]),
+body.light-theme h5:not(.text-transparent):not([class*="text-transparent"]),
+body.light-theme h6:not(.text-transparent):not([class*="text-transparent"]) {
   color: #0f172a !important;
 }
 
@@ -661,10 +719,12 @@ body.light-theme .text-purple-400 {
     transform: scale(0.95);
     opacity: 0.8;
   }
+
   50% {
     transform: scale(1.08);
     opacity: 0.4;
   }
+
   100% {
     transform: scale(0.95);
     opacity: 0.8;
@@ -676,9 +736,12 @@ body.light-theme .text-purple-400 {
 }
 
 @keyframes float-gentle {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateY(0px);
   }
+
   50% {
     transform: translateY(-8px);
   }
@@ -692,6 +755,7 @@ body.light-theme .text-purple-400 {
   0% {
     background-position: -200% 0;
   }
+
   100% {
     background-position: 200% 0;
   }

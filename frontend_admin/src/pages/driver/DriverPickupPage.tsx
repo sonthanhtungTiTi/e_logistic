@@ -415,7 +415,7 @@ export const DriverPickupPage: React.FC = () => {
           <div className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 text-xs space-y-2.5 shadow-sm">
             <div className="flex items-center justify-between font-bold text-white border-b border-slate-800/80 pb-2">
               <span className="flex items-center gap-1.5 text-cyan-300">
-                <Clock className="w-4 h-4 text-amber-400" /> Nhiệm Vụ Thu Gom Theo Ngày
+                <Clock className="w-4 h-4 text-blue-400" /> Nhiệm Vụ Thu Gom Theo Ngày
               </span>
               <span className="font-mono text-[11px] text-cyan-400 bg-cyan-950 px-2 py-0.5 rounded-full border border-cyan-800">
                 Hôm Nay: {todayPendingCount} đơn
@@ -444,13 +444,13 @@ export const DriverPickupPage: React.FC = () => {
                 onClick={() => setScheduleDateFilter('PREVIOUS')}
                 className={`py-1.5 px-2 rounded-lg font-bold transition flex items-center justify-center gap-1 cursor-pointer ${
                   scheduleDateFilter === 'PREVIOUS'
-                    ? 'bg-amber-600 text-white shadow-sm'
+                    ? 'bg-blue-600 text-white shadow-sm'
                     : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
                 <span>Ngày trước</span>
                 {previousPendingCount > 0 ? (
-                  <span className="px-1.5 py-0.2 bg-amber-950 text-amber-200 rounded-full text-[10px] font-mono font-bold animate-pulse">
+                  <span className="px-1.5 py-0.2 bg-blue-950 text-blue-200 rounded-full text-[10px] font-mono font-bold animate-pulse">
                     {previousPendingCount}
                   </span>
                 ) : (
@@ -539,7 +539,7 @@ export const DriverPickupPage: React.FC = () => {
                   <div
                     key={ord.trackingCode || ord._id}
                     className={`bg-slate-900 border rounded-2xl p-4 space-y-3 transition shadow-md ${
-                      ordIsToday ? 'border-slate-800 hover:border-slate-700' : 'border-amber-500/40 bg-amber-950/10'
+                      ordIsToday ? 'border-slate-800 hover:border-slate-700' : 'border-blue-500/40 bg-blue-950/10'
                     }`}
                   >
                     {/* Header line */}
@@ -551,14 +551,14 @@ export const DriverPickupPage: React.FC = () => {
                             ✨ Gom Hôm Nay
                           </span>
                         ) : (
-                          <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-bold">
+                          <span className="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/40 text-[10px] font-bold">
                             ⚠️ Tồn Từ {new Date(ordDate).toLocaleDateString('vi-VN')}
                           </span>
                         )}
                       </div>
                       <span className="text-[11px] text-slate-400 font-mono">
                         {ord.codAmount > 0 ? (
-                          <span className="text-amber-400 font-bold">COD: {ord.codAmount.toLocaleString('vi-VN')}đ</span>
+                          <span className="text-blue-400 font-bold">COD: {ord.codAmount.toLocaleString('vi-VN')}đ</span>
                         ) : (
                           <span className="text-emerald-400">0đ COD</span>
                         )}
@@ -570,7 +570,7 @@ export const DriverPickupPage: React.FC = () => {
                       <div className="flex items-start justify-between">
                         <div>
                           <p className="font-bold text-white flex items-center gap-1.5">
-                            <User className="w-3.5 h-3.5 text-amber-400" />
+                            <User className="w-3.5 h-3.5 text-blue-400" />
                             {ord.pickupAddress?.fullName || ord.sellerId?.companyName || ord.sellerId?.fullName || 'Shop Seller'}
                           </p>
                           {ord.pickupAddress?.phone && (
@@ -874,7 +874,7 @@ export const DriverPickupPage: React.FC = () => {
 
             {/* Sender / Pickup Info */}
             <div className="p-3.5 bg-slate-950/80 rounded-2xl border border-slate-800 space-y-2">
-              <span className="text-[11px] font-bold text-amber-400 uppercase flex items-center gap-1.5">
+              <span className="text-[11px] font-bold text-blue-400 uppercase flex items-center gap-1.5">
                 <User className="w-3.5 h-3.5" /> Địa Điểm Lấy Hàng (Kho Seller)
               </span>
               <div className="text-xs space-y-1">
@@ -943,7 +943,7 @@ export const DriverPickupPage: React.FC = () => {
                 </div>
                 <div className="flex justify-between border-b border-slate-900 pb-1">
                   <span className="text-slate-400">Tiền Thu Hộ COD:</span>
-                  <span className="font-mono text-amber-400 font-bold">
+                  <span className="font-mono text-blue-400 font-bold">
                     {selectedOrderForDetail.codAmount?.toLocaleString('vi-VN')} đ
                   </span>
                 </div>

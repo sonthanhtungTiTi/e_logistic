@@ -19,25 +19,25 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <header className="sticky top-0 z-40 w-full glass-panel border-b border-slate-800/80 transition-all">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
-        
+
         {/* Brand Logo */}
-        <div 
+        <div
           onClick={() => setActiveTab('home')}
           className="flex items-center gap-3 cursor-pointer group"
         >
-          <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-blue-600 via-cyan-500 to-indigo-500 flex items-center justify-center shadow-lg shadow-blue-500/25 group-hover:scale-105 transition-transform duration-200">
-            <Truck className="w-6 h-6 text-white" />
+          <div className="h-12 sm:h-14 flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
+            <img src="/logo.png" alt="GIAO HÀNG Logo" className="h-12 sm:h-14 w-auto object-contain drop-shadow-md" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <span className="font-extrabold text-xl tracking-tight text-white group-hover:text-blue-400 transition-colors">
-                E-LOGISTIC
-              </span>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 flex items-center gap-1">
-                <Cpu className="w-3 h-3" /> AI Freight
-              </span>
-            </div>
-            <p className="text-[11px] text-slate-400 font-medium">Smart Supply Chain & Courier Platform</p>
+            <span className="font-black text-xl sm:text-2xl tracking-tight text-blue-600 dark:text-blue-400 group-hover:text-blue-500 transition-colors block leading-tight">
+              GIAO HÀNG
+            </span>
+            <p className="text-[11px] text-slate-600 dark:text-slate-300 font-medium leading-none mt-0.5">
+              giao hàng tận tay bạn
+            </p>
+            <p className="text-[9px] font-bold tracking-wider text-slate-400 dark:text-slate-400 uppercase mt-0.5">
+              NHANH CHÓNG • TIN CẬY • MỌI NƠI
+            </p>
           </div>
         </div>
 
@@ -45,11 +45,10 @@ export const Navbar: React.FC<NavbarProps> = ({
         <nav className="hidden lg:flex items-center gap-1 bg-slate-900/60 p-1.5 rounded-2xl border border-slate-800">
           <button
             onClick={() => setActiveTab('home')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
-              activeTab === 'home'
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${activeTab === 'home'
                 ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
                 : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
-            }`}
+              }`}
           >
             <Search className="w-4 h-4" />
             Tra Cứu & Trang Chủ
@@ -57,11 +56,10 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           <button
             onClick={() => setActiveTab('calculator')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
-              activeTab === 'calculator'
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${activeTab === 'calculator'
                 ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
                 : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
-            }`}
+              }`}
           >
             <Calculator className="w-4 h-4" />
             Tính Cước & Trọng Lượng
@@ -69,11 +67,10 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           <button
             onClick={() => setActiveTab('seller')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
-              activeTab === 'seller'
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${activeTab === 'seller'
                 ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
                 : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
-            }`}
+              }`}
           >
             <Package className="w-4 h-4" />
             Kênh Chủ Hàng / Seller
@@ -81,11 +78,10 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           <button
             onClick={() => setActiveTab('driver')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
-              activeTab === 'driver'
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${activeTab === 'driver'
                 ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
                 : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
-            }`}
+              }`}
           >
             <Truck className="w-4 h-4" />
             Ứng Dụng Tài Xế

@@ -20,18 +20,6 @@ export const AdminSidebar: React.FC = () => {
       roles: [UserRole.ADMIN, UserRole.OPERATIONS, UserRole.DISPATCHER, UserRole.HUB_COORDINATOR],
     },
     {
-      to: '/admin/orders/approval',
-      label: 'Duyệt Đơn Hàng (Approval)',
-      icon: ShieldCheck,
-      roles: [UserRole.ADMIN, UserRole.OPERATIONS, UserRole.DISPATCHER],
-    },
-    {
-      to: '/admin/dispatch',
-      label: 'Điều Phối Gom Hàng (Dispatch)',
-      icon: Truck,
-      roles: [UserRole.ADMIN, UserRole.OPERATIONS, UserRole.DISPATCHER],
-    },
-    {
       to: '/admin/orders',
       label: 'Tất Cả Đơn Hàng (Global List)',
       icon: Package,
@@ -48,7 +36,7 @@ export const AdminSidebar: React.FC = () => {
       to: '/admin/vendor-ops',
       label: 'Duyệt Đơn & NCC (QL 1)',
       icon: Building2,
-      roles: [UserRole.ADMIN, UserRole.ORDER_VENDOR_MANAGER],
+      roles: [UserRole.ADMIN, UserRole.ORDER_VENDOR_MANAGER, UserRole.OPERATIONS, UserRole.DISPATCHER],
     },
     {
       to: '/admin/dispatch/local',
@@ -63,6 +51,12 @@ export const AdminSidebar: React.FC = () => {
       roles: [UserRole.ADMIN, UserRole.LINE_HAUL_DISPATCHER, UserRole.DISPATCHER, UserRole.OPERATIONS],
     },
     {
+      to: '/admin/kyc',
+      label: 'Xác Minh Danh Tính (KYC)',
+      icon: ShieldCheck,
+      roles: [UserRole.ADMIN, UserRole.CS, 'ADMIN', 'CS'],
+    },
+    {
       to: '/admin/reports',
       label: 'Báo Cáo Tỷ Lệ SLA & Vận Hành',
       icon: BarChart3,
@@ -73,12 +67,6 @@ export const AdminSidebar: React.FC = () => {
       label: 'Quản Lý Người Dùng & Khóa',
       icon: Users,
       roles: [UserRole.ADMIN],
-    },
-    {
-      to: '/admin/kyc',
-      label: 'Xác Minh Danh Tính (KYC)',
-      icon: ShieldCheck,
-      roles: [UserRole.ADMIN, UserRole.CS, 'ADMIN', 'CS'],
     },
     {
       to: '/admin/security',
@@ -97,13 +85,11 @@ export const AdminSidebar: React.FC = () => {
   return (
     <aside className="w-64 bg-slate-950/90 border-r border-slate-800 p-4 flex flex-col justify-between hidden md:flex shrink-0">
       <div className="space-y-6">
-        <div className="flex items-center gap-2.5 px-2">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white font-black">
-            E
-          </div>
+        <div className="flex items-center gap-3 px-2">
+          <img src="/logo.png" alt="GIAO HÀNG Logo" className="h-11 w-auto object-contain shrink-0 drop-shadow-sm" />
           <div>
-            <h1 className="text-sm font-black text-slate-900 dark:text-white tracking-wider">Mission Control</h1>
-            <span className="text-[10px] text-cyan-600 dark:text-cyan-400 font-bold uppercase tracking-widest block">Pharma Logistics v2.4</span>
+            <h1 className="text-sm font-black text-slate-900 dark:text-white tracking-wider text-color-blue">GIAO HÀNG</h1>
+            <span className="text-[10px] text-cyan-600 dark:text-cyan-400 font-bold uppercase tracking-widest block"> tận tay bạn!</span>
           </div>
         </div>
 

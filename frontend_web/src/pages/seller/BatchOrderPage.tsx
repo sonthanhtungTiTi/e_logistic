@@ -805,7 +805,7 @@ export const BatchOrderPage: React.FC = () => {
               onClick={() => setIsGuideOpen(true)}
               className="w-full px-3.5 py-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white text-xs font-semibold border border-slate-800 flex items-center gap-2.5 transition cursor-pointer"
             >
-              <HelpCircle className="w-4 h-4 text-amber-400 shrink-0" />
+              <HelpCircle className="w-4 h-4 text-blue-400 shrink-0" />
               <span>Hướng Dẫn Định Dạng</span>
             </button>
           </div>
@@ -922,7 +922,7 @@ export const BatchOrderPage: React.FC = () => {
             </div>
 
             <div className="glass-panel p-5 rounded-2xl border border-slate-800 space-y-2">
-              <div className="flex items-center gap-2 text-amber-400 font-bold text-xs">
+              <div className="flex items-center gap-2 text-sky-400 font-bold text-xs">
                 <Maximize2 className="w-4 h-4" /> 2. Kích Thước Dài - Rộng - Cao
               </div>
               <p className="text-xs text-slate-400 leading-relaxed">
@@ -1027,10 +1027,10 @@ export const BatchOrderPage: React.FC = () => {
             <div className="glass-panel p-4 rounded-2xl border border-slate-800 space-y-1">
               <span className="text-[11px] font-semibold text-slate-400 block">Tổng COD hợp lệ</span>
               <div className="flex items-center justify-between">
-                <span className="text-lg font-black text-amber-400 font-mono">
+                <span className="text-lg font-black text-sky-400 font-mono">
                   {totalCodSum.toLocaleString('vi-VN')} đ
                 </span>
-                <DollarSign className="w-5 h-5 text-amber-400" />
+                <DollarSign className="w-5 h-5 text-sky-400" />
               </div>
             </div>
           </div>
@@ -1176,7 +1176,7 @@ export const BatchOrderPage: React.FC = () => {
                         </td>
 
                         <td className="py-3 px-4 text-right font-mono">
-                          <div className="font-bold text-amber-400">
+                          <div className="font-bold text-sky-400">
                             {item.codAmount.toLocaleString('vi-VN')} đ
                           </div>
                           <div className="text-[10px] text-slate-500">
@@ -1455,7 +1455,7 @@ export const BatchOrderPage: React.FC = () => {
                         codAmount: parseDotsToNumber(e.target.value),
                       })
                     }
-                    className="w-full glass-input rounded-xl px-3 py-2 text-xs text-amber-400 font-mono bg-slate-950 border border-slate-800 outline-none text-right font-bold"
+                    className="w-full glass-input rounded-xl px-3 py-2 text-xs text-sky-400 font-mono bg-slate-950 border border-slate-800 outline-none text-right font-bold"
                   />
                 </div>
 
@@ -1543,7 +1543,7 @@ export const BatchOrderPage: React.FC = () => {
               <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
                 <div className="flex justify-between">
                   <span>Tiền thu hộ COD:</span>
-                  <span className="font-mono font-bold text-amber-400">
+                  <span className="font-mono font-bold text-sky-400">
                     {selectedItemForView.codAmount.toLocaleString('vi-VN')} đ
                   </span>
                 </div>
@@ -1574,7 +1574,7 @@ export const BatchOrderPage: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
           <div className="relative w-full max-w-4xl bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-5 text-white shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3 shrink-0">
-              <h3 className="text-base font-bold flex items-center gap-2 text-amber-400">
+              <h3 className="text-base font-bold flex items-center gap-2 text-blue-400">
                 <HelpCircle className="w-5 h-5" /> Hướng Dẫn Định Dạng & Cấu Trúc File Excel Chuẩn
               </h3>
               <button
@@ -1594,13 +1594,13 @@ export const BatchOrderPage: React.FC = () => {
                   <span className="font-bold text-slate-200 text-xs flex items-center gap-2">
                     <FileSpreadsheet className="w-4 h-4 text-emerald-400" /> Hình Ảnh Mẫu File Excel Nhập Đơn Hàng Hàng Loạt:
                   </span>
-                  <span className="text-[10px] text-slate-400 font-mono">13 Cột Chuẩn E-Logistics</span>
+                  <span className="text-[10px] text-slate-400 font-mono">13 Cột Chuẩn GIAO HÀNG</span>
                 </div>
                 
                 <div className="rounded-2xl border border-slate-700/80 overflow-hidden bg-slate-950 shadow-xl group relative">
                   <img
                     src="/excel_template_guide.png"
-                    alt="File Excel Mẫu Chuẩn Định Dạng E-Logistics"
+                    alt="File Excel Mẫu Chuẩn Định Dạng GIAO HÀNG"
                     className="w-full object-contain max-h-56 bg-slate-950 transition-transform group-hover:scale-[1.01]"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none" />
@@ -1658,7 +1658,7 @@ export const BatchOrderPage: React.FC = () => {
                         <td className="p-2 border-r border-slate-800">TP. Hồ Chí Minh</td>
                         <td className="p-2 border-r border-slate-800 text-emerald-400 font-semibold">Áo thun Polo Nam Premium</td>
                         <td className="p-2 border-r border-slate-800 text-center">2</td>
-                        <td className="p-2 border-r border-slate-800 text-amber-400 font-bold">0.5</td>
+                        <td className="p-2 border-r border-slate-800 text-sky-400 font-bold">0.5</td>
                         <td className="p-2 border-r border-slate-800 text-emerald-400">350.000</td>
                         <td className="p-2 border-r border-slate-800 text-emerald-400">350.000</td>
                         <td className="p-2 text-slate-400">Cho xem hàng trước khi nhận</td>
@@ -1674,7 +1674,7 @@ export const BatchOrderPage: React.FC = () => {
                         <td className="p-2 border-r border-slate-800">TP. Hồ Chí Minh</td>
                         <td className="p-2 border-r border-slate-800 text-emerald-400 font-semibold">Giày Sneakers Sport RunX</td>
                         <td className="p-2 border-r border-slate-800 text-center">1</td>
-                        <td className="p-2 border-r border-slate-800 text-amber-400 font-bold">1.2</td>
+                        <td className="p-2 border-r border-slate-800 text-sky-400 font-bold">1.2</td>
                         <td className="p-2 border-r border-slate-800 text-emerald-400">520.000</td>
                         <td className="p-2 border-r border-slate-800 text-emerald-400">520.000</td>
                         <td className="p-2 text-slate-400">Gọi trước khi giao 15 phút</td>
@@ -1685,9 +1685,9 @@ export const BatchOrderPage: React.FC = () => {
               </div>
 
               {/* Requirement Notes */}
-              <div className="p-4 rounded-2xl bg-cyan-950/40 border border-cyan-500/30 text-cyan-300 text-[11px] flex items-center justify-between gap-3">
+              <div className="p-4 rounded-2xl bg-blue-950/40 border border-blue-500/30 text-blue-200 text-[11px] flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
-                  <Lightbulb className="w-5 h-5 text-amber-400 shrink-0" />
+                  <Lightbulb className="w-5 h-5 text-blue-400 shrink-0" />
                   <span>
                     <strong>Mẹo Wizard 4 Bước:</strong> Bạn có thể dùng bất kỳ file Excel báo cáo nào (có các dòng thông tin cửa hàng ở trên), Wizard sẽ hỗ trợ chọn dòng Tiêu Đề và dòng Bắt Đầu Dữ Liệu cực kỳ linh hoạt!
                   </span>
@@ -1734,7 +1734,7 @@ export const BatchOrderPage: React.FC = () => {
             <div>
               <h3 className="text-xl font-black text-white">Tạo Đơn Hàng Loạt Thành Công!</h3>
               <p className="text-xs text-slate-300 mt-1">
-                Đã tạo thành công <strong className="text-emerald-400 font-mono text-sm">{createdOrdersResult.length}</strong> vận đơn mới vào hệ thống E-Logistics.
+                Đã tạo thành công <strong className="text-emerald-400 font-mono text-sm">{createdOrdersResult.length}</strong> vận đơn mới vào hệ thống GIAO HÀNG.
               </p>
             </div>
 
