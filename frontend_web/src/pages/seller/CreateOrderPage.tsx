@@ -31,6 +31,7 @@ import { OrderSuccessModal } from '../../components/orders/OrderSuccessModal';
 import { PrintWaybillModal } from '../../components/orders/PrintWaybillModal';
 import { OrderSubNav } from '../../components/orders/OrderSubNav';
 import { formatNumberWithDots, parseDotsToNumber } from '../../lib/formatters';
+import { productApi, type ProductItem as CatalogProductItem } from '../../api/product.api';
 
 interface ProductItem {
   id: number;
@@ -185,6 +186,43 @@ export const CreateOrderPage: React.FC = () => {
       ...prev,
       [id]: { ...prev[id], [field]: true },
     }));
+  };
+
+  // Danh mục sản phẩm mẫu lưu sẵn (Product Catalog)
+  const [catalogProducts, setCatalogProducts] = useState<CatalogProductItem[]>([]);
+
+  useEffect(() => {
+    productApi.getProducts().then((res) => {
+      const list = res.data?.data || res.data || [];
+      if (Array.isArray(list)) {
+        setCatalogProducts(list);
+      }
+    }).catch(() => {});
+  }, []);
+
+  const handleSelectCatalogProduct = (catalogId: string, itemIndex: number) => {
+    const found = catalogProducts.find((p) => p._id === catalogId);
+    if (!found) return;
+
+    setProducts((prev) => {
+      const updated = [...prev];
+      updated[itemIndex] = {
+        ...updated[itemIndex],
+        name: found.name,
+        price: found.priceVnd || 0,
+        weight: found.weightKg || 0.5,
+      };
+      return updated;
+    });
+
+    if (found.dimensions && found.dimensions.length && found.dimensions.width && found.dimensions.height) {
+      setDimensions({
+        length: found.dimensions.length,
+        width: found.dimensions.width,
+        height: found.dimensions.height,
+      });
+      setPackagePreset('custom');
+    }
   };
 
   // Package Presets & Dimensions (Dài x Rộng x Cao cm)
@@ -405,11 +443,6 @@ export const CreateOrderPage: React.FC = () => {
   // Calculated totals & dynamic estimated shipping fee
   const totalActualWeight = products.reduce(
     (sum, p) => sum + (Number(p.weight) || 0) * (Number(p.quantity) || 1),
-    0
-  );
-
-  const totalQuantity = products.reduce(
-    (sum, p) => sum + (Number(p.quantity) || 1),
     0
   );
 
@@ -1336,8 +1369,24 @@ export const CreateOrderPage: React.FC = () => {
                   key={product.id}
                   className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800/80 space-y-3"
                 >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400 font-mono">SP #{index + 1}</span>
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-slate-500 dark:text-slate-400 font-mono">SP #{index + 1}</span>
+                      {catalogProducts.length > 0 && (
+                        <select
+                          onChange={(e) => handleSelectCatalogProduct(e.target.value, index)}
+                          className="text-[11px] bg-white dark:bg-slate-950 border border-emerald-500/40 text-emerald-700 dark:text-emerald-300 rounded-lg px-2 py-0.5 max-w-[230px] focus:outline-none focus:border-emerald-500 cursor-pointer"
+                          defaultValue=""
+                        >
+                          <option value="" disabled>📦 Chọn từ sản phẩm mẫu...</option>
+                          {catalogProducts.map((cp) => (
+                            <option key={cp._id} value={cp._id} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                              {cp.name} ({cp.weightKg}kg - {formatNumberWithDots(cp.priceVnd)}đ)
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
                     {products.length > 1 && (
                       <button
                         type="button"

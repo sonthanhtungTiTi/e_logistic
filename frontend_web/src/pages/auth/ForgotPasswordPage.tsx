@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { KeyRound, Mail, Phone, Lock, CheckCircle2, AlertCircle, ArrowLeft, RefreshCw, ShieldCheck, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Mail, Phone, Lock, CheckCircle2, AlertCircle, ArrowLeft, RefreshCw, ShieldCheck, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { authApi } from '../../api/auth.api';
 
 export const ForgotPasswordPage: React.FC = () => {

@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router';
-import { LayoutDashboard, Package, Truck, Users, ShieldAlert, BarChart3, LogOut, ShieldCheck, Compass, Building2 } from 'lucide-react';
+import { LayoutDashboard, Package, Truck, Users, ShieldAlert, BarChart3, LogOut, ShieldCheck, Compass, Building2, DollarSign, Ticket } from 'lucide-react';
 import { useAdminAuth } from '../../hooks/useAdminAuth';
 import { usePendingKycCount } from '../../hooks/usePendingKycCount';
 import { UserRole } from '@/types/auth.types';
@@ -55,6 +55,18 @@ export const AdminSidebar: React.FC = () => {
       label: 'Xác Minh Danh Tính (KYC)',
       icon: ShieldCheck,
       roles: [UserRole.ADMIN, UserRole.CS, 'ADMIN', 'CS'],
+    },
+    {
+      to: '/admin/pricing',
+      label: 'Bảng Giá & Voucher (CMS)',
+      icon: DollarSign,
+      roles: [UserRole.ADMIN, UserRole.OPERATIONS, UserRole.ACCOUNTANT, 'ADMIN'],
+    },
+    {
+      to: '/admin/tickets',
+      label: 'Khiếu Nại & CSKH (Ticket)',
+      icon: Ticket,
+      roles: [UserRole.ADMIN, UserRole.CS, UserRole.CUSTOMER_SERVICE, UserRole.OPERATIONS, 'ADMIN', 'CS'],
     },
     {
       to: '/admin/reports',

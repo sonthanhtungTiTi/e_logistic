@@ -1,5 +1,5 @@
 import React from 'react';
-import { Truck, Shield, Phone, Mail, MapPin } from 'lucide-react';
+import { Shield, Phone, Mail, MapPin } from 'lucide-react';
 
 export const Footer: React.FC = () => {
   return (

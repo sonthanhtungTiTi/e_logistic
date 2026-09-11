@@ -1,4 +1,4 @@
-import { Truck, Calculator, UserCheck, Package, Cpu, Search, KeyRound } from 'lucide-react';
+import { Truck, Calculator, UserCheck, Package, Search, KeyRound } from 'lucide-react';
 import type { UserRole } from '../types';
 
 interface NavbarProps {

@@ -1,9 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  Truck,
   UserCheck,
   Package,
-  Cpu,
   KeyRound,
   User,
   Settings,

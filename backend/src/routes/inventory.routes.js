@@ -5,8 +5,8 @@ const { protect, authorize } = require('../middleware/auth.middleware');
 
 router.use(protect);
 
-const staffRoles = authorize('HUB_STAFF', 'HUB_COORDINATOR', 'ADMIN', 'WAREHOUSE_STAFF');
-const coordRoles = authorize('HUB_COORDINATOR', 'ADMIN');
+const staffRoles = authorize('HUB_STAFF', 'HUB_COORDINATOR', 'ADMIN', 'WAREHOUSE_STAFF', 'LINE_HAUL_DISPATCHER', 'DISPATCHER', 'OPERATIONS');
+const coordRoles = authorize('HUB_COORDINATOR', 'ADMIN', 'LINE_HAUL_DISPATCHER', 'DISPATCHER', 'OPERATIONS');
 
 // Lấy danh sách tồn kho + phân trang + bộ lọc
 router.get('/aging',                          staffRoles, ctrl.getAging);

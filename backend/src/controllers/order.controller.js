@@ -1,5 +1,6 @@
 const Order = require('../models/order.model');
 const orderService = require('../services/order.service');
+const ioSingleton = require('../lib/ioSingleton');
 
 /**
  * Background Task Helper: Notify Dispatcher when a routed order is cancelled (Step 8 & Alt 8.1)
@@ -407,6 +408,9 @@ const approveOrderHandler = async (req, res, next) => {
     order.flagFeeWarning = false;
 
     await order.save();
+
+    // Phát sự kiện realtime tới Admin và Seller
+    ioSingleton.emitOrderUpdate(order.sellerId, order);
 
     return res.status(200).json({
       success: true,

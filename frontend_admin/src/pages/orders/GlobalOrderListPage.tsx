@@ -7,16 +7,19 @@ import {
   AlertTriangle,
   RefreshCw,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Package,
 } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { adminOrderApi } from '../../api/order.api';
 import type { Order } from '../../types/order.types';
+import { socket } from '../../api/socket';
 
 export const GlobalOrderListPage: React.FC = () => {
   const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Filter States matching Wireframe 3
   const [searchTerm, setSearchTerm] = useState('');
@@ -52,12 +55,45 @@ export const GlobalOrderListPage: React.FC = () => {
   useEffect(() => {
     fetchOrders();
 
-    // Polling tự động làm mới danh sách đơn hàng mỗi 5 giây để đồng bộ Realtime
+    const handleOrderUpdate = (payload: any) => {
+      const updatedOrder = payload?.order || payload;
+      if (!updatedOrder) return;
+      const tracking = updatedOrder.trackingCode || payload?.trackingCode || 'Đơn hàng';
+      const status = updatedOrder.status || payload?.status || '';
+
+      setToastMessage(`⚡ Realtime: Đơn ${tracking} vừa cập nhật trạng thái [${status}]`);
+      setTimeout(() => setToastMessage(null), 5000);
+
+      // Cập nhật ngay trong state orders mà không cần chờ interval
+      setOrders((prev) => {
+        const targetId = updatedOrder._id || (updatedOrder as any).id;
+        const exists = prev.some((o) => (o._id || (o as any).id) === targetId);
+        if (exists) {
+          return prev.map((o) => ((o._id || (o as any).id) === targetId ? { ...o, ...updatedOrder } : o));
+        }
+        return [updatedOrder, ...prev];
+      });
+    };
+
+    if (socket) {
+      socket.on('order:status_changed', handleOrderUpdate);
+      socket.on('order:created', handleOrderUpdate);
+      socket.on('order:assigned', handleOrderUpdate);
+    }
+
+    // Polling tự động làm mới danh sách đơn hàng mỗi 10 giây để đồng bộ Realtime
     const intervalId = setInterval(() => {
       fetchOrders();
-    }, 5000);
+    }, 10000);
 
-    return () => clearInterval(intervalId);
+    return () => {
+      clearInterval(intervalId);
+      if (socket) {
+        socket.off('order:status_changed', handleOrderUpdate);
+        socket.off('order:created', handleOrderUpdate);
+        socket.off('order:assigned', handleOrderUpdate);
+      }
+    };
   }, [statusFilter, riskFilter, hubFilter]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -77,6 +113,14 @@ export const GlobalOrderListPage: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-12">
+      {/* Realtime Toast Notification */}
+      {toastMessage && (
+        <div className="p-3 bg-gradient-to-r from-cyan-950 to-blue-950 border border-cyan-500/40 rounded-2xl text-cyan-300 text-xs font-bold flex items-center justify-between shadow-lg shadow-cyan-900/20 animate-in fade-in slide-in-from-top-2">
+          <span>{toastMessage}</span>
+          <button onClick={() => setToastMessage(null)} className="text-cyan-400 hover:text-white px-2 py-0.5">✕</button>
+        </div>
+      )}
+
       {/* TẦNG 1: Page Header & KPI Cards Grid */}
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-4">

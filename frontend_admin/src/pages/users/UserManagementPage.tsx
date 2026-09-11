@@ -165,7 +165,7 @@ export const UserManagementPage: React.FC = () => {
   const totalUserCount = users.length;
   const shipperCount = users.filter(u => u.role === 'SHIPPER' || u.role === 'LOCAL_SHIPPER').length;
   const driverCount = users.filter(u => u.role === 'LINE_HAUL_DRIVER' || u.role === 'DRIVER').length;
-  const lockedCount = users.filter(u => u.isLocked || u.status === 'LOCKED').length;
+  const lockedCount = users.filter(u => !u.isActive || !!u.lockUntil).length;
 
   return (
     <div className="space-y-6 pb-12">

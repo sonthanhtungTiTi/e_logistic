@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { KeyRound, Mail, Lock, Truck, AlertCircle, Loader2, QrCode } from 'lucide-react';
+import { KeyRound, Mail, Lock, AlertCircle, Loader2, QrCode } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { authApi } from '../../api/auth.api';
 import { sellerApi } from '../../api/seller.api';

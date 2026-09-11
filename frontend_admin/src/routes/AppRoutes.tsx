@@ -30,6 +30,8 @@ import { VendorOpsPage } from '@/pages/vendorOps/VendorOpsPage';
 import { LocalDispatchPage } from '@/pages/dispatch/LocalDispatchPage';
 import { LineHaulDispatchPage } from '@/pages/dispatch/LineHaulDispatchPage';
 import { AdminKycPage } from '@/pages/kyc/AdminKycPage';
+import { PricingConfigPage } from '@/pages/admin/PricingConfigPage';
+import { TicketManagementPage } from '@/pages/support/TicketManagementPage';
 
 // ── Shipper PWA Pages ─────────────────────────────────────────────────────────
 import { ShipperZonePage } from '@/pages/shipper/ShipperZonePage';
@@ -214,6 +216,12 @@ export const AppRoutes: React.FC = () => {
           <Route element={<RoleBaseRoute allowedRoles={[UserRole.ADMIN, UserRole.OPERATIONS]} />}>
             <Route path="/admin/reports" element={<SlaReportPage />} />
           </Route>
+
+          {/* Cấu hình bảng giá phí ship & Voucher CMS */}
+          <Route path="/admin/pricing" element={<PricingConfigPage />} />
+
+          {/* Khiếu nại & Hỗ trợ Ticket (CSKH) */}
+          <Route path="/admin/tickets" element={<TicketManagementPage />} />
 
           <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
         </Route>

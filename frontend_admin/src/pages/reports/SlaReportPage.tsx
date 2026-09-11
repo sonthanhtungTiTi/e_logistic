@@ -1,5 +1,5 @@
 import React from 'react';
-import { BarChart3, CheckCircle2, AlertTriangle, Clock, RefreshCw, Zap, TrendingUp, ShieldCheck } from 'lucide-react';
+import { BarChart3, CheckCircle2, AlertTriangle, Clock, RefreshCw, Zap, ShieldCheck } from 'lucide-react';
 
 export const SlaReportPage: React.FC = () => {
   return (

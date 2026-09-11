@@ -16,6 +16,7 @@ import { CodWalletPage } from '../pages/seller/CodWalletPage';
 import { PayoutHistoryPage } from '../pages/seller/PayoutHistoryPage';
 import { TicketListPage } from '../pages/seller/TicketListPage';
 import { CreateTicketPage } from '../pages/seller/CreateTicketPage';
+import { ProductListPage } from '../pages/seller/ProductListPage';
 import { ProfilePage } from '../pages/seller/ProfilePage';
 
 import { ProtectedRoute } from './ProtectedRoute';
@@ -55,6 +56,14 @@ export const AppRoutes: React.FC = () => {
         element={
           <ProtectedRoute>
             <CreateOrderPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/seller/products"
+        element={
+          <ProtectedRoute>
+            <ProductListPage />
           </ProtectedRoute>
         }
       />

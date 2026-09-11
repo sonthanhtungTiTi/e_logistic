@@ -39,6 +39,7 @@ const orderSchema = new mongoose.Schema(
         'SELLER_PREPARING',
         'PENDING_APPROVAL',
         'APPROVED',
+        'CONFIRMED',
         'ASSIGNED_TO_PICKUP_AND_DELIVERY',
         'ASSIGNED_TO_PICKUP',
         'PENDING_VERIFICATION',
