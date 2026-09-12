@@ -62,6 +62,11 @@ class CustodyController {
         if (actualCod !== undefined && actualCod !== null) {
           order.collectedCodAmount = Number(actualCod);
         }
+        if (!order.deliveryTripId && (req.user?._id || req.user?.id)) {
+          const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+          const shipperSuffix = String(req.user._id || req.user.id).slice(-4).toUpperCase();
+          order.deliveryTripId = `DLV-${todayStr}-${shipperSuffix}`;
+        }
         await order.save();
 
         await OrderTrackingLog.create({

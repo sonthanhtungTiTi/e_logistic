@@ -193,6 +193,24 @@ export const WarehouseInboundPage: React.FC = () => {
       const errMsg = err.response?.data?.message || 'Lỗi quét kiện hàng (Xung đột hoặc Mã không hợp lệ)';
       const errCode = err.response?.data?.code;
 
+      // Nhận diện lỗi đơn hàng chưa được Shipper lấy từ Shop (Chặn nhảy cóc trạng thái)
+      if (errCode === 'ORDER_NOT_YET_PICKED') {
+        toast.error(`🚫 CẢNH BÁO: ${errMsg}`, { duration: 6000 });
+        const failedLog: ScanItemLog = {
+          id: `${Date.now()}-${Math.random()}`,
+          tracking_code: cleanCode,
+          status: 'CHƯA LẤY TỪ SHOP',
+          next_action: 'CHỜ SHIPPER GOM',
+          is_flagged: true,
+          time: new Date().toLocaleTimeString('vi-VN'),
+          isSuccess: false,
+          errorMessage: errMsg,
+        };
+        setScanLogs((prev) => [failedLog, ...prev]);
+        setStats((prev) => ({ ...prev, total: prev.total + 1, failed: prev.failed + 1 }));
+        return;
+      }
+
       // Nhận diện lỗi quét trùng (Đã nhập kho rồi)
       const isDuplicate = errCode === 'INVALID_STATE_TRANSITION' && errMsg.includes('không hợp lệ để nhập kho tại Hub này');
 

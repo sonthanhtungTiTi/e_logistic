@@ -71,13 +71,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     if (token && token !== 'undefined' && token !== 'null') {
       localStorage.setItem('token', token);
-      // Kiểm tra tính hiệu lực của Token với Backend ngay khi mở lại trang
-      axiosClient.get('/auth/profile').catch((err) => {
-        if (err.response?.status === 401 || err.response?.status === 403) {
-          console.warn('⚠️ Phiên làm việc đã hết hạn. Đang đăng xuất...');
-          logout();
-        }
-      });
+      // Kiểm tra tính hiệu lực của Token với Backend và đồng bộ thông tin tài khoản
+      axiosClient
+        .get('/auth/profile')
+        .then((res) => {
+          if (res.data) {
+            const p = res.data;
+            updateUser({
+              fullName: p.fullName,
+              phoneNumber: p.phoneNumber,
+              address: p.address,
+              companyName: p.companyName,
+              kycStatus: p.kycStatus,
+              kycVerified: p.kycVerified,
+            });
+          }
+        })
+        .catch((err) => {
+          if (err.response?.status === 401 || err.response?.status === 403) {
+            console.warn('⚠️ Phiên làm việc đã hết hạn. Đang đăng xuất...');
+            logout();
+          }
+        });
     } else if (!token) {
       localStorage.removeItem('token');
     }

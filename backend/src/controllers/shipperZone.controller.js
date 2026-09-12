@@ -1,4 +1,5 @@
 const User = require('../models/user.model');
+const Order = require('../models/order.model');
 
 class ShipperZoneController {
   /**
@@ -8,7 +9,7 @@ class ShipperZoneController {
   async getShipperProfile(req, res, next) {
     try {
       const user = await User.findById(req.user._id || req.user.id).select(
-        'fullName email phoneNumber role vehicleInfo isWorking operatingArea zoneChangeRequest hubId kycStatus'
+        'fullName email phoneNumber role vehicleInfo isWorking operatingArea zoneChangeRequest hubId kycStatus pickupQuota deliveryQuota maxWeightCapacityKg currentWeightKg shiftStartedAt shiftEndedAt'
       );
       if (!user) {
         return res.status(404).json({ success: false, message: 'Không tìm thấy thông tin tài khoản' });
@@ -45,7 +46,47 @@ class ShipperZoneController {
         };
       }
       if (typeof isWorking === 'boolean') {
+        const wasWorking = user.isWorking;
         user.isWorking = isWorking;
+
+        if (wasWorking && !isWorking) {
+          // Shipper TẮT CA: Tự động thu hồi đơn READY_TO_PICK chưa kịp lấy để chuyển ca
+          const unpickedOrders = await Order.find({
+            status: 'READY_TO_PICK',
+            $or: [{ pickupShipperId: user._id }, { currentDriverId: user._id }],
+          });
+
+          if (unpickedOrders.length > 0) {
+            const unpickedIds = unpickedOrders.map((o) => o._id);
+            const unpickedWeight = unpickedOrders.reduce((sum, o) => sum + Number(o.actualWeight || o.declaredWeight || 1), 0);
+
+            await Order.updateMany(
+              { _id: { $in: unpickedIds } },
+              {
+                $set: {
+                  pickupShipperId: null,
+                  currentDriverId: null,
+                  isRolloverOrder: true,
+                  rolloverReason: 'SHIFT_ENDED_UNPICKED',
+                  agingPriority: 'HIGH',
+                },
+                $inc: { rolloverCount: 1 },
+              }
+            );
+
+            if (user.pickupQuota) {
+              user.pickupQuota.current = Math.max(0, (user.pickupQuota.current || 0) - unpickedOrders.length);
+            }
+            if (user.tripCapacity) {
+              user.tripCapacity.currentParcels = Math.max(0, (user.tripCapacity.currentParcels || 0) - unpickedOrders.length);
+              user.tripCapacity.currentWeightKg = Math.max(0, Math.round(((user.tripCapacity.currentWeightKg || 0) - unpickedWeight) * 100) / 100);
+            }
+            user.currentWeightKg = Math.max(0, Math.round(((user.currentWeightKg || 0) - unpickedWeight) * 100) / 100);
+          }
+          user.shiftEndedAt = new Date();
+        } else if (!wasWorking && isWorking) {
+          user.shiftStartedAt = new Date();
+        }
       }
 
       await user.save();

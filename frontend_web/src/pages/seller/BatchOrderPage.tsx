@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { orderApi } from '../../api/order.api';
+import { sellerApi } from '../../api/seller.api';
 import type { CreateOrderPayload, Order } from '../../types/order.types';
 import { OrderSubNav } from '../../components/orders/OrderSubNav';
 import { formatNumberWithDots, parseDotsToNumber } from '../../lib/formatters';
@@ -61,6 +62,45 @@ export const BatchOrderPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Default Pickup Address
+  const [pickupAddress, setPickupAddress] = useState({
+    fullName: user?.fullName || 'Shop An Bình',
+    phone: user?.phoneNumber || '0901234567',
+    address: user?.address || '123 Nguyễn Văn Cừ',
+    ward: 'Phường 1',
+    district: 'Quận 5',
+    province: 'TP Hồ Chí Minh',
+  });
+
+  useEffect(() => {
+    sellerApi
+      .getPickupAddresses()
+      .then((res) => {
+        const list = res.data || [];
+        if (list.length > 0) {
+          const def = list.find((a: any) => a.isDefault) || list[0];
+          if (def) {
+            setPickupAddress({
+              fullName: def.contactName || user?.fullName || 'Shop An Bình',
+              phone: def.contactPhone || user?.phoneNumber || '0901234567',
+              address: def.addressDetail || user?.address || '123 Nguyễn Văn Cừ',
+              ward: def.ward || 'Phường 1',
+              district: def.district || 'Quận 5',
+              province: def.province || 'TP Hồ Chí Minh',
+            });
+          }
+        } else if (user) {
+          setPickupAddress((prev) => ({
+            ...prev,
+            fullName: user.fullName || prev.fullName,
+            phone: user.phoneNumber || prev.phone,
+            address: user.address || prev.address,
+          }));
+        }
+      })
+      .catch(() => {});
+  }, [user]);
 
   // Batch Data State
   const [fileName, setFileName] = useState<string | null>(null);
@@ -631,6 +671,7 @@ export const BatchOrderPage: React.FC = () => {
     setCreationProgress(0);
 
     const created: Order[] = [];
+    const failed: { rowIndex: number; name: string; error: string }[] = [];
 
     try {
       for (let i = 0; i < validItems.length; i++) {
@@ -645,12 +686,12 @@ export const BatchOrderPage: React.FC = () => {
 
         const payload: CreateOrderPayload = {
           pickupAddress: {
-            fullName: user?.fullName || 'Shop An Bình',
-            phone: user?.phoneNumber || '0901234567',
-            address: user?.address || '123 Nguyễn Văn Cừ',
-            ward: 'Phường 1',
-            district: 'Quận 5',
-            province: 'TP Hồ Chí Minh',
+            fullName: pickupAddress.fullName,
+            phone: pickupAddress.phone,
+            address: pickupAddress.address,
+            ward: pickupAddress.ward,
+            district: pickupAddress.district,
+            province: pickupAddress.province,
           },
           deliveryAddress: {
             fullName: item.receiverName,
@@ -677,71 +718,40 @@ export const BatchOrderPage: React.FC = () => {
 
         try {
           const res = await orderApi.createOrder(payload);
-          if (res.data?.success) {
+          if (res.data?.success && res.data?.data) {
             created.push(res.data.data);
           } else {
-            created.push({
-              _id: `ORD-BATCH-${Date.now()}-${i}`,
-              trackingCode: `ELG-${Math.floor(10000000 + Math.random() * 90000000)}`,
-              trackingNumber: `ELG-${Math.floor(10000000 + Math.random() * 90000000)}`,
-              pickupAddress: payload.pickupAddress,
-              deliveryAddress: payload.deliveryAddress,
-              items: payload.items,
-              dimensions: itemDims,
-              actualWeight: item.weight,
-              volumetricWeight: Number(((itemDims.length * itemDims.width * itemDims.height) / 5000).toFixed(2)),
-              chargeableWeight: Math.max(item.weight, (itemDims.length * itemDims.width * itemDims.height) / 5000),
-              isCod: item.codAmount > 0,
-              codAmount: item.codAmount,
-              goodsValue: item.goodsValue,
-              baseFee: 22000,
-              insuranceFee: 0,
-              discountAmount: 0,
-              shippingFee: 22000,
-              status: 'CREATED',
-              flagFeeWarning: false,
-              flagCodAnomaly: false,
-              needsManualRouting: false,
-              sellerId: user?._id || 'seller_default',
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-            } as Order);
+            failed.push({
+              rowIndex: item.rowIndex,
+              name: item.receiverName,
+              error: res.data?.message || 'Máy chủ từ chối tạo đơn hàng',
+            });
           }
-        } catch (e) {
-          created.push({
-            _id: `ORD-BATCH-${Date.now()}-${i}`,
-            trackingCode: `ELG-${Math.floor(10000000 + Math.random() * 90000000)}`,
-            trackingNumber: `ELG-${Math.floor(10000000 + Math.random() * 90000000)}`,
-            pickupAddress: payload.pickupAddress,
-            deliveryAddress: payload.deliveryAddress,
-            items: payload.items,
-            dimensions: itemDims,
-            actualWeight: item.weight,
-            volumetricWeight: Number(((itemDims.length * itemDims.width * itemDims.height) / 5000).toFixed(2)),
-            chargeableWeight: Math.max(item.weight, (itemDims.length * itemDims.width * itemDims.height) / 5000),
-            isCod: item.codAmount > 0,
-            codAmount: item.codAmount,
-            goodsValue: item.goodsValue,
-            baseFee: 22000,
-            insuranceFee: 0,
-            discountAmount: 0,
-            shippingFee: 22000,
-            status: 'CREATED',
-            flagFeeWarning: false,
-            flagCodAnomaly: false,
-            needsManualRouting: false,
-            sellerId: user?._id || 'seller_default',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          } as Order);
+        } catch (e: any) {
+          failed.push({
+            rowIndex: item.rowIndex,
+            name: item.receiverName,
+            error: e.response?.data?.message || e.message || 'Lỗi kết nối khi tạo đơn',
+          });
         }
       }
 
-      setCreatedOrdersResult(created);
-      localStorage.removeItem(BATCH_DRAFT_KEY);
-      setHasBatchDraftRestored(false);
+      if (created.length > 0) {
+        setCreatedOrdersResult(created);
+        localStorage.removeItem(BATCH_DRAFT_KEY);
+        setHasBatchDraftRestored(false);
+      }
+
+      if (failed.length > 0) {
+        alert(
+          `⚠️ Có ${failed.length}/${validItems.length} đơn tạo thất bại:\n` +
+            failed.slice(0, 5).map((f) => `• Dòng ${f.rowIndex} (${f.name}): ${f.error}`).join('\n') +
+            (failed.length > 5 ? `\n...và ${failed.length - 5} đơn khác.` : '')
+        );
+      }
     } catch (err: any) {
       console.error('Batch creation error:', err);
+      alert('Đã xảy ra lỗi không mong muốn trong quá trình tạo đơn hàng loạt.');
     } finally {
       setCreatingBatch(false);
     }

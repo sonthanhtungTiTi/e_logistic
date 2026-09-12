@@ -45,6 +45,11 @@ export const LoginPage: React.FC = () => {
           email: data.email,
           fullName: data.fullName || 'Công Ty Dược An Bình (Seller)',
           role: data.role || 'SELLER',
+          phoneNumber: data.phoneNumber,
+          address: data.address,
+          companyName: data.companyName,
+          kycStatus: data.kycStatus,
+          kycVerified: data.kycVerified,
         });
         navigate('/seller/dashboard');
       } else {

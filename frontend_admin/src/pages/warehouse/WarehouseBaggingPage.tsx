@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router';
 import { bagApi } from '@/api/bag.api';
 import { toast } from 'sonner';
 import { CameraScanner } from '@/components/driver/CameraScanner';
@@ -15,6 +16,10 @@ import {
   Boxes,
   Camera,
   Keyboard,
+  Zap,
+  Printer,
+  ArrowRight,
+  ShieldCheck,
 } from 'lucide-react';
 
 const HUBS_LIST = [
@@ -28,9 +33,13 @@ const HUBS_LIST = [
 ];
 
 export const WarehouseBaggingPage: React.FC = () => {
+  const navigate = useNavigate();
+
   // Active Bag State
   const [activeBag, setActiveBag] = useState<any | null>(null);
   const [activeBagsList, setActiveBagsList] = useState<any[]>([]);
+  const [sealedBagsList, setSealedBagsList] = useState<any[]>([]);
+  const [sidebarTab, setSidebarTab] = useState<'OPEN' | 'SEALED'>('OPEN');
   const [loading, setLoading] = useState<boolean>(false);
 
   // Open Bag Form State
@@ -50,7 +59,7 @@ export const WarehouseBaggingPage: React.FC = () => {
 
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Load active bags on mount
+  // Load active open bags
   const fetchActiveBags = async () => {
     try {
       const res = await bagApi.listBags('OPEN');
@@ -64,8 +73,20 @@ export const WarehouseBaggingPage: React.FC = () => {
     }
   };
 
+  // Load sealed bags
+  const fetchSealedBags = async () => {
+    try {
+      const res = await bagApi.listBags('SEALED');
+      const bags = res.data?.data || [];
+      setSealedBagsList(bags);
+    } catch (err: any) {
+      console.error('Error fetching sealed bags:', err);
+    }
+  };
+
   useEffect(() => {
     fetchActiveBags();
+    fetchSealedBags();
   }, []);
 
   // Mở bao tải mới
@@ -110,6 +131,11 @@ export const WarehouseBaggingPage: React.FC = () => {
       return;
     }
 
+    if (activeBag.status === 'SEALED') {
+      toast.error('Bao tải này đã bị niêm phong (SEALED), không thể quét thêm kiện hàng!');
+      return;
+    }
+
     try {
       const res = await bagApi.addItem({
         seal_code: activeBag.sealCode || activeBag.seal_code,
@@ -119,24 +145,25 @@ export const WarehouseBaggingPage: React.FC = () => {
       setLastScanResult({
         success: true,
         trackingCode: code,
-        message: `Đã gom kiện [${code}] vào bao thành công (+${result.item_info?.weight_kg || 0.5} kg)`,
+        message: `Đã thả kiện [${code}] vào bao thành công (${result?.current_items || 0} kiện)`,
       });
-      toast.success(`✓ ${code} ➔ ${activeBag.sealCode || activeBag.seal_code}`);
+      toast.success(`Thêm [${code}] vào bao thành công!`);
       setTrackingCodeInput('');
 
-      // Refresh active bag details
+      // Refresh chi tiết bao hiện tại
       const bagDetailRes = await bagApi.getBag(activeBag.sealCode || activeBag.seal_code);
       setActiveBag(bagDetailRes.data?.data);
       fetchActiveBags();
+
+      if (inputRef.current) inputRef.current.focus();
     } catch (err: any) {
-      const errorMsg = err.response?.data?.message || 'Lỗi khi thêm kiện hàng vào bao';
+      const errMsg = err.response?.data?.message || 'Lỗi khi quét kiện hàng vào bao';
       setLastScanResult({
         success: false,
         trackingCode: code,
-        message: errorMsg,
+        message: errMsg,
       });
-      toast.error(errorMsg);
-    } finally {
+      toast.error(errMsg);
       if (inputRef.current) inputRef.current.focus();
     }
   };
@@ -158,22 +185,38 @@ export const WarehouseBaggingPage: React.FC = () => {
     }
   };
 
-  // Khóa niêm phong bao tải
+  // Khóa niêm phong bao tải (Fix lỗi mất mã seal: giữ lại thông tin và hiển thị màn hình bao đã khóa)
   const handleSealBag = async () => {
     if (!activeBag) return;
-    if (activeBag.trackingCodes?.length === 0) {
+    const itemsList = activeBag.trackingCodes || activeBag.tracking_codes || [];
+    if (itemsList.length === 0) {
       toast.error('Không thể niêm phong bao tải rỗng!');
       return;
     }
     setLoading(true);
     try {
+      const currentSealCode = activeBag.sealCode || activeBag.seal_code;
       const res = await bagApi.sealBag({
-        seal_code: activeBag.sealCode || activeBag.seal_code,
+        seal_code: currentSealCode,
       });
       const data = res.data?.data;
-      toast.success(`🔒 Đã khóa niêm phong bao tải [${data.seal_code}] với ${data.total_items} kiện hàng!`);
-      setActiveBag(null);
+      toast.success(`🔒 Đã khóa niêm phong bao tải [${data.seal_code || currentSealCode}] với ${data.total_items || itemsList.length} kiện hàng!`);
+
+      // Giữ nguyên activeBag và cập nhật status sang SEALED kèm thông số niêm phong
+      setActiveBag({
+        ...activeBag,
+        ...data,
+        status: 'SEALED',
+        seal_code: data.seal_code || currentSealCode,
+        sealCode: data.seal_code || currentSealCode,
+        sealedAt: new Date().toISOString(),
+        total_items: data.total_items || itemsList.length,
+        total_weight_kg: data.total_weight_kg || activeBag.totalWeightKg || 0,
+      });
+
       fetchActiveBags();
+      fetchSealedBags();
+      setSidebarTab('SEALED');
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Lỗi khi niêm phong bao tải');
     } finally {
@@ -181,10 +224,12 @@ export const WarehouseBaggingPage: React.FC = () => {
     }
   };
 
-  const totalItems = activeBag?.trackingCodes?.length || 0;
-  const maxCap = activeBag?.maxCapacity || 30;
-  const totalWeight = activeBag?.totalWeightKg || 0;
-  const maxWeight = activeBag?.maxWeightKg || 25;
+  const currentSeal = activeBag?.sealCode || activeBag?.seal_code;
+  const isBagSealed = activeBag?.status === 'SEALED';
+  const totalItems = activeBag?.trackingCodes?.length || activeBag?.total_items || 0;
+  const maxCap = activeBag?.maxCapacity || activeBag?.max_capacity || 30;
+  const totalWeight = activeBag?.totalWeightKg || activeBag?.total_weight_kg || 0;
+  const maxWeight = activeBag?.maxWeightKg || activeBag?.max_weight_kg || 25;
   const progressPercent = Math.min(100, Math.round((totalItems / maxCap) * 100));
 
   return (
@@ -197,13 +242,16 @@ export const WarehouseBaggingPage: React.FC = () => {
             Gom Bao & Niêm Phong Seal (Bagging Engine)
           </h1>
           <p className="text-xs text-slate-400 mt-1">
-            Quy trình Scan-to-Bag: Kiểm soát tuyến đường Poka-Yoke & Chống nhầm bao
+            Quy trình Scan-to-Bag: Kiểm soát tuyến đường Poka-Yoke &amp; Chống nhầm bao
           </p>
         </div>
         <div className="flex items-center gap-3">
           <button
-            onClick={fetchActiveBags}
-            className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl flex items-center gap-2 border border-slate-700 transition"
+            onClick={() => {
+              fetchActiveBags();
+              fetchSealedBags();
+            }}
+            className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl flex items-center gap-2 border border-slate-700 transition cursor-pointer"
           >
             <RefreshCw className="w-3.5 h-3.5" />
             Làm mới danh sách
@@ -212,7 +260,7 @@ export const WarehouseBaggingPage: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* CỘT TRÁI: FORM MỞ BAO TẢI MỚI & DANH SÁCH BAO ĐANG MỞ */}
+        {/* CỘT TRÁI: FORM MỞ BAO TẢI MỚI & TABS DANH SÁCH BAO */}
         <div className="space-y-6">
           {/* Card: Mở Bao Mới */}
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
@@ -229,7 +277,7 @@ export const WarehouseBaggingPage: React.FC = () => {
                     id="btn-gen-seal-code"
                     type="button"
                     onClick={handleGenerateSealCode}
-                    className="text-blue-400 hover:text-blue-300 text-[11px] font-bold underline"
+                    className="text-blue-400 hover:text-blue-300 text-[11px] font-bold underline cursor-pointer"
                   >
                     Tạo mã nhanh
                   </button>
@@ -285,7 +333,7 @@ export const WarehouseBaggingPage: React.FC = () => {
                 id="btn-open-bag"
                 type="submit"
                 disabled={loading}
-                className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg shadow-blue-600/20 transition flex items-center justify-center gap-2 mt-2"
+                className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg shadow-blue-600/20 transition flex items-center justify-center gap-2 mt-2 cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
                 Mở Bao Tải Mới
@@ -293,192 +341,360 @@ export const WarehouseBaggingPage: React.FC = () => {
             </form>
           </div>
 
-          {/* Card: Danh Sách Bao Đang Mở */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-3">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
-              <span>Bao đang mở ({activeBagsList.length})</span>
-            </h3>
-            {activeBagsList.length === 0 ? (
-              <p className="text-xs text-slate-500 italic py-2">Chưa có bao nào đang mở</p>
-            ) : (
-              <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
-                {activeBagsList.map((bag) => {
-                  const isCurrent =
-                    (activeBag?.sealCode || activeBag?.seal_code) === (bag.sealCode || bag.seal_code);
-                  return (
-                    <div
-                      key={bag._id}
-                      onClick={() => setActiveBag(bag)}
-                      className={`p-3 rounded-xl border transition cursor-pointer flex items-center justify-between ${
-                        isCurrent
-                          ? 'bg-blue-950/40 border-blue-500/50 text-white'
-                          : 'bg-slate-950/60 border-slate-800 text-slate-300 hover:bg-slate-800/40'
-                      }`}
-                    >
-                      <div>
-                        <p className="text-xs font-mono font-bold text-blue-400 flex items-center gap-1.5">
-                          <Package className="w-3.5 h-3.5" />
-                          {bag.sealCode || bag.seal_code}
-                        </p>
-                        <p className="text-[11px] text-slate-400 truncate max-w-[170px]">
-                          {bag.destinationHubId?.name || 'Kho đích'}
-                        </p>
+          {/* Card: Quản lý danh sách Bao (Tabs: Đang Mở vs Đã Khóa) */}
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl space-y-3">
+            <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
+              <button
+                type="button"
+                onClick={() => setSidebarTab('OPEN')}
+                className={`flex-1 py-1.5 rounded-lg font-bold transition cursor-pointer ${
+                  sidebarTab === 'OPEN'
+                    ? 'bg-blue-600 text-white shadow'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Bao Đang Mở ({activeBagsList.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setSidebarTab('SEALED')}
+                className={`flex-1 py-1.5 rounded-lg font-bold transition cursor-pointer ${
+                  sidebarTab === 'SEALED'
+                    ? 'bg-emerald-600 text-white shadow'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Đã Khóa ({sealedBagsList.length})
+              </button>
+            </div>
+
+            {/* Tab 1: Bao Đang Mở (OPEN) */}
+            {sidebarTab === 'OPEN' && (
+              <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                {activeBagsList.length === 0 ? (
+                  <p className="text-xs text-slate-500 italic py-4 text-center">Chưa có bao nào đang mở</p>
+                ) : (
+                  activeBagsList.map((bag) => {
+                    const isCurrent = currentSeal === (bag.sealCode || bag.seal_code);
+                    return (
+                      <div
+                        key={bag._id}
+                        onClick={() => setActiveBag(bag)}
+                        className={`p-3 rounded-xl border transition cursor-pointer flex items-center justify-between ${
+                          isCurrent
+                            ? 'bg-blue-950/50 border-blue-500/60 text-white shadow'
+                            : 'bg-slate-950/60 border-slate-800 text-slate-300 hover:bg-slate-800/40'
+                        }`}
+                      >
+                        <div>
+                          <p className="text-xs font-mono font-bold text-blue-400 flex items-center gap-1.5">
+                            <Package className="w-3.5 h-3.5" />
+                            {bag.sealCode || bag.seal_code}
+                          </p>
+                          <p className="text-[11px] text-slate-400 truncate max-w-[170px]">
+                            {bag.destinationHubId?.name || 'Kho đích'}
+                          </p>
+                        </div>
+                        <span className="text-[11px] font-mono px-2 py-0.5 bg-slate-800 rounded-md text-slate-300">
+                          {bag.trackingCodes?.length || 0}/{bag.maxCapacity || 30}
+                        </span>
                       </div>
-                      <span className="text-[11px] font-mono px-2 py-0.5 bg-slate-800 rounded-md text-slate-300">
-                        {bag.trackingCodes?.length || 0}/{bag.maxCapacity || 30}
-                      </span>
-                    </div>
-                  );
-                })}
+                    );
+                  })
+                )}
+              </div>
+            )}
+
+            {/* Tab 2: Bao Đã Khóa Chờ Xuất (SEALED) */}
+            {sidebarTab === 'SEALED' && (
+              <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                {sealedBagsList.length === 0 ? (
+                  <p className="text-xs text-slate-500 italic py-4 text-center">Chưa có bao nào đã khóa</p>
+                ) : (
+                  sealedBagsList.map((bag) => {
+                    const isCurrent = currentSeal === (bag.sealCode || bag.seal_code);
+                    return (
+                      <div
+                        key={bag._id}
+                        onClick={() => setActiveBag(bag)}
+                        className={`p-3 rounded-xl border transition cursor-pointer flex items-center justify-between ${
+                          isCurrent
+                            ? 'bg-emerald-950/50 border-emerald-500/60 text-white shadow'
+                            : 'bg-slate-950/60 border-slate-800 text-slate-300 hover:bg-slate-800/40'
+                        }`}
+                      >
+                        <div>
+                          <p className="text-xs font-mono font-bold text-emerald-400 flex items-center gap-1.5">
+                            <Lock className="w-3.5 h-3.5" />
+                            {bag.sealCode || bag.seal_code}
+                          </p>
+                          <p className="text-[11px] text-slate-400 truncate max-w-[150px]">
+                            {bag.destinationHubId?.name || 'Kho đích'}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px] font-mono px-2 py-0.5 bg-emerald-950 text-emerald-300 border border-emerald-800 rounded">
+                            {bag.trackingCodes?.length || bag.total_items || 0} kiện
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
               </div>
             )}
           </div>
         </div>
 
-        {/* CỘT GIỮA & PHẢI: KHU VỰC QUÉT HÀNG VÀO BAO & CHI TIẾT */}
+        {/* CỘT GIỮA & PHẢI: KHU VỰC QUÉT HÀNG VÀO BAO & CHI TIẾT BAO */}
         <div className="lg:col-span-2 space-y-6">
           {activeBag ? (
             <>
-              {/* Active Bag Status Banner */}
-              <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border border-blue-500/40 p-5 rounded-2xl shadow-xl space-y-4">
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
-                  <div>
-                    <span className="text-[10px] uppercase font-bold tracking-widest text-blue-400 bg-blue-950/60 px-2.5 py-0.5 rounded-full border border-blue-800/60">
-                      BAO ĐANG GOM HÀNG
-                    </span>
-                    <h2 className="text-2xl font-mono font-black text-white mt-1">
-                      {activeBag.sealCode || activeBag.seal_code}
-                    </h2>
-                    <p className="text-xs text-slate-300 flex items-center gap-1.5 mt-0.5">
-                      <Truck className="w-3.5 h-3.5 text-blue-400" />
-                      Điểm đến:{' '}
-                      <span className="font-bold text-blue-300">
-                        {activeBag.destinationHubId?.name || activeBag.destination_hub_name || 'Kho đích'}
+              {/* TRƯỜNG HỢP 1: BAO ĐÃ KHÓA NIÊM PHONG (FIX LỖI MẤT MÃ SEAL) */}
+              {isBagSealed ? (
+                <div className="bg-gradient-to-br from-slate-900 via-emerald-950/40 to-slate-900 border-2 border-emerald-500/60 p-6 rounded-3xl shadow-2xl space-y-6 animate-in fade-in zoom-in-95 duration-200">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-emerald-500/30 pb-4">
+                    <div>
+                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-black uppercase tracking-wider">
+                        <Lock className="w-3.5 h-3.5 text-emerald-400" />
+                        Đã Khóa Niêm Phong An Toàn (SEALED)
+                      </div>
+                      <h2 className="text-3xl font-mono font-black text-white mt-2 tracking-tight">
+                        {currentSeal}
+                      </h2>
+                      <p className="text-xs text-slate-300 mt-1 flex items-center gap-1.5">
+                        <Truck className="w-4 h-4 text-emerald-400" />
+                        Tuyến vận chuyển đến:{' '}
+                        <strong className="text-emerald-300">
+                          {activeBag.destinationHubId?.name || activeBag.destination_hub_name || 'Kho Tổng Đích'}
+                        </strong>
+                      </p>
+                    </div>
+
+                    {/* Barcode Display Box */}
+                    <div className="bg-white text-slate-950 p-3.5 rounded-2xl flex flex-col items-center justify-center shadow-lg border border-slate-200">
+                      <div className="flex items-center gap-1 h-8 px-2">
+                        {/* Visual Barcode pattern */}
+                        <div className="w-1.5 h-8 bg-black" />
+                        <div className="w-0.5 h-8 bg-black" />
+                        <div className="w-2 h-8 bg-black" />
+                        <div className="w-1 h-8 bg-black" />
+                        <div className="w-0.5 h-8 bg-black" />
+                        <div className="w-3 h-8 bg-black" />
+                        <div className="w-1.5 h-8 bg-black" />
+                        <div className="w-0.5 h-8 bg-black" />
+                        <div className="w-2 h-8 bg-black" />
+                        <div className="w-1.5 h-8 bg-black" />
+                      </div>
+                      <span className="font-mono text-xs font-black tracking-widest mt-1">
+                        {currentSeal}
                       </span>
-                    </p>
+                    </div>
                   </div>
 
-                  <button
-                    id="btn-seal-bag"
-                    onClick={handleSealBag}
-                    disabled={loading || totalItems === 0}
-                    className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-xs rounded-xl shadow-lg shadow-emerald-600/20 transition flex items-center gap-2 cursor-pointer"
-                  >
-                    <Lock className="w-4 h-4" />
-                    Khóa Niêm Phong (SEAL)
-                  </button>
+                  {/* Thông số bao đã niêm phong */}
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    <div className="bg-slate-950/80 border border-slate-800 rounded-2xl p-3.5 text-center">
+                      <span className="text-[10px] text-slate-400 font-bold uppercase block">TỔNG SỐ KIỆN</span>
+                      <span className="text-2xl font-black text-emerald-400 font-mono mt-0.5 block">
+                        {totalItems} kiện
+                      </span>
+                    </div>
+
+                    <div className="bg-slate-950/80 border border-slate-800 rounded-2xl p-3.5 text-center">
+                      <span className="text-[10px] text-slate-400 font-bold uppercase block">TỔNG TRỌNG LƯỢNG</span>
+                      <span className="text-2xl font-black text-blue-400 font-mono mt-0.5 block">
+                        {Number(totalWeight).toFixed(1)} kg
+                      </span>
+                    </div>
+
+                    <div className="bg-slate-950/80 border border-slate-800 rounded-2xl p-3.5 text-center col-span-2 md:col-span-1">
+                      <span className="text-[10px] text-slate-400 font-bold uppercase block">BẢO MẬT &amp; CHỨNG TỪ</span>
+                      <span className="text-xs font-bold text-emerald-300 mt-1.5 inline-flex items-center gap-1">
+                        <ShieldCheck className="w-4 h-4" /> Đạt chuẩn xuất kho
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Nút hành động nổi bật: Chuyển Sang Xuất Kho Ngay & In Nhãn */}
+                  <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-slate-800">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => toast.success(`🖨️ Đang in nhãn dán Seal: [${currentSeal}]...`)}
+                        className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl flex items-center gap-2 border border-slate-700 transition cursor-pointer"
+                      >
+                        <Printer className="w-4 h-4 text-slate-400" />
+                        In Nhãn Dán Seal
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setActiveBag(null);
+                          setSidebarTab('OPEN');
+                        }}
+                        className="px-4 py-2.5 bg-slate-950 hover:bg-slate-800 text-slate-300 text-xs font-semibold rounded-xl border border-slate-800 transition cursor-pointer"
+                      >
+                        ➕ Mở Bao Tải Tiếp Theo
+                      </button>
+                    </div>
+
+                    {/* NÚT CHUYỂN SANG XUẤT KHO NGAY (ITEM 6) */}
+                    <button
+                      id="btn-goto-outbound"
+                      onClick={() => navigate(`/warehouse/outbound?sealCode=${currentSeal}`)}
+                      className="px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-xs rounded-xl shadow-xl shadow-orange-500/20 transition flex items-center gap-2 cursor-pointer"
+                    >
+                      <Zap className="w-4 h-4 fill-current" />
+                      ⚡ Chuyển Sang Xuất Kho Ngay
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
+              ) : (
+                /* TRƯỜNG HỢP 2: BAO ĐANG MỞ (OPEN) */
+                <>
+                  {/* Active Bag Status Banner */}
+                  <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border border-blue-500/40 p-5 rounded-2xl shadow-xl space-y-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
+                      <div>
+                        <span className="text-[10px] uppercase font-bold tracking-widest text-blue-400 bg-blue-950/60 px-2.5 py-0.5 rounded-full border border-blue-800/60">
+                          BAO ĐANG GOM HÀNG
+                        </span>
+                        <h2 className="text-2xl font-mono font-black text-white mt-1">
+                          {currentSeal}
+                        </h2>
+                        <p className="text-xs text-slate-300 flex items-center gap-1.5 mt-0.5">
+                          <Truck className="w-3.5 h-3.5 text-blue-400" />
+                          Điểm đến:{' '}
+                          <span className="font-bold text-blue-300">
+                            {activeBag.destinationHubId?.name || activeBag.destination_hub_name || 'Kho đích'}
+                          </span>
+                        </p>
+                      </div>
 
-                {/* Progress Stats */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
-                  <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-3">
-                    <p className="text-[10px] text-slate-400 font-bold uppercase">SỐ KIỆN HIỆN TẠI</p>
-                    <p className="text-xl font-black text-white font-mono mt-0.5">
-                      {totalItems} <span className="text-xs text-slate-400 font-normal">/ {maxCap}</span>
-                    </p>
-                  </div>
-                  <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-3">
-                    <p className="text-[10px] text-slate-400 font-bold uppercase">TỔNG KHỐI LƯỢNG</p>
-                    <p className="text-xl font-black text-blue-400 font-mono mt-0.5">
-                      {totalWeight.toFixed(1)}{' '}
-                      <span className="text-xs text-slate-400 font-normal">/ {maxWeight} kg</span>
-                    </p>
-                  </div>
-                  <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-3">
-                    <p className="text-[10px] text-slate-400 font-bold uppercase">ĐỘ ĐẦY ĐỊNH MỨC</p>
-                    <p className="text-xl font-black text-emerald-400 font-mono mt-0.5">{progressPercent}%</p>
-                  </div>
-                  <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-3">
-                    <p className="text-[10px] text-slate-400 font-bold uppercase">TRẠNG THÁI</p>
-                    <span className="inline-block mt-1 text-[11px] font-bold text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800/60">
-                      OPEN (Đang mở)
-                    </span>
-                  </div>
-                </div>
+                      <button
+                        id="btn-seal-bag"
+                        onClick={handleSealBag}
+                        disabled={loading || totalItems === 0}
+                        className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-xs rounded-xl shadow-lg shadow-emerald-600/20 transition flex items-center gap-2 cursor-pointer"
+                      >
+                        <Lock className="w-4 h-4" />
+                        Khóa Niêm Phong (SEAL)
+                      </button>
+                    </div>
 
-                {/* Progress Bar */}
-                <div className="w-full bg-slate-950 rounded-full h-2 overflow-hidden border border-slate-800">
-                  <div
-                    className={`h-full transition-all duration-300 ${
-                      progressPercent >= 100
-                        ? 'bg-blue-600'
-                        : progressPercent >= 80
-                        ? 'bg-sky-400'
-                        : 'bg-blue-500'
-                    }`}
-                    style={{ width: `${progressPercent}%` }}
-                  />
-                </div>
-              </div>
+                    {/* Progress Stats */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                      <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-3">
+                        <p className="text-[10px] text-slate-400 font-bold uppercase">SỐ KIỆN HIỆN TẠI</p>
+                        <p className="text-xl font-black text-white font-mono mt-0.5">
+                          {totalItems} <span className="text-xs text-slate-400 font-normal">/ {maxCap}</span>
+                        </p>
+                      </div>
+                      <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-3">
+                        <p className="text-[10px] text-slate-400 font-bold uppercase">TỔNG KHỐI LƯỢNG</p>
+                        <p className="text-xl font-black text-blue-400 font-mono mt-0.5">
+                          {Number(totalWeight).toFixed(1)}{' '}
+                          <span className="text-xs text-slate-400 font-normal">/ {maxWeight} kg</span>
+                        </p>
+                      </div>
+                      <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-3">
+                        <p className="text-[10px] text-slate-400 font-bold uppercase">ĐỘ ĐẦY ĐỊNH MỨC</p>
+                        <p className="text-xl font-black text-emerald-400 font-mono mt-0.5">{progressPercent}%</p>
+                      </div>
+                      <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-3">
+                        <p className="text-[10px] text-slate-400 font-bold uppercase">TRẠNG THÁI</p>
+                        <span className="inline-block mt-1 text-[11px] font-bold text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800/60">
+                          OPEN (Đang mở)
+                        </span>
+                      </div>
+                    </div>
 
-              {/* Scan Box (Camera + Input) */}
-              <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-xl space-y-4">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                  <h3 className="text-sm font-bold text-slate-200 flex items-center gap-2">
-                    <Barcode className="w-4 h-4 text-blue-400" />
-                    2. Quét Thả Kiện Hàng Vào Bao
-                  </h3>
-                  <button
-                    onClick={() => setIsCameraActive(!isCameraActive)}
-                    className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-lg border border-slate-700 flex items-center gap-1.5 transition"
-                  >
-                    <Camera className="w-3.5 h-3.5 text-blue-400" />
-                    {isCameraActive ? 'Tắt Camera' : 'Bật Camera'}
-                  </button>
-                </div>
-
-                {/* Camera Scanner View */}
-                {isCameraActive && (
-                  <div className="rounded-xl overflow-hidden border border-slate-700 bg-slate-950 p-2">
-                    <CameraScanner
-                      isActive={isCameraActive}
-                      onScanSuccess={(code) => handleAddItem(code)}
-                    />
+                    {/* Progress Bar */}
+                    <div className="w-full bg-slate-950 rounded-full h-2 overflow-hidden border border-slate-800">
+                      <div
+                        className={`h-full transition-all duration-300 ${
+                          progressPercent >= 100
+                            ? 'bg-blue-600'
+                            : progressPercent >= 80
+                            ? 'bg-sky-400'
+                            : 'bg-blue-500'
+                        }`}
+                        style={{ width: `${progressPercent}%` }}
+                      />
+                    </div>
                   </div>
-                )}
 
-                {/* Input Barcode */}
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <Keyboard className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                    <input
-                      id="input-bag-tracking-code"
-                      ref={inputRef}
-                      type="text"
-                      placeholder="Quét mã vạch hoặc nhập mã vận đơn (VD: ELG-VN-123456)..."
-                      value={trackingCodeInput}
-                      onChange={(e) => setTrackingCodeInput(e.target.value.toUpperCase())}
-                      onKeyDown={(e) => e.key === 'Enter' && handleAddItem()}
-                      className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-10 pr-4 py-3 text-white font-mono text-sm focus:outline-none focus:border-blue-500 transition shadow-inner"
-                    />
-                  </div>
-                  <button
-                    id="btn-add-item-to-bag"
-                    onClick={() => handleAddItem()}
-                    className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-blue-600/20 transition cursor-pointer"
-                  >
-                    Thêm vào bao
-                  </button>
-                </div>
+                  {/* Scan Box (Camera + Input) */}
+                  <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-xl space-y-4">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                      <h3 className="text-sm font-bold text-slate-200 flex items-center gap-2">
+                        <Barcode className="w-4 h-4 text-blue-400" />
+                        2. Quét Thả Kiện Hàng Vào Bao
+                      </h3>
+                      <button
+                        onClick={() => setIsCameraActive(!isCameraActive)}
+                        className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-lg border border-slate-700 flex items-center gap-1.5 transition cursor-pointer"
+                      >
+                        <Camera className="w-3.5 h-3.5 text-blue-400" />
+                        {isCameraActive ? 'Tắt Camera' : 'Bật Camera'}
+                      </button>
+                    </div>
 
-                {/* Last Scan Feedback */}
-                {lastScanResult && (
-                  <div
-                    className={`p-3.5 rounded-xl border flex items-center gap-3 text-xs transition ${
-                      lastScanResult.success
-                        ? 'bg-emerald-950/40 border-emerald-700/50 text-emerald-300'
-                        : 'bg-rose-950/40 border-rose-700/50 text-rose-300'
-                    }`}
-                  >
-                    {lastScanResult.success ? (
-                      <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-emerald-400" />
-                    ) : (
-                      <AlertTriangle className="w-4 h-4 flex-shrink-0 text-rose-400" />
+                    {/* Camera Scanner View */}
+                    {isCameraActive && (
+                      <div className="rounded-xl overflow-hidden border border-slate-700 bg-slate-950 p-2">
+                        <CameraScanner
+                          isActive={isCameraActive}
+                          onScanSuccess={(code) => handleAddItem(code)}
+                        />
+                      </div>
                     )}
-                    <span className="font-medium">{lastScanResult.message}</span>
+
+                    {/* Input Barcode */}
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <Keyboard className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                        <input
+                          id="input-bag-tracking-code"
+                          ref={inputRef}
+                          type="text"
+                          placeholder="Quét mã vạch hoặc nhập mã vận đơn (VD: ELG-VN-123456)..."
+                          value={trackingCodeInput}
+                          onChange={(e) => setTrackingCodeInput(e.target.value.toUpperCase())}
+                          onKeyDown={(e) => e.key === 'Enter' && handleAddItem()}
+                          className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-10 pr-4 py-3 text-white font-mono text-sm focus:outline-none focus:border-blue-500 transition shadow-inner"
+                        />
+                      </div>
+                      <button
+                        id="btn-add-item-to-bag"
+                        onClick={() => handleAddItem()}
+                        className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-blue-600/20 transition cursor-pointer"
+                      >
+                        Thêm vào bao
+                      </button>
+                    </div>
+
+                    {/* Last Scan Feedback */}
+                    {lastScanResult && (
+                      <div
+                        className={`p-3.5 rounded-xl border flex items-center gap-3 text-xs transition ${
+                          lastScanResult.success
+                            ? 'bg-emerald-950/40 border-emerald-700/50 text-emerald-300'
+                            : 'bg-rose-950/40 border-rose-700/50 text-rose-300'
+                        }`}
+                      >
+                        {lastScanResult.success ? (
+                          <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-emerald-400" />
+                        ) : (
+                          <AlertTriangle className="w-4 h-4 flex-shrink-0 text-rose-400" />
+                        )}
+                        <span className="font-medium">{lastScanResult.message}</span>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+                </>
+              )}
 
               {/* Items List in Bag */}
               <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-xl overflow-hidden">
@@ -487,6 +703,11 @@ export const WarehouseBaggingPage: React.FC = () => {
                     <Package className="w-3.5 h-3.5 text-blue-400" />
                     Danh sách kiện hàng trong bao ({totalItems})
                   </h3>
+                  {isBagSealed && (
+                    <span className="text-[10px] font-mono text-emerald-400 font-bold bg-emerald-950/60 border border-emerald-800 px-2 py-0.5 rounded">
+                      ĐÃ KHÓA
+                    </span>
+                  )}
                 </div>
 
                 {totalItems === 0 ? (
@@ -504,13 +725,15 @@ export const WarehouseBaggingPage: React.FC = () => {
                           <span className="text-slate-500 font-bold w-5">{idx + 1}.</span>
                           <span className="font-bold text-blue-400">{code}</span>
                         </div>
-                        <button
-                          onClick={() => handleRemoveItem(code)}
-                          className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-950/30 rounded-lg transition"
-                          title="Gỡ khỏi bao"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        {!isBagSealed && (
+                          <button
+                            onClick={() => handleRemoveItem(code)}
+                            className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-950/30 rounded-lg transition cursor-pointer"
+                            title="Gỡ khỏi bao"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -522,7 +745,7 @@ export const WarehouseBaggingPage: React.FC = () => {
               <Boxes className="w-12 h-12 mx-auto text-slate-600 stroke-[1.5]" />
               <h3 className="text-base font-bold text-slate-300">Chưa chọn bao tải nào</h3>
               <p className="text-xs text-slate-500 max-w-md mx-auto">
-                Hãy mở một bao tải mới ở cột bên trái hoặc chọn một bao tải đang mở để bắt đầu quét gom kiện hàng.
+                Hãy mở một bao tải mới ở cột bên trái hoặc chọn một bao tải trong danh sách để bắt đầu quy trình đóng bao &amp; xuất kho.
               </p>
             </div>
           )}

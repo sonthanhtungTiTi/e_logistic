@@ -1,6 +1,8 @@
 const Order = require('../models/order.model');
 const User = require('../models/user.model');
 const OrderLog = require('../models/orderLog.model');
+const dispatchEngine = require('../services/dispatchEngine.service');
+const ioSingleton = require('../lib/ioSingleton');
 
 /**
  * Controller: Quản trị Đơn hàng & Nhà cung cấp (ORDER_VENDOR_MANAGER & ADMIN)
@@ -264,6 +266,9 @@ class VendorOpsController {
         return res.status(404).json({ success: false, message: 'Không tìm thấy đơn hàng' });
       }
 
+      const wasRouted = Boolean(order.currentDriverId || order.currentDriver?.driverId || order.pickupShipperId || order.deliveryShipperId);
+      const assignedShipperId = order.pickupShipperId || order.currentDriverId || order.currentDriver?.driverId || order.deliveryShipperId;
+
       const previousStatus = order.status;
       order.status = 'CANCELLED';
       order.riskViolationReason = reason;
@@ -275,6 +280,16 @@ class VendorOpsController {
       order.cancelledBy = req.user?._id || req.user?.id;
       order.cancelledAt = new Date();
       await order.save();
+
+      ioSingleton.emitOrderUpdate(order.sellerId, order);
+
+      if (wasRouted && assignedShipperId) {
+        try {
+          await dispatchEngine.compensateCancelledOrder(order, assignedShipperId);
+        } catch (compErr) {
+          console.warn('[VendorOps] Auto compensation on reject error:', compErr.message);
+        }
+      }
 
       // Log lịch sử
       await OrderLog.create({

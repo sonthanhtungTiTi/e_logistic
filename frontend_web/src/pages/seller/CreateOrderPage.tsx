@@ -781,41 +781,13 @@ export const CreateOrderPage: React.FC = () => {
       };
 
       const response = await orderApi.createOrder(payload);
-      if (response.data?.success) {
+      if (response.data?.success && response.data?.data) {
         setCreatedOrder(response.data.data);
+        localStorage.removeItem(DRAFT_KEY);
+        setHasDraftRestored(false);
       } else {
-        // Demo fallback
-        setCreatedOrder({
-          _id: 'ORD-' + Math.floor(100000 + Math.random() * 900000),
-          trackingCode: response.data?.trackingCode || 'ELG-' + Math.floor(10000000 + Math.random() * 90000000),
-          trackingNumber: 'ELG-' + Math.floor(10000000 + Math.random() * 90000000),
-          pickupAddress: payload.pickupAddress,
-          deliveryAddress: payload.deliveryAddress,
-          items: payload.items,
-          dimensions: payload.dimensions || { length: 20, width: 15, height: 10 },
-          actualWeight: totalActualWeight || 0.5,
-          volumetricWeight: volumetricWeight,
-          chargeableWeight: chargeableWeight,
-          isCod: Boolean(payload.isCod),
-          codAmount: Number(codAmount) || 0,
-          goodsValue: Number(goodsValue) || 0,
-          baseFee: activeShippingFee,
-          insuranceFee: 0,
-          discountAmount: 0,
-          shippingFee: activeShippingFee,
-          status: 'CREATED',
-          flagFeeWarning: false,
-          flagCodAnomaly: false,
-          needsManualRouting: false,
-          sellerId: user?._id || 'seller_default',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        } as Order);
+        setSubmitError(response.data?.message || 'Không thể tạo đơn hàng trên máy chủ.');
       }
-
-      // Clear local storage draft after successful order creation
-      localStorage.removeItem(DRAFT_KEY);
-      setHasDraftRestored(false);
     } catch (err: any) {
       const resData = err.response?.data;
       if (resData?.code === 'DISCOUNT_INVALID_NEEDS_CONFIRM') {

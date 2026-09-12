@@ -10,6 +10,8 @@ import {
   Clock,
   Send,
   ShieldCheck,
+  Flame,
+  TrendingUp,
 } from 'lucide-react';
 import { axiosClient } from '../../api/axiosClient';
 
@@ -33,11 +35,13 @@ interface ShipperOverview {
   id: string;
   fullName: string;
   phoneNumber: string;
+  role?: string;
   isWorking: boolean;
   activeGeozone?: { name: string; code: string; ward: string };
   operatingArea?: { province?: string; district?: string; ward?: string; subZone?: string };
   pickupQuota: { max: number; current: number; percent: number };
   deliveryQuota: { max: number; current: number; percent: number };
+  tripCapacity?: { maxParcels: number; currentParcels: number; maxWeightKg: number; currentWeightKg: number };
   maxWeightCapacityKg: number;
   currentWeightKg: number;
   acceptanceRate: number;
@@ -53,6 +57,10 @@ interface EscalatedOrder {
   deliveryAddress: { fullName: string; phone: string; address: string; ward: string };
   riskViolationReason?: string;
   dispatchRetryCount: number;
+  isRolloverOrder?: boolean;
+  rolloverCount?: number;
+  rolloverReason?: string;
+  agingPriority?: 'NORMAL' | 'HIGH' | 'CRITICAL';
 }
 
 interface ZoneChangeRequestItem {
@@ -79,9 +87,33 @@ export const LocalDispatchPage: React.FC = () => {
   const [escalatedOrders, setEscalatedOrders] = useState<EscalatedOrder[]>([]);
   const [zoneRequests, setZoneRequests] = useState<ZoneChangeRequestItem[]>([]);
   const [selectedZoneId, setSelectedZoneId] = useState<string>('');
+  const [roleFilter, setRoleFilter] = useState<'ALL' | 'PICKUP_SHIPPER' | 'DELIVERY_SHIPPER' | 'LOCAL_SHIPPER'>('ALL');
+  const [surgeTargetRole, setSurgeTargetRole] = useState<'ALL' | 'PICKUP_SHIPPER' | 'DELIVERY_SHIPPER'>('ALL');
   const [isSpilloverActive, setIsSpilloverActive] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [msg, setMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [surgeQuotaValue, setSurgeQuotaValue] = useState<number>(25);
+  const [surgeScope, setSurgeScope] = useState<'ALL' | 'ZONE'>('ALL');
+  const [updatingSurge, setUpdatingSurge] = useState<boolean>(false);
+  const [sweeping, setSweeping] = useState<boolean>(false);
+
+  const handleOvernightSweep = async () => {
+    if (!window.confirm('Xác nhận kích hoạt quét dọn đơn tồn ca & qua ngày (Overnight Rollover Sweep)?\n- Đơn dồn ca/quá hạn sẽ được nâng Aging Boost (+25/+40 điểm)\n- Reset Quota ngày mới cho Shipper')) {
+      return;
+    }
+    setSweeping(true);
+    try {
+      const res = await axiosClient.post('/dispatch/local/overnight-rollover-sweep', {
+        resetShipperQuotas: true,
+      });
+      setMsg({ type: 'success', text: `🧹 ${res.data?.message || 'Quét dọn đơn tồn ca thành công'}` });
+      loadDashboardData();
+    } catch (err: any) {
+      setMsg({ type: 'error', text: err.response?.data?.message || 'Lỗi quét dọn đơn tồn ca' });
+    } finally {
+      setSweeping(false);
+    }
+  };
 
   useEffect(() => {
     if (activeTab === 'DISPATCH') {
@@ -165,6 +197,53 @@ export const LocalDispatchPage: React.FC = () => {
     }
   };
 
+  const handleApproveCancel = async (orderId: string, trackingCode: string) => {
+    if (!window.confirm(`Xác nhận duyệt HỦY đơn hàng [${trackingCode}] theo báo cáo của Shipper?`)) return;
+    try {
+      const res = await axiosClient.post(`/dispatch/local/escalated-orders/${orderId}/approve-cancel`, {
+        cancelReason: 'Dispatcher phê duyệt hủy theo báo cáo shipper',
+      });
+      setMsg({ type: 'success', text: `✅ ${res.data?.message || 'Đã duyệt hủy đơn thành công'}` });
+      loadDashboardData();
+    } catch (err: any) {
+      setMsg({ type: 'error', text: err.response?.data?.message || 'Lỗi khi duyệt hủy đơn' });
+    }
+  };
+
+  const handleRetryPickup = async (orderId: string, trackingCode: string) => {
+    try {
+      const res = await axiosClient.post(`/dispatch/local/escalated-orders/${orderId}/retry-pickup`);
+      setMsg({ type: 'success', text: `🔄 [${trackingCode}]: ${res.data?.message || 'Đã đưa đơn về hàng đợi lấy lại'}` });
+      loadDashboardData();
+    } catch (err: any) {
+      setMsg({ type: 'error', text: err.response?.data?.message || 'Lỗi khi đưa đơn về lấy lại' });
+    }
+  };
+
+  const handleApplySurgeQuota = async (quota: number) => {
+    setUpdatingSurge(true);
+    try {
+      const payload: any = {
+        maxPickupQuota: quota,
+        reason: quota === 25 ? 'Hạ về mức ngày thường' : quota >= 80 ? `Mega Sale Đội Gom (${quota} đơn)` : `Cao Điểm (${quota} đơn)`,
+      };
+      if (surgeTargetRole !== 'ALL') {
+        payload.targetRole = surgeTargetRole;
+      }
+      if (surgeScope === 'ZONE' && selectedZoneId) {
+        payload.geozoneId = selectedZoneId;
+      }
+      const res = await axiosClient.patch('/dispatch/local/surge-quota', payload);
+      setMsg({ type: 'success', text: `🔥 ${res.data?.message || 'Cập nhật Quota thành công'}` });
+      setSurgeQuotaValue(quota);
+      loadDashboardData();
+    } catch (err: any) {
+      setMsg({ type: 'error', text: err.response?.data?.message || 'Lỗi cập nhật Quota cao điểm' });
+    } finally {
+      setUpdatingSurge(false);
+    }
+  };
+
   const pendingRequestsCount = zoneRequests.filter((r) => r.zoneChangeRequest?.status === 'PENDING').length;
 
   const totalActiveShippers = shippers.filter(s => s.isWorking).length;
@@ -190,6 +269,15 @@ export const LocalDispatchPage: React.FC = () => {
 
           <div className="flex items-center gap-2">
             <button
+              onClick={handleOvernightSweep}
+              disabled={sweeping}
+              className="px-3.5 py-2 rounded-xl bg-purple-950/80 hover:bg-purple-900 text-purple-300 border border-purple-800 text-xs font-bold flex items-center gap-2 transition cursor-pointer shadow-lg shadow-purple-950/40"
+              title="Quét dọn đơn tồn ca & đơn qua ngày, nâng Aging Boost (+25/+40 điểm) và reset quota ngày mới cho Shipper"
+            >
+              <Clock className={`w-4 h-4 text-purple-400 ${sweeping ? 'animate-spin' : ''}`} />
+              <span>{sweeping ? 'Đang Quét Dọn...' : 'Quét Dọn Đơn Tồn Ca'}</span>
+            </button>
+            <button
               onClick={activeTab === 'DISPATCH' ? loadDashboardData : loadZoneRequests}
               className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 text-xs font-semibold flex items-center gap-2 transition cursor-pointer"
             >
@@ -198,8 +286,8 @@ export const LocalDispatchPage: React.FC = () => {
           </div>
         </div>
 
-        {/* 4 Thẻ KPI Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* 5 Thẻ KPI Grid */}
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
           <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800/80 shadow-lg flex items-center justify-between">
             <div>
               <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Khu Vực Tuyến (Geozone)</span>
@@ -231,6 +319,18 @@ export const LocalDispatchPage: React.FC = () => {
           </div>
 
           <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800/80 shadow-lg flex items-center justify-between">
+            <div>
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Đơn Tồn Ca / Aging Boost</span>
+              <span className="text-2xl font-black text-purple-400 mt-1 block font-mono">
+                {escalatedOrders.filter(o => o.isRolloverOrder || o.agingPriority === 'HIGH' || o.agingPriority === 'CRITICAL').length}
+              </span>
+            </div>
+            <div className="p-3 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20">
+              <Clock className="w-5 h-5" />
+            </div>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800/80 shadow-lg flex items-center justify-between col-span-2 lg:col-span-1">
             <div>
               <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Đổi Khu Vực Chờ Duyệt</span>
               <span className="text-2xl font-black text-amber-400 mt-1 block font-mono">{pendingRequestsCount}</span>
@@ -319,6 +419,167 @@ export const LocalDispatchPage: React.FC = () => {
             </button>
           </div>
 
+          {/* Surge Quota Mega Sale Control Card */}
+          <div className="bg-gradient-to-r from-amber-950/40 via-slate-900 to-rose-950/30 border border-amber-500/30 p-4 rounded-2xl space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-400">
+                  <Flame className="w-5 h-5 text-amber-400 animate-pulse" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-bold text-white flex items-center gap-2">
+                    Điều Chỉnh Quota Cao Điểm / Mega Sale
+                    <span className="text-[10px] bg-amber-500/20 text-amber-300 font-mono px-2 py-0.5 rounded border border-amber-500/30 font-bold">
+                      Dynamic Surge
+                    </span>
+                  </h3>
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    Linh hoạt nâng hạn mức nhận đơn của đội ngũ tài xế hiện có mà không cần tăng chi phí thuê xe ngoài.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[11px] text-slate-400">Đối tượng:</span>
+                  <select
+                    value={surgeTargetRole}
+                    onChange={(e) => setSurgeTargetRole(e.target.value as any)}
+                    className="bg-slate-950 border border-slate-700 text-amber-400 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none"
+                  >
+                    <option value="ALL">Toàn Bộ Shipper</option>
+                    <option value="PICKUP_SHIPPER">Đội Gom (PICKUP_SHIPPER)</option>
+                    <option value="DELIVERY_SHIPPER">Đội Giao (DELIVERY_SHIPPER)</option>
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[11px] text-slate-400">Phạm vi:</span>
+                  <select
+                    value={surgeScope}
+                    onChange={(e) => setSurgeScope(e.target.value as any)}
+                    className="bg-slate-950 border border-slate-700 text-cyan-400 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none"
+                  >
+                    <option value="ALL">Toàn Tuyến</option>
+                    <option value="ZONE">Theo Cụm Tuyến Đang Chọn</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-800/80">
+              <span className="text-[11px] font-bold text-slate-400">Chọn hạn mức:</span>
+              {surgeTargetRole === 'PICKUP_SHIPPER' ? (
+                <>
+                  <button
+                    onClick={() => handleApplySurgeQuota(80)}
+                    disabled={updatingSurge}
+                    className="px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 bg-slate-950 text-slate-300 hover:text-white border border-slate-800"
+                  >
+                    <span>80 đơn</span>
+                    <span className="text-[9px] text-slate-500">(Chuẩn Gom 2 chuyến)</span>
+                  </button>
+                  <button
+                    onClick={() => handleApplySurgeQuota(120)}
+                    disabled={updatingSurge}
+                    className="px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20 font-black"
+                  >
+                    <TrendingUp className="w-3.5 h-3.5" />
+                    <span>120 đơn</span>
+                    <span className="text-[9px] opacity-80">(Mega Sale Gom)</span>
+                  </button>
+                  <button
+                    onClick={() => handleApplySurgeQuota(150)}
+                    disabled={updatingSurge}
+                    className="px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 bg-rose-500 text-white shadow-lg shadow-rose-500/20 font-black"
+                  >
+                    <Flame className="w-3.5 h-3.5" />
+                    <span>150 đơn</span>
+                    <span className="text-[9px] opacity-80">(Đỉnh Điểm Mega Sale)</span>
+                  </button>
+                </>
+              ) : surgeTargetRole === 'DELIVERY_SHIPPER' ? (
+                <>
+                  <button
+                    onClick={() => handleApplySurgeQuota(40)}
+                    disabled={updatingSurge}
+                    className="px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 bg-slate-950 text-slate-300 hover:text-white border border-slate-800"
+                  >
+                    <span>40 đơn</span>
+                    <span className="text-[9px] text-slate-500">(Chuẩn Giao 2 chuyến)</span>
+                  </button>
+                  <button
+                    onClick={() => handleApplySurgeQuota(55)}
+                    disabled={updatingSurge}
+                    className="px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 bg-cyan-500 text-slate-950 shadow-lg shadow-cyan-500/20 font-black"
+                  >
+                    <TrendingUp className="w-3.5 h-3.5" />
+                    <span>55 đơn</span>
+                    <span className="text-[9px] opacity-80">(Mega Sale Giao)</span>
+                  </button>
+                  <button
+                    onClick={() => handleApplySurgeQuota(65)}
+                    disabled={updatingSurge}
+                    className="px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 bg-rose-500 text-white shadow-lg shadow-rose-500/20 font-black"
+                  >
+                    <Flame className="w-3.5 h-3.5" />
+                    <span>65 đơn</span>
+                    <span className="text-[9px] opacity-80">(Đỉnh Điểm Giao)</span>
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={() => handleApplySurgeQuota(25)}
+                    disabled={updatingSurge}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                      surgeQuotaValue === 25
+                        ? 'bg-slate-700 text-white ring-1 ring-slate-500'
+                        : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
+                    }`}
+                  >
+                    <span>25 đơn</span>
+                    <span className="text-[9px] text-slate-500 font-normal">(Mặc định)</span>
+                  </button>
+                  <button
+                    onClick={() => handleApplySurgeQuota(35)}
+                    disabled={updatingSurge}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                      surgeQuotaValue === 35
+                        ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20 font-black'
+                        : 'bg-slate-950 text-amber-400 hover:text-amber-300 border border-amber-500/30'
+                    }`}
+                  >
+                    <TrendingUp className="w-3.5 h-3.5" />
+                    <span>35 đơn</span>
+                    <span className="text-[9px] opacity-80 font-normal">(Chiến Dịch)</span>
+                  </button>
+                  <button
+                    onClick={() => handleApplySurgeQuota(40)}
+                    disabled={updatingSurge}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                      surgeQuotaValue === 40
+                        ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/20 font-black'
+                        : 'bg-slate-950 text-rose-400 hover:text-rose-300 border border-rose-500/30'
+                    }`}
+                  >
+                    <Flame className="w-3.5 h-3.5" />
+                    <span>40 đơn</span>
+                    <span className="text-[9px] opacity-80 font-normal">(Mega Sale Giao)</span>
+                  </button>
+                  <button
+                    onClick={() => handleApplySurgeQuota(80)}
+                    disabled={updatingSurge}
+                    className="px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 bg-slate-950 text-amber-400 hover:text-amber-300 border border-amber-500/30"
+                  >
+                    <span>80 đơn</span>
+                    <span className="text-[9px] opacity-80 font-normal">(Chuẩn Gom)</span>
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+
           {/* Escalated Orders Alert Banner */}
           {escalatedOrders.length > 0 && (
             <div className="bg-rose-500/10 border border-rose-500/30 p-4 rounded-2xl space-y-3">
@@ -339,19 +600,46 @@ export const LocalDispatchPage: React.FC = () => {
                     className="bg-slate-900/90 border border-rose-500/20 p-3 rounded-xl flex items-center justify-between text-xs"
                   >
                     <div>
-                      <div className="font-mono font-bold text-white">{ord.trackingCode}</div>
+                      <div className="font-mono font-bold text-white flex items-center gap-1.5 flex-wrap">
+                        <span>{ord.trackingCode}</span>
+                        {ord.agingPriority === 'CRITICAL' && (
+                          <span className="text-[9px] bg-purple-500/20 text-purple-300 border border-purple-500/30 px-1.5 py-0.2 rounded font-mono font-bold">
+                            Aging +40
+                          </span>
+                        )}
+                        {(ord.isRolloverOrder || ord.agingPriority === 'HIGH') && ord.agingPriority !== 'CRITICAL' && (
+                          <span className="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-1.5 py-0.2 rounded font-mono font-bold">
+                            Tồn Ca +25
+                          </span>
+                        )}
+                      </div>
                       <div className="text-[11px] text-slate-400 mt-0.5">
                         Lấy: {ord.pickupAddress?.address} ({ord.pickupAddress?.ward})
                       </div>
                       <div className="text-[10px] text-rose-300 italic mt-0.5">{ord.riskViolationReason}</div>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                      <button
+                        onClick={() => handleApproveCancel(ord._id, ord.trackingCode)}
+                        className="px-2.5 py-1.5 rounded-lg bg-rose-600/20 hover:bg-rose-600/40 text-rose-300 border border-rose-500/30 font-bold text-[10px] transition shadow cursor-pointer"
+                        title="Duyệt HỦY đơn theo báo cáo thất bại của Shipper"
+                      >
+                        Duyệt Hủy
+                      </button>
+                      <button
+                        onClick={() => handleRetryPickup(ord._id, ord.trackingCode)}
+                        className="px-2.5 py-1.5 rounded-lg bg-amber-600/20 hover:bg-amber-600/40 text-amber-300 border border-amber-500/30 font-bold text-[10px] transition shadow cursor-pointer"
+                        title="Trả đơn về hàng đợi READY_TO_PICK với ưu tiên cao"
+                      >
+                        Lấy Lại
+                      </button>
                       <button
                         onClick={() => handleAutoDispatch(ord._id)}
-                        className="px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-[11px] transition shadow"
+                        className="px-2.5 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-[10px] transition shadow cursor-pointer"
+                        title="Tự động gán ngay cho Shipper lân cận"
                       >
-                        Gán Lại (Auto)
+                        Gán Lại
                       </button>
                     </div>
                   </div>
@@ -401,30 +689,69 @@ export const LocalDispatchPage: React.FC = () => {
 
           {/* Shippers Load Monitor Table */}
           <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
-            <div className="p-4 border-b border-slate-800 flex items-center justify-between">
+            <div className="p-4 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <Users className="w-5 h-5 text-cyan-400" />
                 <h2 className="font-bold text-white text-sm">Giám Sát Tải Trọng & Ca Trực Shipper Nội Vùng</h2>
               </div>
-              <span className="text-xs text-slate-400 font-mono">Tổng: {shippers.length} nhân sự</span>
+              <div className="flex flex-wrap items-center gap-1.5">
+                <button
+                  onClick={() => setRoleFilter('ALL')}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                    roleFilter === 'ALL' ? 'bg-cyan-500 text-slate-950' : 'bg-slate-800 text-slate-400 hover:text-white'
+                  }`}
+                >
+                  Tất Cả ({shippers.length})
+                </button>
+                <button
+                  onClick={() => setRoleFilter('PICKUP_SHIPPER')}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                    roleFilter === 'PICKUP_SHIPPER' ? 'bg-amber-500 text-slate-950 font-black' : 'bg-slate-800 text-amber-400 hover:text-amber-300'
+                  }`}
+                >
+                  Đội Gom ({shippers.filter(s => s.role === 'PICKUP_SHIPPER').length})
+                </button>
+                <button
+                  onClick={() => setRoleFilter('DELIVERY_SHIPPER')}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                    roleFilter === 'DELIVERY_SHIPPER' ? 'bg-blue-500 text-slate-950 font-black' : 'bg-slate-800 text-blue-400 hover:text-blue-300'
+                  }`}
+                >
+                  Đội Giao ({shippers.filter(s => s.role === 'DELIVERY_SHIPPER').length})
+                </button>
+              </div>
             </div>
 
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-950/60 text-slate-400 font-bold border-b border-slate-800">
                 <tr>
-                  <th className="p-3.5">Shipper</th>
+                  <th className="p-3.5">Shipper &amp; Vai Trò</th>
                   <th className="p-3.5">Cụm Tuyến / Địa Bàn</th>
                   <th className="p-3.5">Tải Lệnh Lấy (Pickup Quota)</th>
                   <th className="p-3.5">Tải Lệnh Giao (Delivery Quota)</th>
-                  <th className="p-3.5">Khối Lượng / Tỷ Lệ Nhận</th>
+                  <th className="p-3.5">Khối Lượng &amp; Chuyến</th>
                   <th className="p-3.5 text-right">Trạng Thái Ca</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60">
-                {shippers.map((s) => (
+                {shippers
+                  .filter((s) => (roleFilter === 'ALL' ? true : s.role === roleFilter))
+                  .map((s) => (
                   <tr key={s.id} className="hover:bg-slate-800/30 transition">
                     <td className="p-3.5">
-                      <div className="font-bold text-white">{s.fullName}</div>
+                      <div className="font-bold text-white flex items-center gap-1.5">
+                        {s.fullName}
+                        {s.role === 'PICKUP_SHIPPER' && (
+                          <span className="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-1.5 py-0.2 rounded font-mono font-bold">
+                            Đội Gom
+                          </span>
+                        )}
+                        {s.role === 'DELIVERY_SHIPPER' && (
+                          <span className="text-[9px] bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 px-1.5 py-0.2 rounded font-mono font-bold">
+                            Đội Giao
+                          </span>
+                        )}
+                      </div>
                       <div className="text-slate-400 text-[11px] font-mono">{s.phoneNumber}</div>
                     </td>
 
@@ -443,14 +770,14 @@ export const LocalDispatchPage: React.FC = () => {
                         <span>
                           {s.pickupQuota.current} / {s.pickupQuota.max} đơn
                         </span>
-                        <span className={s.pickupQuota.percent > 85 ? 'text-rose-400' : 'text-blue-400'}>
+                        <span className={s.pickupQuota.percent > 85 ? 'text-rose-400' : 'text-amber-400'}>
                           {s.pickupQuota.percent}%
                         </span>
                       </div>
                       <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
                         <div
                           className={`h-full rounded-full ${
-                            s.pickupQuota.percent > 85 ? 'bg-rose-500' : 'bg-blue-500'
+                            s.pickupQuota.percent > 85 ? 'bg-rose-500' : 'bg-amber-500'
                           }`}
                           style={{ width: `${Math.min(s.pickupQuota.percent, 100)}%` }}
                         />
@@ -479,8 +806,13 @@ export const LocalDispatchPage: React.FC = () => {
 
                     <td className="p-3.5 space-y-0.5">
                       <div className="text-slate-300">
-                        Tải: <span className="font-bold text-white">{s.currentWeightKg}</span> / {s.maxWeightCapacityKg} kg
+                        Tải ca: <span className="font-bold text-white">{s.currentWeightKg}</span> / {s.maxWeightCapacityKg} kg
                       </div>
+                      {s.tripCapacity && (
+                        <div className="text-[10px] text-cyan-300 font-mono">
+                          Chuyến: {s.tripCapacity.currentParcels}/{s.tripCapacity.maxParcels} đơn ({s.tripCapacity.currentWeightKg}/{s.tripCapacity.maxWeightKg}kg)
+                        </div>
+                      )}
                       <div className="text-[10px] text-emerald-400 font-semibold">
                         Uy tín nhận đơn: {s.acceptanceRate}%
                       </div>

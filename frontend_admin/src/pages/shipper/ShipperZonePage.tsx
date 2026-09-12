@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, Compass, RefreshCw, Send, ShieldCheck } from 'lucide-react';
+import { MapPin, Compass, RefreshCw, Send, ShieldCheck, CheckSquare, Square, Layers } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { axiosClient } from '@/api/axiosClient';
 
@@ -20,10 +20,18 @@ export const ShipperZonePage: React.FC = () => {
   const [zones, setZones] = useState<ZoneItem[]>([]);
   const [selectedProvince, setSelectedProvince] = useState<string>('Hà Nội');
   const [allProvinces, setAllProvinces] = useState<string[]>(['Hà Nội', 'TP. Hồ Chí Minh', 'Cần Thơ', 'Đà Nẵng', 'Hải Phòng']);
-  const [selectedZone, setSelectedZone] = useState<string>('');
+  const [selectedZones, setSelectedZones] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('shipper_selected_zones');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
   const [isWorking, setIsWorking] = useState<boolean>(true);
   const [loading, setLoading] = useState<boolean>(true);
   const [shipperArea, setShipperArea] = useState<any>(null);
+  const [shipperProfile, setShipperProfile] = useState<any>(null);
   const [msg, setMsg] = useState<string | null>(null);
 
   useEffect(() => {
@@ -37,6 +45,7 @@ export const ShipperZonePage: React.FC = () => {
       const profRes = await axiosClient.get('/auth/shipper/profile');
       if (profRes.data?.data) {
         const u = profRes.data.data;
+        setShipperProfile(u);
         setIsWorking(u.isWorking !== false);
         setShipperArea(u.operatingArea || null);
         const prov = u.operatingArea?.province || 'Hà Nội';
@@ -57,11 +66,15 @@ export const ShipperZonePage: React.FC = () => {
         params: { province: prov },
       });
       if (res.data?.data) {
-        setZones(res.data.data);
+        const zoneList: ZoneItem[] = res.data.data;
+        setZones(zoneList);
         if (res.data.allProvinces) setAllProvinces(res.data.allProvinces);
-        if (res.data.data.length > 0 && !selectedZone) {
-          setSelectedZone(res.data.data[0].id);
-        }
+
+        setSelectedZones((prev) => {
+          const validPrev = prev.filter((id) => zoneList.some((z) => z.id === id || z.code === id));
+          if (validPrev.length > 0) return validPrev;
+          return zoneList.length > 0 ? [zoneList[0].id] : [];
+        });
       }
     } catch (err) {
       console.warn('Lỗi tải danh mục zone:', err);
@@ -81,6 +94,33 @@ export const ShipperZonePage: React.FC = () => {
       console.warn('Lỗi cập nhật trạng thái làm việc');
     }
   };
+
+  const handleToggleZone = (zoneId: string) => {
+    setSelectedZones((prev) => {
+      if (prev.includes(zoneId)) {
+        if (prev.length <= 1) {
+          setMsg('⚠️ Bạn cần chọn ít nhất 1 cụm tuyến để gom đơn!');
+          setTimeout(() => setMsg(null), 3000);
+          return prev;
+        }
+        return prev.filter((id) => id !== zoneId);
+      } else {
+        return [...prev, zoneId];
+      }
+    });
+  };
+
+  const handleSelectAllZones = () => {
+    if (selectedZones.length === zones.length) {
+      if (zones.length > 0) setSelectedZones([zones[0].id]);
+    } else {
+      setSelectedZones(zones.map((z) => z.id));
+    }
+  };
+
+  const totalWaitingOrders = zones
+    .filter((z) => selectedZones.includes(z.id))
+    .reduce((sum, z) => sum + (z.activeOrders || 0), 0);
 
   return (
     <div className="space-y-4">
@@ -108,14 +148,24 @@ export const ShipperZonePage: React.FC = () => {
         </div>
 
         {/* Quota Overview */}
-        <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800 text-center">
+        <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-800 text-center">
           <div className="bg-slate-950/70 p-2.5 rounded-xl border border-slate-850">
             <span className="text-[10px] text-slate-400 block">Hạn Mức Lấy Hàng</span>
-            <span className="text-sm font-black text-blue-400">0 / 25 đơn</span>
+            <span className="text-xs sm:text-sm font-black text-blue-400">
+              {shipperProfile?.pickupQuota?.current || 0} / {shipperProfile?.pickupQuota?.max || 25} đơn
+            </span>
           </div>
           <div className="bg-slate-950/70 p-2.5 rounded-xl border border-slate-850">
             <span className="text-[10px] text-slate-400 block">Hạn Mức Giao Hàng</span>
-            <span className="text-sm font-black text-sky-400">0 / 35 đơn</span>
+            <span className="text-xs sm:text-sm font-black text-sky-400">
+              {shipperProfile?.deliveryQuota?.current || 0} / {shipperProfile?.deliveryQuota?.max || 35} đơn
+            </span>
+          </div>
+          <div className="bg-slate-950/70 p-2.5 rounded-xl border border-slate-850">
+            <span className="text-[10px] text-slate-400 block">Tải Trọng Cho Phép</span>
+            <span className="text-xs sm:text-sm font-black text-amber-400">
+              {shipperProfile?.currentWeightKg || 0} / {shipperProfile?.maxWeightCapacityKg || 45} kg
+            </span>
           </div>
         </div>
       </div>
@@ -150,12 +200,12 @@ export const ShipperZonePage: React.FC = () => {
         </div>
       </div>
 
-      {/* Geozone Selection List */}
+      {/* Geozone Multi-Selection List */}
       <div className="space-y-2.5">
         <div className="flex items-center justify-between px-1">
           <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
             <MapPin className="w-3.5 h-3.5 text-cyan-400" />
-            Các Cụm Tuyến Thuộc Địa Bàn:
+            Cụm Tuyến Nhận Gom Đơn (Chọn nhiều cụm khi ít đơn):
           </span>
 
           <select
@@ -175,6 +225,23 @@ export const ShipperZonePage: React.FC = () => {
           </select>
         </div>
 
+        {/* Aggregate Selection Indicator */}
+        <div className="bg-cyan-950/40 border border-cyan-500/30 p-2.5 rounded-xl flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Layers className="w-4 h-4 text-cyan-400" />
+            <span className="text-xs font-bold text-cyan-200">
+              Đã chọn <strong className="text-white font-black">{selectedZones.length}</strong> cụm tuyến •{' '}
+              <strong className="text-emerald-400 font-black">~{totalWaitingOrders}</strong> đơn chờ gom
+            </span>
+          </div>
+          <button
+            onClick={handleSelectAllZones}
+            className="text-[11px] font-bold text-cyan-400 hover:text-cyan-300 underline cursor-pointer"
+          >
+            {selectedZones.length === zones.length ? 'Chỉ chọn 1 cụm' : 'Chọn tất cả cụm'}
+          </button>
+        </div>
+
         {loading ? (
           <div className="p-6 text-center text-slate-500 text-xs space-y-1">
             <RefreshCw className="w-5 h-5 animate-spin mx-auto text-cyan-400" />
@@ -182,50 +249,65 @@ export const ShipperZonePage: React.FC = () => {
           </div>
         ) : (
           <div className="space-y-2.5">
-            {zones.map((z) => (
-              <div
-                key={z.id}
-                onClick={() => setSelectedZone(z.id)}
-                className={`p-3.5 rounded-2xl border transition cursor-pointer ${
-                  selectedZone === z.id
-                    ? 'bg-slate-900 border-cyan-500/60 ring-1 ring-cyan-500/60 shadow-lg shadow-cyan-500/10'
-                    : 'bg-slate-900/60 border-slate-800 hover:border-slate-700'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-mono font-bold text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded">
-                    {z.code} ({z.hubCode})
-                  </span>
-                  <span className="text-[11px] text-emerald-400 font-bold">~{z.activeOrders} đơn chờ</span>
-                </div>
-
-                <h3 className="font-bold text-white text-xs mt-1.5">{z.name}</h3>
-                <p className="text-[11px] text-slate-400 mt-0.5">
-                  {z.ward}, {z.district}, {z.province}
-                </p>
-
-                <div className="flex flex-wrap gap-1 mt-2">
-                  {z.subZones.map((sz, idx) => (
-                    <span
-                      key={idx}
-                      className="text-[9px] bg-slate-950 text-slate-300 px-2 py-0.5 rounded-md border border-slate-800 font-medium"
-                    >
-                      {sz}
+            {zones.map((z) => {
+              const isSelected = selectedZones.includes(z.id);
+              return (
+                <div
+                  key={z.id}
+                  onClick={() => handleToggleZone(z.id)}
+                  className={`p-3.5 rounded-2xl border transition cursor-pointer ${
+                    isSelected
+                      ? 'bg-slate-900 border-cyan-500/70 ring-1 ring-cyan-500/50 shadow-lg shadow-cyan-500/10'
+                      : 'bg-slate-900/60 border-slate-800 hover:border-slate-700 opacity-75'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      {isSelected ? (
+                        <CheckSquare className="w-4 h-4 text-cyan-400" />
+                      ) : (
+                        <Square className="w-4 h-4 text-slate-500" />
+                      )}
+                      <span className="text-[10px] font-mono font-bold text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded">
+                        {z.code} ({z.hubCode})
+                      </span>
+                    </div>
+                    <span className={`text-[11px] font-bold ${z.activeOrders > 0 ? 'text-emerald-400' : 'text-slate-500'}`}>
+                      ~{z.activeOrders} đơn chờ
                     </span>
-                  ))}
+                  </div>
+
+                  <h3 className="font-bold text-white text-xs mt-2">{z.name}</h3>
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    {z.ward}, {z.district}, {z.province}
+                  </p>
+
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {z.subZones.map((sz, idx) => (
+                      <span
+                        key={idx}
+                        className="text-[9px] bg-slate-950 text-slate-300 px-2 py-0.5 rounded-md border border-slate-800 font-medium"
+                      >
+                        {sz}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
         <button
           onClick={() => {
-            navigate('/shipper/pickup');
+            localStorage.setItem('shipper_selected_zones', JSON.stringify(selectedZones));
+            navigate(`/shipper/pickup?zones=${selectedZones.join(',')}`);
           }}
-          className="w-full py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold text-xs shadow-lg shadow-cyan-500/20 transition mt-3 cursor-pointer"
+          disabled={selectedZones.length === 0}
+          className="w-full py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 disabled:opacity-50 text-white font-bold text-xs shadow-lg shadow-cyan-500/20 transition mt-3 cursor-pointer flex items-center justify-center gap-2"
         >
-          Bắt Đầu Nhận Đơn Lấy Hàng Tại Khu Vực Này
+          <Layers className="w-4 h-4" />
+          Bắt Đầu Nhận Đơn Lấy Hàng ({selectedZones.length} Cụm Tuyến)
         </button>
       </div>
     </div>

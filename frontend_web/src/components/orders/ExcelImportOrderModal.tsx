@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   FileSpreadsheet,
   Upload,
@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { orderApi } from '../../api/order.api';
+import { sellerApi } from '../../api/seller.api';
 import type { CreateOrderPayload, Order } from '../../types/order.types';
 import { useAuth } from '../../hooks/useAuth';
 
@@ -91,6 +92,48 @@ export const ExcelImportOrderModal: React.FC<ExcelImportOrderModalProps> = ({
   const [editingCell, setEditingCell] = useState<{ rIdx: number; cIdx: number } | null>(null);
   const [editingStep3RowIndex, setEditingStep3RowIndex] = useState<number | null>(null);
 
+  // Default Pickup Address for batch orders
+  const [pickupAddress, setPickupAddress] = useState({
+    fullName: user?.fullName || 'Shop E-Logistic',
+    phone: user?.phoneNumber || '0901234567',
+    address: user?.address || '123 Nguyễn Văn Cừ',
+    ward: 'Phường 1',
+    district: 'Quận 5',
+    province: 'TP Hồ Chí Minh',
+  });
+
+  useEffect(() => {
+    if (isOpen) {
+      sellerApi
+        .getPickupAddresses()
+        .then((res) => {
+          const list = res.data || [];
+          if (list.length > 0) {
+            const def = list.find((a: any) => a.isDefault) || list[0];
+            if (def) {
+              setPickupAddress({
+                fullName: def.contactName || user?.fullName || 'Shop E-Logistic',
+                phone: def.contactPhone || user?.phoneNumber || '0901234567',
+                address: def.addressDetail || user?.address || '123 Nguyễn Văn Cừ',
+                ward: def.ward || 'Phường 1',
+                district: def.district || 'Quận 5',
+                province: def.province || 'TP Hồ Chí Minh',
+              });
+            }
+          } else if (user) {
+            setPickupAddress((prev) => ({
+              ...prev,
+              fullName: user.fullName || prev.fullName,
+              phone: user.phoneNumber || prev.phone,
+              address: user.address || prev.address,
+            }));
+          }
+        })
+        .catch(() => {});
+    }
+  }, [isOpen, user]);
+
+
   // Helper functions for Step 3 Row Edit & Delete
   const handleUpdateStep3Row = (rowIndex: number, updatedFields: Partial<MappedOrderItem>) => {
     setParsedItems((prev) =>
@@ -98,13 +141,24 @@ export const ExcelImportOrderModal: React.FC<ExcelImportOrderModalProps> = ({
         if (item.rowIndex !== rowIndex) return item;
         const newItem = { ...item, ...updatedFields };
 
+        // Smart Phone Clean
+        let cleanPhone = newItem.receiverPhone.trim().replace(/[\s\.\-_]/g, '');
+        if (cleanPhone.startsWith('+84')) {
+          cleanPhone = '0' + cleanPhone.slice(3);
+        } else if (cleanPhone.startsWith('84') && cleanPhone.length === 11) {
+          cleanPhone = '0' + cleanPhone.slice(2);
+        } else if (/^[1-9]\d{8}$/.test(cleanPhone)) {
+          cleanPhone = '0' + cleanPhone;
+        }
+        newItem.receiverPhone = cleanPhone;
+
         // Dynamic Re-validation
         const errors: string[] = [];
         if (!newItem.receiverName.trim()) errors.push('Thiếu họ tên người nhận');
-        if (!newItem.receiverPhone.trim()) errors.push('Thiếu số điện thoại');
+        if (!cleanPhone) errors.push('Thiếu số điện thoại');
         else if (
-          !/^(0|\+84)[3|5|7|8|9][0-9]{8}$/.test(newItem.receiverPhone.trim()) &&
-          newItem.receiverPhone.trim().length < 10
+          !/^(0[3|5|7|8|9][0-9]{8})$/.test(cleanPhone) &&
+          cleanPhone.length < 10
         ) {
           errors.push('Số điện thoại không hợp lệ');
         }
@@ -197,6 +251,16 @@ export const ExcelImportOrderModal: React.FC<ExcelImportOrderModalProps> = ({
     logs: [],
     createdOrders: [],
   });
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen && !importing) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, importing, onClose]);
 
   // Auto-load initialFile khi modal vừa mở (từ drag-drop ngoài trang)
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -358,16 +422,20 @@ export const ExcelImportOrderModal: React.FC<ExcelImportOrderModalProps> = ({
       if (!hasAnyContent) continue; // Skip blank rows
 
       const recName = String(row[mapping.receiverNameCol] || '').trim();
-      let rawPhone = String(row[mapping.receiverPhoneCol] || '').trim();
+      let rawPhone = String(row[mapping.receiverPhoneCol] || '').trim().replace(/[\s\.\-_]/g, '');
 
-      // Smart Phone Normalization (handles scientific notation 9.12E+08 and missing leading 0)
+      // Smart Phone Normalization (handles scientific notation 9.12E+08, international +84 and missing leading 0)
       if (/^\d+\.?\d*e\+\d+$/i.test(rawPhone)) {
         const numVal = Number(rawPhone);
         if (!isNaN(numVal)) {
           rawPhone = Math.round(numVal).toString();
         }
       }
-      if (/^[1-9]\d{8}$/.test(rawPhone)) {
+      if (rawPhone.startsWith('+84')) {
+        rawPhone = '0' + rawPhone.slice(3);
+      } else if (rawPhone.startsWith('84') && rawPhone.length === 11) {
+        rawPhone = '0' + rawPhone.slice(2);
+      } else if (/^[1-9]\d{8}$/.test(rawPhone)) {
         rawPhone = '0' + rawPhone;
       }
       const recPhone = rawPhone;
@@ -469,39 +537,15 @@ export const ExcelImportOrderModal: React.FC<ExcelImportOrderModalProps> = ({
         continue;
       }
 
-      // Check duplicate rule
-      const isDuplicate = item.rowIndex > 10 && item.rowIndex % 5 === 0; // Demonstration duplicate condition or existing order match
-
-      if (isDuplicate) {
-        if (mapping.duplicateStrategy === 'SKIP') {
-          skippedCount++;
-          logs.push({
-            rowIndex: item.rowIndex,
-            title: `${item.receiverName} (${item.productName})`,
-            reason: `Đã tồn tại đơn hàng trùng SKU (${item.shopOrderCode || 'null'}) hoặc SĐT + Địa chỉ`,
-            type: 'SKIPPED',
-          });
-          continue;
-        } else {
-          updatedCount++;
-          logs.push({
-            rowIndex: item.rowIndex,
-            title: `${item.receiverName} (${item.productName})`,
-            reason: `Đã cập nhật thông tin thành công vào đơn hàng cũ`,
-            type: 'UPDATED',
-          });
-        }
-      }
-
       // Construct Payload & Call API
       const payload: CreateOrderPayload = {
         pickupAddress: {
-          fullName: user?.fullName || 'Shop E-Logistic',
-          phone: user?.phoneNumber || '0901234567',
-          address: user?.address || '123 Nguyễn Văn Cừ',
-          ward: 'Phường 1',
-          district: 'Quận 5',
-          province: 'TP Hồ Chí Minh',
+          fullName: pickupAddress.fullName,
+          phone: pickupAddress.phone,
+          address: pickupAddress.address,
+          ward: pickupAddress.ward,
+          district: pickupAddress.district,
+          province: pickupAddress.province,
         },
         deliveryAddress: {
           fullName: item.receiverName,
@@ -527,48 +571,34 @@ export const ExcelImportOrderModal: React.FC<ExcelImportOrderModalProps> = ({
 
       try {
         const res = await orderApi.createOrder(payload);
-        if (res.data?.success) {
+        if (res.data?.success && res.data?.data) {
           successCount++;
           createdOrders.push(res.data.data);
+          logs.push({
+            rowIndex: item.rowIndex,
+            title: `${item.receiverName} (${item.productName})`,
+            reason: `Tạo thành công vận đơn: ${res.data.data.trackingCode || res.data.data.trackingNumber}`,
+            type: 'SUCCESS',
+          });
         } else {
-          successCount++;
-          createdOrders.push({
-            _id: `ORD-IMP-${Date.now()}-${idx}`,
-            trackingCode: `ELG-${Math.floor(10000000 + Math.random() * 90000000)}`,
-            trackingNumber: `ELG-${Math.floor(10000000 + Math.random() * 90000000)}`,
-            pickupAddress: payload.pickupAddress,
-            deliveryAddress: payload.deliveryAddress,
-            items: payload.items,
-            dimensions: payload.dimensions,
-            actualWeight: item.weight,
-            shippingFee: 22000,
-            status: 'CREATED',
-            codAmount: item.codAmount,
-            goodsValue: item.goodsValue,
-            sellerId: user?._id || 'seller_1',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          } as Order);
+          errorCount++;
+          const errMsg = res.data?.message || 'Không thể tạo đơn hàng trên máy chủ';
+          logs.push({
+            rowIndex: item.rowIndex,
+            title: `${item.receiverName} (${item.productName})`,
+            reason: errMsg,
+            type: 'ERROR',
+          });
         }
-      } catch (err) {
-        successCount++;
-        createdOrders.push({
-          _id: `ORD-IMP-${Date.now()}-${idx}`,
-          trackingCode: `ELG-${Math.floor(10000000 + Math.random() * 90000000)}`,
-          trackingNumber: `ELG-${Math.floor(10000000 + Math.random() * 90000000)}`,
-          pickupAddress: payload.pickupAddress,
-          deliveryAddress: payload.deliveryAddress,
-          items: payload.items,
-          dimensions: payload.dimensions,
-          actualWeight: item.weight,
-          shippingFee: 22000,
-          status: 'CREATED',
-          codAmount: item.codAmount,
-          goodsValue: item.goodsValue,
-          sellerId: user?._id || 'seller_1',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        } as Order);
+      } catch (err: any) {
+        errorCount++;
+        const errMsg = err.response?.data?.message || err.message || 'Lỗi kết nối khi tạo đơn hàng';
+        logs.push({
+          rowIndex: item.rowIndex,
+          title: `${item.receiverName} (${item.productName})`,
+          reason: errMsg,
+          type: 'ERROR',
+        });
       }
     }
 
@@ -581,10 +611,20 @@ export const ExcelImportOrderModal: React.FC<ExcelImportOrderModalProps> = ({
       createdOrders,
     });
     setImporting(false);
+  };
 
-    if (onSuccess && createdOrders.length > 0) {
-      onSuccess(createdOrders);
+  const handleFinishAndClose = () => {
+    if (onSuccess && importResults.createdOrders.length > 0) {
+      onSuccess(importResults.createdOrders);
     }
+    onClose();
+  };
+
+  const handleModalClose = () => {
+    if (currentStep === 4 && onSuccess && importResults.createdOrders.length > 0) {
+      onSuccess(importResults.createdOrders);
+    }
+    onClose();
   };
 
   // Helper: Get sample cell values for dropdown preview chips
@@ -636,7 +676,7 @@ export const ExcelImportOrderModal: React.FC<ExcelImportOrderModalProps> = ({
           <div className="flex items-center gap-1.5">
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleModalClose}
               className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-200 hover:text-slate-600 transition-colors"
               title="Thu nhỏ"
             >
@@ -644,7 +684,7 @@ export const ExcelImportOrderModal: React.FC<ExcelImportOrderModalProps> = ({
             </button>
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleModalClose}
               className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-200 hover:text-slate-600 transition-colors"
               title="Đóng"
             >
@@ -2010,7 +2050,7 @@ export const ExcelImportOrderModal: React.FC<ExcelImportOrderModalProps> = ({
             {currentStep === 4 && !importing && (
               <button
                 type="button"
-                onClick={onClose}
+                onClick={handleFinishAndClose}
                 className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition"
               >
                 Thu nhỏ xuống góc
@@ -2052,10 +2092,10 @@ export const ExcelImportOrderModal: React.FC<ExcelImportOrderModalProps> = ({
             {currentStep === 4 && !importing && (
               <button
                 type="button"
-                onClick={onClose}
+                onClick={handleFinishAndClose}
                 className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold shadow-md transition"
               >
-                Đóng & Xem danh sách đơn
+                Đóng & Xem danh sách đơn {importResults.success > 0 ? `(${importResults.success} đơn)` : ''}
               </button>
             )}
           </div>

@@ -125,8 +125,13 @@ const loginUser = async (req, res) => {
       _id: user._id,
       fullName: user.fullName,
       email: user.email,
+      phoneNumber: user.phoneNumber,
       role: user.role,
       hubId: user.hubId || null,
+      address: user.address || '',
+      companyName: user.companyName || '',
+      kycStatus: user.kycStatus || 'NOT_SUBMITTED',
+      kycVerified: user.kycVerified || false,
       accessToken,
       refreshToken,
     });

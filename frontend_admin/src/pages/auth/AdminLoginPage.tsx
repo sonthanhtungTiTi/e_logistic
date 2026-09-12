@@ -16,7 +16,11 @@ export const AdminLoginPage: React.FC = () => {
   const navigate = useNavigate();
 
   const redirectByRole = (role: string) => {
-    if (
+    if (role === 'PICKUP_SHIPPER' || role === UserRole.PICKUP_SHIPPER) {
+      navigate('/shipper/pickup');
+    } else if (role === 'DELIVERY_SHIPPER' || role === UserRole.DELIVERY_SHIPPER) {
+      navigate('/shipper/delivery');
+    } else if (
       role === 'SHIPPER' ||
       role === 'LOCAL_SHIPPER' ||
       role === UserRole.SHIPPER ||

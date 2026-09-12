@@ -19,6 +19,8 @@ export interface AuthUser {
   bankBranch?: string;
   isEmailVerified?: boolean;
   isBankLinked?: boolean;
+  kycStatus?: 'NOT_SUBMITTED' | 'PENDING' | 'APPROVED' | 'REJECTED' | 'VERIFIED_KYC';
+  kycVerified?: boolean;
 }
 
 export interface LoginResponse {
