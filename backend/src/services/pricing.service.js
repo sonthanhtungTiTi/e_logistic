@@ -107,35 +107,27 @@ const calculateOrderFees = ({ actualWeight, dimensions, pickupAddress, deliveryA
   const zoneInfo = hubRoutingService.calculateZoneTier(pickupAddress?.province, deliveryAddress?.province);
   const routeMetrics = hubRoutingService.calculateRouteDistanceAndEta(pickupRouting.hubCode, deliveryRouting.hubCode);
 
-  let baseFee = 0;
-  const extraWeightSteps = chgW > 1.0 ? Math.ceil((chgW - 1.0) / 0.5) : 0;
+  const pricingConfigCtrl = require('../controllers/pricingConfig.controller');
+  const activeConfig = pricingConfigCtrl.getSyncConfig();
+  const zoneConfig = activeConfig.zones?.[zoneInfo.tier] || {
+    baseFee: 35000,
+    extraWeightFee: 8500,
+    baseWeightKg: 1.0,
+    stepKg: 0.5,
+  };
 
-  switch (zoneInfo.tier) {
-    case 'INTRA_PROVINCE':
-      // Nội tỉnh: 16.500 đ (<= 1.0 kg), + 5.000 đ / 0.5 kg phụ trội
-      baseFee = 16500 + extraWeightSteps * 5000;
-      break;
-    case 'INTRA_REGION':
-      // Nội miền: 22.000 đ (<= 1.0 kg), + 6.000 đ / 0.5 kg phụ trội
-      baseFee = 22000 + extraWeightSteps * 6000;
-      break;
-    case 'NEAR_REGION':
-      // Cận miền: 28.000 đ (<= 1.0 kg), + 7.000 đ / 0.5 kg phụ trội
-      baseFee = 28000 + extraWeightSteps * 7000;
-      break;
-    case 'INTER_REGION':
-    default:
-      // Liên miền (Bắc - Nam): 35.000 đ (<= 1.0 kg), + 8.500 đ / 0.5 kg phụ trội
-      baseFee = 35000 + extraWeightSteps * 8500;
-      break;
-  }
+  const baseWeight = zoneConfig.baseWeightKg || 1.0;
+  const step = zoneConfig.stepKg || 0.5;
+  const extraWeightSteps = chgW > baseWeight ? Math.ceil((chgW - baseWeight) / step) : 0;
+  let baseFee = zoneConfig.baseFee + extraWeightSteps * (zoneConfig.extraWeightFee || 0);
 
   // 4. Insurance / Goods Valuation Fee
-  // If goodsValue > 1,000,000 VND -> 0.5% insurance fee
   let insuranceFee = 0;
   const numericGoodsValue = Math.max(0, Math.floor(Number(goodsValue) || 0));
-  if (numericGoodsValue > 1000000) {
-    insuranceFee = Math.round(numericGoodsValue * 0.005);
+  const insThreshold = activeConfig.insurance?.threshold || 1000000;
+  const insRate = activeConfig.insurance?.rate || 0.005;
+  if (numericGoodsValue > insThreshold) {
+    insuranceFee = Math.round(numericGoodsValue * insRate);
   }
 
   // 5. Discount Code Validation & Calculation
@@ -144,7 +136,11 @@ const calculateOrderFees = ({ actualWeight, dimensions, pickupAddress, deliveryA
 
   if (discountCode && discountCode.trim() !== '') {
     const codeKey = discountCode.trim().toUpperCase();
-    const promo = DISCOUNT_CODES[codeKey];
+    const allVouchers = pricingConfigCtrl.getSyncVouchers();
+    let promo = Array.isArray(allVouchers) ? allVouchers.find((v) => v.code === codeKey) : null;
+    if (!promo) {
+      promo = DISCOUNT_CODES[codeKey];
+    }
 
     if (!promo || !promo.active) {
       discountError = 'Mã khuyến mãi không hợp lệ hoặc đã hết lượt sử dụng';
@@ -192,16 +188,21 @@ const evaluateRisk = ({ shippingFee, codAmount = 0, goodsValue = 0, needsManualR
   const numericCod = Math.max(0, Math.floor(Number(codAmount) || 0));
   const numericGoods = Math.max(0, Math.floor(Number(goodsValue) || 0));
 
+  const pricingConfigCtrl = require('../controllers/pricingConfig.controller');
+  const activeConfig = pricingConfigCtrl.getSyncConfig();
+  const feeLimit = activeConfig.riskThresholds?.feeWarning || 500000;
+  const codLimit = activeConfig.riskThresholds?.codWarning || 10000000;
+
   let flagFeeWarning = false;
   let flagCodAnomaly = false;
 
-  // Fee threshold warning (> 500,000 VND)
-  if (shippingFee > 500000) {
+  // Fee threshold warning (> 500,000 VND hoặc cấu hình)
+  if (shippingFee > feeLimit) {
     flagFeeWarning = true;
   }
 
-  // COD anomaly warning (> 10,000,000 VND or COD > 2x goodsValue if goodsValue > 0)
-  if (numericCod > 10000000 || (numericGoods > 0 && numericCod > numericGoods * 2)) {
+  // COD anomaly warning (> 10,000,000 VND hoặc COD > 2x goodsValue if goodsValue > 0)
+  if (numericCod > codLimit || (numericGoods > 0 && numericCod > numericGoods * 2)) {
     flagCodAnomaly = true;
   }
 

@@ -61,4 +61,13 @@ router.post('/zone-change-requests/:id/approve', shipperZoneController.approveZo
 router.post('/zone-change-requests/:id/reject', shipperZoneController.rejectZoneChangeRequest);
 router.put('/users/:id/assign-zone', shipperZoneController.adminAssignZone);
 
+// ==========================================
+// 3. CẤU HÌNH BẢNG GIÁ PHÍ SHIP & VOUCHER KHUYẾN MÃI
+// ==========================================
+const pricingConfigController = require('../controllers/pricingConfig.controller');
+router.get('/pricing-config', pricingConfigController.getPricingAndVouchers);
+router.put('/pricing-config', pricingConfigController.updatePricingConfig);
+router.post('/vouchers', pricingConfigController.saveVoucher);
+router.delete('/vouchers/:code', pricingConfigController.deleteVoucher);
+
 module.exports = router;

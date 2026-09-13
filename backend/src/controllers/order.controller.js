@@ -1,5 +1,7 @@
 const Order = require('../models/order.model');
+const User = require('../models/user.model');
 const orderService = require('../services/order.service');
+const ioSingleton = require('../lib/ioSingleton');
 
 /**
  * Background Task Helper: Notify Dispatcher when a routed order is cancelled (Step 8 & Alt 8.1)
@@ -40,7 +42,7 @@ const getQuote = async (req, res, next) => {
  */
 const createOrder = async (req, res, next) => {
   try {
-    const headerIdempotencyKey = req.headers['x-idempotency-key'] || req.headers['idempotency-key'];
+    const headerIdempotencyKey = req.headers['x-idempotency-key'] || req.headers['idempotency-key'] || req.body?.idempotencyKey;
     const sellerId = req.effectiveSellerId || req.user._id;
     const result = await orderService.createNewOrder(sellerId, req.body, headerIdempotencyKey);
 
@@ -408,6 +410,9 @@ const approveOrderHandler = async (req, res, next) => {
 
     await order.save();
 
+    // Phát sự kiện realtime tới Admin và Seller
+    ioSingleton.emitOrderUpdate(order.sellerId, order);
+
     return res.status(200).json({
       success: true,
       message: 'Phê duyệt đơn hàng và chuyển sang READY_TO_PICK thành công',
@@ -572,23 +577,192 @@ const pickupFailedHandler = async (req, res, next) => {
   }
 };
 
+const MASTER_ZONES = {
+  'Hà Nội': [
+    {
+      id: 'z-han-01',
+      code: 'ZONE-HAN-HK',
+      name: 'Cụm Tuyến Hoàn Kiếm - Hà Nội',
+      province: 'Hà Nội',
+      district: 'Quận Hoàn Kiếm',
+      ward: 'Phường Hàng Bài',
+      subZones: ['Khu phố 1', 'Khu phố 2', 'Khu phố 3', 'Đường Tràng Tiền', 'Đường Đinh Tiên Hoàng'],
+      hubCode: 'HUB_HAN_01',
+    },
+    {
+      id: 'z-han-02',
+      code: 'ZONE-HAN-TX',
+      name: 'Cụm Tuyến Thanh Xuân - Hà Nội',
+      province: 'Hà Nội',
+      district: 'Quận Thanh Xuân',
+      ward: 'Phường Thanh Xuân Trung',
+      subZones: ['Khu phố 4', 'Khu phố 5', 'Khu phố 6', 'Đường Nguyễn Trãi', 'Đường Khuất Duy Tiến'],
+      hubCode: 'HUB_HAN_01',
+    },
+    {
+      id: 'z-han-03',
+      code: 'ZONE-HAN-CG',
+      name: 'Cụm Tuyến Cầu Giấy - Hà Nội',
+      province: 'Hà Nội',
+      district: 'Quận Cầu Giấy',
+      ward: 'Phường Dịch Vọng',
+      subZones: ['Khu phố 1', 'Khu phố 2', 'Khu phố 3', 'Đường Cầu Giấy', 'Đường Duy Tân'],
+      hubCode: 'HUB_HAN_01',
+    },
+  ],
+  'TP. Hồ Chí Minh': [
+    {
+      id: 'z-sgn-01',
+      code: 'ZONE-SGN-TB1',
+      name: 'Cụm Tuyến Phường 12 - Tân Bình',
+      province: 'TP. Hồ Chí Minh',
+      district: 'Quận Tân Bình',
+      ward: 'Phường 12',
+      subZones: ['Khu phố 1', 'Khu phố 2', 'Khu phố 3', 'Đường Hoàng Hoa Thám'],
+      hubCode: 'HUB_SGN_01',
+    },
+    {
+      id: 'z-sgn-02',
+      code: 'ZONE-SGN-TB2',
+      name: 'Cụm Tuyến Phường 13 - Tân Bình',
+      province: 'TP. Hồ Chí Minh',
+      district: 'Quận Tân Bình',
+      ward: 'Phường 13',
+      subZones: ['Khu phố 4', 'Khu phố 5', 'Đường Cộng Hòa'],
+      hubCode: 'HUB_SGN_01',
+    },
+    {
+      id: 'z-sgn-03',
+      code: 'ZONE-SGN-Q1',
+      name: 'Cụm Tuyến Trung Tâm Quận 1',
+      province: 'TP. Hồ Chí Minh',
+      district: 'Quận 1',
+      ward: 'Phường Bến Nghé',
+      subZones: ['Khu phố 1', 'Khu phố 2', 'Đường Lê Duẩn', 'Đường Nguyễn Huệ'],
+      hubCode: 'HUB_SGN_01',
+    },
+  ],
+  'Cần Thơ': [
+    {
+      id: 'z-vca-01',
+      code: 'ZONE-VCA-NK',
+      name: 'Cụm Tuyến Ninh Kiều - Cần Thơ',
+      province: 'Cần Thơ',
+      district: 'Quận Ninh Kiều',
+      ward: 'Phường Tân An',
+      subZones: ['Khu phố 1', 'Khu phố 2', 'Khu phố 3', 'Đường Hai Bà Trưng', 'Bến Ninh Kiều'],
+      hubCode: 'HUB_VCA_01',
+    },
+    {
+      id: 'z-vca-02',
+      code: 'ZONE-VCA-CR',
+      name: 'Cụm Tuyến Cái Răng - Cần Thơ',
+      province: 'Cần Thơ',
+      district: 'Quận Cái Răng',
+      ward: 'Phường Lê Bình',
+      subZones: ['Khu phố 1', 'Khu phố 2', 'Đường Quang Trung'],
+      hubCode: 'HUB_VCA_01',
+    },
+  ],
+  'Đà Nẵng': [
+    {
+      id: 'z-dad-01',
+      code: 'ZONE-DAD-HC',
+      name: 'Cụm Tuyến Hải Châu - Đà Nẵng',
+      province: 'Đà Nẵng',
+      district: 'Quận Hải Châu',
+      ward: 'Phường Hải Châu 1',
+      subZones: ['Khu phố 1', 'Khu phố 2', 'Đường Bạch Đằng', 'Đường Nguyễn Văn Linh'],
+      hubCode: 'HUB_DAD_01',
+    },
+  ],
+  'Hải Phòng': [
+    {
+      id: 'z-hph-01',
+      code: 'ZONE-HPH-HB',
+      name: 'Cụm Tuyến Hồng Bàng - Hải Phòng',
+      province: 'Hải Phòng',
+      district: 'Quận Hồng Bàng',
+      ward: 'Phường Hoàng Văn Thụ',
+      subZones: ['Khu phố 1', 'Khu phố 2', 'Đường Đinh Tiên Hoàng'],
+      hubCode: 'HUB_HPH_01',
+    },
+  ],
+};
+
+const escapeRegex = (str) => String(str || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 const getShipperPickupTasks = async (req, res, next) => {
   try {
     const user = req.user;
+    // Chặn chéo quyền: Shipper chuyên giao không được vào luồng gom
+    if (user && user.role === 'DELIVERY_SHIPPER') {
+      return res.status(403).json({
+        success: false,
+        message: 'Tài khoản của bạn là Shipper Giao Hàng (Last-Mile), không có quyền thực hiện gom hàng tại Shop.',
+      });
+    }
+
+    const { zones, province } = req.query;
 
     let query = {
       status: 'READY_TO_PICK',
     };
 
-    if (user && user.operatingArea && user.operatingArea.province) {
-      const provRegex = new RegExp(user.operatingArea.province.replace(/^(Tỉnh|Thành phố|TP\.?)\s+/i, '').trim(), 'i');
+    // Hỗ trợ gom tuyến đa cụm (Multi-Zone Selection)
+    if (zones) {
+      const zoneIds = (Array.isArray(zones) ? zones.join(',') : String(zones))
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+
+      const matchedZones = [];
+      Object.values(MASTER_ZONES).forEach((zList) => {
+        zList.forEach((mz) => {
+          if (zoneIds.includes(mz.id) || zoneIds.includes(mz.code)) {
+            matchedZones.push(mz);
+          }
+        });
+      });
+
+      if (matchedZones.length > 0) {
+        const zoneFilters = matchedZones.map((mz) => {
+          const wardNorm = mz.ward.replace(/^(Phường|Xã|Thị trấn)\s+/i, '').trim();
+          const distNorm = mz.district.replace(/^(Quận|Huyện|Thị xã|TP\.?)\s+/i, '').trim();
+          return {
+            'pickupAddress.ward': new RegExp(escapeRegex(wardNorm), 'i'),
+            'pickupAddress.district': new RegExp(escapeRegex(distNorm), 'i'),
+          };
+        });
+        query.$or = zoneFilters;
+      } else {
+        // Chỉ định zones nhưng không khớp bất kỳ zone hợp lệ nào -> trả về rỗng thay vì tất cả
+        query.$or = [{ _id: null }];
+      }
+    } else if (province || (user && user.operatingArea && user.operatingArea.province)) {
+      const targetProv = province || user.operatingArea.province;
+      const provNorm = targetProv.replace(/^(Tỉnh|Thành phố|TP\.?)\s+/i, '').trim();
+      const provRegex = new RegExp(escapeRegex(provNorm), 'i');
       query['pickupAddress.province'] = provRegex;
     }
 
     const orders = await Order.find(query)
       .populate('sellerId', 'fullName companyName phoneNumber email address')
       .sort({ createdAt: -1 })
-      .limit(30);
+      .limit(50);
+
+    const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const shipperSuffix = String(user?._id || '0000').slice(-4).toUpperCase();
+    const currentTripId = `PKT-${todayStr}-${shipperSuffix}`;
+
+    // Tự động gán pickupTripId trong DB cho các đơn chưa được gắn
+    const untaggedPickupIds = orders.filter((o) => !o.pickupTripId).map((o) => o._id);
+    if (untaggedPickupIds.length > 0) {
+      await Order.updateMany(
+        { _id: { $in: untaggedPickupIds } },
+        { $set: { pickupTripId: currentTripId } }
+      );
+    }
 
     const tasks = orders.map((o) => ({
       _id: o._id,
@@ -607,14 +781,69 @@ const getShipperPickupTasks = async (req, res, next) => {
       codAmount: o.codAmount || 0,
       isCod: o.isCod || false,
       status: o.status,
+      pickupTripId: o.pickupTripId || currentTripId,
+      createdAt: o.createdAt,
+    }));
+
+    const maxQuota = user?.role === 'PICKUP_SHIPPER' ? 80 : 25;
+    return res.status(200).json({
+      success: true,
+      currentTripId,
+      data: tasks,
+      total: tasks.length,
+      shipperArea: user?.operatingArea || null,
+      pickupQuota: user?.pickupQuota || { max: maxQuota, current: tasks.length },
+      tripCapacity: user?.tripCapacity || { maxParcels: 40, currentParcels: 0, maxWeightKg: 55, currentWeightKg: 0 },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+const getShipperPickupHistory = async (req, res, next) => {
+  try {
+    const user = req.user;
+    const { limit = 50 } = req.query;
+
+    const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const shipperSuffix = String(user?._id || '0000').slice(-4).toUpperCase();
+    const currentTripId = `PKT-${todayStr}-${shipperSuffix}`;
+
+    const query = {
+      status: { $in: ['PICKED_UP', 'IN_HUB_ORIGIN', 'SORTED', 'IN_TRANSIT', 'IN_HUB_DEST', 'DELIVERING', 'DELIVERED'] },
+      $or: [
+        { pickupShipperId: user._id },
+        { currentDriverId: user._id },
+        { assignedShipperId: user._id },
+      ],
+    };
+
+    const orders = await Order.find(query)
+      .populate('sellerId', 'fullName companyName phoneNumber email address')
+      .sort({ pickedAt: -1, updatedAt: -1 })
+      .limit(Number(limit));
+
+    const historyTasks = orders.map((o) => ({
+      _id: o._id,
+      id: o._id,
+      trackingCode: o.trackingCode,
+      shopName: o.sellerId?.companyName || o.sellerId?.fullName || o.pickupAddress?.fullName || 'Shop Bán Hàng',
+      phone: o.sellerId?.phoneNumber || o.pickupAddress?.phone || '0900000000',
+      address: `${o.pickupAddress?.address || ''}${o.pickupAddress?.subZone ? ', ' + o.pickupAddress.subZone : ''}, ${o.pickupAddress?.ward || ''}, ${o.pickupAddress?.district || ''}, ${o.pickupAddress?.province || ''}`.replace(/^,\s*/, ''),
+      declaredWeight: o.actualWeight || 1.0,
+      codAmount: o.codAmount || 0,
+      isCod: o.isCod || false,
+      status: o.status,
+      pickedAt: o.pickedAt || o.updatedAt,
+      pickupTripId: o.pickupTripId || currentTripId,
       createdAt: o.createdAt,
     }));
 
     return res.status(200).json({
       success: true,
-      data: tasks,
-      total: tasks.length,
-      shipperArea: user?.operatingArea || null,
+      currentTripId,
+      data: historyTasks,
+      total: historyTasks.length,
     });
   } catch (err) {
     next(err);
@@ -624,13 +853,25 @@ const getShipperPickupTasks = async (req, res, next) => {
 const getShipperDeliveryTasks = async (req, res, next) => {
   try {
     const user = req.user;
+    // Chặn chéo quyền: Shipper chuyên gom không được vào luồng giao
+    if (user && user.role === 'PICKUP_SHIPPER') {
+      return res.status(403).json({
+        success: false,
+        message: 'Tài khoản của bạn là Shipper Gom Hàng (First-Mile), không có quyền thực hiện giao hàng cho khách.',
+      });
+    }
+
+    const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const shipperSuffix = String(user?._id || '0000').slice(-4).toUpperCase();
+    const currentTripId = `DLV-${todayStr}-${shipperSuffix}`;
 
     let query = {
       status: { $in: ['OUT_FOR_DELIVERY', 'DELIVERING', 'IN_HUB_DEST'] },
     };
 
     if (user && user.operatingArea && user.operatingArea.province) {
-      const provRegex = new RegExp(user.operatingArea.province.replace(/^(Tỉnh|Thành phố|TP\.?)\s+/i, '').trim(), 'i');
+      const provNorm = user.operatingArea.province.replace(/^(Tỉnh|Thành phố|TP\.?)\s+/i, '').trim();
+      const provRegex = new RegExp(escapeRegex(provNorm), 'i');
       query['deliveryAddress.province'] = provRegex;
     }
 
@@ -638,6 +879,15 @@ const getShipperDeliveryTasks = async (req, res, next) => {
       .populate('sellerId', 'fullName companyName phoneNumber email')
       .sort({ updatedAt: -1, createdAt: -1 })
       .limit(30);
+
+    // Tự động gán deliveryTripId trong DB cho các đơn chưa được gắn
+    const untaggedDeliveryIds = orders.filter((o) => !o.deliveryTripId).map((o) => o._id);
+    if (untaggedDeliveryIds.length > 0) {
+      await Order.updateMany(
+        { _id: { $in: untaggedDeliveryIds } },
+        { $set: { deliveryTripId: currentTripId } }
+      );
+    }
 
     const tasks = orders.map((o) => ({
       _id: o._id,
@@ -651,17 +901,115 @@ const getShipperDeliveryTasks = async (req, res, next) => {
       district: o.deliveryAddress?.district || '',
       province: o.deliveryAddress?.province || '',
       itemsCount: (o.items || []).length || 1,
+      items: o.items || [],
+      declaredWeight: o.actualWeight || 1.0,
       codAmount: o.codAmount || 0,
       isCod: o.isCod || false,
       status: o.status,
+      deliveryTripId: o.deliveryTripId || currentTripId,
+      createdAt: o.createdAt,
+    }));
+
+    const maxDelivery = user?.role === 'DELIVERY_SHIPPER' ? 40 : 35;
+    return res.status(200).json({
+      success: true,
+      currentTripId,
+      data: tasks,
+      total: tasks.length,
+      shipperArea: user?.operatingArea || null,
+      deliveryQuota: user?.deliveryQuota || { max: maxDelivery, current: tasks.length },
+      tripCapacity: user?.tripCapacity || { maxParcels: 25, currentParcels: 0, maxWeightKg: 40, currentWeightKg: 0 },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+const getShipperDeliveryHistory = async (req, res, next) => {
+  try {
+    const user = req.user;
+    const { limit = 50 } = req.query;
+
+    const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const shipperSuffix = String(user?._id || '0000').slice(-4).toUpperCase();
+    const currentTripId = `DLV-${todayStr}-${shipperSuffix}`;
+
+    const query = {
+      status: { $in: ['DELIVERED', 'DELIVERY_FAILED_PENDING_RETURN', 'PENDING_REDELIVERY'] },
+      $or: [
+        { deliveryShipperId: user._id },
+        { currentDriverId: user._id },
+        { assignedShipperId: user._id },
+      ],
+    };
+
+    const orders = await Order.find(query)
+      .populate('sellerId', 'fullName companyName phoneNumber email address')
+      .sort({ deliveredAt: -1, updatedAt: -1 })
+      .limit(Number(limit));
+
+    const historyTasks = orders.map((o) => ({
+      _id: o._id,
+      id: o._id,
+      trackingCode: o.trackingCode,
+      buyerName: o.deliveryAddress?.fullName || 'Khách Nhận',
+      phone: o.deliveryAddress?.phone || '0988000000',
+      address: `${o.deliveryAddress?.address || ''}${o.deliveryAddress?.subZone ? ', ' + o.deliveryAddress.subZone : ''}, ${o.deliveryAddress?.ward || ''}, ${o.deliveryAddress?.district || ''}, ${o.deliveryAddress?.province || ''}`.replace(/^,\s*/, ''),
+      declaredWeight: o.actualWeight || 1.0,
+      codAmount: o.collectedCodAmount || o.codAmount || 0,
+      isCod: o.isCod || false,
+      status: o.status,
+      deliveredAt: o.deliveredAt || o.updatedAt,
+      deliveryTripId: o.deliveryTripId || currentTripId,
       createdAt: o.createdAt,
     }));
 
     return res.status(200).json({
       success: true,
-      data: tasks,
-      total: tasks.length,
-      shipperArea: user?.operatingArea || null,
+      currentTripId,
+      data: historyTasks,
+      total: historyTasks.length,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * Xả tải thùng xe (Trip Flush) khi Shipper Gom về Hub bàn giao Inbound
+ * POST /api/orders/shipper/trip-flush
+ */
+const flushShipperTripHandler = async (req, res, next) => {
+  try {
+    const user = req.user;
+    const shipper = await User.findById(user._id);
+    if (!shipper) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy thông tin Shipper' });
+    }
+
+    const previousTripParcels = shipper.tripCapacity?.currentParcels || 0;
+    const previousTripWeight = shipper.tripCapacity?.currentWeightKg || 0;
+
+    // Reset sức chứa tức thời trên chuyến xe máy
+    if (!shipper.tripCapacity) {
+      shipper.tripCapacity = { maxParcels: 40, currentParcels: 0, maxWeightKg: 55, currentWeightKg: 0 };
+    } else {
+      shipper.tripCapacity.currentParcels = 0;
+      shipper.tripCapacity.currentWeightKg = 0;
+    }
+    shipper.currentWeightKg = 0;
+    await shipper.save();
+
+    return res.status(200).json({
+      success: true,
+      message: `Đã xả tải thành công chuyến xe (${previousTripParcels} kiện, ${previousTripWeight} kg). Thùng xe đã sẵn sàng cho chuyến tiếp theo!`,
+      data: {
+        shipperId: shipper._id,
+        tripCapacity: shipper.tripCapacity,
+        pickupQuota: shipper.pickupQuota,
+        deliveryQuota: shipper.deliveryQuota,
+        currentWeightKg: shipper.currentWeightKg,
+      },
     });
   } catch (err) {
     next(err);
@@ -673,119 +1021,6 @@ const getShipperAvailableZones = async (req, res, next) => {
     const user = req.user;
     const province = req.query.province || user?.operatingArea?.province || 'Hà Nội';
 
-    const MASTER_ZONES = {
-      'Hà Nội': [
-        {
-          id: 'z-han-01',
-          code: 'ZONE-HAN-HK',
-          name: 'Cụm Tuyến Hoàn Kiếm - Hà Nội',
-          province: 'Hà Nội',
-          district: 'Quận Hoàn Kiếm',
-          ward: 'Phường Hàng Bài',
-          subZones: ['Khu phố 1', 'Khu phố 2', 'Khu phố 3', 'Đường Tràng Tiền', 'Đường Đinh Tiên Hoàng'],
-          hubCode: 'HUB_HAN_01',
-        },
-        {
-          id: 'z-han-02',
-          code: 'ZONE-HAN-TX',
-          name: 'Cụm Tuyến Thanh Xuân - Hà Nội',
-          province: 'Hà Nội',
-          district: 'Quận Thanh Xuân',
-          ward: 'Phường Thanh Xuân Trung',
-          subZones: ['Khu phố 4', 'Khu phố 5', 'Khu phố 6', 'Đường Nguyễn Trãi', 'Đường Khuất Duy Tiến'],
-          hubCode: 'HUB_HAN_01',
-        },
-        {
-          id: 'z-han-03',
-          code: 'ZONE-HAN-CG',
-          name: 'Cụm Tuyến Cầu Giấy - Hà Nội',
-          province: 'Hà Nội',
-          district: 'Quận Cầu Giấy',
-          ward: 'Phường Dịch Vọng',
-          subZones: ['Khu phố 1', 'Khu phố 2', 'Khu phố 3', 'Đường Cầu Giấy', 'Đường Duy Tân'],
-          hubCode: 'HUB_HAN_01',
-        },
-      ],
-      'TP. Hồ Chí Minh': [
-        {
-          id: 'z-sgn-01',
-          code: 'ZONE-SGN-TB1',
-          name: 'Cụm Tuyến Phường 12 - Tân Bình',
-          province: 'TP. Hồ Chí Minh',
-          district: 'Quận Tân Bình',
-          ward: 'Phường 12',
-          subZones: ['Khu phố 1', 'Khu phố 2', 'Khu phố 3', 'Đường Hoàng Hoa Thám'],
-          hubCode: 'HUB_SGN_01',
-        },
-        {
-          id: 'z-sgn-02',
-          code: 'ZONE-SGN-TB2',
-          name: 'Cụm Tuyến Phường 13 - Tân Bình',
-          province: 'TP. Hồ Chí Minh',
-          district: 'Quận Tân Bình',
-          ward: 'Phường 13',
-          subZones: ['Khu phố 4', 'Khu phố 5', 'Đường Cộng Hòa'],
-          hubCode: 'HUB_SGN_01',
-        },
-        {
-          id: 'z-sgn-03',
-          code: 'ZONE-SGN-Q1',
-          name: 'Cụm Tuyến Trung Tâm Quận 1',
-          province: 'TP. Hồ Chí Minh',
-          district: 'Quận 1',
-          ward: 'Phường Bến Nghé',
-          subZones: ['Khu phố 1', 'Khu phố 2', 'Đường Lê Duẩn', 'Đường Nguyễn Huệ'],
-          hubCode: 'HUB_SGN_01',
-        },
-      ],
-      'Cần Thơ': [
-        {
-          id: 'z-vca-01',
-          code: 'ZONE-VCA-NK',
-          name: 'Cụm Tuyến Ninh Kiều - Cần Thơ',
-          province: 'Cần Thơ',
-          district: 'Quận Ninh Kiều',
-          ward: 'Phường Tân An',
-          subZones: ['Khu phố 1', 'Khu phố 2', 'Khu phố 3', 'Đường Hai Bà Trưng', 'Bến Ninh Kiều'],
-          hubCode: 'HUB_VCA_01',
-        },
-        {
-          id: 'z-vca-02',
-          code: 'ZONE-VCA-CR',
-          name: 'Cụm Tuyến Cái Răng - Cần Thơ',
-          province: 'Cần Thơ',
-          district: 'Quận Cái Răng',
-          ward: 'Phường Lê Bình',
-          subZones: ['Khu phố 1', 'Khu phố 2', 'Đường Quang Trung'],
-          hubCode: 'HUB_VCA_01',
-        },
-      ],
-      'Đà Nẵng': [
-        {
-          id: 'z-dad-01',
-          code: 'ZONE-DAD-HC',
-          name: 'Cụm Tuyến Hải Châu - Đà Nẵng',
-          province: 'Đà Nẵng',
-          district: 'Quận Hải Châu',
-          ward: 'Phường Hải Châu 1',
-          subZones: ['Khu phố 1', 'Khu phố 2', 'Đường Bạch Đằng', 'Đường Nguyễn Văn Linh'],
-          hubCode: 'HUB_DAD_01',
-        },
-      ],
-      'Hải Phòng': [
-        {
-          id: 'z-hph-01',
-          code: 'ZONE-HPH-HB',
-          name: 'Cụm Tuyến Hồng Bàng - Hải Phòng',
-          province: 'Hải Phòng',
-          district: 'Quận Hồng Bàng',
-          ward: 'Phường Hoàng Văn Thụ',
-          subZones: ['Khu phố 1', 'Khu phố 2', 'Đường Đinh Tiên Hoàng'],
-          hubCode: 'HUB_HPH_01',
-        },
-      ],
-    };
-
     let matchedKey = Object.keys(MASTER_ZONES).find((k) =>
       province.toLowerCase().includes(k.toLowerCase().replace(/^(tỉnh|thành phố|tp\.?)\s+/i, ''))
     ) || 'Hà Nội';
@@ -794,17 +1029,27 @@ const getShipperAvailableZones = async (req, res, next) => {
 
     const zonesWithCount = await Promise.all(
       zones.map(async (z) => {
-        const provRegex = new RegExp(z.province.replace(/^(Tỉnh|Thành phố|TP\.?)\s+/i, '').trim(), 'i');
+        const wardNorm = z.ward.replace(/^(Phường|Xã|Thị trấn)\s+/i, '').trim();
+        const distNorm = z.district.replace(/^(Quận|Huyện|Thị xã|TP\.?)\s+/i, '').trim();
+        const provNorm = z.province.replace(/^(Tỉnh|Thành phố|TP\.?)\s+/i, '').trim();
+        const provRegex = new RegExp(escapeRegex(provNorm), 'i');
+
         const activeOrders = await Order.countDocuments({
-          status: { $in: ['READY_TO_PICK', 'OUT_FOR_DELIVERY', 'DELIVERING'] },
-          $or: [
+          status: 'READY_TO_PICK',
+          $and: [
             { 'pickupAddress.province': provRegex },
-            { 'deliveryAddress.province': provRegex },
+            {
+              $or: [
+                { 'pickupAddress.ward': new RegExp(escapeRegex(wardNorm), 'i') },
+                { 'pickupAddress.district': new RegExp(escapeRegex(distNorm), 'i') },
+              ],
+            },
           ],
         });
+
         return {
           ...z,
-          activeOrders: Math.max(activeOrders, 1),
+          activeOrders,
         };
       })
     );
@@ -842,7 +1087,10 @@ module.exports = {
   pickupFailedHandler,
   approveOrderHandler,
   getShipperPickupTasks,
+  getShipperPickupHistory,
   getShipperDeliveryTasks,
+  getShipperDeliveryHistory,
   getShipperAvailableZones,
+  flushShipperTripHandler,
 };
 

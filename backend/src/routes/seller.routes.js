@@ -41,5 +41,10 @@ const { kycSubmitRateLimiter } = require('../middleware/rateLimit.middleware');
 router.post('/kyc/submit', protect, authorize('SELLER'), kycSubmitRateLimiter, uploadKycFiles, submitKyc);
 router.get('/kyc/status', protect, authorize('SELLER'), getKycStatus);
 
+// ==========================================
+// 4. QUẢN LÝ SẢN PHẨM MẪU (SELLER PRODUCT CATALOG)
+// ==========================================
+router.use('/products', require('./product.routes'));
+
 module.exports = router;
 

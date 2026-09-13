@@ -21,8 +21,11 @@ const {
   completePickupManifestHandler,
   approveOrderHandler,
   getShipperPickupTasks,
+  getShipperPickupHistory,
   getShipperDeliveryTasks,
-  getShipperAvailableZones
+  getShipperDeliveryHistory,
+  getShipperAvailableZones,
+  flushShipperTripHandler
 } = require('../controllers/order.controller');
 const { protect, authorize, resolveSellerContext } = require('../middleware/auth.middleware');
 const { createOrderRateLimiter, trackingRateLimiter } = require('../middleware/rateLimit.middleware');
@@ -62,19 +65,23 @@ router.patch('/:id/status', protect, authorize('SELLER', 'ADMIN'), updateOrderSt
 
 // DELETE /api/orders/:id/cancel - Hủy 1 đơn hàng (UC-08)
 router.delete('/:id/cancel', protect, authorize('SELLER', 'ADMIN'), cancelOrder);
+router.post('/:id/cancel', protect, authorize('SELLER', 'ADMIN'), cancelOrder);
 
 // UC-12: Shipper Pickup Endpoints (2-Phase Session & Legacy endpoints)
 // UC-12: Shipper Task & Operating Zone Endpoints
-router.get('/shipper/pickup-tasks', protect, authorize('DRIVER', 'SHIPPER', 'LOCAL_SHIPPER', 'LINE_HAUL_DRIVER', 'ADMIN'), getShipperPickupTasks);
-router.get('/shipper/delivery-tasks', protect, authorize('DRIVER', 'SHIPPER', 'LOCAL_SHIPPER', 'LINE_HAUL_DRIVER', 'ADMIN'), getShipperDeliveryTasks);
-router.get('/shipper/zones', protect, authorize('DRIVER', 'SHIPPER', 'LOCAL_SHIPPER', 'LINE_HAUL_DRIVER', 'ADMIN'), getShipperAvailableZones);
-router.post('/shipper/process-scan', protect, authorize('DRIVER', 'SHIPPER', 'SELLER', 'ADMIN'), processItemScanHandler);
-router.post('/shipper/complete-manifest', protect, authorize('DRIVER', 'SHIPPER', 'SELLER', 'ADMIN'), completePickupManifestHandler);
-router.post('/shipper/batch-pickup', protect, authorize('DRIVER', 'SHIPPER', 'SELLER', 'ADMIN'), confirmBatchPickupHandler);
-router.post('/shipper/:id/verify-scan', protect, authorize('DRIVER', 'SHIPPER', 'SELLER', 'ADMIN'), verifyPickupScanHandler);
-router.post('/shipper/:id/verify-pickup-scan', protect, authorize('DRIVER', 'SHIPPER', 'SELLER', 'ADMIN'), verifyPickupScanHandler);
-router.post('/shipper/:id/confirm-pickup', protect, authorize('DRIVER', 'SHIPPER', 'SELLER', 'ADMIN'), confirmPickupHandler);
-router.post('/shipper/:id/pickup-failed', protect, authorize('DRIVER', 'SHIPPER', 'SELLER', 'ADMIN'), pickupFailedHandler);
+router.get('/shipper/pickup-tasks', protect, authorize('PICKUP_SHIPPER', 'LOCAL_SHIPPER', 'SHIPPER', 'DRIVER', 'LINE_HAUL_DRIVER', 'ADMIN'), getShipperPickupTasks);
+router.get('/shipper/pickup-history', protect, authorize('PICKUP_SHIPPER', 'LOCAL_SHIPPER', 'SHIPPER', 'DRIVER', 'LINE_HAUL_DRIVER', 'ADMIN'), getShipperPickupHistory);
+router.get('/shipper/delivery-tasks', protect, authorize('DELIVERY_SHIPPER', 'LOCAL_SHIPPER', 'SHIPPER', 'DRIVER', 'LINE_HAUL_DRIVER', 'ADMIN'), getShipperDeliveryTasks);
+router.get('/shipper/delivery-history', protect, authorize('DELIVERY_SHIPPER', 'LOCAL_SHIPPER', 'SHIPPER', 'DRIVER', 'LINE_HAUL_DRIVER', 'ADMIN'), getShipperDeliveryHistory);
+router.get('/shipper/zones', protect, authorize('PICKUP_SHIPPER', 'LOCAL_SHIPPER', 'SHIPPER', 'DRIVER', 'LINE_HAUL_DRIVER', 'ADMIN'), getShipperAvailableZones);
+router.post('/shipper/trip-flush', protect, authorize('PICKUP_SHIPPER', 'LOCAL_SHIPPER', 'SHIPPER', 'ADMIN'), flushShipperTripHandler);
+router.post('/shipper/process-scan', protect, authorize('PICKUP_SHIPPER', 'DELIVERY_SHIPPER', 'DRIVER', 'SHIPPER', 'SELLER', 'ADMIN'), processItemScanHandler);
+router.post('/shipper/complete-manifest', protect, authorize('PICKUP_SHIPPER', 'DELIVERY_SHIPPER', 'DRIVER', 'SHIPPER', 'SELLER', 'ADMIN'), completePickupManifestHandler);
+router.post('/shipper/batch-pickup', protect, authorize('PICKUP_SHIPPER', 'LOCAL_SHIPPER', 'DRIVER', 'SHIPPER', 'SELLER', 'ADMIN'), confirmBatchPickupHandler);
+router.post('/shipper/:id/verify-scan', protect, authorize('PICKUP_SHIPPER', 'LOCAL_SHIPPER', 'DRIVER', 'SHIPPER', 'SELLER', 'ADMIN'), verifyPickupScanHandler);
+router.post('/shipper/:id/verify-pickup-scan', protect, authorize('PICKUP_SHIPPER', 'LOCAL_SHIPPER', 'DRIVER', 'SHIPPER', 'SELLER', 'ADMIN'), verifyPickupScanHandler);
+router.post('/shipper/:id/confirm-pickup', protect, authorize('PICKUP_SHIPPER', 'LOCAL_SHIPPER', 'DRIVER', 'SHIPPER', 'SELLER', 'ADMIN'), confirmPickupHandler);
+router.post('/shipper/:id/pickup-failed', protect, authorize('PICKUP_SHIPPER', 'LOCAL_SHIPPER', 'DRIVER', 'SHIPPER', 'SELLER', 'ADMIN'), pickupFailedHandler);
 
 
 // GET /api/orders/:id - Chi tiết đơn hàng (Riêng tư - IDOR Protection)

@@ -10,6 +10,7 @@ const Geozone = require('../models/geozone.model');
 const autoApprovalService = require('./autoApproval.service');
 const hubRoutingService = require('./hubRouting.service');
 const ioSingleton = require('../lib/ioSingleton');
+const dispatchEngineService = require('./dispatchEngine.service');
 
 // Bộ nhớ tạm chống brute-force 4 số cuối điện thoại
 const failedPhoneAttempts = new Map();
@@ -43,8 +44,43 @@ const orderService = {
     if (idempotencyKey) {
       const existing = await Order.findOne({ idempotencyKey });
       if (existing) {
+        if (data.actualWeight !== undefined && Math.abs(existing.actualWeight - Number(data.actualWeight)) > 0.01) {
+          const err = new Error('Xung đột Idempotency Key: dữ liệu gửi lên không trùng khớp với yêu cầu trước đó');
+          err.statusCode = 409;
+          throw err;
+        }
         return { statusCode: 200, message: 'Đơn hàng đã tồn tại (Idempotent)', order: existing };
       }
+    }
+
+    // Kiểm tra tính hợp lệ của trọng lượng và thông tin người nhận
+    if (data.actualWeight !== undefined && Number(data.actualWeight) < 0) {
+      const err = new Error('Trọng lượng hàng hóa (actualWeight) không được âm');
+      err.statusCode = 400;
+      throw err;
+    }
+    if (Array.isArray(data.items)) {
+      for (const item of data.items) {
+        if (item.weight !== undefined && Number(item.weight) < 0) {
+          const err = new Error('Trọng lượng sản phẩm trong đơn hàng không được âm');
+          err.statusCode = 400;
+          throw err;
+        }
+      }
+    }
+    if (!data.deliveryAddress || !data.deliveryAddress.fullName || !data.deliveryAddress.phone || !data.deliveryAddress.address) {
+      const err = new Error('Thông tin người nhận (Họ tên, Số điện thoại, Địa chỉ chi tiết) là bắt buộc');
+      err.statusCode = 400;
+      throw err;
+    }
+
+    // Kiểm tra định dạng số điện thoại người nhận
+    const cleanPhone = String(data.deliveryAddress.phone).replace(/[\s.-]/g, '');
+    const phoneRegex = /^(0|84|\+84)[0-9]{9,10}$/;
+    if (!phoneRegex.test(cleanPhone)) {
+      const err = new Error('Số điện thoại người nhận không hợp lệ (cần đúng định dạng số điện thoại Việt Nam)');
+      err.statusCode = 400;
+      throw err;
     }
 
     // Sinh mã vận đơn tự động nếu chưa có
@@ -246,7 +282,8 @@ const orderService = {
       throw err;
     }
 
-    const wasRouted = Boolean(order.currentDriverId || order.currentDriver?.driverId);
+    const wasRouted = Boolean(order.currentDriverId || order.currentDriver?.driverId || order.pickupShipperId || order.deliveryShipperId);
+    const assignedShipperId = order.pickupShipperId || order.currentDriverId || order.currentDriver?.driverId || order.deliveryShipperId;
 
     order.status = 'CANCELLED';
     order.cancelReason = data?.reason || 'Hủy bởi người dùng';
@@ -256,7 +293,18 @@ const orderService = {
 
     await order.save();
     ioSingleton.emitOrderUpdate(order.sellerId, order);
-    return { cancelledOrder: order, wasRouted };
+
+    // Kích hoạt giải phóng tải trọng/quota và bù đơn tự động cho Shipper
+    let compensation = null;
+    if (wasRouted && assignedShipperId) {
+      try {
+        compensation = await dispatchEngineService.compensateCancelledOrder(order, assignedShipperId);
+      } catch (compErr) {
+        console.warn('[OrderService] Auto compensation error:', compErr.message);
+      }
+    }
+
+    return { cancelledOrder: order, wasRouted, compensation };
   },
 
   /**
@@ -696,6 +744,17 @@ const orderService = {
     if (user && user.hubId && !order.originHubId) {
       order.originHubId = user.hubId;
     }
+    if (!order.pickupTripId) {
+      const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+      const shipperSuffix = String(user?._id || '0000').slice(-4).toUpperCase();
+      order.pickupTripId = data.pickupTripId || `PKT-${todayStr}-${shipperSuffix}`;
+    }
+    if (!order.pickupShipperId && user?._id) {
+      order.pickupShipperId = user._id;
+    }
+    if (!order.currentDriverId && user?._id) {
+      order.currentDriverId = user._id;
+    }
     await order.save();
     ioSingleton.emitOrderUpdate(order.sellerId, order);
 
@@ -758,11 +817,20 @@ const orderService = {
   },
 
   /**
-   * UC-12: Ghi nhận lấy hàng thất bại (Pickup Failed)
+   * UC-12: Ghi nhận lấy hàng thất bại (Pickup Failed) - Phân luồng 2 tầng
+   * Tầng 1: Hẹn lại (TEMPORARY_RESCHEDULE) -> Trả về READY_TO_PICK, isRolloverOrder: true, agingPriority: HIGH, hoàn Quota
+   * Tầng 2: Shop hủy / Vi phạm (PERMANENT_CANCEL / VIOLATION) -> Chuyển sang DISPATCH_ESCALATED cho Dispatcher duyệt
    */
   async pickupFailed(user, orderId, data = {}) {
-    const { reason, note, trackingCode } = data;
-    const failReason = reason || note || 'SELLER_REFUSED_SIGNATURE';
+    const {
+      reason,
+      note,
+      trackingCode,
+      failureCategory = 'TEMPORARY_RESCHEDULE',
+      failureReason,
+      rescheduledAt,
+    } = data;
+    const failReason = failureReason || reason || note || 'Shop hẹn lấy lại';
 
     let order;
     if (orderId && mongoose.Types.ObjectId.isValid(orderId)) {
@@ -780,28 +848,96 @@ const orderService = {
     }
 
     const preStatus = order.status;
-    order.status = 'PICKUP_FAILED';
-    order.cancelNote = `Lấy hàng thất bại: ${failReason}`;
+    const assignedShipperId = order.pickupShipperId || order.currentDriverId || user?._id;
+
+    order.pickupFailureCount = (order.pickupFailureCount || 0) + 1;
+    order.pickupFailureHistory.push({
+      failureCategory,
+      failureReason: failReason,
+      rescheduledAt: rescheduledAt ? new Date(rescheduledAt) : null,
+      reportedBy: user?._id,
+      reportedAt: new Date(),
+      note: note || '',
+    });
+
+    let postStatus = 'READY_TO_PICK';
+    let actionType = 'PICKUP_RESCHEDULED';
+    let timelineTitle = 'Lấy hàng không thành công (Hẹn lại)';
+    let timelineDesc = `Lấy hàng thất bại: ${failReason}. Đơn được xếp vào danh sách ưu tiên ca kế tiếp.`;
+
+    const isExceededMaxFailures = (order.pickupFailureCount || 0) >= 3;
+    if (isExceededMaxFailures || failureCategory === 'PERMANENT_CANCEL' || failureCategory === 'VIOLATION') {
+      // Tầng 2: Shop báo hủy đơn hoặc vi phạm hoặc thất bại >= 3 lần -> Chuyển sang DISPATCH_ESCALATED chờ Dispatcher can thiệp
+      postStatus = 'DISPATCH_ESCALATED';
+      actionType = 'DISPATCH_ESCALATED';
+      timelineTitle = 'Cần điều phối viên can thiệp (Leo thang)';
+      timelineDesc = isExceededMaxFailures
+        ? `Lấy hàng thất bại ${order.pickupFailureCount} lần liên tiếp: ${failReason}. Tự động chuyển Điều phối viên (Dispatcher) can thiệp.`
+        : `Shop yêu cầu hủy hoặc vi phạm: ${failReason}. Chờ Dispatcher/CSKH phê duyệt.`;
+
+      order.status = 'DISPATCH_ESCALATED';
+      order.isFlagged = true;
+      order.agingPriority = 'CRITICAL';
+      order.riskViolationReason = failReason;
+      const newFlags = [...(order.riskFlags || [])];
+      if (failureCategory === 'VIOLATION') newFlags.push('PROHIBITED_GOODS');
+      if (failureCategory === 'PERMANENT_CANCEL') newFlags.push('SELLER_REQUESTED_CANCEL');
+      if (isExceededMaxFailures) newFlags.push('PICKUP_MAX_FAILED_ESCALATED');
+      order.riskFlags = Array.from(new Set(newFlags));
+    } else {
+      // Tầng 1: Tự động hẹn lại -> READY_TO_PICK, isRolloverOrder: true, agingPriority: HIGH (+25 điểm)
+      postStatus = 'READY_TO_PICK';
+      actionType = 'PICKUP_RESCHEDULED';
+      order.status = 'READY_TO_PICK';
+      order.isRolloverOrder = true;
+      order.agingPriority = 'HIGH';
+      order.rolloverCount = (order.rolloverCount || 0) + 1;
+      order.rolloverReason = failReason;
+      if (rescheduledAt) {
+        order.rescheduledForDate = new Date(rescheduledAt);
+      }
+    }
+
+    // Thu hồi phân công tài xế để trả về hàng đợi và hoàn Quota
+    order.pickupShipperId = null;
+    order.currentDriverId = null;
+    order.assignedDriverId = null;
+    order.assignedShipperId = null;
+    order.pickupTripId = null;
+
     await order.save();
     ioSingleton.emitOrderUpdate(order.sellerId, order);
+
+    if (assignedShipperId) {
+      try {
+        await dispatchEngineService.compensateCancelledOrder(order, assignedShipperId);
+      } catch (compErr) {
+        console.warn('[OrderService] Auto compensation on pickupFailed error:', compErr.message);
+      }
+    }
 
     try {
       await OrderLog.create({
         orderId: order._id,
         actionBy: user._id,
         preStatus,
-        postStatus: 'PICKUP_FAILED',
-        actionType: 'PICKUP_FAILED',
+        postStatus,
+        actionType,
         trackingCode: order.trackingCode,
-        note: `Ghi nhận lấy hàng thất bại: ${failReason}`
+        note: `Ghi nhận lấy hàng thất bại (${failureCategory}): ${failReason}`,
+        metadata: {
+          failureCategory,
+          rescheduledAt,
+          pickupFailureCount: order.pickupFailureCount,
+        },
       });
       await OrderTrackingLog.create({
         orderId: order._id,
         trackingCode: order.trackingCode,
-        eventType: 'PICKUP_FAILED',
-        title: 'Lấy hàng không thành công',
-        description: `Lấy hàng thất bại: ${failReason}`,
-        timestamp: new Date()
+        eventType: actionType,
+        title: timelineTitle,
+        description: timelineDesc,
+        timestamp: new Date(),
       });
     } catch (logErr) {
       console.error(`[OrderLog] Failed to log pickup failure: ${logErr.message}`);
@@ -809,7 +945,9 @@ const orderService = {
 
     return {
       order,
-      message: 'Đã ghi nhận lấy hàng thất bại'
+      message: failureCategory === 'PERMANENT_CANCEL' || failureCategory === 'VIOLATION'
+        ? `Đã báo cáo vi phạm/hủy đơn [${order.trackingCode}]. Chuyển điều phối viên (Dispatcher) phê duyệt.`
+        : `Đã ghi nhận hẹn lại [${order.trackingCode}]. Đơn được đưa về trạng thái Chờ Gom Ưu Tiên Cao.`,
     };
   },
 

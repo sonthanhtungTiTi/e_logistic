@@ -39,6 +39,7 @@ const orderSchema = new mongoose.Schema(
         'SELLER_PREPARING',
         'PENDING_APPROVAL',
         'APPROVED',
+        'CONFIRMED',
         'ASSIGNED_TO_PICKUP_AND_DELIVERY',
         'ASSIGNED_TO_PICKUP',
         'PENDING_VERIFICATION',
@@ -128,11 +129,13 @@ const orderSchema = new mongoose.Schema(
         },
         failureCategory: {
           type: String,
-          enum: ['CUSTOMER_FAULT', 'OPERATIONAL_FAULT', 'OTHER'],
+          enum: ['CUSTOMER_FAULT', 'OPERATIONAL_FAULT', 'OTHER', 'TEMPORARY_RESCHEDULE', 'RECIPIENT_REJECTED', 'WRONG_ADDRESS'],
           required: true,
         },
         contactAttempts: { type: Number, default: 0 },
         rescheduleRequestedAt: { type: Date, default: null },
+        rescheduledAt: { type: Date, default: null },
+        failureReason: { type: String },
         note: { type: String, default: '' },
         proofImageUrls: { type: [String], default: [] },
         gpsLocation: {
@@ -142,6 +145,7 @@ const orderSchema = new mongoose.Schema(
         },
         reportedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
         clientOfflineId: { type: String, default: null, index: true },
+        reportedAt: { type: Date, default: Date.now },
         reportedAt: { type: Date, default: Date.now },
       },
     ],
@@ -196,6 +200,30 @@ const orderSchema = new mongoose.Schema(
     autoApproved: {
       type: Boolean,
       default: false,
+    },
+    // Quản lý đơn tồn chuyển ca & qua ngày (Shift Rollover & Overnight Aging)
+    isRolloverOrder: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    rolloverCount: {
+      type: Number,
+      default: 0,
+    },
+    rolloverReason: {
+      type: String,
+      default: null,
+    },
+    agingPriority: {
+      type: String,
+      enum: ['NORMAL', 'HIGH', 'CRITICAL'],
+      default: 'NORMAL',
+      index: true,
+    },
+    rescheduledForDate: {
+      type: Date,
+      default: null,
     },
     riskFlags: {
       type: [String],
@@ -395,6 +423,29 @@ const orderSchema = new mongoose.Schema(
     zoneTier: { type: String, default: null },
     routeDistanceKm: { type: Number, default: null },
     estimatedDeliveryDays: { type: Number, default: null },
+
+    // Chuyến gom hàng của Shipper (Pickup Trip Manifest)
+    pickupTripId: { type: String, default: null, index: true },
+
+    // Chuyến giao hàng của Shipper (Delivery Trip / Runsheet Manifest)
+    deliveryTripId: { type: String, default: null, index: true },
+
+    // Lịch sử thất bại lấy hàng (First-Mile)
+    pickupFailureCount: { type: Number, default: 0 },
+    pickupFailureHistory: [
+      {
+        failureCategory: {
+          type: String,
+          enum: ['TEMPORARY_RESCHEDULE', 'PERMANENT_CANCEL', 'VIOLATION', 'OTHER'],
+          default: 'TEMPORARY_RESCHEDULE',
+        },
+        failureReason: { type: String },
+        rescheduledAt: { type: Date, default: null },
+        reportedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        reportedAt: { type: Date, default: Date.now },
+        note: { type: String, default: '' },
+      },
+    ],
   },
   {
     timestamps: true,

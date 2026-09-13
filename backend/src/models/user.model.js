@@ -32,7 +32,9 @@ const userSchema = new mongoose.Schema(
         'SELLER',
         'BUYER',
         'SHIPPER', // Shipper giao nhận chặng đầu / chặng cuối
-        'LOCAL_SHIPPER', // Shipper nội vùng
+        'LOCAL_SHIPPER', // Shipper nội vùng (tương thích ngược)
+        'PICKUP_SHIPPER', // Shipper chuyên gom hàng (First-Mile: Quota 80 đơn/ca, 40 đơn/chuyến)
+        'DELIVERY_SHIPPER', // Shipper chuyên giao hàng (Last-Mile: Quota 40 đơn/ca, 25 đơn/chuyến)
         'LINE_HAUL_DRIVER', // Tài xế xe tải liên tỉnh / liên kho
         'DRIVER', // Tài xế vận chuyển (tương thích ngược)
         'ORDER_VENDOR_MANAGER', // Quản lý Duyệt đơn & Nhà cung cấp
@@ -100,6 +102,13 @@ const userSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    // Giới hạn sức chứa theo từng chuyến xe máy (Trip Batch Capacity)
+    tripCapacity: {
+      maxParcels: { type: Number, default: 40 },
+      currentParcels: { type: Number, default: 0 },
+      maxWeightKg: { type: Number, default: 55 },
+      currentWeightKg: { type: Number, default: 0 },
+    },
     acceptanceRate: {
       type: Number,
       default: 100, // Tỷ lệ chấp nhận đơn (%)
@@ -109,6 +118,10 @@ const userSchema = new mongoose.Schema(
       default: 0,
     },
     shiftStartedAt: {
+      type: Date,
+      default: null,
+    },
+    shiftEndedAt: {
       type: Date,
       default: null,
     },
@@ -234,8 +247,26 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-// Hash mật khẩu trước khi lưu
+// Khởi tạo Quota & Tải trọng theo Role và Hash mật khẩu trước khi lưu
 userSchema.pre('save', async function () {
+  if (this.isNew || this.isModified('role')) {
+    if (this.role === 'PICKUP_SHIPPER') {
+      this.pickupQuota = this.pickupQuota || {};
+      if (!this.pickupQuota.max || this.pickupQuota.max === 25) this.pickupQuota.max = 80;
+      if (!this.maxWeightCapacityKg || this.maxWeightCapacityKg === 45) this.maxWeightCapacityKg = 55;
+      if (!this.tripCapacity || !this.tripCapacity.maxParcels || this.tripCapacity.maxParcels === 25) {
+        this.tripCapacity = { maxParcels: 40, currentParcels: this.tripCapacity?.currentParcels || 0, maxWeightKg: 55, currentWeightKg: this.tripCapacity?.currentWeightKg || 0 };
+      }
+    } else if (this.role === 'DELIVERY_SHIPPER') {
+      this.deliveryQuota = this.deliveryQuota || {};
+      if (!this.deliveryQuota.max || this.deliveryQuota.max === 35) this.deliveryQuota.max = 40;
+      if (!this.maxWeightCapacityKg || this.maxWeightCapacityKg === 45) this.maxWeightCapacityKg = 40;
+      if (!this.tripCapacity || !this.tripCapacity.maxParcels || this.tripCapacity.maxParcels === 40) {
+        this.tripCapacity = { maxParcels: 25, currentParcels: this.tripCapacity?.currentParcels || 0, maxWeightKg: 40, currentWeightKg: this.tripCapacity?.currentWeightKg || 0 };
+      }
+    }
+  }
+
   if (!this.isModified('password')) return;
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);

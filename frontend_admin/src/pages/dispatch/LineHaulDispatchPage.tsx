@@ -7,6 +7,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { axiosClient } from '../../api/axiosClient';
+import { InventorySuggestionsPanel } from '../../components/warehouse/InventorySuggestionsPanel';
 
 interface Driver {
   _id: string;
@@ -187,6 +188,9 @@ export const LineHaulDispatchPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* CẢNH BÁO TỒN KHO & ĐỀ XUẤT GOM CHUYẾN XE (SMART INVENTORY TRIP SUGGESTIONS) */}
+      <InventorySuggestionsPanel onTripCreated={loadLinehaulData} />
 
       {msg && (
         <div

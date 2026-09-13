@@ -12,6 +12,9 @@ exports.createTrip = async (req, res) => {
     if (!currentHubId) return res.status(403).json({ success: false, message: 'Nhân viên chưa được gán vào Bưu cục/Kho nào', code: 'HUB_UNASSIGNED' });
 
     const destHubId = value.destination_hub_id || value.destinationHubId || null;
+    if (destHubId && destHubId.toString() === currentHubId.toString()) {
+      return res.status(400).json({ success: false, message: 'Bưu cục đích không được trùng với bưu cục xuất phát', code: 'INVALID_DESTINATION' });
+    }
     const tripType = value.trip_type || value.tripType || 'MID_MILE_TRANSFER';
     const planned = value.planned_tracking_codes || value.plannedTrackingCodes || [];
 

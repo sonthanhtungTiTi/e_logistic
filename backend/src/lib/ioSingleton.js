@@ -47,5 +47,18 @@ module.exports = {
     } catch (e) {
       console.error('[IO_KYC_EMIT_ERROR]', e.message);
     }
+  },
+  // Emit realtime updates cho Shipper (Hủy đơn, Bù đơn, Gán đơn)
+  emitShipperUpdate: (shipperId, event, payload) => {
+    if (!_io) return;
+    try {
+      _io.emit(event, payload);
+      if (shipperId) {
+        _io.to(`shipper:${shipperId.toString()}`).emit(event, payload);
+        _io.to(`shipper_${shipperId.toString()}`).emit(event, payload);
+      }
+    } catch (e) {
+      console.error('[IO_SHIPPER_EMIT_ERROR]', e.message);
+    }
   }
 };

@@ -129,6 +129,12 @@ async function processInboundSingle({
     }
     nextStatus = 'RETURNED_TO_HUB_ORIGIN';
     nextAction = 'WAITING_SELLER_RETURN';
+  } else if (['READY_TO_PICK', 'ASSIGNED_PICKUP', 'ASSIGNED_TO_PICKUP', 'CREATED', 'APPROVED', 'PICKING', 'DISPATCH_ESCALATED'].includes(currStatus)) {
+    throw {
+      status: 400,
+      message: `Cảnh báo: Đơn hàng [${order.trackingCode}] chưa được Shipper lấy từ người gửi (Hiện ở trạng thái [${currStatus}]). Vui lòng không quét nhập kho trước khi Shipper xác nhận lấy hàng!`,
+      code: 'ORDER_NOT_YET_PICKED',
+    };
   } else {
     throw {
       status: 400,

@@ -35,6 +35,18 @@ export const RoleBaseRoute: React.FC<RoleBaseRouteProps> = ({ allowedRoles }) =>
   // 3. Nếu không có quyền -> Redirect về trang phù hợp với vai trò
   if (!isAllowed) {
     if (
+      userRole === 'PICKUP_SHIPPER' ||
+      userRole === UserRole.PICKUP_SHIPPER
+    ) {
+      return <Navigate to="/shipper/pickup" replace />;
+    }
+    if (
+      userRole === 'DELIVERY_SHIPPER' ||
+      userRole === UserRole.DELIVERY_SHIPPER
+    ) {
+      return <Navigate to="/shipper/delivery" replace />;
+    }
+    if (
       userRole === 'SHIPPER' ||
       userRole === 'LOCAL_SHIPPER' ||
       userRole === UserRole.SHIPPER ||

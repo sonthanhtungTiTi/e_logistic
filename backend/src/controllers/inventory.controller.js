@@ -37,7 +37,12 @@ exports.getAging = async (req, res) => {
 
 exports.getSummary = async (req, res) => {
   try {
-    const hubId = req.query.hub_id || req.query.hubId || req.user?.hubId?.toString();
+    let hubId = req.query.hub_id || req.query.hubId || req.user?.hubId?.toString();
+    if (!hubId) {
+      const Hub = require('../models/hub.model');
+      const firstHub = await Hub.findOne();
+      hubId = firstHub?._id?.toString();
+    }
     if (!hubId) return res.status(400).json({ success: false, message: 'Thiếu hub_id', code: 'MISSING_HUB_ID' });
     const result = await svc.getSummary(hubId);
     return res.status(200).json({ success: true, message: 'Tổng hợp tồn kho', data: result });
@@ -48,7 +53,12 @@ exports.getSummary = async (req, res) => {
 
 exports.getTripSuggestions = async (req, res) => {
   try {
-    const hubId = req.query.hub_id || req.query.hubId || req.user?.hubId?.toString();
+    let hubId = req.query.hub_id || req.query.hubId || req.user?.hubId?.toString();
+    if (!hubId) {
+      const Hub = require('../models/hub.model');
+      const firstHub = await Hub.findOne();
+      hubId = firstHub?._id?.toString();
+    }
     if (!hubId) return res.status(400).json({ success: false, message: 'Thiếu hub_id', code: 'MISSING_HUB_ID' });
     const result = await svc.getTripSuggestions(hubId);
     return res.status(200).json({ success: true, message: 'Gợi ý chuyến xe từ tồn kho', data: result });

@@ -31,6 +31,7 @@ import { OrderSuccessModal } from '../../components/orders/OrderSuccessModal';
 import { PrintWaybillModal } from '../../components/orders/PrintWaybillModal';
 import { OrderSubNav } from '../../components/orders/OrderSubNav';
 import { formatNumberWithDots, parseDotsToNumber } from '../../lib/formatters';
+import { productApi, type ProductItem as CatalogProductItem } from '../../api/product.api';
 
 interface ProductItem {
   id: number;
@@ -185,6 +186,43 @@ export const CreateOrderPage: React.FC = () => {
       ...prev,
       [id]: { ...prev[id], [field]: true },
     }));
+  };
+
+  // Danh mục sản phẩm mẫu lưu sẵn (Product Catalog)
+  const [catalogProducts, setCatalogProducts] = useState<CatalogProductItem[]>([]);
+
+  useEffect(() => {
+    productApi.getProducts().then((res) => {
+      const list = res.data?.data || res.data || [];
+      if (Array.isArray(list)) {
+        setCatalogProducts(list);
+      }
+    }).catch(() => {});
+  }, []);
+
+  const handleSelectCatalogProduct = (catalogId: string, itemIndex: number) => {
+    const found = catalogProducts.find((p) => p._id === catalogId);
+    if (!found) return;
+
+    setProducts((prev) => {
+      const updated = [...prev];
+      updated[itemIndex] = {
+        ...updated[itemIndex],
+        name: found.name,
+        price: found.priceVnd || 0,
+        weight: found.weightKg || 0.5,
+      };
+      return updated;
+    });
+
+    if (found.dimensions && found.dimensions.length && found.dimensions.width && found.dimensions.height) {
+      setDimensions({
+        length: found.dimensions.length,
+        width: found.dimensions.width,
+        height: found.dimensions.height,
+      });
+      setPackagePreset('custom');
+    }
   };
 
   // Package Presets & Dimensions (Dài x Rộng x Cao cm)
@@ -405,11 +443,6 @@ export const CreateOrderPage: React.FC = () => {
   // Calculated totals & dynamic estimated shipping fee
   const totalActualWeight = products.reduce(
     (sum, p) => sum + (Number(p.weight) || 0) * (Number(p.quantity) || 1),
-    0
-  );
-
-  const totalQuantity = products.reduce(
-    (sum, p) => sum + (Number(p.quantity) || 1),
     0
   );
 
@@ -748,41 +781,13 @@ export const CreateOrderPage: React.FC = () => {
       };
 
       const response = await orderApi.createOrder(payload);
-      if (response.data?.success) {
+      if (response.data?.success && response.data?.data) {
         setCreatedOrder(response.data.data);
+        localStorage.removeItem(DRAFT_KEY);
+        setHasDraftRestored(false);
       } else {
-        // Demo fallback
-        setCreatedOrder({
-          _id: 'ORD-' + Math.floor(100000 + Math.random() * 900000),
-          trackingCode: response.data?.trackingCode || 'ELG-' + Math.floor(10000000 + Math.random() * 90000000),
-          trackingNumber: 'ELG-' + Math.floor(10000000 + Math.random() * 90000000),
-          pickupAddress: payload.pickupAddress,
-          deliveryAddress: payload.deliveryAddress,
-          items: payload.items,
-          dimensions: payload.dimensions || { length: 20, width: 15, height: 10 },
-          actualWeight: totalActualWeight || 0.5,
-          volumetricWeight: volumetricWeight,
-          chargeableWeight: chargeableWeight,
-          isCod: Boolean(payload.isCod),
-          codAmount: Number(codAmount) || 0,
-          goodsValue: Number(goodsValue) || 0,
-          baseFee: activeShippingFee,
-          insuranceFee: 0,
-          discountAmount: 0,
-          shippingFee: activeShippingFee,
-          status: 'CREATED',
-          flagFeeWarning: false,
-          flagCodAnomaly: false,
-          needsManualRouting: false,
-          sellerId: user?._id || 'seller_default',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        } as Order);
+        setSubmitError(response.data?.message || 'Không thể tạo đơn hàng trên máy chủ.');
       }
-
-      // Clear local storage draft after successful order creation
-      localStorage.removeItem(DRAFT_KEY);
-      setHasDraftRestored(false);
     } catch (err: any) {
       const resData = err.response?.data;
       if (resData?.code === 'DISCOUNT_INVALID_NEEDS_CONFIRM') {
@@ -1336,8 +1341,24 @@ export const CreateOrderPage: React.FC = () => {
                   key={product.id}
                   className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800/80 space-y-3"
                 >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400 font-mono">SP #{index + 1}</span>
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-slate-500 dark:text-slate-400 font-mono">SP #{index + 1}</span>
+                      {catalogProducts.length > 0 && (
+                        <select
+                          onChange={(e) => handleSelectCatalogProduct(e.target.value, index)}
+                          className="text-[11px] bg-white dark:bg-slate-950 border border-emerald-500/40 text-emerald-700 dark:text-emerald-300 rounded-lg px-2 py-0.5 max-w-[230px] focus:outline-none focus:border-emerald-500 cursor-pointer"
+                          defaultValue=""
+                        >
+                          <option value="" disabled>📦 Chọn từ sản phẩm mẫu...</option>
+                          {catalogProducts.map((cp) => (
+                            <option key={cp._id} value={cp._id} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                              {cp.name} ({cp.weightKg}kg - {formatNumberWithDots(cp.priceVnd)}đ)
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
                     {products.length > 1 && (
                       <button
                         type="button"

@@ -1,4 +1,4 @@
-import { Truck, Heart, MapPin, Phone, Mail } from 'lucide-react';
+import { Heart, MapPin, Phone, Mail } from 'lucide-react';
 
 export const Footer: React.FC = () => {
   return (

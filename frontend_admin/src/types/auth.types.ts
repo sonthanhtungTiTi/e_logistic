@@ -5,6 +5,8 @@ export const UserRole = {
   HUB_COORDINATOR: 'HUB_COORDINATOR',
   SHIPPER: 'SHIPPER', // Shipper giao nhận nội thành
   LOCAL_SHIPPER: 'LOCAL_SHIPPER', // Shipper giao nhận nội thành (alias)
+  PICKUP_SHIPPER: 'PICKUP_SHIPPER', // Shipper Gom hàng (First-Mile / Seller -> Hub)
+  DELIVERY_SHIPPER: 'DELIVERY_SHIPPER', // Shipper Giao hàng (Last-Mile / Hub -> Khách)
   DRIVER: 'DRIVER', // Tài xế vận chuyển / tương thích ngược
   LINE_HAUL_DRIVER: 'LINE_HAUL_DRIVER', // Tài xế xe tải liên tỉnh
   ORDER_VENDOR_MANAGER: 'ORDER_VENDOR_MANAGER', // Quản lý Duyệt đơn & Nhà cung cấp

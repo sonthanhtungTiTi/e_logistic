@@ -30,6 +30,8 @@ import { VendorOpsPage } from '@/pages/vendorOps/VendorOpsPage';
 import { LocalDispatchPage } from '@/pages/dispatch/LocalDispatchPage';
 import { LineHaulDispatchPage } from '@/pages/dispatch/LineHaulDispatchPage';
 import { AdminKycPage } from '@/pages/kyc/AdminKycPage';
+import { PricingConfigPage } from '@/pages/admin/PricingConfigPage';
+import { TicketManagementPage } from '@/pages/support/TicketManagementPage';
 
 // ── Shipper PWA Pages ─────────────────────────────────────────────────────────
 import { ShipperZonePage } from '@/pages/shipper/ShipperZonePage';
@@ -51,6 +53,7 @@ import { DriverHandoffPage } from '@/pages/driver/DriverHandoffPage';
 const ADMIN_ROLES = [UserRole.ADMIN] as const;
 
 const WAREHOUSE_ROLES = [
+  UserRole.ADMIN,
   UserRole.HUB_STAFF,
   UserRole.WAREHOUSE_STAFF,
   UserRole.HUB_COORDINATOR,
@@ -93,8 +96,12 @@ const KYC_ROLES = [UserRole.ADMIN, UserRole.CS, 'ADMIN', 'CS'] as const;
 const SHIPPER_ROLES = [
   UserRole.SHIPPER,
   UserRole.LOCAL_SHIPPER,
+  UserRole.PICKUP_SHIPPER,
+  UserRole.DELIVERY_SHIPPER,
   'SHIPPER',
   'LOCAL_SHIPPER',
+  'PICKUP_SHIPPER',
+  'DELIVERY_SHIPPER',
 ] as const;
 
 const DRIVER_ROLES = [
@@ -110,6 +117,12 @@ const RootRedirect: React.FC = () => {
   if (!user) return <Navigate to="/admin/login" replace />;
 
   const role = (user.role || '').toString();
+  if (role === 'PICKUP_SHIPPER' || role === UserRole.PICKUP_SHIPPER) {
+    return <Navigate to="/shipper/pickup" replace />;
+  }
+  if (role === 'DELIVERY_SHIPPER' || role === UserRole.DELIVERY_SHIPPER) {
+    return <Navigate to="/shipper/delivery" replace />;
+  }
   if (
     role === 'SHIPPER' ||
     role === 'LOCAL_SHIPPER' ||
@@ -215,6 +228,12 @@ export const AppRoutes: React.FC = () => {
             <Route path="/admin/reports" element={<SlaReportPage />} />
           </Route>
 
+          {/* Cấu hình bảng giá phí ship & Voucher CMS */}
+          <Route path="/admin/pricing" element={<PricingConfigPage />} />
+
+          {/* Khiếu nại & Hỗ trợ Ticket (CSKH) */}
+          <Route path="/admin/tickets" element={<TicketManagementPage />} />
+
           <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
         </Route>
       </Route>
@@ -247,6 +266,7 @@ export const AppRoutes: React.FC = () => {
       <Route element={<RoleBaseRoute allowedRoles={[...SHIPPER_ROLES]} />}>
         <Route element={<ShipperLayout />}>
           <Route path="/shipper/zone"     element={<ShipperZonePage />} />
+          <Route path="/shipper/zones"    element={<ShipperZonePage />} />
           <Route path="/shipper/pickup"   element={<ShipperPickupPage />} />
           <Route path="/shipper/delivery" element={<ShipperDeliveryPage />} />
           <Route path="/shipper/wallet"   element={<ShipperWalletPage />} />
