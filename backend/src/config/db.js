@@ -20,7 +20,7 @@ require('../models/pickupConfirmation.model');
 
 const connectDB = async () => {
   try {
-    const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/e-logistics';
+    const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/e_logistic';
     const conn = await mongoose.connect(mongoURI);
     console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {

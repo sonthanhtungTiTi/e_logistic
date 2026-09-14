@@ -9,8 +9,8 @@ export const Footer: React.FC = () => {
 
           <div className="space-y-3">
             <div className="flex items-center gap-3">
-              <img src="/logo.png" alt="GIAO HÀNG Logo" className="h-9 w-auto object-contain" />
-              <span className="font-black text-xl text-blue-500 tracking-tight">GIAO HÀNG</span>
+              <img src="/logo.png" alt="Giao hàng siêu tốc Logo" className="h-9 w-auto object-contain" />
+              <span className="font-black text-xl text-blue-500 tracking-tight">Giao hàng siêu tốc</span>
             </div>
             <p className="text-xs text-slate-400 leading-relaxed">
               Nền tảng giao hàng & chuỗi cung ứng thông minh. Giao hàng tận tay bạn — Nhanh chóng • Tin cậy • Mọi nơi.
@@ -49,7 +49,7 @@ export const Footer: React.FC = () => {
         </div>
 
         <div className="border-t border-slate-800/80 pt-6 text-center text-xs text-slate-500">
-          <p>© 2026 GIAO HÀNG Platform. Hệ Thống Giao Hàng & Quản Lý Logistics Thông Minh.</p>
+          <p>© 2026 Giao hàng siêu tốc Platform. Hệ Thống Giao Hàng & Quản Lý Logistics Thông Minh.</p>
         </div>
       </div>
     </footer>

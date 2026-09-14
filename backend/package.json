@@ -7,6 +7,7 @@
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "test:e2e": "node test/e2e/run-guide-tests.js",
+    "test:architecture": "node test/e2e/test-redis-first-architecture.js",
     "seed": "node seed-test-data.js",
     "clean:orders": "node scripts/clear-all-orders.js"
   },
@@ -14,12 +15,14 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "amqplib": "^2.0.1",
     "axios": "^1.19.0",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "express-rate-limit": "^8.6.2",
+    "ioredis": "^6.0.0",
     "joi": "^18.2.3",
     "jsonwebtoken": "^9.0.3",
     "mogoose": "^0.0.1-security",
@@ -29,9 +32,11 @@
     "qrcode": "^1.5.4",
     "socket.io": "^4.8.3",
     "socket.io-client": "^4.8.3",
-    "speakeasy": "^2.0.0"
+    "speakeasy": "^2.0.0",
+    "uuid": "^14.0.2"
   },
   "devDependencies": {
+    "ioredis-mock": "^8.13.1",
     "nodemon": "^3.1.14",
     "puppeteer-core": "^25.10.0"
   }

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router';
 import { KeyRound, Mail, Lock, AlertCircle, Loader2, QrCode } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { authApi } from '../../api/auth.api';
@@ -16,8 +16,17 @@ export const LoginPage: React.FC = () => {
   const [tempToken, setTempToken] = useState('');
   const [totpCode, setTotpCode] = useState('');
 
-  const { login } = useAuth();
+  const { user, token, login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const from = (location.state as any)?.from || '/seller/dashboard';
+
+  useEffect(() => {
+    if (user && token) {
+      navigate(from, { replace: true });
+    }
+  }, [user, token, navigate, from]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,7 +60,7 @@ export const LoginPage: React.FC = () => {
           kycStatus: data.kycStatus,
           kycVerified: data.kycVerified,
         });
-        navigate('/seller/dashboard');
+        navigate(from, { replace: true });
       } else {
         setError('Đăng nhập thất bại. Không nhận được Access Token từ hệ thống.');
       }
@@ -82,7 +91,7 @@ export const LoginPage: React.FC = () => {
           fullName: data.fullName || 'Seller Partner',
           role: data.role || 'SELLER',
         });
-        navigate('/seller/dashboard');
+        navigate(from, { replace: true });
       } else {
         setError('Xác thực 2FA thất bại');
       }
@@ -103,11 +112,11 @@ export const LoginPage: React.FC = () => {
             </div>
           ) : (
             <div className="flex justify-center mb-1">
-              <img src="/logo.png" alt="GIAO HÀNG Logo" className="h-16 w-auto object-contain" />
+              <img src="/logo.png" alt="Giao hàng siêu tốc Logo" className="h-16 w-auto object-contain" />
             </div>
           )}
           <h2 className="text-2xl font-black text-slate-900 dark:text-white">
-            {requiresTwoFactor ? 'Xác Thực 2FA TOTP' : 'Đăng Nhập GIAO HÀNG Hub'}
+            {requiresTwoFactor ? 'Xác Thực 2FA TOTP' : 'Đăng Nhập Giao hàng siêu tốc Hub'}
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400">
             {requiresTwoFactor

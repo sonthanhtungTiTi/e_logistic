@@ -8,7 +8,7 @@ import {
   RefreshCw,
   ChevronLeft,
   ChevronRight,
-  Package,
+  Package
 } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { adminOrderApi } from '../../api/order.api';

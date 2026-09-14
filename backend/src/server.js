@@ -26,6 +26,21 @@ const startServer = async () => {
       console.warn('⚠️ Cảnh báo Migration 002:', migErr.message);
     }
 
+    // Khởi tạo Redis (Hot Layer) & RabbitMQ (Message Broker & Queue Synchronizer)
+    const { connectRedis } = require('./config/redis.config');
+    const { connectRabbitMQ } = require('./config/rabbitmq.config');
+    const { startDBSyncWorker } = require('./queues/consumers/db-sync.worker');
+    const { startRedisSyncWorker } = require('./queues/consumers/redis-sync.worker');
+    const { startDBWatcher } = require('./services/db-watcher.service');
+
+    connectRedis();
+    const { channel: rmqChannel } = await connectRabbitMQ();
+    if (rmqChannel) {
+      await startDBSyncWorker();
+      await startRedisSyncWorker();
+      startDBWatcher();
+    }
+
     // Khởi tạo HTTP Server & WebSocket Server (Socket.io)
     const server = http.createServer(app);
     const io = new Server(server, {
@@ -51,6 +66,10 @@ const startServer = async () => {
         if (sellerId) socket.join(`seller:${sellerId}`);
       });
     });
+
+    // Khởi động Sync Monitor Job (Kiểm tra pending queue mỗi 30s)
+    const { startSyncMonitorJob } = require('./jobs/syncMonitor.job');
+    startSyncMonitorJob();
 
     // Khởi động Audit Lost Timeout Job
     const { startAuditLostTimeoutJob } = require('./jobs/auditLostTimeout.job');

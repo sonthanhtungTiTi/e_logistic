@@ -41,6 +41,13 @@ export const Sidebar: React.FC = () => {
     return null;
   }
 
+  const isLinkActive = (path: string) => {
+    if (path === '/seller/tickets') {
+      return location.pathname.startsWith('/seller/tickets');
+    }
+    return location.pathname === path;
+  };
+
   return (
     <aside
       className={`hidden lg:flex flex-col shrink-0 border-r border-slate-200 dark:border-slate-800/80 glass-panel h-[calc(100vh-5rem)] sticky top-20 z-30 overflow-y-auto text-xs select-none transition-all duration-300 ease-in-out ${
@@ -62,7 +69,7 @@ export const Sidebar: React.FC = () => {
           type="button"
           onClick={toggleCollapsed}
           title={isCollapsed ? 'Mở rộng menu' : 'Thu gọn menu'}
-          className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition cursor-pointer"
+          className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition cursor-pointer"
         >
           {isCollapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
         </button>
@@ -73,11 +80,11 @@ export const Sidebar: React.FC = () => {
         {!isCollapsed ? (
           <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-2 mb-2 flex items-center justify-between">
             <span>Thao Tác Đơn Hàng</span>
-            <Sparkles className="w-3 h-3 text-cyan-600 dark:text-cyan-400" />
+            <Sparkles className="w-3 h-3 text-blue-600 dark:text-blue-400" />
           </div>
         ) : (
           <div className="w-full flex justify-center py-0.5" title="Thao Tác Đơn Hàng">
-            <Sparkles className="w-3 h-3 text-cyan-600 dark:text-cyan-400" />
+            <Sparkles className="w-3 h-3 text-blue-600 dark:text-blue-400" />
           </div>
         )}
 
@@ -87,12 +94,12 @@ export const Sidebar: React.FC = () => {
           className={`w-full flex items-center rounded-2xl font-bold transition ${
             isCollapsed ? 'justify-center p-2.5' : 'gap-3 px-3.5 py-3'
           } ${
-            location.pathname === '/seller/orders/create'
-              ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white ring-1 ring-cyan-400/40 shadow-md shadow-blue-500/20'
-              : 'bg-blue-500/10 hover:bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-500/30'
+            isLinkActive('/seller/orders/create')
+              ? 'bg-blue-600 text-white shadow-md shadow-blue-600/25'
+              : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white font-medium border border-blue-500/20 bg-blue-500/5 dark:bg-blue-500/10'
           }`}
         >
-          <PlusCircle className="w-4 h-4 text-emerald-500 dark:text-emerald-400 shrink-0" />
+          <PlusCircle className={`w-4 h-4 shrink-0 ${isLinkActive('/seller/orders/create') ? 'text-white' : 'text-blue-600 dark:text-blue-400'}`} />
           {!isCollapsed && <span className="truncate">Tạo Đơn Vận Chuyển Mới</span>}
         </Link>
 
@@ -102,42 +109,42 @@ export const Sidebar: React.FC = () => {
           className={`w-full flex items-center rounded-2xl font-bold transition ${
             isCollapsed ? 'justify-center p-2.5' : 'gap-3 px-3.5 py-2.5'
           } ${
-            location.pathname === '/seller/orders/batch'
-              ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white ring-1 ring-cyan-400/40 shadow-md shadow-cyan-500/20'
-              : 'bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-800'
+            isLinkActive('/seller/orders/batch')
+              ? 'bg-blue-600 text-white shadow-md shadow-blue-600/25'
+              : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white font-medium'
           }`}
         >
-          <FileSpreadsheet className="w-4 h-4 text-cyan-600 dark:text-cyan-400 shrink-0" />
+          <FileSpreadsheet className={`w-4 h-4 shrink-0 ${isLinkActive('/seller/orders/batch') ? 'text-white' : 'text-blue-600 dark:text-blue-400'}`} />
           {!isCollapsed && <span className="truncate">Đăng Đơn Excel Loạt</span>}
         </Link>
 
         <Link
           to="/seller/orders"
           title="Quản Lý Danh Sách Đơn"
-          className={`w-full flex items-center rounded-2xl font-semibold transition ${
+          className={`w-full flex items-center rounded-2xl transition ${
             isCollapsed ? 'justify-center p-2.5' : 'gap-3 px-3.5 py-2.5'
           } ${
-            location.pathname === '/seller/orders'
-              ? 'bg-blue-600/15 text-blue-700 dark:text-blue-300 border border-blue-500/30 font-bold'
-              : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-900 hover:text-slate-900 dark:hover:text-white'
+            isLinkActive('/seller/orders')
+              ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-600/25'
+              : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white font-medium'
           }`}
         >
-          <ListFilter className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0" />
+          <ListFilter className={`w-4 h-4 shrink-0 ${isLinkActive('/seller/orders') ? 'text-white' : 'text-blue-600 dark:text-blue-400'}`} />
           {!isCollapsed && <span className="truncate">Quản Lý Danh Sách Đơn</span>}
         </Link>
 
         <Link
           to="/seller/products"
           title="Danh Mục Sản Phẩm Mẫu"
-          className={`w-full flex items-center rounded-2xl font-semibold transition ${
+          className={`w-full flex items-center rounded-2xl transition ${
             isCollapsed ? 'justify-center p-2.5' : 'gap-3 px-3.5 py-2.5'
           } ${
-            location.pathname === '/seller/products'
-              ? 'bg-emerald-600/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 font-bold'
-              : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-900 hover:text-slate-900 dark:hover:text-white'
+            isLinkActive('/seller/products')
+              ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-600/25'
+              : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white font-medium'
           }`}
         >
-          <Boxes className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+          <Boxes className={`w-4 h-4 shrink-0 ${isLinkActive('/seller/products') ? 'text-white' : 'text-blue-600 dark:text-blue-400'}`} />
           {!isCollapsed && <span className="truncate">Sản Phẩm Mẫu (Catalog)</span>}
         </Link>
       </div>
@@ -153,60 +160,60 @@ export const Sidebar: React.FC = () => {
         <Link
           to="/seller/dashboard"
           title="Dashboard Kênh Seller"
-          className={`w-full flex items-center rounded-xl font-semibold transition ${
+          className={`w-full flex items-center rounded-xl transition ${
             isCollapsed ? 'justify-center p-2.5' : 'gap-3 px-3.5 py-2.5'
           } ${
-            location.pathname === '/seller/dashboard'
-              ? 'bg-blue-600/15 text-blue-700 dark:text-blue-300 border border-blue-500/30 font-bold'
-              : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-900 hover:text-slate-900 dark:hover:text-white'
+            isLinkActive('/seller/dashboard')
+              ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-600/25'
+              : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white font-medium'
           }`}
         >
-          <LayoutDashboard className="w-4 h-4 text-cyan-600 dark:text-cyan-400 shrink-0" />
+          <LayoutDashboard className={`w-4 h-4 shrink-0 ${isLinkActive('/seller/dashboard') ? 'text-white' : 'text-blue-600 dark:text-blue-400'}`} />
           {!isCollapsed && <span>Dashboard Kênh Seller</span>}
         </Link>
 
         <Link
           to="/seller/wallet"
           title="Ví COD & Doanh Thu"
-          className={`w-full flex items-center rounded-xl font-semibold transition ${
+          className={`w-full flex items-center rounded-xl transition ${
             isCollapsed ? 'justify-center p-2.5' : 'gap-3 px-3.5 py-2.5'
           } ${
-            location.pathname === '/seller/wallet'
-              ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 font-bold'
-              : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-900 hover:text-slate-900 dark:hover:text-white'
+            isLinkActive('/seller/wallet')
+              ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-600/25'
+              : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white font-medium'
           }`}
         >
-          <CreditCard className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+          <CreditCard className={`w-4 h-4 shrink-0 ${isLinkActive('/seller/wallet') ? 'text-white' : 'text-blue-600 dark:text-blue-400'}`} />
           {!isCollapsed && <span>Ví COD & Doanh Thu</span>}
         </Link>
 
         <Link
           to="/seller/tickets"
           title="Khiếu Nại & Hỗ Trợ Ticket"
-          className={`w-full flex items-center rounded-xl font-semibold transition ${
+          className={`w-full flex items-center rounded-xl transition ${
             isCollapsed ? 'justify-center p-2.5' : 'gap-3 px-3.5 py-2.5'
           } ${
-            location.pathname.startsWith('/seller/tickets')
-              ? 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30 font-bold'
-              : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-900 hover:text-slate-900 dark:hover:text-white'
+            isLinkActive('/seller/tickets')
+              ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-600/25'
+              : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white font-medium'
           }`}
         >
-          <Ticket className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
+          <Ticket className={`w-4 h-4 shrink-0 ${isLinkActive('/seller/tickets') ? 'text-white' : 'text-blue-600 dark:text-blue-400'}`} />
           {!isCollapsed && <span>Khiếu Nại & Hỗ Trợ Ticket</span>}
         </Link>
 
         <Link
           to="/seller/profile"
           title="Hồ Sơ Cá Nhân & Cài Đặt"
-          className={`w-full flex items-center rounded-xl font-semibold transition ${
+          className={`w-full flex items-center rounded-xl transition ${
             isCollapsed ? 'justify-center p-2.5' : 'gap-3 px-3.5 py-2.5'
           } ${
-            location.pathname === '/seller/profile'
-              ? 'bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30 font-bold'
-              : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-900 hover:text-slate-900 dark:hover:text-white'
+            isLinkActive('/seller/profile')
+              ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-600/25'
+              : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white font-medium'
           }`}
         >
-          <User className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0" />
+          <User className={`w-4 h-4 shrink-0 ${isLinkActive('/seller/profile') ? 'text-white' : 'text-blue-600 dark:text-blue-400'}`} />
           {!isCollapsed && <span>Hồ Sơ Cá Nhân & Cài Đặt</span>}
         </Link>
       </div>
@@ -214,7 +221,7 @@ export const Sidebar: React.FC = () => {
       {/* Main Pages Section */}
       <div className={`space-y-1 pt-2 border-t border-slate-200 dark:border-slate-800/80 ${isCollapsed ? 'w-full' : ''}`}>
         {!isCollapsed && (
-          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 mb-2">
+          <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-2 mb-2">
             Tiện Ích Khác
           </div>
         )}
@@ -225,14 +232,16 @@ export const Sidebar: React.FC = () => {
           className={`w-full flex items-center rounded-xl transition ${
             isCollapsed ? 'justify-center p-2.5' : 'justify-between px-3.5 py-2'
           } ${
-            location.pathname === '/' ? 'text-blue-400 font-bold' : 'text-slate-400 hover:text-white'
+            isLinkActive('/')
+              ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-600/25'
+              : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white font-medium'
           }`}
         >
           <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-2.5'}`}>
-            <Search className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+            <Search className={`w-4 h-4 shrink-0 ${isLinkActive('/') ? 'text-white' : 'text-blue-600 dark:text-blue-400'}`} />
             {!isCollapsed && <span>Tra Cứu & Trang Chủ</span>}
           </div>
-          {!isCollapsed && <ChevronRight className="w-3.5 h-3.5 text-slate-600" />}
+          {!isCollapsed && <ChevronRight className={`w-3.5 h-3.5 ${isLinkActive('/') ? 'text-white' : 'text-slate-400 dark:text-slate-500'}`} />}
         </Link>
 
         <Link
@@ -241,14 +250,16 @@ export const Sidebar: React.FC = () => {
           className={`w-full flex items-center rounded-xl transition ${
             isCollapsed ? 'justify-center p-2.5' : 'justify-between px-3.5 py-2'
           } ${
-            location.pathname === '/pricing' ? 'text-blue-400 font-bold' : 'text-slate-400 hover:text-white'
+            isLinkActive('/pricing')
+              ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-600/25'
+              : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white font-medium'
           }`}
         >
           <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-2.5'}`}>
-            <Calculator className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+            <Calculator className={`w-4 h-4 shrink-0 ${isLinkActive('/pricing') ? 'text-white' : 'text-blue-600 dark:text-blue-400'}`} />
             {!isCollapsed && <span>Bảng Giá & Tính Cước</span>}
           </div>
-          {!isCollapsed && <ChevronRight className="w-3.5 h-3.5 text-slate-600" />}
+          {!isCollapsed && <ChevronRight className={`w-3.5 h-3.5 ${isLinkActive('/pricing') ? 'text-white' : 'text-slate-400 dark:text-slate-500'}`} />}
         </Link>
       </div>
 
@@ -259,7 +270,7 @@ export const Sidebar: React.FC = () => {
             type="button"
             onClick={logout}
             title="Đăng Xuất Hệ Thống"
-            className={`w-full flex items-center justify-center rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 dark:text-rose-400 border border-rose-500/30 transition cursor-pointer ${
+            className={`w-full flex items-center justify-center rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30 transition cursor-pointer ${
               isCollapsed ? 'p-2.5' : 'gap-2 px-3 py-2.5 font-bold'
             }`}
           >

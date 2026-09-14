@@ -30,6 +30,11 @@ const passwordResetOtpSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    // Khóa xác thực OTP tạm thời khi sai 5 lần
+    lockUntil: {
+      type: Date,
+      required: false,
+    },
     // Kênh gửi OTP (email/sms) — Actor phụ ĐT
     channel: {
       type: String,

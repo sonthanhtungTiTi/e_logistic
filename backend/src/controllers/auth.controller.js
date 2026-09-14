@@ -158,12 +158,12 @@ const registerUser = async (req, res) => {
         'string.email': 'Email không đúng định dạng',
         'any.required': 'Vui lòng cung cấp email'
       }),
-      phoneNumber: Joi.string().pattern(/^[0-9]{10,11}$/).required().messages({
-        'string.pattern.base': 'Số điện thoại không hợp lệ',
+      phoneNumber: Joi.string().pattern(/^(03|05|07|08|09)[0-9]{8}$/).required().messages({
+        'string.pattern.base': 'Số điện thoại phải gồm đúng 10 chữ số thuộc dải đầu số nhà mạng Việt Nam',
         'any.required': 'Vui lòng cung cấp số điện thoại'
       }),
-      password: Joi.string().min(6).required().messages({
-        'string.min': 'Mật khẩu phải từ 6 ký tự',
+      password: Joi.string().min(8).required().messages({
+        'string.min': 'Mật khẩu phải từ 8 ký tự trở lên',
         'any.required': 'Vui lòng cung cấp mật khẩu'
       }),
       // Xác nhận mật khẩu — bước 2 của form đăng ký theo đặc tả Main Flow bước 3
@@ -934,7 +934,7 @@ const verifyRegisterOtp = async (req, res) => {
     const schema = Joi.object({
       email: Joi.string().email().required(),
       otp: Joi.string().length(6).required().messages({
-        'string.length': 'Mã OTP gồm 6 chữ số',
+        'string.length': 'Mã OTP phải gồm đúng 6 chữ số',
         'any.required': 'Vui lòng nhập mã OTP'
       })
     });
@@ -945,25 +945,53 @@ const verifyRegisterOtp = async (req, res) => {
 
     const otpRecord = await PasswordResetOtp.findOne({
       sentTo: email,
-      isUsed: false,
     }).select('+otpHash');
 
     if (!otpRecord) {
-      return res.status(400).json({ message: 'Yêu cầu xác thực OTP không tồn tại hoặc đã được sử dụng.' });
+      return res.status(400).json({ message: 'Yêu cầu xác thực OTP không tồn tại hoặc đã hết hạn. Vui lòng nhấn Gửi lại OTP.' });
+    }
+
+    // Alt: Kiểm tra tài khoản/email có đang bị khóa 5 phút do nhập sai 5 lần không
+    if (otpRecord.lockUntil && otpRecord.lockUntil > new Date()) {
+      const minutesLeft = Math.ceil((otpRecord.lockUntil - new Date()) / 60000);
+      return res.status(403).json({
+        message: `Email này tạm thời bị khóa xác thực OTP do nhập sai 5 lần. Vui lòng thử lại sau ${minutesLeft} phút hoặc bấm Gửi lại mã OTP.`
+      });
     }
 
     if (otpRecord.expiresAt < new Date()) {
-      return res.status(400).json({ message: 'Mã xác thực OTP đã hết hạn. Vui lòng gửi lại mã mới.' });
+      return res.status(400).json({ message: 'Mã xác thực OTP đã hết hạn (10 phút). Vui lòng nhấn Gửi lại mã mới.' });
+    }
+
+    // Nếu mã OTP này đã được xác thực thành công trước đó và chưa hết hạn -> Cho phép hoàn tất đăng ký
+    if (otpRecord.isUsed) {
+      return res.status(200).json({ message: 'Email đã được xác thực OTP thành công!' });
     }
 
     const isOtpValid = await bcrypt.compare(otp, otpRecord.otpHash);
     if (!isOtpValid) {
-      otpRecord.failedAttempts += 1;
+      otpRecord.failedAttempts = (otpRecord.failedAttempts || 0) + 1;
+
+      // Nhập sai 5 lần -> Khóa xác thực OTP trong 5 phút
+      if (otpRecord.failedAttempts >= 5) {
+        otpRecord.lockUntil = new Date(Date.now() + 5 * 60 * 1000);
+        await otpRecord.save();
+        return res.status(403).json({
+          message: 'Bạn đã nhập sai mã OTP 5 lần liên tiếp. Email này tạm thời bị khóa xác thực OTP trong 5 phút.'
+        });
+      }
+
       await otpRecord.save();
-      return res.status(400).json({ message: 'Mã OTP xác thực không chính xác.' });
+      const attemptsLeft = 5 - otpRecord.failedAttempts;
+      return res.status(400).json({
+        message: `Mã OTP không chính xác. Bạn còn ${attemptsLeft} lần thử trước khi bị tạm khóa 5 phút.`
+      });
     }
 
+    // Xác thực thành công -> Đánh dấu isUsed = true, reset đếm sai & xóa lock
     otpRecord.isUsed = true;
+    otpRecord.failedAttempts = 0;
+    otpRecord.lockUntil = undefined;
     await otpRecord.save();
 
     res.status(200).json({ message: 'Xác thực Email thành công!' });

@@ -71,6 +71,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     if (token && token !== 'undefined' && token !== 'null') {
       localStorage.setItem('token', token);
+      // Skip remote API check for mock tokens to prevent 401 logout on refresh
+      if (token === 'mock-jwt-token-seller') {
+        return;
+      }
       // Kiểm tra tính hiệu lực của Token với Backend và đồng bộ thông tin tài khoản
       axiosClient
         .get('/auth/profile')
@@ -88,7 +92,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         })
         .catch((err) => {
-          if (err.response?.status === 401 || err.response?.status === 403) {
+          if (err.response?.status === 401 && (err.response?.data?.message?.includes('token') || err.response?.data?.message?.includes('hết hạn'))) {
             console.warn('⚠️ Phiên làm việc đã hết hạn. Đang đăng xuất...');
             logout();
           }
@@ -96,7 +100,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } else if (!token) {
       localStorage.removeItem('token');
     }
-  }, []);
+  }, [token]);
 
   return (
     <AuthContext.Provider value={{ user, role: user?.role || null, token, login, logout, updateUser }}>
