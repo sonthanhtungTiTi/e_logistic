@@ -759,71 +759,63 @@ export const BatchOrderPage: React.FC = () => {
 
   return (
     <>
-      <div className="flex flex-col lg:flex-row gap-6 animate-in fade-in duration-300">
-      {/* LEFT SIDEBAR MENU (Thanh menu chuyển sang bên tay trái, sổ dọc xuống) */}
-      <div className="w-full lg:w-72 shrink-0 space-y-4">
-        {/* Header Title Card */}
-        <div className="glass-panel p-5 rounded-3xl border border-slate-800 space-y-2">
-          <div className="flex items-center gap-2 text-xs text-slate-400 mb-1">
-            <span className="cursor-pointer hover:text-blue-400" onClick={() => navigate('/seller/dashboard')}>
-              Seller Portal
-            </span>
-            <ChevronRight className="w-3.5 h-3.5 text-slate-600" />
-            <span className="text-cyan-400 font-semibold">Tạo Đơn Hàng Loạt</span>
-          </div>
-          <h2 className="text-xl font-black text-white flex items-center gap-2">
-            <FileSpreadsheet className="w-6 h-6 text-cyan-400 shrink-0" /> Nhập Đơn Excel
-          </h2>
-          <p className="text-xs text-slate-400 leading-relaxed pt-1">
-            Tải lên file danh sách để khởi tạo tự động hàng trăm vận đơn, phát hiện lỗi cấu trúc và xem chi tiết.
-          </p>
-        </div>
-
-        {/* Vertical Action & Navigation Menu */}
-        <div className="glass-panel p-4 rounded-3xl border border-slate-800 space-y-4 shadow-xl">
-          <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-1">
-            Menu Thao Tác Hệ Thống
+      <div className="flex flex-col gap-6 animate-in fade-in duration-300">
+        {/* TOP HORIZONTAL HEADER & ACTION TOOLBAR */}
+        <div className="w-full glass-panel p-5 sm:p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm bg-white/80 dark:bg-slate-900/80 backdrop-blur-md flex flex-col xl:flex-row xl:items-center justify-between gap-5">
+          {/* Header Title Info */}
+          <div className="space-y-1.5 max-w-xl">
+            <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+              <span className="cursor-pointer hover:text-blue-500 transition font-medium" onClick={() => navigate('/seller/dashboard')}>
+                Seller Portal
+              </span>
+              <ChevronRight className="w-3.5 h-3.5 text-slate-400 dark:text-slate-600" />
+              <span className="text-cyan-600 dark:text-cyan-400 font-semibold">Tạo Đơn Hàng Loạt</span>
+            </div>
+            <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2.5">
+              <FileSpreadsheet className="w-6 h-6 text-cyan-500 dark:text-cyan-400 shrink-0" /> Nhập Đơn Excel
+            </h2>
+            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+              Tải lên file danh sách để khởi tạo tự động hàng trăm vận đơn, phát hiện lỗi cấu trúc và xem chi tiết.
+            </p>
           </div>
 
-          {/* SubNav Tabs (Vertical Layout) */}
-          <OrderSubNav activeTab="batch" layout="vertical" />
+          {/* Horizontal Action Toolbar */}
+          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+            <OrderSubNav activeTab="batch" layout="horizontal" />
 
-          <div className="h-px bg-slate-800/80 my-2" />
+            <div className="hidden sm:block h-7 w-px bg-slate-200 dark:bg-slate-800 mx-1" />
 
-          {/* Action Buttons Stacked Vertically */}
-          <div className="flex flex-col gap-2.5">
             <button
               type="button"
               onClick={() => setIsImportModalOpen(true)}
-              className="w-full px-4 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black shadow-lg shadow-emerald-600/30 flex items-center gap-2.5 transition cursor-pointer"
+              className="px-4 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black shadow-md shadow-emerald-600/20 flex items-center gap-2 transition cursor-pointer"
             >
-              <Upload className="w-4 h-4 text-emerald-200 shrink-0" />
+              <Upload className="w-4 h-4 text-emerald-100 shrink-0" />
               <span>Tải File Excel (Wizard 4 Bước)</span>
             </button>
 
             <button
               type="button"
               onClick={handleDownloadTemplate}
-              className="w-full px-4 py-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-cyan-400 hover:text-cyan-300 text-xs font-bold border border-cyan-500/30 flex items-center gap-2.5 shadow-md transition cursor-pointer"
+              className="px-3.5 py-2.5 rounded-2xl bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-cyan-600 dark:text-cyan-400 text-xs font-bold border border-slate-200 dark:border-cyan-500/30 flex items-center gap-2 shadow-sm transition cursor-pointer"
             >
-              <Download className="w-4 h-4 text-cyan-400 shrink-0" />
-              <span>Tải File Mẫu Excel (.CSV)</span>
+              <Download className="w-4 h-4 text-cyan-500 dark:text-cyan-400 shrink-0" />
+              <span>Tải File Mẫu (.CSV)</span>
             </button>
 
             <button
               type="button"
               onClick={() => setIsGuideOpen(true)}
-              className="w-full px-3.5 py-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white text-xs font-semibold border border-slate-800 flex items-center gap-2.5 transition cursor-pointer"
+              className="px-3.5 py-2.5 rounded-2xl bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold border border-slate-200 dark:border-slate-800 flex items-center gap-2 shadow-sm transition cursor-pointer"
             >
-              <HelpCircle className="w-4 h-4 text-blue-400 shrink-0" />
-              <span>Hướng Dẫn Định Dạng</span>
+              <HelpCircle className="w-4 h-4 text-blue-500 dark:text-blue-400 shrink-0" />
+              <span>Hướng Dẫn</span>
             </button>
           </div>
         </div>
-      </div>
 
-      {/* RIGHT MAIN WORKSPACE (Full Width & Expanded Space) */}
-      <div className="flex-1 min-w-0 space-y-6">
+        {/* MAIN WORKSPACE (Full Width & Expanded Space) */}
+        <div className="w-full space-y-6">
 
       {/* Auto-Restored Batch Draft Notification Banner */}
       {hasBatchDraftRestored && (

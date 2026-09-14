@@ -105,9 +105,9 @@ export const PrintWaybillModal: React.FC<PrintWaybillModalProps> = ({ order, onC
           {/* Header */}
           <div className="flex items-center justify-between border-b-2 border-slate-900 pb-2 gap-2">
             <div className="flex items-center gap-2 shrink-0">
-              <img src="/logo.png" alt="GIAO HÀNG Logo" className="h-9 w-auto object-contain" />
+              <img src="/logo.png" alt="Giao hàng siêu tốc Logo" className="h-9 w-auto object-contain" />
               <div>
-                <h1 className="font-black text-lg tracking-wider text-black whitespace-nowrap leading-none">GIAO HÀNG</h1>
+                <h1 className="font-black text-lg tracking-wider text-black whitespace-nowrap leading-none">Giao hàng siêu tốc</h1>
                 <span className="text-[9px] font-bold block uppercase text-slate-700 whitespace-nowrap mt-0.5">Dịch Vụ Giao Hàng Hỏa Tốc & Chuỗi Lạnh</span>
               </div>
             </div>

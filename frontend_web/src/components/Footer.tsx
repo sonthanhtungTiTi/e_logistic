@@ -9,11 +9,11 @@ export const Footer: React.FC = () => {
           {/* Brand Col */}
           <div className="space-y-3 md:col-span-1">
             <div className="flex items-center gap-3">
-              <img src="/logo.png" alt="GIAO HÀNG Logo" className="h-9 w-auto object-contain" />
-              <span className="font-black text-xl text-blue-500 tracking-tight">GIAO HÀNG</span>
+              <img src="/logo.png" alt="Giao hàng siêu tốc Logo" className="h-9 w-auto object-contain" />
+              <span className="font-black text-xl text-blue-500 tracking-tight">Giao hàng siêu tốc</span>
             </div>
             <p className="text-xs text-slate-400 leading-relaxed">
-              Hệ thống vận tải & logistics chuỗi cung ứng thông minh GIAO HÀNG.
+              Hệ thống vận tải & logistics chuỗi cung ứng thông minh Giao hàng siêu tốc.
             </p>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-[11px] font-bold border border-emerald-500/20">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
@@ -56,7 +56,7 @@ export const Footer: React.FC = () => {
 
         {/* Bottom credits */}
         <div className="pt-6 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
-          <p>© 2026 GIAO HÀNG Platform. Tất cả quyền được bảo lưu.</p>
+          <p>© 2026 Giao hàng siêu tốc Platform. Tất cả quyền được bảo lưu.</p>
           <div className="flex items-center gap-1">
             <span>Thiết kế & phát triển cho Khoa Luận K18 với</span>
             <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500 inline" />

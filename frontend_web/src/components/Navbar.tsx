@@ -26,11 +26,11 @@ export const Navbar: React.FC<NavbarProps> = ({
           className="flex items-center gap-3 cursor-pointer group"
         >
           <div className="h-12 sm:h-14 flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
-            <img src="/logo.png" alt="GIAO HÀNG Logo" className="h-12 sm:h-14 w-auto object-contain drop-shadow-md" />
+            <img src="/logo.png" alt="Giao hàng siêu tốc Logo" className="h-12 sm:h-14 w-auto object-contain drop-shadow-md" />
           </div>
           <div>
             <span className="font-black text-xl sm:text-2xl tracking-tight text-blue-600 dark:text-blue-400 group-hover:text-blue-500 transition-colors block leading-tight">
-              GIAO HÀNG
+              Giao hàng siêu tốc
             </span>
             <p className="text-[11px] text-slate-600 dark:text-slate-300 font-medium leading-none mt-0.5">
               giao hàng tận tay bạn

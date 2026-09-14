@@ -92,10 +92,10 @@ export const AdminLoginPage: React.FC = () => {
       <div className="w-full max-w-md glass-panel p-8 rounded-3xl border border-cyan-500/30 shadow-2xl space-y-6">
         <div className="text-center space-y-2">
           <div className="flex justify-center mb-1">
-            <img src="/logo.png" alt="GIAO HÀNG Logo" className="h-14 w-auto object-contain" />
+            <img src="/logo.png" alt="Giao hàng siêu tốc Logo" className="h-14 w-auto object-contain" />
           </div>
-          <h2 className="text-2xl font-black text-white tracking-tight">Cổng Quản Trị GIAO HÀNG</h2>
-          <p className="text-xs text-slate-400">Đăng nhập tài khoản nhân sự &amp; điều hành GIAO HÀNG Operations</p>
+          <h2 className="text-2xl font-black text-white tracking-tight">Cổng Quản Trị Giao hàng siêu tốc</h2>
+          <p className="text-xs text-slate-400">Đăng nhập tài khoản nhân sự &amp; điều hành Giao hàng siêu tốc Operations</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">

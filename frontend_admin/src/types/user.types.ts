@@ -7,6 +7,8 @@ export interface UserAccount {
   phoneNumber: string;
   role: 'ADMIN' | 'SELLER' | 'DRIVER' | 'LINE_HAUL_DRIVER' | 'SHIPPER' | 'LOCAL_SHIPPER' | 'HUB_STAFF' | 'HUB_COORDINATOR' | 'STAFF' | AdminRole;
   isActive: boolean;
+  isLocked?: boolean;
+  status?: string;
   failedLoginAttempts: number;
   lockUntil?: string;
   lastLogin?: string;
