@@ -2,6 +2,7 @@ const Kyc = require('../models/kyc.model');
 const User = require('../models/user.model');
 const KycLog = require('../models/kycLog.model');
 const ioSingleton = require('../lib/ioSingleton');
+const { publishMessage, EXCHANGES } = require('../config/rabbitmq.config');
 
 /**
  * Hàm che mờ một phần số CCCD/CMND để bảo vệ PII trong danh sách tổng quan
@@ -133,15 +134,22 @@ const submitKyc = async (sellerId, payload, files, meta = {}) => {
     userAgent: meta.userAgent,
   });
 
-  // Gửi Realtime Notification cho Admin Dashboard & Sidebar
+  // Gửi Realtime Notification cho Admin Dashboard & Sidebar & RabbitMQ Event
   try {
     const pendingCount = await Kyc.countDocuments({ status: 'PENDING' });
     ioSingleton.emitKycUpdate({
       type: 'NEW_SUBMISSION',
-      sellerId,
+      status: 'PENDING',
+      sellerId: sellerId.toString(),
       shopName: payload.idFullName || 'Seller',
       pendingCount,
       submittedAt: now,
+    });
+    await publishMessage(EXCHANGES.NOTIFICATIONS, 'kyc.submitted', {
+      event: 'KYC_SUBMITTED',
+      sellerId: sellerId.toString(),
+      status: 'PENDING',
+      timestamp: now.toISOString(),
     });
   } catch (emitErr) {
     console.warn('[KYC_EMIT_WARN]', emitErr.message);
@@ -341,13 +349,22 @@ const approveKyc = async (sellerId, reviewerId, meta = {}) => {
     userAgent: meta.userAgent,
   });
 
-  // Gửi Realtime Notification cập nhật số lượng hồ sơ chờ duyệt
+  // Gửi Realtime Notification & RabbitMQ Event
   try {
     const pendingCount = await Kyc.countDocuments({ status: 'PENDING' });
     ioSingleton.emitKycUpdate({
       type: 'APPROVED',
-      sellerId,
+      status: 'APPROVED',
+      kycVerified: true,
+      sellerId: sellerId.toString(),
       pendingCount,
+    });
+    await publishMessage(EXCHANGES.NOTIFICATIONS, 'kyc.status.updated', {
+      event: 'KYC_APPROVED',
+      sellerId: sellerId.toString(),
+      status: 'APPROVED',
+      kycVerified: true,
+      timestamp: now.toISOString(),
     });
   } catch (emitErr) {
     console.warn('[KYC_EMIT_WARN]', emitErr.message);
@@ -416,13 +433,24 @@ const rejectKyc = async (sellerId, reviewerId, reason, meta = {}) => {
     userAgent: meta.userAgent,
   });
 
-  // Gửi Realtime Notification cập nhật số lượng hồ sơ chờ duyệt
+  // Gửi Realtime Notification & RabbitMQ Event
   try {
     const pendingCount = await Kyc.countDocuments({ status: 'PENDING' });
     ioSingleton.emitKycUpdate({
       type: 'REJECTED',
-      sellerId,
+      status: 'REJECTED',
+      kycVerified: false,
+      sellerId: sellerId.toString(),
+      reason: reason.trim(),
       pendingCount,
+    });
+    await publishMessage(EXCHANGES.NOTIFICATIONS, 'kyc.status.updated', {
+      event: 'KYC_REJECTED',
+      sellerId: sellerId.toString(),
+      status: 'REJECTED',
+      kycVerified: false,
+      reason: reason.trim(),
+      timestamp: now.toISOString(),
     });
   } catch (emitErr) {
     console.warn('[KYC_EMIT_WARN]', emitErr.message);

@@ -285,6 +285,8 @@ const getUserProfile = async (req, res) => {
       bankName: user.bankName || '',
       bankAccount: user.bankAccount || '',
       bankAccountName: user.bankAccountName || '',
+      kycStatus: user.kycStatus || 'NOT_SUBMITTED',
+      kycVerified: user.kycVerified || false,
       createdAt: user.createdAt,
     });
   } catch (error) {

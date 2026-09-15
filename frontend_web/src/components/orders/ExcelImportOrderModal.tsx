@@ -23,6 +23,7 @@ import { orderApi } from '../../api/order.api';
 import { sellerApi } from '../../api/seller.api';
 import type { CreateOrderPayload, Order } from '../../types/order.types';
 import { useAuth } from '../../hooks/useAuth';
+import { KycRequiredModal } from './KycRequiredModal';
 
 export interface ExcelImportOrderModalProps {
   isOpen: boolean;
@@ -82,6 +83,7 @@ export const ExcelImportOrderModal: React.FC<ExcelImportOrderModalProps> = ({
   const [sheetName, setSheetName] = useState<string>('');
   const [rawRows, setRawRows] = useState<any[][]>([]);
   const [parsingFile, setParsingFile] = useState<boolean>(false);
+  const [isModalDragOver, setIsModalDragOver] = useState<boolean>(false);
 
   // Step 2 Position Controls
   const [headerRowIndex, setHeaderRowIndex] = useState<number>(4); // 1-indexed
@@ -262,16 +264,35 @@ export const ExcelImportOrderModal: React.FC<ExcelImportOrderModalProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, importing, onClose]);
 
-  // Auto-load initialFile khi modal vừa mở (từ drag-drop ngoài trang)
+  // Auto-load initialFile khi modal vừa mở (từ drag-drop ngoài trang) hoặc reset khi mở thủ công
   // eslint-disable-next-line react-hooks/exhaustive-deps
   React.useEffect(() => {
-    if (isOpen && initialFile && initialFile !== initialFileProcessed.current) {
-      initialFileProcessed.current = initialFile;
-      setCurrentStep(1);
-      // Dùng setTimeout nhỏ để đảm bảo modal đã render xong trước khi parse
-      setTimeout(() => handleFileSelect(initialFile), 50);
-    }
-    if (!isOpen) {
+    if (isOpen) {
+      if (initialFile && initialFile !== initialFileProcessed.current) {
+        initialFileProcessed.current = initialFile;
+        setCurrentStep(1);
+        // Dùng setTimeout nhỏ để đảm bảo modal đã render xong trước khi parse
+        setTimeout(() => handleFileSelect(initialFile), 50);
+      } else if (!initialFile) {
+        // Reset state sạch sẽ khi mở modal bằng nút bấm trên header
+        setCurrentStep(1);
+        setRawRows([]);
+        setParsedItems([]);
+        setFileName('');
+        setSheetName('');
+        setParsingFile(false);
+        setImporting(false);
+        setImportProgress(0);
+        setImportResults({
+          success: 0,
+          updated: 0,
+          skipped: 0,
+          errors: 0,
+          logs: [],
+          createdOrders: [],
+        });
+      }
+    } else {
       initialFileProcessed.current = null;
     }
   }, [isOpen, initialFile]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -504,8 +525,24 @@ export const ExcelImportOrderModal: React.FC<ExcelImportOrderModalProps> = ({
     }
   };
 
+  // KYC Modal State
+  const [showKycModal, setShowKycModal] = useState<boolean>(false);
+  const [kycErrorMessage, setKycErrorMessage] = useState<string | undefined>(undefined);
+
   // Step 3 -> Step 4: Execute Batch Order Import
   const handleExecuteImport = async () => {
+    const isVerifiedKyc =
+      user?.role !== 'SELLER' ||
+      user?.kycVerified === true ||
+      user?.kycStatus === 'APPROVED' ||
+      user?.kycStatus === 'VERIFIED_KYC';
+
+    if (!isVerifiedKyc) {
+      setKycErrorMessage('Cần hoàn tất xác minh KYC trước khi tạo vận đơn từ file Excel.');
+      setShowKycModal(true);
+      return;
+    }
+
     setCurrentStep(4);
     setImporting(true);
     setImportProgress(0);
@@ -694,7 +731,7 @@ export const ExcelImportOrderModal: React.FC<ExcelImportOrderModalProps> = ({
         </div>
 
         {/* STEPPER STEP NAVIGATION BAR */}
-        <div className="px-6 py-3 bg-white border-b border-slate-100 flex items-center justify-between text-xs font-bold flex-shrink-0">
+        <div className="px-4 sm:px-6 py-3 bg-white border-b border-slate-100 flex items-center justify-between text-xs font-bold flex-shrink-0 overflow-x-auto whitespace-nowrap gap-2 sm:gap-4">
           <div
             className={`flex items-center gap-2 cursor-pointer ${currentStep >= 1 ? 'text-emerald-600' : 'text-slate-400'
               }`}
@@ -709,7 +746,7 @@ export const ExcelImportOrderModal: React.FC<ExcelImportOrderModalProps> = ({
             <span>1. Chọn file Excel</span>
           </div>
 
-          <div className="w-8 h-[2px] bg-slate-200"></div>
+          <div className="w-8 h-[2px] bg-slate-200 shrink-0"></div>
 
           <div
             className={`flex items-center gap-2 cursor-pointer ${currentStep >= 2 ? 'text-emerald-600' : 'text-slate-400'
@@ -725,7 +762,7 @@ export const ExcelImportOrderModal: React.FC<ExcelImportOrderModalProps> = ({
             <span>2. Chọn Vị trí & Cấu hình Cột</span>
           </div>
 
-          <div className="w-8 h-[2px] bg-slate-200"></div>
+          <div className="w-8 h-[2px] bg-slate-200 shrink-0"></div>
 
           <div
             className={`flex items-center gap-2 cursor-pointer ${currentStep >= 3 ? 'text-emerald-600' : 'text-slate-400'
@@ -741,7 +778,7 @@ export const ExcelImportOrderModal: React.FC<ExcelImportOrderModalProps> = ({
             <span>3. Xem trước & Nhập</span>
           </div>
 
-          <div className="w-8 h-[2px] bg-slate-200"></div>
+          <div className="w-8 h-[2px] bg-slate-200 shrink-0"></div>
 
           <div
             className={`flex items-center gap-2 ${currentStep === 4 ? 'text-emerald-600' : 'text-slate-400'
@@ -758,7 +795,7 @@ export const ExcelImportOrderModal: React.FC<ExcelImportOrderModalProps> = ({
         </div>
 
         {/* STEP CONTENT BODY CONTAINER */}
-        <div className="p-6 overflow-y-auto flex-1 bg-slate-50/40 space-y-6">
+        <div className="p-4 sm:p-6 overflow-y-auto flex-1 bg-slate-50/40 space-y-6">
 
           {/* STEP 1: CHỌN FILE EXCEL */}
           {currentStep === 1 && (
@@ -776,8 +813,24 @@ export const ExcelImportOrderModal: React.FC<ExcelImportOrderModalProps> = ({
               />
 
               <div
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setIsModalDragOver(true);
+                }}
+                onDragLeave={() => setIsModalDragOver(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setIsModalDragOver(false);
+                  if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                    handleFileSelect(e.dataTransfer.files[0]);
+                  }
+                }}
                 onClick={() => !parsingFile && fileInputRef.current?.click()}
-                className="border-2 border-dashed border-slate-200 hover:border-emerald-500 rounded-3xl p-12 bg-white text-center space-y-4 cursor-pointer transition-all hover:shadow-lg group"
+                className={`border-2 border-dashed rounded-3xl p-8 sm:p-12 text-center space-y-4 cursor-pointer transition-all hover:shadow-lg group ${
+                  isModalDragOver
+                    ? 'border-emerald-500 bg-emerald-50/60 scale-[1.01]'
+                    : 'border-slate-200 hover:border-emerald-500 bg-white'
+                }`}
               >
                 <div className="w-16 h-16 rounded-3xl bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto shadow-md group-hover:scale-105 transition-transform">
                   {parsingFile ? (
@@ -792,14 +845,18 @@ export const ExcelImportOrderModal: React.FC<ExcelImportOrderModalProps> = ({
                     {parsingFile ? 'Đang phân tích file Excel...' : 'Kéo thả hoặc click để chọn file Excel'}
                   </h3>
                   <p className="text-xs text-slate-500 max-w-md mx-auto">
-                    Hỗ trợ định dạng <strong className="text-slate-700">.xlsx</strong> hoặc <strong className="text-slate-700">.xls</strong>. File báo cáo tổng hợp, tồn kho, xuất nhập đều đọc được.
+                    Hỗ trợ định dạng <strong className="text-slate-700">.xlsx</strong>, <strong className="text-slate-700">.xls</strong> hoặc <strong className="text-slate-700">.csv</strong>. File báo cáo tổng hợp, tồn kho, xuất nhập đều đọc được.
                   </p>
                 </div>
 
                 <button
                   type="button"
                   disabled={parsingFile}
-                  className="px-6 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold shadow-md shadow-emerald-600/20 inline-flex items-center gap-2 transition disabled:opacity-50"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (!parsingFile) fileInputRef.current?.click();
+                  }}
+                  className="px-6 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold shadow-md shadow-emerald-600/20 inline-flex items-center gap-2 transition disabled:opacity-50 cursor-pointer"
                 >
                   {parsingFile ? (
                     <>
