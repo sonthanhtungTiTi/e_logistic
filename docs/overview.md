@@ -6,6 +6,28 @@
 
 ---
 
+> [!IMPORTANT]
+> **HƯỚNG DẪN BẮT BUỘC DÀNH CHO AI ASSISTANTS & AGENTS (AI WORKING GUIDELINES)**
+> 
+> Khi lập trình, phát triển tính năng, refactor hoặc sửa lỗi trong dự án **E-Logistics**, tất cả AI Assistants & Agents **BẮT BUỘC** phải tuân thủ nghiêm ngặt các nguyên tắc làm việc và quy chuẩn kiến trúc sau:
+> 
+> 1. **Tuân thủ Skill File chính thức (Nguồn sự thật duy nhất)**:
+>    - Quy chuẩn lập trình, kiến trúc 3 tầng, 42 trạng thái Order, 17 Roles RBAC, quy tắc Atomic Update, Write-Behind Caching và Checklist kiểm thử được quy định tại:  
+>      👉 [`.gemini/skills/elogistic-feature-dev/SKILL.md`](file:///.gemini/skills/elogistic-feature-dev/SKILL.md)  
+>    - AI **PHẢI** tham chiếu file skill này trước khi triển khai bất kỳ route, controller, service, model, worker, job hoặc component/page mới nào.
+> 
+> 2. **Hiểu rõ Kiến trúc Kỹ thuật Hệ thống**:
+>    - **Backend Engine**: Node.js / Express 5 + Mongoose 9 (MongoDB) + Redis (In-Memory Hot Cache Layer) + RabbitMQ (Message Broker) + Socket.io Realtime Push.
+>    - **Dual Frontend**: `frontend_web` (Kênh Seller & Tra cứu công khai) và `frontend_admin` (Quản trị & Vận hành kho/lái xe/điều phối), được xây dựng riêng biệt bằng React 19 + Vite 8 + TypeScript 6 + TailwindCSS v4.
+> 
+> 3. **Quy tắc làm việc & Kiểm soát chất lượng (Zero Technical Debt)**:
+>    - **Đọc code hiện có trước khi viết**: Kiểm tra xem logic, service, component, hook hoặc type tương tự đã tồn tại chưa để **tái sử dụng / mở rộng**, tuyệt đối không tạo code trùng lặp.
+>    - **Targeted Patch Mode**: Chỉ sửa đúng vị trí cần thiết, giữ lượng diff tối thiểu, duy trì code convention và line endings.
+>    - **Bảo mật & Race Condition**: Sanitize chống Mass Assignment / IDOR, sử dụng Atomic Conditional Update cho các thao tác đổi `status` và cập nhật Quota, áp dụng Pattern Write-Behind Caching (`sync.service.js`) cho thao tác cập nhật đơn hàng.
+>    - **Xác minh runtime**: Đảm bảo 100% không có lỗi TypeScript (`npx tsc --noEmit`), không có lỗi build/lint trước khi báo cáo hoàn thành.
+
+---
+
 ## 📑 MỤC LỤC
 
 1. [Tổng quan Hệ thống](#1-tổng-quan-hệ-thống)

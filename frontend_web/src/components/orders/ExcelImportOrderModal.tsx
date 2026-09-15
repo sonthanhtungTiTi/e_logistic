@@ -731,7 +731,7 @@ export const ExcelImportOrderModal: React.FC<ExcelImportOrderModalProps> = ({
         </div>
 
         {/* STEPPER STEP NAVIGATION BAR */}
-        <div className="px-6 py-3 bg-white border-b border-slate-100 flex items-center justify-between text-xs font-bold flex-shrink-0">
+        <div className="px-4 sm:px-6 py-3 bg-white border-b border-slate-100 flex items-center justify-between text-xs font-bold flex-shrink-0 overflow-x-auto whitespace-nowrap gap-2 sm:gap-4">
           <div
             className={`flex items-center gap-2 cursor-pointer ${currentStep >= 1 ? 'text-emerald-600' : 'text-slate-400'
               }`}
@@ -746,7 +746,7 @@ export const ExcelImportOrderModal: React.FC<ExcelImportOrderModalProps> = ({
             <span>1. Chọn file Excel</span>
           </div>
 
-          <div className="w-8 h-[2px] bg-slate-200"></div>
+          <div className="w-8 h-[2px] bg-slate-200 shrink-0"></div>
 
           <div
             className={`flex items-center gap-2 cursor-pointer ${currentStep >= 2 ? 'text-emerald-600' : 'text-slate-400'
@@ -762,7 +762,7 @@ export const ExcelImportOrderModal: React.FC<ExcelImportOrderModalProps> = ({
             <span>2. Chọn Vị trí & Cấu hình Cột</span>
           </div>
 
-          <div className="w-8 h-[2px] bg-slate-200"></div>
+          <div className="w-8 h-[2px] bg-slate-200 shrink-0"></div>
 
           <div
             className={`flex items-center gap-2 cursor-pointer ${currentStep >= 3 ? 'text-emerald-600' : 'text-slate-400'
@@ -778,7 +778,7 @@ export const ExcelImportOrderModal: React.FC<ExcelImportOrderModalProps> = ({
             <span>3. Xem trước & Nhập</span>
           </div>
 
-          <div className="w-8 h-[2px] bg-slate-200"></div>
+          <div className="w-8 h-[2px] bg-slate-200 shrink-0"></div>
 
           <div
             className={`flex items-center gap-2 ${currentStep === 4 ? 'text-emerald-600' : 'text-slate-400'
@@ -795,7 +795,7 @@ export const ExcelImportOrderModal: React.FC<ExcelImportOrderModalProps> = ({
         </div>
 
         {/* STEP CONTENT BODY CONTAINER */}
-        <div className="p-6 overflow-y-auto flex-1 bg-slate-50/40 space-y-6">
+        <div className="p-4 sm:p-6 overflow-y-auto flex-1 bg-slate-50/40 space-y-6">
 
           {/* STEP 1: CHỌN FILE EXCEL */}
           {currentStep === 1 && (
@@ -813,8 +813,24 @@ export const ExcelImportOrderModal: React.FC<ExcelImportOrderModalProps> = ({
               />
 
               <div
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setIsModalDragOver(true);
+                }}
+                onDragLeave={() => setIsModalDragOver(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setIsModalDragOver(false);
+                  if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                    handleFileSelect(e.dataTransfer.files[0]);
+                  }
+                }}
                 onClick={() => !parsingFile && fileInputRef.current?.click()}
-                className="border-2 border-dashed border-slate-200 hover:border-emerald-500 rounded-3xl p-12 bg-white text-center space-y-4 cursor-pointer transition-all hover:shadow-lg group"
+                className={`border-2 border-dashed rounded-3xl p-8 sm:p-12 text-center space-y-4 cursor-pointer transition-all hover:shadow-lg group ${
+                  isModalDragOver
+                    ? 'border-emerald-500 bg-emerald-50/60 scale-[1.01]'
+                    : 'border-slate-200 hover:border-emerald-500 bg-white'
+                }`}
               >
                 <div className="w-16 h-16 rounded-3xl bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto shadow-md group-hover:scale-105 transition-transform">
                   {parsingFile ? (
@@ -829,14 +845,18 @@ export const ExcelImportOrderModal: React.FC<ExcelImportOrderModalProps> = ({
                     {parsingFile ? 'Đang phân tích file Excel...' : 'Kéo thả hoặc click để chọn file Excel'}
                   </h3>
                   <p className="text-xs text-slate-500 max-w-md mx-auto">
-                    Hỗ trợ định dạng <strong className="text-slate-700">.xlsx</strong> hoặc <strong className="text-slate-700">.xls</strong>. File báo cáo tổng hợp, tồn kho, xuất nhập đều đọc được.
+                    Hỗ trợ định dạng <strong className="text-slate-700">.xlsx</strong>, <strong className="text-slate-700">.xls</strong> hoặc <strong className="text-slate-700">.csv</strong>. File báo cáo tổng hợp, tồn kho, xuất nhập đều đọc được.
                   </p>
                 </div>
 
                 <button
                   type="button"
                   disabled={parsingFile}
-                  className="px-6 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold shadow-md shadow-emerald-600/20 inline-flex items-center gap-2 transition disabled:opacity-50"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (!parsingFile) fileInputRef.current?.click();
+                  }}
+                  className="px-6 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold shadow-md shadow-emerald-600/20 inline-flex items-center gap-2 transition disabled:opacity-50 cursor-pointer"
                 >
                   {parsingFile ? (
                     <>
