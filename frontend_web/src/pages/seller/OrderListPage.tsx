@@ -187,7 +187,9 @@ export const OrderListPage: React.FC = () => {
     try {
       const response = await orderApi.markPrepared(order._id || (order as any).id);
       if (response.data) {
-        setToastMessage(`Đã báo chuẩn bị xong đơn hàng ${code}! Đơn đã chuyển sang trạng thái "Chờ duyệt" (PENDING_APPROVAL) để Admin phê duyệt & phân công tài xế.`);
+        const newStatus = response.data?.order?.status || 'READY_TO_PICK';
+        const statusLabel = newStatus === 'READY_TO_PICK' ? 'Sẵn sàng lấy (READY_TO_PICK)' : 'Chờ duyệt (PENDING_APPROVAL)';
+        setToastMessage(`Đã báo chuẩn bị xong đơn hàng ${code}! Đơn đã chuyển sang trạng thái "${statusLabel}" để tiếp tục quy trình.`);
         fetchOrders();
         setTimeout(() => setToastMessage(null), 5000);
       }
@@ -227,7 +229,7 @@ export const OrderListPage: React.FC = () => {
           console.error(`Lỗi báo chuẩn bị đơn ${id}:`, err);
         }
       }
-      setToastMessage(`🎉 Đã báo chuẩn bị xong ${successCount}/${selectedIds.length} đơn hàng! Đơn đã chuyển sang "CHỜ DUYỆT" (PENDING_APPROVAL) để Admin phê duyệt & phân công tài xế.`);
+      setToastMessage(`🎉 Đã báo chuẩn bị xong ${successCount}/${selectedIds.length} đơn hàng! Đơn đã chuyển sang trạng thái "Sẵn sàng lấy" (READY_TO_PICK) để bưu tá đến lấy.`);
       setSelectedIds([]);
       fetchOrders();
       setTimeout(() => setToastMessage(null), 5000);

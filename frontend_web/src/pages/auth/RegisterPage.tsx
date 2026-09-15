@@ -17,7 +17,6 @@ import {
   Check,
   X as XIcon,
   Smartphone,
-  ShieldAlert,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { authApi } from '../../api/auth.api';

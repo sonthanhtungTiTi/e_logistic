@@ -199,7 +199,7 @@ const orderService = {
       autoApproved: approvalEval.autoApproved,
       riskFlags: approvalEval.riskFlags,
       riskViolationReason: approvalEval.reason,
-      status: approvalEval.status,
+      status: approvalEval.status === 'PENDING_VERIFICATION' ? 'PENDING_VERIFICATION' : 'CREATED',
       routeNodes,
       routeType,
       currentRouteIndex: 0,
