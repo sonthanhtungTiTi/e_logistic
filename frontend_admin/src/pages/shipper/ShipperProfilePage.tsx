@@ -206,8 +206,20 @@ export const ShipperProfilePage: React.FC = () => {
           <div className="flex-1">
             <h2 className="text-sm font-bold text-white">{profile?.fullName}</h2>
             <p className="text-xs text-slate-400 font-mono">{profile?.email}</p>
-            <span className="inline-block mt-0.5 text-[10px] font-bold px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 font-mono">
-              VAI TRÒ: {profile?.role}
+            <span className={`inline-block mt-0.5 text-[10px] font-bold px-2 py-0.5 rounded border font-mono ${
+              profile?.role === 'PICKUP_SHIPPER'
+                ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+                : profile?.role === 'DELIVERY_SHIPPER'
+                ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30'
+                : 'bg-slate-500/10 text-slate-300 border-slate-500/20'
+            }`}>
+              VAI TRÒ: {
+                profile?.role === 'PICKUP_SHIPPER'
+                  ? 'Tài Xế Gom Hàng (First-Mile)'
+                  : profile?.role === 'DELIVERY_SHIPPER'
+                  ? 'Tài Xế Giao Hàng (Last-Mile)'
+                  : profile?.role
+              }
             </span>
           </div>
           <div className="text-right">

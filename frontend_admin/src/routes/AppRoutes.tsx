@@ -104,6 +104,28 @@ const SHIPPER_ROLES = [
   'DELIVERY_SHIPPER',
 ] as const;
 
+const PICKUP_SHIPPER_ROLES = [
+  UserRole.PICKUP_SHIPPER,
+  'PICKUP_SHIPPER',
+  'SHIPPER',
+  'LOCAL_SHIPPER',
+  UserRole.SHIPPER,
+  UserRole.LOCAL_SHIPPER,
+  'ADMIN',
+  UserRole.ADMIN,
+] as const;
+
+const DELIVERY_SHIPPER_ROLES = [
+  UserRole.DELIVERY_SHIPPER,
+  'DELIVERY_SHIPPER',
+  'SHIPPER',
+  'LOCAL_SHIPPER',
+  UserRole.SHIPPER,
+  UserRole.LOCAL_SHIPPER,
+  'ADMIN',
+  UserRole.ADMIN,
+] as const;
+
 const DRIVER_ROLES = [
   UserRole.LINE_HAUL_DRIVER,
   UserRole.DRIVER,
@@ -267,8 +289,12 @@ export const AppRoutes: React.FC = () => {
         <Route element={<ShipperLayout />}>
           <Route path="/shipper/zone"     element={<ShipperZonePage />} />
           <Route path="/shipper/zones"    element={<ShipperZonePage />} />
-          <Route path="/shipper/pickup"   element={<ShipperPickupPage />} />
-          <Route path="/shipper/delivery" element={<ShipperDeliveryPage />} />
+          <Route element={<RoleBaseRoute allowedRoles={[...PICKUP_SHIPPER_ROLES]} />}>
+            <Route path="/shipper/pickup"   element={<ShipperPickupPage />} />
+          </Route>
+          <Route element={<RoleBaseRoute allowedRoles={[...DELIVERY_SHIPPER_ROLES]} />}>
+            <Route path="/shipper/delivery" element={<ShipperDeliveryPage />} />
+          </Route>
           <Route path="/shipper/wallet"   element={<ShipperWalletPage />} />
           <Route path="/shipper/profile"  element={<ShipperProfilePage />} />
           <Route path="/shipper" element={<Navigate to="/shipper/zone" replace />} />
