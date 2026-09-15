@@ -27,7 +27,7 @@ import {
   FileText,
   Check,
 } from 'lucide-react';
-import { useLocation } from 'react-router';
+import { useLocation, useNavigate } from 'react-router';
 import { io as socketIO } from 'socket.io-client';
 import { useAuth } from '../../hooks/useAuth';
 import { authApi } from '../../api/auth.api';
@@ -68,21 +68,49 @@ const PERMISSION_LABELS: Record<string, string> = {
 export const ProfilePage: React.FC = () => {
   const { user, updateUser, logout } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
 
   const getInitialTab = (): TabType => {
+    const validTabs: TabType[] = ['PROFILE', 'ADDRESS', 'BANK', 'KYC', 'SECURITY', 'NOTIFICATIONS', 'SUB_ACCOUNTS'];
+    const searchParams = new URLSearchParams(location.search);
+    const queryTab = searchParams.get('tab')?.toUpperCase();
+    if (queryTab && validTabs.includes(queryTab as TabType)) {
+      return queryTab as TabType;
+    }
     if (location.state?.tab) {
-      return location.state.tab as TabType;
+      const stateTab = String(location.state.tab).toUpperCase();
+      if (validTabs.includes(stateTab as TabType)) {
+        return stateTab as TabType;
+      }
+    }
+    const savedTab = localStorage.getItem('seller_profile_active_tab')?.toUpperCase();
+    if (savedTab && validTabs.includes(savedTab as TabType)) {
+      return savedTab as TabType;
     }
     return 'PROFILE';
   };
 
   const [activeTab, setActiveTab] = useState<TabType>(getInitialTab);
 
+  const handleTabChange = (tab: TabType) => {
+    setActiveTab(tab);
+    localStorage.setItem('seller_profile_active_tab', tab);
+    navigate(`/seller/profile?tab=${tab.toLowerCase()}`, { replace: true });
+  };
+
   useEffect(() => {
-    if (location.state?.tab) {
-      setActiveTab(location.state.tab as TabType);
+    const validTabs: TabType[] = ['PROFILE', 'ADDRESS', 'BANK', 'KYC', 'SECURITY', 'NOTIFICATIONS', 'SUB_ACCOUNTS'];
+    const searchParams = new URLSearchParams(location.search);
+    const queryTab = searchParams.get('tab')?.toUpperCase();
+    if (queryTab && validTabs.includes(queryTab as TabType)) {
+      setActiveTab(queryTab as TabType);
+    } else if (location.state?.tab) {
+      const stateTab = String(location.state.tab).toUpperCase();
+      if (validTabs.includes(stateTab as TabType)) {
+        setActiveTab(stateTab as TabType);
+      }
     }
-  }, [location.state]);
+  }, [location.search, location.state]);
 
   // General state
   const [isLoading, setIsLoading] = useState(false);
@@ -191,7 +219,9 @@ export const ProfilePage: React.FC = () => {
 
   // 3. KYC Verification State
   const [kycInfo, setKycInfo] = useState<KycStatusResponse | null>(null);
-  const [kycStatus, setKycStatus] = useState<string>('NOT_SUBMITTED');
+  const [kycStatus, setKycStatus] = useState<string>(
+    user?.kycStatus || (user?.kycVerified ? 'APPROVED' : 'NOT_SUBMITTED')
+  );
   const [kycIdType, setKycIdType] = useState<'CCCD' | 'CMND' | 'PASSPORT'>('CCCD');
   const [kycIdNumber, setKycIdNumber] = useState('');
   const [kycIdFullName, setKycIdFullName] = useState('');
@@ -243,9 +273,10 @@ export const ProfilePage: React.FC = () => {
   const [subPassword, setSubPassword] = useState('');
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>(['VIEW_ORDERS']);
 
-  // Fetch initial profile & data
+  // Fetch initial profile & KYC status on mount
   useEffect(() => {
     fetchProfileData();
+    fetchKyc();
   }, []);
 
   useEffect(() => {
@@ -290,7 +321,11 @@ export const ProfilePage: React.FC = () => {
         setBankAccount(u.bankAccount || '');
         setBankAccountName(u.bankAccountName || '');
         setTwoFactorEnabled(!!u.twoFactorEnabled);
-        setKycStatus(u.kycStatus || 'NOT_SUBMITTED');
+        if (u.kycStatus) {
+          setKycStatus(u.kycStatus);
+        } else if (u.kycVerified) {
+          setKycStatus('APPROVED');
+        }
       }
     } catch (e) {
       console.warn('Profile sync failed:', e);
@@ -313,10 +348,16 @@ export const ProfilePage: React.FC = () => {
       if (res.data?.data) {
         const d = res.data.data;
         setKycInfo(d);
-        setKycStatus(d.status);
+        setKycStatus(d.status || (d.kycVerified ? 'APPROVED' : 'NOT_SUBMITTED'));
         if (d.idType) setKycIdType(d.idType);
         if (d.idFullName) setKycIdFullName(d.idFullName);
         if (d.maskedIdNumber) setKycIdNumber(d.maskedIdNumber);
+
+        const isApproved = d.status === 'APPROVED' || d.status === 'VERIFIED_KYC' || d.kycVerified === true;
+        updateUser({
+          kycStatus: d.status,
+          kycVerified: isApproved,
+        });
 
         // Đồng bộ cập nhật localStorage 'user' để toàn bộ app nhận diện KYC ngay lập tức
         const currentUserStr = localStorage.getItem('user');
@@ -324,7 +365,7 @@ export const ProfilePage: React.FC = () => {
           try {
             const parsed = JSON.parse(currentUserStr);
             parsed.kycStatus = d.status;
-            parsed.kycVerified = d.kycVerified ?? (d.status === 'APPROVED');
+            parsed.kycVerified = isApproved;
             localStorage.setItem('user', JSON.stringify(parsed));
           } catch {}
         }
@@ -877,7 +918,11 @@ export const ProfilePage: React.FC = () => {
             <div className="space-y-1">
               <div className="flex items-center justify-center sm:justify-start gap-2">
                 <h2 className="text-2xl font-black text-white">{companyName || 'Chưa cập nhật tên Shop'}</h2>
-                <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0" />
+                {kycStatus === 'APPROVED' || kycStatus === 'VERIFIED_KYC' || user?.kycVerified ? (
+                  <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0" title="Shop đã xác minh KYC" />
+                ) : (
+                  <ShieldAlert className="w-5 h-5 text-amber-400 shrink-0" title="Shop chưa xác minh KYC" />
+                )}
               </div>
               <p className="text-xs text-slate-400 flex items-center justify-center sm:justify-start gap-2 font-medium">
                 <span>Đại diện: <strong className="text-slate-200">{fullName}</strong></span>
@@ -889,8 +934,8 @@ export const ProfilePage: React.FC = () => {
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
                   {user?.role || 'SELLER'}
                 </span>
-                <span className={`px-3 py-1 rounded-full text-[11px] font-bold border ${kycStatus === 'APPROVED' || kycStatus === 'VERIFIED_KYC' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : kycStatus === 'PENDING' || kycStatus === 'PENDING_KYC' ? 'bg-blue-500/15 text-blue-300 border-blue-500/30' : kycStatus === 'REJECTED' || kycStatus === 'REJECTED_KYC' ? 'bg-rose-500/10 text-rose-300 border-rose-500/30' : 'bg-slate-800 text-slate-400 border-slate-700'}`}>
-                  KYC: {kycStatus === 'APPROVED' || kycStatus === 'VERIFIED_KYC' ? 'Đã Xác Minh ✅' : kycStatus === 'PENDING' || kycStatus === 'PENDING_KYC' ? 'Đang Chờ Duyệt ⏳' : kycStatus === 'REJECTED' || kycStatus === 'REJECTED_KYC' ? 'Bị Từ Chối ❌' : 'Chưa Nộp'}
+                <span className={`px-3 py-1 rounded-full text-[11px] font-bold border ${kycStatus === 'APPROVED' || kycStatus === 'VERIFIED_KYC' || user?.kycVerified ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : kycStatus === 'PENDING' || kycStatus === 'PENDING_KYC' ? 'bg-blue-500/15 text-blue-300 border-blue-500/30' : kycStatus === 'REJECTED' || kycStatus === 'REJECTED_KYC' ? 'bg-rose-500/10 text-rose-300 border-rose-500/30' : 'bg-slate-800 text-slate-400 border-slate-700'}`}>
+                  KYC: {kycStatus === 'APPROVED' || kycStatus === 'VERIFIED_KYC' || user?.kycVerified ? 'Đã Xác Minh ✅' : kycStatus === 'PENDING' || kycStatus === 'PENDING_KYC' ? 'Đang Chờ Duyệt ⏳' : kycStatus === 'REJECTED' || kycStatus === 'REJECTED_KYC' ? 'Bị Từ Chối ❌' : 'Chưa Nộp'}
                 </span>
               </div>
             </div>
@@ -901,49 +946,49 @@ export const ProfilePage: React.FC = () => {
       {/* Tabs Navigation */}
       <div className="flex items-center gap-2 border-b border-slate-800 pb-1 overflow-x-auto">
         <button
-          onClick={() => setActiveTab('PROFILE')}
+          onClick={() => handleTabChange('PROFILE')}
           className={`flex items-center gap-2 px-4 py-3 rounded-2xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${activeTab === 'PROFILE' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'}`}
         >
           <User className="w-4 h-4" /> Hồ Sơ Shop
         </button>
 
         <button
-          onClick={() => setActiveTab('ADDRESS')}
+          onClick={() => handleTabChange('ADDRESS')}
           className={`flex items-center gap-2 px-4 py-3 rounded-2xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${activeTab === 'ADDRESS' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'}`}
         >
           <MapPin className="w-4 h-4" /> Kho Lấy Hàng
         </button>
 
         <button
-          onClick={() => setActiveTab('BANK')}
+          onClick={() => handleTabChange('BANK')}
           className={`flex items-center gap-2 px-4 py-3 rounded-2xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${activeTab === 'BANK' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'}`}
         >
           <CreditCard className="w-4 h-4" /> Ngân Hàng COD
         </button>
 
         <button
-          onClick={() => setActiveTab('KYC')}
+          onClick={() => handleTabChange('KYC')}
           className={`flex items-center gap-2 px-4 py-3 rounded-2xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${activeTab === 'KYC' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'}`}
         >
           <FileCheck className="w-4 h-4" /> Xác Minh KYC
         </button>
 
         <button
-          onClick={() => setActiveTab('NOTIFICATIONS')}
+          onClick={() => handleTabChange('NOTIFICATIONS')}
           className={`flex items-center gap-2 px-4 py-3 rounded-2xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${activeTab === 'NOTIFICATIONS' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'}`}
         >
           <Bell className="w-4 h-4" /> Thông Báo
         </button>
 
         <button
-          onClick={() => setActiveTab('SECURITY')}
+          onClick={() => handleTabChange('SECURITY')}
           className={`flex items-center gap-2 px-4 py-3 rounded-2xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${activeTab === 'SECURITY' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'}`}
         >
           <Lock className="w-4 h-4" /> Bảo Mật & 2FA
         </button>
 
         <button
-          onClick={() => setActiveTab('SUB_ACCOUNTS')}
+          onClick={() => handleTabChange('SUB_ACCOUNTS')}
           className={`flex items-center gap-2 px-4 py-3 rounded-2xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${activeTab === 'SUB_ACCOUNTS' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'}`}
         >
           <Users className="w-4 h-4" /> Nhân Viên Phụ

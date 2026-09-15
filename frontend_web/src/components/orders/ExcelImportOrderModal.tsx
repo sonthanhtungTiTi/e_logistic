@@ -23,6 +23,7 @@ import { orderApi } from '../../api/order.api';
 import { sellerApi } from '../../api/seller.api';
 import type { CreateOrderPayload, Order } from '../../types/order.types';
 import { useAuth } from '../../hooks/useAuth';
+import { KycRequiredModal } from './KycRequiredModal';
 
 export interface ExcelImportOrderModalProps {
   isOpen: boolean;
@@ -82,6 +83,7 @@ export const ExcelImportOrderModal: React.FC<ExcelImportOrderModalProps> = ({
   const [sheetName, setSheetName] = useState<string>('');
   const [rawRows, setRawRows] = useState<any[][]>([]);
   const [parsingFile, setParsingFile] = useState<boolean>(false);
+  const [isModalDragOver, setIsModalDragOver] = useState<boolean>(false);
 
   // Step 2 Position Controls
   const [headerRowIndex, setHeaderRowIndex] = useState<number>(4); // 1-indexed
@@ -262,16 +264,35 @@ export const ExcelImportOrderModal: React.FC<ExcelImportOrderModalProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, importing, onClose]);
 
-  // Auto-load initialFile khi modal vừa mở (từ drag-drop ngoài trang)
+  // Auto-load initialFile khi modal vừa mở (từ drag-drop ngoài trang) hoặc reset khi mở thủ công
   // eslint-disable-next-line react-hooks/exhaustive-deps
   React.useEffect(() => {
-    if (isOpen && initialFile && initialFile !== initialFileProcessed.current) {
-      initialFileProcessed.current = initialFile;
-      setCurrentStep(1);
-      // Dùng setTimeout nhỏ để đảm bảo modal đã render xong trước khi parse
-      setTimeout(() => handleFileSelect(initialFile), 50);
-    }
-    if (!isOpen) {
+    if (isOpen) {
+      if (initialFile && initialFile !== initialFileProcessed.current) {
+        initialFileProcessed.current = initialFile;
+        setCurrentStep(1);
+        // Dùng setTimeout nhỏ để đảm bảo modal đã render xong trước khi parse
+        setTimeout(() => handleFileSelect(initialFile), 50);
+      } else if (!initialFile) {
+        // Reset state sạch sẽ khi mở modal bằng nút bấm trên header
+        setCurrentStep(1);
+        setRawRows([]);
+        setParsedItems([]);
+        setFileName('');
+        setSheetName('');
+        setParsingFile(false);
+        setImporting(false);
+        setImportProgress(0);
+        setImportResults({
+          success: 0,
+          updated: 0,
+          skipped: 0,
+          errors: 0,
+          logs: [],
+          createdOrders: [],
+        });
+      }
+    } else {
       initialFileProcessed.current = null;
     }
   }, [isOpen, initialFile]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -504,8 +525,24 @@ export const ExcelImportOrderModal: React.FC<ExcelImportOrderModalProps> = ({
     }
   };
 
+  // KYC Modal State
+  const [showKycModal, setShowKycModal] = useState<boolean>(false);
+  const [kycErrorMessage, setKycErrorMessage] = useState<string | undefined>(undefined);
+
   // Step 3 -> Step 4: Execute Batch Order Import
   const handleExecuteImport = async () => {
+    const isVerifiedKyc =
+      user?.role !== 'SELLER' ||
+      user?.kycVerified === true ||
+      user?.kycStatus === 'APPROVED' ||
+      user?.kycStatus === 'VERIFIED_KYC';
+
+    if (!isVerifiedKyc) {
+      setKycErrorMessage('Cần hoàn tất xác minh KYC trước khi tạo vận đơn từ file Excel.');
+      setShowKycModal(true);
+      return;
+    }
+
     setCurrentStep(4);
     setImporting(true);
     setImportProgress(0);
