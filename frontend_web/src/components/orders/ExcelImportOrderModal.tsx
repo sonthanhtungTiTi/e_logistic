@@ -94,6 +94,10 @@ export const ExcelImportOrderModal: React.FC<ExcelImportOrderModalProps> = ({
   const [editingCell, setEditingCell] = useState<{ rIdx: number; cIdx: number } | null>(null);
   const [editingStep3RowIndex, setEditingStep3RowIndex] = useState<number | null>(null);
 
+  // KYC Modal State
+  const [showKycModal, setShowKycModal] = useState<boolean>(false);
+  const [kycErrorMessage, setKycErrorMessage] = useState<string | undefined>(undefined);
+
   // Default Pickup Address for batch orders
   const [pickupAddress, setPickupAddress] = useState({
     fullName: user?.fullName || 'Shop E-Logistic',
@@ -525,9 +529,6 @@ export const ExcelImportOrderModal: React.FC<ExcelImportOrderModalProps> = ({
     }
   };
 
-  // KYC Modal State
-  const [showKycModal, setShowKycModal] = useState<boolean>(false);
-  const [kycErrorMessage, setKycErrorMessage] = useState<string | undefined>(undefined);
 
   // Step 3 -> Step 4: Execute Batch Order Import
   const handleExecuteImport = async () => {
