@@ -885,7 +885,7 @@ export const BatchOrderPage: React.FC = () => {
               e.preventDefault();
               setIsDragOver(false);
               if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-                handleFileChange(e.dataTransfer.files[0]);
+                handleOpenWizardWithFile(e.dataTransfer.files[0]);
               }
             }}
             className={`glass-panel p-12 rounded-3xl border-2 border-dashed text-center space-y-5 transition duration-300 cursor-pointer ${isDragOver
@@ -894,7 +894,7 @@ export const BatchOrderPage: React.FC = () => {
               }`}
             onClick={() => fileInputRef.current?.click()}
           >
-            {/* Hidden input: nhận file từ click vùng upload & drag-drop, xử lý trực tiếp ra bảng dữ liệu */}
+            {/* Hidden input: nhận file từ click vùng upload & drag-drop, đưa vào Wizard 4 bước */}
             <input
               type="file"
               ref={fileInputRef}
@@ -902,7 +902,7 @@ export const BatchOrderPage: React.FC = () => {
               className="hidden"
               onChange={(e) => {
                 if (e.target.files && e.target.files[0]) {
-                  handleFileChange(e.target.files[0]);
+                  handleOpenWizardWithFile(e.target.files[0]);
                   // Reset input để có thể chọn lại cùng file
                   e.target.value = '';
                 }
