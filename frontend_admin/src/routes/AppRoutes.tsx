@@ -152,11 +152,24 @@ const RootRedirect: React.FC = () => {
     role === UserRole.HUB_STAFF ||
     role === UserRole.WAREHOUSE_STAFF ||
     role === UserRole.HUB_COORDINATOR ||
+    role === UserRole.WAREHOUSE_MANAGER ||
     role === 'HUB_STAFF' ||
     role === 'WAREHOUSE_STAFF' ||
-    role === 'HUB_COORDINATOR'
+    role === 'HUB_COORDINATOR' ||
+    role === 'WAREHOUSE_MANAGER'
   ) {
     return <Navigate to="/warehouse/inbound" replace />;
+  }
+  if (
+    role === UserRole.CS ||
+    role === UserRole.CUSTOMER_SERVICE ||
+    role === 'CS' ||
+    role === 'CUSTOMER_SERVICE'
+  ) {
+    return <Navigate to="/admin/tickets" replace />;
+  }
+  if (role === UserRole.ACCOUNTANT || role === 'ACCOUNTANT') {
+    return <Navigate to="/admin/orders" replace />;
   }
   // ADMIN và các role còn lại → Admin dashboard
   return <Navigate to="/admin/dashboard" replace />;
@@ -234,7 +247,7 @@ export const AppRoutes: React.FC = () => {
           {/* Khiếu nại & Hỗ trợ Ticket (CSKH) */}
           <Route path="/admin/tickets" element={<TicketManagementPage />} />
 
-          <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+          <Route path="/admin" element={<RootRedirect />} />
         </Route>
       </Route>
 

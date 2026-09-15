@@ -41,8 +41,15 @@ export const UnauthorizedPage: React.FC = () => {
       navigate('/admin/vendor-ops');
     } else if (role === UserRole.LAST_MILE_DISPATCHER || role === 'LAST_MILE_DISPATCHER') {
       navigate('/admin/dispatch/local');
-    } else if (role === UserRole.LINE_HAUL_DISPATCHER || role === 'LINE_HAUL_DISPATCHER') {
-      navigate('/admin/dispatch/linehaul');
+    } else if (
+      role === 'CS' ||
+      role === 'CUSTOMER_SERVICE' ||
+      role === UserRole.CS ||
+      role === UserRole.CUSTOMER_SERVICE
+    ) {
+      navigate('/admin/tickets');
+    } else if (role === 'ACCOUNTANT' || role === UserRole.ACCOUNTANT) {
+      navigate('/admin/orders');
     } else if (role === UserRole.SELLER) {
       window.location.href = 'http://localhost:5173/seller/dashboard';
     } else {

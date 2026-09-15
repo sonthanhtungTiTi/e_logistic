@@ -46,9 +46,19 @@ export const AdminLoginPage: React.FC = () => {
       role === UserRole.HUB_COORDINATOR ||
       role === 'HUB_STAFF' ||
       role === 'WAREHOUSE_STAFF' ||
-      role === 'HUB_COORDINATOR'
+      role === 'HUB_COORDINATOR' ||
+      role === 'WAREHOUSE_MANAGER'
     ) {
       navigate('/warehouse/inbound');
+    } else if (
+      role === 'CS' ||
+      role === 'CUSTOMER_SERVICE' ||
+      role === UserRole.CS ||
+      role === UserRole.CUSTOMER_SERVICE
+    ) {
+      navigate('/admin/tickets');
+    } else if (role === 'ACCOUNTANT' || role === UserRole.ACCOUNTANT) {
+      navigate('/admin/orders');
     } else {
       navigate('/admin/dashboard');
     }
@@ -175,14 +185,18 @@ export const AdminLoginPage: React.FC = () => {
         {/* Gợi ý tài khoản test 1-Click */}
         <div className="pt-2 border-t border-slate-800 space-y-1.5">
           <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Tài khoản test nhanh (1-Click Fill)</p>
-          <div className="max-h-48 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
+          <div className="max-h-56 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
             {[
-              { label: '🛵 Shipper Nội Thành', email: 'shipper.demo@elogistic.vn', pw: 'Password123@' },
-              { label: '🛡️ QL 1 (Duyệt Đơn & NCC)', email: 'vendormgr.demo@elogistic.vn', pw: 'Password123@' },
-              { label: '🧭 QL 2 (Điều Phối Shipper)', email: 'dispatcher.demo@elogistic.vn', pw: 'Password123@' },
-              { label: '🚛 QL 3 (Xe Tải Tuyến)', email: 'linehaul.demo@elogistic.vn', pw: 'Password123@' },
+              { label: '🏪 Shop / Seller (Tạo Đơn Hàng)', email: 'seller.demo@elogistic.vn', pw: 'Password123@' },
+              { label: '🛵 Shipper Nội Thành (Lấy & Giao)', email: 'shipper.demo@elogistic.vn', pw: 'Password123@' },
+              { label: '📦 Vận Hành Kho (Nhập/Xuất Hub)', email: 'hub.demo@elogistic.vn', pw: 'Password123@' },
+              { label: '🏢 Quản Lý Kho Vận (Hub Manager)', email: 'warehouse.mgr@elogistic.vn', pw: 'Password123@' },
+              { label: '🧭 QL 2 (Điều Phối Shipper Nội Vùng)', email: 'dispatcher.demo@elogistic.vn', pw: 'Password123@' },
+              { label: '🚛 QL 3 (Điều Phối Xe Tải Tuyến)', email: 'linehaul.demo@elogistic.vn', pw: 'Password123@' },
               { label: '🚚 Tài Xế Tuyến Liên Tỉnh', email: 'driver.demo@elogistic.vn', pw: 'Password123@' },
-              { label: '📦 Kho Vận', email: 'hub.demo@elogistic.vn', pw: 'Password123@' },
+              { label: '🛡️ QL 1 (Duyệt Đơn & NCC)', email: 'vendormgr.demo@elogistic.vn', pw: 'Password123@' },
+              { label: '🎧 CSKH & Xử Lý Khiếu Nại', email: 'cs.demo@elogistic.vn', pw: 'Password123@' },
+              { label: '💰 Kế Toán & Quản Lý Ví COD', email: 'accountant.demo@elogistic.vn', pw: 'Password123@' },
               { label: '👑 Admin Hệ Thống', email: 'admin.demo@elogistic.vn', pw: 'Password123@' },
             ].map((acc) => (
               <button

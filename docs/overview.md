@@ -1,14 +1,13 @@
 #  E-LOGISTICS — PHÂN TÍCH KIẾN TRÚC & LUỒNG SOURCE CODE TOÀN DIỆN
 
-> **Ngày phân tích:** 14/09/2026  
+> **Ngày phân tích:** 15/09/2026  
 > **Phạm vi:** Toàn bộ hệ thống — Backend API, Frontend Web (Seller/Buyer), Frontend Admin (Operations/Driver/Warehouse)  
-> **Trạng thái:** Production-ready · 92/92 Test Cases PASS · E2E Web UI & Socket Realtime Validated · Hybrid Docker Infra (`e_logistic`) · Mobile-First Responsive UI v2.5
+> **Trạng thái:** Production-ready · 92/92 Test Cases PASS · E2E Web UI & Socket Realtime Validated · Full RBAC Route Guard & CS/Accountant/Warehouse Demo Accounts Synchronized · v2.6
 
 ---
 
 > [!IMPORTANT]
 > **HƯỚNG DẪN BẮT BUỘC DÀNH CHO AI ASSISTANTS & AGENTS (AI WORKING GUIDELINES)**
-> 
 > Khi lập trình, phát triển tính năng, refactor hoặc sửa lỗi trong dự án **E-Logistics**, tất cả AI Assistants & Agents **BẮT BUỘC** phải tuân thủ nghiêm ngặt các nguyên tắc làm việc và quy chuẩn kiến trúc sau:
 > 
 > 1. **Tuân thủ Skill File chính thức (Nguồn sự thật duy nhất)**:
@@ -1994,6 +1993,6 @@ Sprint 3 (Tháng tới):
 
 ---
 
-> **Cập nhật lần cuối:** 14/09/2026  
-> **Phiên bản tài liệu:** 2.5 — Cập nhật toàn diện Hệ thống: Socket.IO Event-Driven Realtime Engine (4 nhóm Rooms), Redis Write-Behind Hot Layer Caching, RabbitMQ Message Queue Synchronizer, MongoDB Change Streams DB Watcher, Mobile-First Web Responsive UI Architecture & Active Route Navigation Poka-yoke (`#2563eb`).
+> **Cập nhật lần cuối:** 15/09/2026  
+> **Phiên bản tài liệu:** 2.6 — Đồng bộ toàn diện Hệ thống: Seed tài khoản demo chuẩn cho 17 Roles (bổ sung `cs.demo@elogistic.vn`, `accountant.demo@elogistic.vn`, `warehouse.mgr@elogistic.vn`), Khắc phục triệt để lỗi 403 Forbidden do Routing Guard trên Frontend Admin, Đồng bộ luồng Ticket CSKH & Duyệt KYC Real-time.
 
