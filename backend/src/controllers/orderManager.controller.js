@@ -20,15 +20,22 @@ const orderManagerController = {
         return res.status(404).json({ message: 'Không tìm thấy đơn hàng hoặc bạn không có quyền thao tác' });
       }
 
-      if (!['CREATED', 'SELLER_PREPARING', 'DRAFT', 'READY_TO_PICK'].includes(order.status)) {
+      if (!['CREATED', 'SELLER_PREPARING', 'DRAFT', 'PENDING_VERIFICATION', 'READY_TO_PICK'].includes(order.status)) {
         return res.status(400).json({
           message: `Đơn hàng đang ở trạng thái "${order.status}", không thể đánh dấu chuẩn bị xong.`,
         });
       }
 
       const preStatus = order.status;
-      order.status = 'PENDING_APPROVAL';
+      // Seller báo đã chuẩn bị xong hàng:
+      // - Nếu đơn có cờ vi phạm rủi ro lớn (autoApproved === false): Chuyển sang PENDING_APPROVAL để Admin duyệt
+      // - Nếu đơn thông thường hoặc đã auto-approved: Chuyển sang READY_TO_PICK ("SẴN SÀNG LẤY")
+      const nextStatus = order.autoApproved === false ? 'PENDING_APPROVAL' : 'READY_TO_PICK';
+      order.status = nextStatus;
       order.sellerPreparedAt = new Date();
+      if (nextStatus === 'READY_TO_PICK') {
+        order.readyToPickAt = new Date();
+      }
       await order.save();
 
       // Ghi audit log
@@ -37,10 +44,12 @@ const orderManagerController = {
           orderId: order._id,
           actionBy: req.user._id,
           preStatus,
-          postStatus: 'PENDING_APPROVAL',
+          postStatus: nextStatus,
           actionType: 'STATUS_UPDATED',
           trackingCode: order.trackingCode,
-          note: 'Seller báo đã chuẩn bị xong hàng. Đơn chuyển sang Chờ Duyệt (PENDING_APPROVAL).',
+          note: nextStatus === 'READY_TO_PICK'
+            ? 'Seller báo đã chuẩn bị xong hàng. Đơn chuyển sang Sẵn Sàng Lấy (READY_TO_PICK) để bưu tá đến lấy.'
+            : 'Seller báo đã chuẩn bị xong hàng. Đơn có cảnh báo rủi ro, chuyển sang Chờ Duyệt (PENDING_APPROVAL).',
         });
       } catch (logErr) {
         console.error('[OrderLog Error]:', logErr.message);
@@ -48,7 +57,9 @@ const orderManagerController = {
 
       ioSingleton.emitOrderUpdate(order.sellerId, order);
       return res.json({
-        message: 'Đã cập nhật trạng thái đơn hàng: Chờ duyệt (PENDING_APPROVAL)',
+        message: nextStatus === 'READY_TO_PICK'
+          ? 'Đã cập nhật trạng thái đơn hàng: Sẵn sàng lấy (READY_TO_PICK)'
+          : 'Đã cập nhật trạng thái đơn hàng: Chờ duyệt (PENDING_APPROVAL)',
         order,
       });
     } catch (error) {
@@ -144,11 +155,11 @@ const orderManagerController = {
             continue;
           }
 
-          if (order.status !== 'PENDING_APPROVAL') {
+          if (!['PENDING_APPROVAL', 'READY_TO_PICK'].includes(order.status)) {
             skippedOrders.push({
               orderId,
               trackingCode: order.trackingCode,
-              reason: `Trạng thái đơn là "${order.status}", không ở trạng thái PENDING_APPROVAL`,
+              reason: `Trạng thái đơn là "${order.status}", không ở trạng thái PENDING_APPROVAL hoặc READY_TO_PICK`,
             });
             continue;
           }

@@ -177,7 +177,8 @@ export const AdminLoginPage: React.FC = () => {
           <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Tài khoản test nhanh (1-Click Fill)</p>
           <div className="max-h-48 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
             {[
-              { label: '🛵 Shipper Nội Thành', email: 'shipper.demo@elogistic.vn', pw: 'Password123@' },
+              { label: '🛵 Shipper Gom (Lấy Hàng)', email: 'shipper.pickup@elogistic.vn', pw: 'Password123@' },
+              { label: '📦 Shipper Giao (Giao Hàng)', email: 'shipper.delivery@elogistic.vn', pw: 'Password123@' },
               { label: '🛡️ QL 1 (Duyệt Đơn & NCC)', email: 'vendormgr.demo@elogistic.vn', pw: 'Password123@' },
               { label: '🧭 QL 2 (Điều Phối Shipper)', email: 'dispatcher.demo@elogistic.vn', pw: 'Password123@' },
               { label: '🚛 QL 3 (Xe Tải Tuyến)', email: 'linehaul.demo@elogistic.vn', pw: 'Password123@' },
