@@ -236,23 +236,31 @@ const orderService = {
       throw err;
     }
 
-    let allowEdit = ['DRAFT', 'CREATED', 'PENDING_VERIFICATION'].includes(order.status);
-    if (!allowEdit && (order.status === 'PENDING_APPROVAL' || order.status === 'READY_TO_PICK')) {
-      const preparedTime = order.sellerPreparedAt || order.readyToPickAt || order.updatedAt;
-      const elapsedSecs = preparedTime ? Math.floor((Date.now() - new Date(preparedTime).getTime()) / 1000) : 9999;
-      if (elapsedSecs <= 300) {
-        allowEdit = true;
-      } else {
-        const err = new Error('Đã hết thời gian 5 phút cho phép chỉnh sửa thông tin đơn hàng.');
+    // Kiểm tra quyền chỉnh sửa của Seller:
+    // - Chỉ cho phép sửa khi đơn chưa bấm chuẩn bị xong (DRAFT, CREATED, PENDING_VERIFICATION, PENDING)
+    //   và trong thời hạn 5 phút kể từ lúc tạo đơn (createdAt).
+    // - Sau khi Seller bấm chuẩn bị xong (READY_TO_PICK) hoặc trạng thái kế tiếp: Khóa không cho sửa!
+    if (!isAdmin) {
+      const lockedStatuses = ['READY_TO_PICK', 'PENDING_APPROVAL', 'APPROVED', 'ASSIGNED_TO_PICKUP', 'ASSIGNED_TO_PICKUP_AND_DELIVERY', 'PICKING', 'PICKED_UP', 'IN_TRANSIT', 'DELIVERED', 'RETURNED', 'CANCELLED'];
+      if (lockedStatuses.includes(order.status)) {
+        const err = new Error(`Đơn hàng đã được xác nhận chuẩn bị xong / sẵn sàng lấy (${order.status}), hệ thống đã khóa không cho phép chỉnh sửa.`);
         err.statusCode = 400;
         throw err;
       }
-    }
 
-    if (!allowEdit && !isAdmin) {
-      const err = new Error(`Không thể chỉnh sửa đơn hàng đang ở trạng thái ${order.status} (Đơn hàng đã được Admin phê duyệt hoặc đã hết hạn sửa).`);
-      err.statusCode = 400;
-      throw err;
+      const unpreparedStatuses = ['DRAFT', 'CREATED', 'PENDING_VERIFICATION', 'PENDING'];
+      if (unpreparedStatuses.includes(order.status)) {
+        const elapsedSecs = order.createdAt ? Math.floor((Date.now() - new Date(order.createdAt).getTime()) / 1000) : 0;
+        if (elapsedSecs > 300) {
+          const err = new Error('Đã hết thời hạn 5 phút kể từ lúc tạo đơn để chỉnh sửa thông tin đơn hàng.');
+          err.statusCode = 400;
+          throw err;
+        }
+      } else {
+        const err = new Error(`Không thể chỉnh sửa đơn hàng đang ở trạng thái "${order.status}".`);
+        err.statusCode = 400;
+        throw err;
+      }
     }
 
     Object.assign(order, data);
@@ -275,11 +283,27 @@ const orderService = {
       throw err;
     }
 
-    const unCancellable = ['APPROVED', 'ASSIGNED_TO_PICKUP', 'ASSIGNED_TO_PICKUP_AND_DELIVERY', 'PICKING', 'PICKED_UP', 'IN_TRANSIT', 'DELIVERED', 'RETURNED', 'CANCELLED'];
-    if (unCancellable.includes(order.status) && !isAdmin) {
-      const err = new Error(`Không thể hủy đơn hàng ở trạng thái ${order.status} (Đơn hàng đã được Admin phê duyệt hoặc đang được xử lý)`);
-      err.statusCode = 400;
-      throw err;
+    // Kiểm tra quyền hủy của Seller:
+    // - Chỉ cho phép hủy khi đơn chưa bấm chuẩn bị xong (DRAFT, CREATED, PENDING_VERIFICATION, PENDING)
+    //   và trong thời hạn 5 phút kể từ lúc tạo đơn (createdAt).
+    // - Sau khi Seller bấm chuẩn bị xong (READY_TO_PICK) hoặc trạng thái kế tiếp: Khóa không cho hủy!
+    if (!isAdmin) {
+      const unCancellable = ['READY_TO_PICK', 'PENDING_APPROVAL', 'APPROVED', 'ASSIGNED_TO_PICKUP', 'ASSIGNED_TO_PICKUP_AND_DELIVERY', 'PICKING', 'PICKED_UP', 'IN_TRANSIT', 'DELIVERED', 'RETURNED', 'CANCELLED'];
+      if (unCancellable.includes(order.status)) {
+        const err = new Error(`Không thể hủy đơn hàng ở trạng thái "${order.status}" (Đơn hàng đã được xác nhận chuẩn bị xong hoặc đang được xử lý).`);
+        err.statusCode = 400;
+        throw err;
+      }
+
+      const unpreparedStatuses = ['DRAFT', 'CREATED', 'PENDING_VERIFICATION', 'PENDING'];
+      if (unpreparedStatuses.includes(order.status)) {
+        const elapsedSecs = order.createdAt ? Math.floor((Date.now() - new Date(order.createdAt).getTime()) / 1000) : 0;
+        if (elapsedSecs > 300) {
+          const err = new Error('Đã hết thời hạn 5 phút kể từ lúc tạo đơn để hủy đơn hàng.');
+          err.statusCode = 400;
+          throw err;
+        }
+      }
     }
 
     const wasRouted = Boolean(order.currentDriverId || order.currentDriver?.driverId || order.pickupShipperId || order.deliveryShipperId);

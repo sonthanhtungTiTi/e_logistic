@@ -255,11 +255,12 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
                   const chargeableWeightVal = ord.chargeableWeight || ord.chargeableWeightKg || 0;
                   const fee = ord.shippingFee || ord.cost || 0;
 
-                  // 5-minute grace window for READY_TO_PICK status
-                  const readyTime = (ord as any).readyToPickAt || ord.updatedAt;
-                  const elapsedSecs = readyTime ? Math.floor((Date.now() - new Date(readyTime).getTime()) / 1000) : 0;
+                  // 5-minute window for unprepared orders from createdAt
+                  const isUnprepared = ['CREATED', 'PENDING_VERIFICATION', 'PENDING', 'DRAFT'].includes(ord.status);
+                  const createdTime = ord.createdAt;
+                  const elapsedSecs = createdTime ? Math.floor((Date.now() - new Date(createdTime).getTime()) / 1000) : 0;
                   const remainingSecs = Math.max(0, 300 - elapsedSecs);
-                  const isWithin5MinWindow = ord.status === 'READY_TO_PICK' && remainingSecs > 0;
+                  const isWithin5MinWindow = isUnprepared && remainingSecs > 0;
 
                   const formatCd = (secs: number) => {
                     const m = Math.floor(secs / 60);
@@ -267,9 +268,9 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
                     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
                   };
 
-                  // Allow edit & cancel during initialization OR within the 5-minute READY_TO_PICK countdown
-                  const isEditable = ['CREATED', 'PENDING_VERIFICATION', 'PENDING'].includes(ord.status) || isWithin5MinWindow;
-                  const canCancel = ['CREATED', 'PENDING_VERIFICATION', 'PENDING'].includes(ord.status) || isWithin5MinWindow;
+                  // Allow edit & cancel only while unprepared and within 5 minutes
+                  const isEditable = isWithin5MinWindow;
+                  const canCancel = isWithin5MinWindow;
 
                   return (
                     <tr key={ord._id || ord.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
@@ -324,18 +325,18 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
                             <button
                               onClick={() => onEditOrder(ord)}
                               className="px-2.5 py-1 rounded-lg bg-sky-500/20 hover:bg-sky-600 text-sky-700 dark:text-sky-300 hover:text-white border border-sky-500/30 text-xs font-semibold transition cursor-pointer"
-                              title={ord.status === 'READY_TO_PICK' ? `Sửa đơn trong thời hạn 5 phút (Còn ${formatCd(remainingSecs)})` : "Chỉnh sửa đơn hàng"}
+                              title={`Sửa đơn trong thời hạn 5 phút (Còn ${formatCd(remainingSecs)})`}
                             >
-                              Sửa {ord.status === 'READY_TO_PICK' && remainingSecs > 0 && `(${formatCd(remainingSecs)})`}
+                              Sửa {remainingSecs > 0 && `(${formatCd(remainingSecs)})`}
                             </button>
                           )}
                           {canCancel && onCancelOrder && (
                             <button
                               onClick={() => onCancelOrder(ord)}
                               className="px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-600 text-rose-700 dark:text-rose-300 hover:text-white border border-rose-500/30 text-xs font-semibold transition cursor-pointer"
-                              title={ord.status === 'READY_TO_PICK' ? `Hủy đơn trong thời hạn 5 phút (Còn ${formatCd(remainingSecs)})` : "Hủy đơn hàng"}
+                              title={`Hủy đơn trong thời hạn 5 phút (Còn ${formatCd(remainingSecs)})`}
                             >
-                              Hủy {ord.status === 'READY_TO_PICK' && remainingSecs > 0 && `(${formatCd(remainingSecs)})`}
+                              Hủy {remainingSecs > 0 && `(${formatCd(remainingSecs)})`}
                             </button>
                           )}
                         </div>

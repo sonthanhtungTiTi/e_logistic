@@ -453,13 +453,14 @@ export const OrderListPage: React.FC = () => {
               orders.map((o) => {
                 const orderId = o._id || (o as any).id;
                 const isSelected = selectedIds.includes(orderId);
-                const isSelectable = ['CREATED', 'PENDING_VERIFICATION', 'PENDING', 'DRAFT'].includes(o.status);
-                const readyTime = (o as any).sellerPreparedAt || (o as any).readyToPickAt || o.updatedAt;
-                const elapsedSecs = readyTime ? Math.floor((now - new Date(readyTime).getTime()) / 1000) : 9999;
+                const isUnprepared = ['CREATED', 'PENDING_VERIFICATION', 'PENDING', 'DRAFT'].includes(o.status);
+                const isSelectable = isUnprepared;
+                const createdTime = o.createdAt;
+                const elapsedSecs = createdTime ? Math.floor((now - new Date(createdTime).getTime()) / 1000) : 0;
                 const remainingSecs = Math.max(0, 300 - elapsedSecs);
-                const isWithin5MinWindow = (o.status === 'PENDING_APPROVAL' || o.status === 'READY_TO_PICK') && remainingSecs > 0;
-                const canEdit = isSelectable || isWithin5MinWindow;
-                const canCancel = isSelectable || isWithin5MinWindow;
+                const isWithin5MinWindow = isUnprepared && remainingSecs > 0;
+                const canEdit = isWithin5MinWindow;
+                const canCancel = isWithin5MinWindow;
 
                 const formatTimer = (secs: number) => {
                   const m = Math.floor(secs / 60);
@@ -526,14 +527,14 @@ export const OrderListPage: React.FC = () => {
                           {badge.label}
                         </span>
 
-                        {(o.status === 'PENDING_APPROVAL' || o.status === 'READY_TO_PICK') && (
+                        {isUnprepared && (
                           remainingSecs > 0 ? (
                             <span className="text-[10px] font-mono font-bold text-sky-700 dark:text-sky-300 bg-sky-500/10 dark:bg-sky-950/50 px-2 py-0.5 rounded-lg border border-sky-500/30 flex items-center gap-1 animate-pulse">
-                              <Clock className="w-3 h-3 text-sky-600 dark:text-sky-400" /> Sửa trong: {formatTimer(remainingSecs)}
+                              <Clock className="w-3 h-3 text-sky-600 dark:text-sky-400" /> Sửa/Hủy: {formatTimer(remainingSecs)}
                             </span>
                           ) : (
                             <span className="text-[10px] font-mono text-slate-500 px-1 py-0.5">
-                              (Khóa sửa / Hết hạn)
+                              (Khóa sửa & hủy / Quá 5p)
                             </span>
                           )
                         )}

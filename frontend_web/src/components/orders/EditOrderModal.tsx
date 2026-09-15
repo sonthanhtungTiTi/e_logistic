@@ -36,17 +36,17 @@ export const EditOrderModal: React.FC<EditOrderModalProps> = ({ order, onClose, 
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
   };
 
-  const readyTime = (order as any).sellerPreparedAt || (order as any).readyToPickAt || order.updatedAt;
-  const elapsedSecs = readyTime ? Math.floor((Date.now() - new Date(readyTime).getTime()) / 1000) : 0;
-  const isWithin5MinWindow = (order.status === 'PENDING_APPROVAL' || order.status === 'READY_TO_PICK') && elapsedSecs < 300;
-  const isEditableStatus = ['CREATED', 'PENDING_VERIFICATION', 'PENDING', 'DRAFT'].includes(order.status) || isWithin5MinWindow;
+  const isUnprepared = ['CREATED', 'PENDING_VERIFICATION', 'PENDING', 'DRAFT'].includes(order.status);
+  const createdTime = order.createdAt;
+  const elapsedSecs = createdTime ? Math.floor((Date.now() - new Date(createdTime).getTime()) / 1000) : 0;
+  const isEditableStatus = isUnprepared && elapsedSecs < 300;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
 
     if (!isEditableStatus) {
-      setErrorMessage(`Đơn hàng đã chuyển sang trạng thái "${order.status}". Hệ thống không cho phép chỉnh sửa thông tin nữa.`);
+      setErrorMessage(`Đơn hàng đang ở trạng thái "${order.status}" hoặc đã hết thời hạn 5 phút. Hệ thống không cho phép chỉnh sửa thông tin nữa.`);
       return;
     }
 
@@ -133,7 +133,7 @@ export const EditOrderModal: React.FC<EditOrderModalProps> = ({ order, onClose, 
                 Chỉnh Sửa Đơn Hàng <span className="font-mono text-amber-400">{order.trackingCode || order.trackingNumber}</span>
               </h3>
               <p className="text-xs text-slate-400">
-                Chỉnh sửa thông tin địa chỉ giao, COD & ghi chú bưu gửi (Chỉ áp dụng khi đơn ở trạng thái CREATED / PENDING_VERIFICATION)
+                Chỉnh sửa thông tin địa chỉ giao, COD & ghi chú bưu gửi (Chỉ áp dụng trong 5 phút khi đơn chưa chuẩn bị xong)
               </p>
             </div>
           </div>
@@ -148,7 +148,7 @@ export const EditOrderModal: React.FC<EditOrderModalProps> = ({ order, onClose, 
         {!isEditableStatus && (
           <div className="p-4 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-bold flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0 text-amber-400" />
-            <span>Đơn hàng đang ở trạng thái <strong>{order.status}</strong>. Đã khóa chỉnh sửa thông tin!</span>
+            <span>Đơn hàng đang ở trạng thái <strong>{order.status}</strong> hoặc đã quá thời hạn 5 phút. Đã khóa chỉnh sửa thông tin!</span>
           </div>
         )}
 
