@@ -1,0 +1,16 @@
+{
+  "short_name": "Driver PWA",
+  "name": "E-Logistic Driver Mobile App",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192 512x512"
+    }
+  ],
+  "start_url": "/driver/pickup",
+  "background_color": "#020617",
+  "theme_color": "#0f172a",
+  "display": "standalone",
+  "orientation": "portrait"
+}

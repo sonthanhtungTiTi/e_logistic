@@ -32,6 +32,8 @@ import { PrintWaybillModal } from '../../components/orders/PrintWaybillModal';
 import { OrderSubNav } from '../../components/orders/OrderSubNav';
 import { formatNumberWithDots, parseDotsToNumber } from '../../lib/formatters';
 import { productApi, type ProductItem as CatalogProductItem } from '../../api/product.api';
+import { locationApi, type Province, type District, type Ward } from '../../api/location.api';
+import { KycRequiredModal } from '../../components/orders/KycRequiredModal';
 
 interface ProductItem {
   id: number;
@@ -50,6 +52,32 @@ const cleanStreetAddress = (raw?: string): string => {
     return `${parts[0].trim()}${parts[1] ? ', ' + parts[1].trim() : ''}`;
   }
   return raw.trim();
+};
+
+// Hàm khớp nối đơn vị hành chính linh hoạt
+const matchLocationName = <T extends { name: string; code: number }>(list: T[], name: string): T | null => {
+  if (!name || !list || list.length === 0) return null;
+  const cleanName = name.toLowerCase().trim();
+
+  // 1. Exact match
+  let found = list.find((item) => item.name.toLowerCase().trim() === cleanName);
+  if (found) return found;
+
+  // 2. Prefix strip match (Tỉnh, Thành phố, TP., Quận, Huyện, Phường, Xã)
+  const strip = (s: string) =>
+    s.replace(/^(tỉnh|thành phố|tp\.|quận|q\.|huyện|h\.|thị xã|tx\.|phường|p\.|xã)\s*/gi, '').trim();
+
+  const strippedSearch = strip(cleanName);
+  found = list.find((item) => strip(item.name.toLowerCase()) === strippedSearch);
+  if (found) return found;
+
+  // 3. Substring inclusion
+  return (
+    list.find((item) => {
+      const lower = item.name.toLowerCase();
+      return lower.includes(cleanName) || cleanName.includes(lower);
+    }) || null
+  );
 };
 
 // Danh mục đơn vị hành chính sau sáp nhập tại các tỉnh thành trọng điểm
@@ -120,6 +148,108 @@ export const CreateOrderPage: React.FC = () => {
   const [pickupDetailAddress, setPickupDetailAddress] = useState<string>(
     cleanStreetAddress(user?.address) || '123 Đường Tân Bình'
   );
+
+  // Dynamic Location API Data (Real 63 Provinces, Districts & Wards of Vietnam)
+  const [provincesList, setProvincesList] = useState<Province[]>([]);
+  const [deliveryDistrictsList, setDeliveryDistrictsList] = useState<District[]>([]);
+  const [deliveryWardsList, setDeliveryWardsList] = useState<Ward[]>([]);
+  const [pickupDistrictsList, setPickupDistrictsList] = useState<District[]>([]);
+  const [pickupWardsList, setPickupWardsList] = useState<Ward[]>([]);
+
+  // 1. Fetch 63 Provinces on mount
+  useEffect(() => {
+    let isMounted = true;
+    locationApi.getProvinces().then((data) => {
+      if (isMounted && Array.isArray(data) && data.length > 0) {
+        setProvincesList(data);
+      }
+    }).catch(() => {});
+    return () => { isMounted = false; };
+  }, []);
+
+  // 2. Fetch Delivery Districts when deliveryProvince or provincesList changes
+  useEffect(() => {
+    let isMounted = true;
+    if (!deliveryProvince || provincesList.length === 0) return;
+
+    const matchedP = matchLocationName(provincesList, deliveryProvince);
+    if (matchedP) {
+      locationApi.getDistrictsByProvince(matchedP.code).then((dists) => {
+        if (!isMounted || !Array.isArray(dists)) return;
+        setDeliveryDistrictsList(dists);
+        if (dists.length > 0) {
+          const matchedD = matchLocationName(dists, deliveryDistrict);
+          if (!matchedD) {
+            setDeliveryDistrict(dists[0].name);
+          }
+        }
+      }).catch(() => {});
+    }
+    return () => { isMounted = false; };
+  }, [deliveryProvince, provincesList]);
+
+  // 3. Fetch Delivery Wards when deliveryDistrict or deliveryDistrictsList changes
+  useEffect(() => {
+    let isMounted = true;
+    if (!deliveryDistrict || deliveryDistrictsList.length === 0) return;
+
+    const matchedD = matchLocationName(deliveryDistrictsList, deliveryDistrict);
+    if (matchedD) {
+      locationApi.getWardsByDistrict(matchedD.code).then((wards) => {
+        if (!isMounted || !Array.isArray(wards)) return;
+        setDeliveryWardsList(wards);
+        if (wards.length > 0) {
+          const matchedW = matchLocationName(wards, deliveryWard);
+          if (!matchedW) {
+            setDeliveryWard(wards[0].name);
+          }
+        }
+      }).catch(() => {});
+    }
+    return () => { isMounted = false; };
+  }, [deliveryDistrict, deliveryDistrictsList]);
+
+  // 4. Fetch Pickup Districts when pickupProvince or provincesList changes
+  useEffect(() => {
+    let isMounted = true;
+    if (!pickupProvince || provincesList.length === 0) return;
+
+    const matchedP = matchLocationName(provincesList, pickupProvince);
+    if (matchedP) {
+      locationApi.getDistrictsByProvince(matchedP.code).then((dists) => {
+        if (!isMounted || !Array.isArray(dists)) return;
+        setPickupDistrictsList(dists);
+        if (dists.length > 0) {
+          const matchedD = matchLocationName(dists, pickupDistrict);
+          if (!matchedD) {
+            setPickupDistrict(dists[0].name);
+          }
+        }
+      }).catch(() => {});
+    }
+    return () => { isMounted = false; };
+  }, [pickupProvince, provincesList]);
+
+  // 5. Fetch Pickup Wards when pickupDistrict or pickupDistrictsList changes
+  useEffect(() => {
+    let isMounted = true;
+    if (!pickupDistrict || pickupDistrictsList.length === 0) return;
+
+    const matchedD = matchLocationName(pickupDistrictsList, pickupDistrict);
+    if (matchedD) {
+      locationApi.getWardsByDistrict(matchedD.code).then((wards) => {
+        if (!isMounted || !Array.isArray(wards)) return;
+        setPickupWardsList(wards);
+        if (wards.length > 0) {
+          const matchedW = matchLocationName(wards, pickupWard);
+          if (!matchedW) {
+            setPickupWard(wards[0].name);
+          }
+        }
+      }).catch(() => {});
+    }
+    return () => { isMounted = false; };
+  }, [pickupDistrict, pickupDistrictsList]);
 
   // Load saved pickup addresses on mount
   useEffect(() => {
@@ -265,14 +395,18 @@ export const CreateOrderPage: React.FC = () => {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [createdOrder, setCreatedOrder] = useState<Order | null>(null);
   const [showPrintModal, setShowPrintModal] = useState<boolean>(false);
+  const [showKycModal, setShowKycModal] = useState<boolean>(false);
+  const [kycErrorMessage, setKycErrorMessage] = useState<string | undefined>(undefined);
 
   // 2-Step Order Flow & Quote States (UC-06)
   const [quoteResult, setQuoteResult] = useState<QuoteResponseData | null>(null);
   const [quoting, setQuoting] = useState<boolean>(false);
   const [confirmDiscountModal, setConfirmDiscountModal] = useState<string | null>(null);
 
-  // Key for localStorage auto-drafting
-  const DRAFT_KEY = 'elogistic_create_order_draft';
+  // Key for localStorage auto-drafting (user-scoped to prevent draft cross-contamination)
+  const DRAFT_KEY = user?._id
+    ? `elogistic_create_order_draft_${user._id}`
+    : 'elogistic_create_order_draft_guest';
   const [hasDraftRestored, setHasDraftRestored] = useState<boolean>(false);
 
   // 1. Restore draft from localStorage on initial load
@@ -312,7 +446,7 @@ export const CreateOrderPage: React.FC = () => {
     } catch (err) {
       console.error('Failed to parse order draft from localStorage', err);
     }
-  }, []);
+  }, [DRAFT_KEY]);
 
   // 2. Auto-save draft when form values change
   useEffect(() => {
@@ -724,6 +858,19 @@ export const CreateOrderPage: React.FC = () => {
 
   // UC-06 Step 2: Submit Order Form
   const handleSubmitOrder = async (confirmWithoutDiscount: boolean = false) => {
+    // Guard: KYC Verification check
+    const isVerifiedKyc =
+      user?.role !== 'SELLER' ||
+      user?.kycVerified === true ||
+      user?.kycStatus === 'APPROVED' ||
+      user?.kycStatus === 'VERIFIED_KYC';
+
+    if (!isVerifiedKyc) {
+      setKycErrorMessage('Cần hoàn tất xác minh KYC trước khi tạo đơn hàng.');
+      setShowKycModal(true);
+      return;
+    }
+
     // Guard: Shop profile check
     if (!isShopInfoComplete) {
       setShowInfoModal(true);
@@ -790,6 +937,11 @@ export const CreateOrderPage: React.FC = () => {
       }
     } catch (err: any) {
       const resData = err.response?.data;
+      if (resData?.code === 'KYC_REQUIRED' || err.response?.status === 403) {
+        setKycErrorMessage(resData?.message || 'Cần hoàn tất xác minh KYC trước khi tạo đơn');
+        setShowKycModal(true);
+        return;
+      }
       if (resData?.code === 'DISCOUNT_INVALID_NEEDS_CONFIRM') {
         setConfirmDiscountModal(resData.message);
         return;
@@ -962,20 +1114,21 @@ export const CreateOrderPage: React.FC = () => {
                     <select
                       value={deliveryProvince}
                       onChange={(e) => {
-                        const p = e.target.value;
-                        setDeliveryProvince(p);
-                        const firstDist = Object.keys(VIETNAM_ADMIN_UNITS[p] || {})[0] || '';
-                        setDeliveryDistrict(firstDist);
-                        const firstWard = (VIETNAM_ADMIN_UNITS[p]?.[firstDist] || [])[0] || '';
-                        setDeliveryWard(firstWard);
+                        setDeliveryProvince(e.target.value);
                       }}
                       className="w-full glass-input rounded-xl px-3 py-2.5 text-xs text-slate-900 dark:text-slate-200 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 outline-none focus:border-blue-500"
                     >
-                      {Object.keys(VIETNAM_ADMIN_UNITS).map((p) => (
-                        <option key={p} value={p} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
-                          {p}
-                        </option>
-                      ))}
+                      {provincesList.length > 0
+                        ? provincesList.map((p) => (
+                            <option key={p.code} value={p.name} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                              {p.name}
+                            </option>
+                          ))
+                        : Object.keys(VIETNAM_ADMIN_UNITS).map((p) => (
+                            <option key={p} value={p} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                              {p}
+                            </option>
+                          ))}
                     </select>
                   </div>
 
@@ -984,18 +1137,21 @@ export const CreateOrderPage: React.FC = () => {
                     <select
                       value={deliveryDistrict}
                       onChange={(e) => {
-                        const d = e.target.value;
-                        setDeliveryDistrict(d);
-                        const firstWard = (VIETNAM_ADMIN_UNITS[deliveryProvince]?.[d] || [])[0] || '';
-                        setDeliveryWard(firstWard);
+                        setDeliveryDistrict(e.target.value);
                       }}
                       className="w-full glass-input rounded-xl px-3 py-2.5 text-xs text-slate-900 dark:text-slate-200 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 outline-none focus:border-blue-500"
                     >
-                      {Object.keys(VIETNAM_ADMIN_UNITS[deliveryProvince] || {}).map((d) => (
-                        <option key={d} value={d} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
-                          {d}
-                        </option>
-                      ))}
+                      {deliveryDistrictsList.length > 0
+                        ? deliveryDistrictsList.map((d) => (
+                            <option key={d.code} value={d.name} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                              {d.name}
+                            </option>
+                          ))
+                        : Object.keys(VIETNAM_ADMIN_UNITS[deliveryProvince] || {}).map((d) => (
+                            <option key={d} value={d} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                              {d}
+                            </option>
+                          ))}
                     </select>
                   </div>
                 </div>
@@ -1009,11 +1165,17 @@ export const CreateOrderPage: React.FC = () => {
                       onChange={(e) => setDeliveryWard(e.target.value)}
                       className="w-full glass-input rounded-xl px-3 py-2.5 text-xs text-slate-900 dark:text-slate-200 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 outline-none focus:border-blue-500"
                     >
-                      {(VIETNAM_ADMIN_UNITS[deliveryProvince]?.[deliveryDistrict] || []).map((w) => (
-                        <option key={w} value={w} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
-                          {w}
-                        </option>
-                      ))}
+                      {deliveryWardsList.length > 0
+                        ? deliveryWardsList.map((w) => (
+                            <option key={w.code} value={w.name} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                              {w.name}
+                            </option>
+                          ))
+                        : (VIETNAM_ADMIN_UNITS[deliveryProvince]?.[deliveryDistrict] || []).map((w) => (
+                            <option key={w} value={w} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                              {w}
+                            </option>
+                          ))}
                     </select>
                   </div>
 
@@ -1222,20 +1384,21 @@ export const CreateOrderPage: React.FC = () => {
                         <select
                           value={pickupProvince}
                           onChange={(e) => {
-                            const p = e.target.value;
-                            setPickupProvince(p);
-                            const firstDist = Object.keys(VIETNAM_ADMIN_UNITS[p] || {})[0] || '';
-                            setPickupDistrict(firstDist);
-                            const firstWard = (VIETNAM_ADMIN_UNITS[p]?.[firstDist] || [])[0] || '';
-                            setPickupWard(firstWard);
+                            setPickupProvince(e.target.value);
                           }}
                           className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-cyan-500"
                         >
-                          {Object.keys(VIETNAM_ADMIN_UNITS).map((p) => (
-                            <option key={p} value={p} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
-                              {p}
-                            </option>
-                          ))}
+                          {provincesList.length > 0
+                            ? provincesList.map((p) => (
+                                <option key={p.code} value={p.name} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                                  {p.name}
+                                </option>
+                              ))
+                            : Object.keys(VIETNAM_ADMIN_UNITS).map((p) => (
+                                <option key={p} value={p} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                                  {p}
+                                </option>
+                              ))}
                         </select>
                       </div>
 
@@ -1244,18 +1407,21 @@ export const CreateOrderPage: React.FC = () => {
                         <select
                           value={pickupDistrict}
                           onChange={(e) => {
-                            const d = e.target.value;
-                            setPickupDistrict(d);
-                            const firstWard = (VIETNAM_ADMIN_UNITS[pickupProvince]?.[d] || [])[0] || '';
-                            setPickupWard(firstWard);
+                            setPickupDistrict(e.target.value);
                           }}
                           className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-cyan-500"
                         >
-                          {Object.keys(VIETNAM_ADMIN_UNITS[pickupProvince] || {}).map((d) => (
-                            <option key={d} value={d} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
-                              {d}
-                            </option>
-                          ))}
+                          {pickupDistrictsList.length > 0
+                            ? pickupDistrictsList.map((d) => (
+                                <option key={d.code} value={d.name} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                                  {d.name}
+                                </option>
+                              ))
+                            : Object.keys(VIETNAM_ADMIN_UNITS[pickupProvince] || {}).map((d) => (
+                                <option key={d} value={d} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                                  {d}
+                                </option>
+                              ))}
                         </select>
                       </div>
                     </div>
@@ -1268,11 +1434,17 @@ export const CreateOrderPage: React.FC = () => {
                           onChange={(e) => setPickupWard(e.target.value)}
                           className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-cyan-500"
                         >
-                          {(VIETNAM_ADMIN_UNITS[pickupProvince]?.[pickupDistrict] || []).map((w) => (
-                            <option key={w} value={w} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
-                              {w}
-                            </option>
-                          ))}
+                          {pickupWardsList.length > 0
+                            ? pickupWardsList.map((w) => (
+                                <option key={w.code} value={w.name} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                                  {w.name}
+                                </option>
+                              ))
+                            : (VIETNAM_ADMIN_UNITS[pickupProvince]?.[pickupDistrict] || []).map((w) => (
+                                <option key={w} value={w} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                                  {w}
+                                </option>
+                              ))}
                         </select>
                       </div>
 
@@ -2014,6 +2186,14 @@ export const CreateOrderPage: React.FC = () => {
       {showPrintModal && createdOrder && (
         <PrintWaybillModal order={createdOrder} onClose={() => setShowPrintModal(false)} />
       )}
+
+      {/* KYC REQUIRED POPUP MODAL */}
+      <KycRequiredModal
+        isOpen={showKycModal}
+        onClose={() => setShowKycModal(false)}
+        kycStatus={user?.kycStatus}
+        customMessage={kycErrorMessage}
+      />
     </div>
   );
 };

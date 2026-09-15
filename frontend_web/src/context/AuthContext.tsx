@@ -1,4 +1,5 @@
 import React, { createContext, useState, useEffect } from 'react';
+import { io as socketIO } from 'socket.io-client';
 import axiosClient from '../api/axiosClient';
 import type { AuthUser, UserRole } from '../types';
 
@@ -81,14 +82,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .then((res) => {
           if (res.data) {
             const p = res.data;
-            updateUser({
+            const updatePayload: Partial<AuthUser> = {
               fullName: p.fullName,
               phoneNumber: p.phoneNumber,
               address: p.address,
               companyName: p.companyName,
-              kycStatus: p.kycStatus,
-              kycVerified: p.kycVerified,
-            });
+            };
+            if (p.kycStatus !== undefined) updatePayload.kycStatus = p.kycStatus;
+            if (p.kycVerified !== undefined) updatePayload.kycVerified = p.kycVerified;
+            updateUser(updatePayload);
           }
         })
         .catch((err) => {
@@ -101,6 +103,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.removeItem('token');
     }
   }, [token]);
+
+  // Realtime Socket listener cho KYC status update từ Admin/Server
+  useEffect(() => {
+    if (!user) return;
+    const userId = user._id || (user as any).id;
+    if (!userId) return;
+
+    const socket = socketIO('http://localhost:5000', { transports: ['websocket'] });
+    socket.emit('join_seller_room', userId);
+
+    socket.on('kyc:status_updated', (data: any) => {
+      console.log('⚡ [AuthContext] Realtime KYC status updated event:', data);
+      const isApproved = data?.status === 'APPROVED' || data?.type === 'APPROVED' || data?.kycVerified === true;
+      const newStatus = data?.status || (isApproved ? 'APPROVED' : 'REJECTED');
+      updateUser({
+        kycStatus: newStatus,
+        kycVerified: isApproved,
+      });
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [user?._id || (user as any)?.id]);
 
   return (
     <AuthContext.Provider value={{ user, role: user?.role || null, token, login, logout, updateUser }}>

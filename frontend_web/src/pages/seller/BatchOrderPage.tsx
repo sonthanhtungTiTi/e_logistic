@@ -31,6 +31,7 @@ import { OrderSubNav } from '../../components/orders/OrderSubNav';
 import { formatNumberWithDots, parseDotsToNumber } from '../../lib/formatters';
 import { ExcelImportOrderModal } from '../../components/orders/ExcelImportOrderModal';
 import type { MappedOrderItem } from '../../components/orders/ExcelImportOrderModal';
+import { KycRequiredModal } from '../../components/orders/KycRequiredModal';
 import * as XLSX from 'xlsx';
 
 
@@ -121,6 +122,8 @@ export const BatchOrderPage: React.FC = () => {
   const [creatingBatch, setCreatingBatch] = useState<boolean>(false);
   const [creationProgress, setCreationProgress] = useState<number>(0);
   const [createdOrdersResult, setCreatedOrdersResult] = useState<Order[] | null>(null);
+  const [showKycModal, setShowKycModal] = useState<boolean>(false);
+  const [kycErrorMessage, setKycErrorMessage] = useState<string | undefined>(undefined);
 
   /** Mở wizard và tự nạp file vào Step 1 (dùng cho drag-drop và click vùng upload) */
   const handleOpenWizardWithFile = (file: File) => {
@@ -160,8 +163,10 @@ export const BatchOrderPage: React.FC = () => {
 
 
 
-  // LocalStorage Batch Draft Key
-  const BATCH_DRAFT_KEY = 'elogistic_batch_order_draft';
+  // LocalStorage Batch Draft Key (user-scoped to prevent demo data cross-contamination)
+  const BATCH_DRAFT_KEY = user?._id
+    ? `elogistic_batch_order_draft_${user._id}`
+    : 'elogistic_batch_order_draft_guest';
   const [hasBatchDraftRestored, setHasBatchDraftRestored] = useState<boolean>(false);
 
   // Restore Batch Draft on Mount
@@ -179,14 +184,16 @@ export const BatchOrderPage: React.FC = () => {
     } catch (err) {
       console.error('Failed to parse batch draft from localStorage', err);
     }
-  }, []);
+  }, [BATCH_DRAFT_KEY]);
 
-  // Save Batch Draft when batchItems changes
+  // Save/Clear Batch Draft when batchItems changes
   useEffect(() => {
     if (batchItems.length > 0) {
       localStorage.setItem(BATCH_DRAFT_KEY, JSON.stringify({ fileName, batchItems }));
+    } else {
+      localStorage.removeItem(BATCH_DRAFT_KEY);
     }
-  }, [batchItems, fileName]);
+  }, [batchItems, fileName, BATCH_DRAFT_KEY]);
 
   // Clear Batch Draft
   const handleClearBatchDraft = () => {
@@ -372,7 +379,7 @@ export const BatchOrderPage: React.FC = () => {
         const rawRows: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
 
         if (!rawRows || rawRows.length === 0) {
-          loadDemoBatchData(file.name);
+          alert('Tệp Excel rỗng hoặc không có dữ liệu!');
           setParsing(false);
           return;
         }
@@ -483,19 +490,20 @@ export const BatchOrderPage: React.FC = () => {
 
         if (items.length > 0) {
           setBatchItems(items);
+          setFileName(file.name);
         } else {
-          loadDemoBatchData(file.name);
+          alert('Tệp Excel không chứa dữ liệu hợp lệ. Vui lòng kiểm tra lại định dạng tệp!');
         }
       } catch (err) {
         console.error('Error reading excel in BatchOrderPage:', err);
-        loadDemoBatchData(file.name);
+        alert('Có lỗi xảy ra khi đọc tệp Excel. Vui lòng thử lại!');
       } finally {
         setParsing(false);
       }
     };
 
     reader.onerror = () => {
-      loadDemoBatchData(file.name);
+      alert('Không thể đọc tệp đã chọn!');
       setParsing(false);
     };
 
@@ -667,6 +675,19 @@ export const BatchOrderPage: React.FC = () => {
   const handleConfirmCreateBatch = async () => {
     if (validCount === 0) return;
 
+    // Guard: KYC Verification check
+    const isVerifiedKyc =
+      user?.role !== 'SELLER' ||
+      user?.kycVerified === true ||
+      user?.kycStatus === 'APPROVED' ||
+      user?.kycStatus === 'VERIFIED_KYC';
+
+    if (!isVerifiedKyc) {
+      setKycErrorMessage('Cần hoàn tất xác minh KYC trước khi tạo đơn hàng loạt.');
+      setShowKycModal(true);
+      return;
+    }
+
     setCreatingBatch(true);
     setCreationProgress(0);
 
@@ -728,6 +749,12 @@ export const BatchOrderPage: React.FC = () => {
             });
           }
         } catch (e: any) {
+          if (e.response?.data?.code === 'KYC_REQUIRED' || e.response?.status === 403) {
+            setCreatingBatch(false);
+            setKycErrorMessage(e.response?.data?.message || 'Cần hoàn tất xác minh KYC trước khi tạo đơn');
+            setShowKycModal(true);
+            return;
+          }
           failed.push({
             rowIndex: item.rowIndex,
             name: item.receiverName,
@@ -760,15 +787,15 @@ export const BatchOrderPage: React.FC = () => {
   return (
     <>
       <div className="flex flex-col gap-6 animate-in fade-in duration-300">
-        {/* TOP HORIZONTAL HEADER & ACTION TOOLBAR */}
-        <div className="w-full glass-panel p-5 sm:p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm bg-white/80 dark:bg-slate-900/80 backdrop-blur-md flex flex-col xl:flex-row xl:items-center justify-between gap-5">
+        {/* TOP HEADER & ACTION TOOLBAR */}
+        <div className="w-full glass-panel p-5 sm:p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm bg-white/80 dark:bg-slate-900/80 backdrop-blur-md flex flex-col gap-4 sm:gap-5">
           {/* Header Title Info */}
-          <div className="space-y-1.5 max-w-xl">
-            <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+          <div className="space-y-1.5 w-full">
+            <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 flex-wrap">
               <span className="cursor-pointer hover:text-blue-500 transition font-medium" onClick={() => navigate('/seller/dashboard')}>
                 Seller Portal
               </span>
-              <ChevronRight className="w-3.5 h-3.5 text-slate-400 dark:text-slate-600" />
+              <ChevronRight className="w-3.5 h-3.5 text-slate-400 dark:text-slate-600 shrink-0" />
               <span className="text-cyan-600 dark:text-cyan-400 font-semibold">Tạo Đơn Hàng Loạt</span>
             </div>
             <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2.5">
@@ -779,16 +806,20 @@ export const BatchOrderPage: React.FC = () => {
             </p>
           </div>
 
-          {/* Horizontal Action Toolbar */}
-          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+          {/* SubNav Tabs */}
+          <div className="w-full">
             <OrderSubNav activeTab="batch" layout="horizontal" />
+          </div>
 
-            <div className="hidden sm:block h-7 w-px bg-slate-200 dark:bg-slate-800 mx-1" />
-
+          {/* Action Buttons Row */}
+          <div className="flex flex-wrap items-center gap-2.5">
             <button
               type="button"
-              onClick={() => setIsImportModalOpen(true)}
-              className="px-4 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black shadow-md shadow-emerald-600/20 flex items-center gap-2 transition cursor-pointer"
+              onClick={() => {
+                setPendingWizardFile(null);
+                setIsImportModalOpen(true);
+              }}
+              className="px-4 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2 transition cursor-pointer active:scale-95 shrink-0"
             >
               <Upload className="w-4 h-4 text-emerald-100 shrink-0" />
               <span>Tải File Excel (Wizard 4 Bước)</span>
@@ -797,7 +828,7 @@ export const BatchOrderPage: React.FC = () => {
             <button
               type="button"
               onClick={handleDownloadTemplate}
-              className="px-3.5 py-2.5 rounded-2xl bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-cyan-600 dark:text-cyan-400 text-xs font-bold border border-slate-200 dark:border-cyan-500/30 flex items-center gap-2 shadow-sm transition cursor-pointer"
+              className="px-3.5 py-2.5 rounded-2xl bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-cyan-600 dark:text-cyan-400 text-xs font-bold border border-slate-200 dark:border-cyan-500/30 flex items-center justify-center gap-2 shadow-sm transition cursor-pointer active:scale-95 shrink-0"
             >
               <Download className="w-4 h-4 text-cyan-500 dark:text-cyan-400 shrink-0" />
               <span>Tải File Mẫu (.CSV)</span>
@@ -806,7 +837,7 @@ export const BatchOrderPage: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsGuideOpen(true)}
-              className="px-3.5 py-2.5 rounded-2xl bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold border border-slate-200 dark:border-slate-800 flex items-center gap-2 shadow-sm transition cursor-pointer"
+              className="px-3.5 py-2.5 rounded-2xl bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold border border-slate-200 dark:border-slate-800 flex items-center justify-center gap-2 shadow-sm transition cursor-pointer active:scale-95 shrink-0"
             >
               <HelpCircle className="w-4 h-4 text-blue-500 dark:text-blue-400 shrink-0" />
               <span>Hướng Dẫn</span>
@@ -854,16 +885,16 @@ export const BatchOrderPage: React.FC = () => {
               e.preventDefault();
               setIsDragOver(false);
               if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-                handleOpenWizardWithFile(e.dataTransfer.files[0]);
+                handleFileChange(e.dataTransfer.files[0]);
               }
             }}
             className={`glass-panel p-12 rounded-3xl border-2 border-dashed text-center space-y-5 transition duration-300 cursor-pointer ${isDragOver
                 ? 'border-cyan-400 bg-cyan-950/20 scale-[1.01]'
                 : 'border-slate-700/80 hover:border-cyan-500/60 bg-slate-900/40'
               }`}
-            onClick={() => setIsImportModalOpen(true)}
+            onClick={() => fileInputRef.current?.click()}
           >
-            {/* Hidden input: chỉ dùng để nhận file từ drag-drop zone, rồi đưa vào wizard */}
+            {/* Hidden input: nhận file từ click vùng upload & drag-drop, xử lý trực tiếp ra bảng dữ liệu */}
             <input
               type="file"
               ref={fileInputRef}
@@ -871,7 +902,7 @@ export const BatchOrderPage: React.FC = () => {
               className="hidden"
               onChange={(e) => {
                 if (e.target.files && e.target.files[0]) {
-                  handleOpenWizardWithFile(e.target.files[0]);
+                  handleFileChange(e.target.files[0]);
                   // Reset input để có thể chọn lại cùng file
                   e.target.value = '';
                 }
@@ -1792,6 +1823,14 @@ export const BatchOrderPage: React.FC = () => {
           setPendingWizardFile(null);
           navigate('/seller/orders');
         }}
+      />
+
+      {/* KYC REQUIRED POPUP MODAL */}
+      <KycRequiredModal
+        isOpen={showKycModal}
+        onClose={() => setShowKycModal(false)}
+        kycStatus={user?.kycStatus}
+        customMessage={kycErrorMessage}
       />
     </>
   );
