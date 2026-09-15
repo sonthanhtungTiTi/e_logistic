@@ -6,14 +6,12 @@ import { useAdminAuth } from '../hooks/useAdminAuth';
 export const ShipperLayout: React.FC = () => {
   const { user, logout } = useAdminAuth();
 
-  const isPickupOnly = user?.role === 'PICKUP_SHIPPER';
   const isDeliveryOnly = user?.role === 'DELIVERY_SHIPPER';
+  const isPickupOnly = !isDeliveryOnly;
 
-  const roleTitle = isPickupOnly
-    ? 'Shipper Gom Hàng (First-Mile)'
-    : isDeliveryOnly
+  const roleTitle = isDeliveryOnly
     ? 'Shipper Giao Hàng (Last-Mile)'
-    : 'Shipper Giao Nhận';
+    : 'Shipper Gom Hàng (First-Mile)';
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between selection:bg-cyan-500 selection:text-white">
@@ -21,13 +19,11 @@ export const ShipperLayout: React.FC = () => {
       <header className="sticky top-0 z-40 bg-slate-900/95 backdrop-blur border-b border-slate-800 px-4 py-3 flex items-center justify-between shadow-md">
         <div className="flex items-center gap-2.5">
           <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white font-black text-sm shadow-md ${
-            isPickupOnly
-              ? 'bg-gradient-to-tr from-amber-500 to-orange-600 shadow-amber-500/20'
-              : isDeliveryOnly
+            isDeliveryOnly
               ? 'bg-gradient-to-tr from-cyan-500 to-blue-600 shadow-cyan-500/20'
-              : 'bg-gradient-to-tr from-cyan-500 to-blue-600 shadow-cyan-500/20'
+              : 'bg-gradient-to-tr from-amber-500 to-orange-600 shadow-amber-500/20'
           }`}>
-            {isPickupOnly ? 'G' : isDeliveryOnly ? 'D' : 'S'}
+            {isDeliveryOnly ? 'D' : 'G'}
           </div>
           <div>
             <h1 className="text-xs font-black text-white tracking-wide">{roleTitle}</h1>
@@ -36,20 +32,15 @@ export const ShipperLayout: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          {isPickupOnly ? (
-            <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full font-bold border border-amber-500/30 flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-              Đội Gom
-            </span>
-          ) : isDeliveryOnly ? (
+          {isDeliveryOnly ? (
             <span className="text-[10px] bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded-full font-bold border border-cyan-500/30 flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
               Đội Giao
             </span>
           ) : (
-            <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full font-bold border border-emerald-500/30 flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              Trực Ca
+            <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full font-bold border border-amber-500/30 flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+              Đội Gom
             </span>
           )}
 
@@ -82,7 +73,7 @@ export const ShipperLayout: React.FC = () => {
           <span>Chọn Zone</span>
         </NavLink>
 
-        {!isDeliveryOnly && (
+        {isPickupOnly && (
           <NavLink
             to="/shipper/pickup"
             className={({ isActive }) =>
@@ -96,7 +87,7 @@ export const ShipperLayout: React.FC = () => {
           </NavLink>
         )}
 
-        {!isPickupOnly && (
+        {isDeliveryOnly && (
           <NavLink
             to="/shipper/delivery"
             className={({ isActive }) =>

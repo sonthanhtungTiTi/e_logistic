@@ -13,25 +13,26 @@ interface OrderDetailModalProps {
 export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, onClose, onEdit, onReadyToPick }) => {
   const [showPrintModal, setShowPrintModal] = useState(false);
 
-  // Đếm ngược 5 phút cho phép Hủy & Sửa đơn ở trạng thái PENDING_APPROVAL hoặc READY_TO_PICK
-  const readyToPickTime = (order as any).sellerPreparedAt || (order as any).readyToPickAt || order.updatedAt;
-  const isGraceStatus = order.status === 'PENDING_APPROVAL' || order.status === 'READY_TO_PICK';
+  // Đếm ngược 5 phút cho phép Hủy & Sửa đơn khi chưa chuẩn bị xong (CREATED, PENDING_VERIFICATION, PENDING, DRAFT)
+  const isCancelled = order.status === 'CANCELLED';
+  const isUnprepared = ['CREATED', 'PENDING_VERIFICATION', 'PENDING', 'DRAFT'].includes(order.status);
+  const createdTime = order.createdAt;
 
   const [secondsRemaining, setSecondsRemaining] = useState<number>(() => {
-    if (!isGraceStatus || !readyToPickTime) return 300;
-    const elapsed = Math.floor((Date.now() - new Date(readyToPickTime).getTime()) / 1000);
+    if (!isUnprepared || !createdTime) return 0;
+    const elapsed = Math.floor((Date.now() - new Date(createdTime).getTime()) / 1000);
     return Math.max(0, 300 - elapsed);
   });
 
   useEffect(() => {
-    if (!isGraceStatus || !readyToPickTime) return;
+    if (!isUnprepared || !createdTime) return;
     const interval = setInterval(() => {
-      const elapsed = Math.floor((Date.now() - new Date(readyToPickTime).getTime()) / 1000);
+      const elapsed = Math.floor((Date.now() - new Date(createdTime).getTime()) / 1000);
       const remaining = Math.max(0, 300 - elapsed);
       setSecondsRemaining(remaining);
     }, 1000);
     return () => clearInterval(interval);
-  }, [isGraceStatus, readyToPickTime]);
+  }, [isUnprepared, createdTime]);
 
   const formatCountdown = (secs: number) => {
     const m = Math.floor(secs / 60);
@@ -39,13 +40,9 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, onClo
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
-  const isCancelled = order.status === 'CANCELLED';
-  const isWithin5MinWindow = isGraceStatus && secondsRemaining > 0;
-  const isEditable = !isCancelled && (
-    ['CREATED', 'PENDING_VERIFICATION', 'PENDING', 'DRAFT'].includes(order.status) ||
-    isWithin5MinWindow
-  );
-  const canReadyToPick = !isCancelled && ['CREATED', 'PENDING_VERIFICATION', 'PENDING', 'DRAFT'].includes(order.status);
+  const isWithin5MinWindow = isUnprepared && secondsRemaining > 0;
+  const isEditable = !isCancelled && isWithin5MinWindow;
+  const canReadyToPick = !isCancelled && isUnprepared;
 
   const formatCurrency = (val?: number) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val || 0);
@@ -81,8 +78,8 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, onClo
           </button>
         </div>
 
-        {/* READY_TO_PICK Countdown Banner */}
-        {order.status === 'READY_TO_PICK' && (
+        {/* UNPREPARED Countdown Banner */}
+        {isUnprepared && (
           <div className={`p-4 rounded-2xl border text-xs font-semibold flex items-center justify-between gap-3 shadow-lg ${secondsRemaining > 0
               ? 'bg-amber-500/10 border-amber-500/30 text-amber-300'
               : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
@@ -93,17 +90,17 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, onClo
                 <Clock className="w-5 h-5" />
               </div>
               <div>
-                <p className="font-bold text-white">Đơn hàng ở trạng thái Sẵn Sàng Lấy Hàng (Đang đếm ngược 5 phút)</p>
+                <p className="font-bold text-white">Đơn hàng mới tạo (Đang đếm ngược 5 phút để sửa/hủy)</p>
                 <p className="text-[11px] text-slate-300">
                   {secondsRemaining > 0 ? (
                     <span className="flex items-center gap-1">
                       <Hourglass className="w-3.5 h-3.5 text-amber-400 shrink-0 inline" />
-                      <span>Bạn có <strong className="text-amber-400 font-mono font-bold text-sm px-1.5 py-0.5 rounded bg-amber-950/60 border border-amber-500/30">{formatCountdown(secondsRemaining)}</strong> để chỉnh sửa thông tin hoặc hủy đơn trước khi bưu tá ghé lấy.</span>
+                      <span>Bạn có <strong className="text-amber-400 font-mono font-bold text-sm px-1.5 py-0.5 rounded bg-amber-950/60 border border-amber-500/30">{formatCountdown(secondsRemaining)}</strong> để chỉnh sửa thông tin hoặc hủy đơn trước khi bấm "Chuẩn Bị Xong" hoặc hết giờ.</span>
                     </span>
                   ) : (
                     <span className="text-rose-400 font-bold flex items-center gap-1">
                       <Lock className="w-3.5 h-3.5 text-rose-400 shrink-0 inline" />
-                      <span>Đã HẾT thời hạn 5 phút. Thông tin đơn hàng đã khóa hoàn toàn.</span>
+                      <span>Đã HẾT thời hạn 5 phút. Thông tin đơn hàng đã khóa sửa và hủy.</span>
                     </span>
                   )}
                 </p>
@@ -236,7 +233,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, onClo
                 }}
                 className="px-4 py-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 font-bold text-xs flex items-center gap-2 transition cursor-pointer"
               >
-                <Edit3 className="w-4 h-4" /> Chỉnh Sửa Đơn Hàng {order.status === 'READY_TO_PICK' && secondsRemaining > 0 && `(${formatCountdown(secondsRemaining)})`}
+                <Edit3 className="w-4 h-4" /> Chỉnh Sửa Đơn Hàng {secondsRemaining > 0 && `(${formatCountdown(secondsRemaining)})`}
               </button>
             )}
           </div>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { MapPin, Compass, RefreshCw, Send, ShieldCheck, CheckSquare, Square, Layers } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { axiosClient } from '@/api/axiosClient';
+import { useAdminAuth } from '@/hooks/useAdminAuth';
 
 interface ZoneItem {
   id: string;
@@ -17,6 +18,10 @@ interface ZoneItem {
 
 export const ShipperZonePage: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAdminAuth();
+  const isDeliveryOnly = user?.role === 'DELIVERY_SHIPPER';
+  const isPickupOnly = !isDeliveryOnly;
+
   const [zones, setZones] = useState<ZoneItem[]>([]);
   const [selectedProvince, setSelectedProvince] = useState<string>('Hà Nội');
   const [allProvinces, setAllProvinces] = useState<string[]>(['Hà Nội', 'TP. Hồ Chí Minh', 'Cần Thơ', 'Đà Nẵng', 'Hải Phòng']);
@@ -99,7 +104,7 @@ export const ShipperZonePage: React.FC = () => {
     setSelectedZones((prev) => {
       if (prev.includes(zoneId)) {
         if (prev.length <= 1) {
-          setMsg('⚠️ Bạn cần chọn ít nhất 1 cụm tuyến để gom đơn!');
+          setMsg(isDeliveryOnly ? '⚠️ Bạn cần chọn ít nhất 1 cụm tuyến để giao đơn!' : '⚠️ Bạn cần chọn ít nhất 1 cụm tuyến để gom đơn!');
           setTimeout(() => setMsg(null), 3000);
           return prev;
         }
@@ -148,23 +153,27 @@ export const ShipperZonePage: React.FC = () => {
         </div>
 
         {/* Quota Overview */}
-        <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-800 text-center">
-          <div className="bg-slate-950/70 p-2.5 rounded-xl border border-slate-850">
-            <span className="text-[10px] text-slate-400 block">Hạn Mức Lấy Hàng</span>
-            <span className="text-xs sm:text-sm font-black text-blue-400">
-              {shipperProfile?.pickupQuota?.current || 0} / {shipperProfile?.pickupQuota?.max || 25} đơn
-            </span>
-          </div>
-          <div className="bg-slate-950/70 p-2.5 rounded-xl border border-slate-850">
-            <span className="text-[10px] text-slate-400 block">Hạn Mức Giao Hàng</span>
-            <span className="text-xs sm:text-sm font-black text-sky-400">
-              {shipperProfile?.deliveryQuota?.current || 0} / {shipperProfile?.deliveryQuota?.max || 35} đơn
-            </span>
-          </div>
+        <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800 text-center">
+          {isPickupOnly && (
+            <div className="bg-slate-950/70 p-2.5 rounded-xl border border-slate-850">
+              <span className="text-[10px] text-slate-400 block">Hạn Mức Lấy Hàng</span>
+              <span className="text-xs sm:text-sm font-black text-amber-400">
+                {shipperProfile?.pickupQuota?.current || 0} / {shipperProfile?.pickupQuota?.max || 80} đơn
+              </span>
+            </div>
+          )}
+          {isDeliveryOnly && (
+            <div className="bg-slate-950/70 p-2.5 rounded-xl border border-slate-850">
+              <span className="text-[10px] text-slate-400 block">Hạn Mức Giao Hàng</span>
+              <span className="text-xs sm:text-sm font-black text-cyan-400">
+                {shipperProfile?.deliveryQuota?.current || 0} / {shipperProfile?.deliveryQuota?.max || 40} đơn
+              </span>
+            </div>
+          )}
           <div className="bg-slate-950/70 p-2.5 rounded-xl border border-slate-850">
             <span className="text-[10px] text-slate-400 block">Tải Trọng Cho Phép</span>
-            <span className="text-xs sm:text-sm font-black text-amber-400">
-              {shipperProfile?.currentWeightKg || 0} / {shipperProfile?.maxWeightCapacityKg || 45} kg
+            <span className="text-xs sm:text-sm font-black text-emerald-400">
+              {shipperProfile?.currentWeightKg || 0} / {shipperProfile?.maxWeightCapacityKg || (isDeliveryOnly ? 40 : 55)} kg
             </span>
           </div>
         </div>
@@ -205,7 +214,9 @@ export const ShipperZonePage: React.FC = () => {
         <div className="flex items-center justify-between px-1">
           <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
             <MapPin className="w-3.5 h-3.5 text-cyan-400" />
-            Cụm Tuyến Nhận Gom Đơn (Chọn nhiều cụm khi ít đơn):
+            {isDeliveryOnly
+              ? 'Cụm Tuyến Nhận Giao Đơn (Khu vực phát hàng phụ trách):'
+              : 'Cụm Tuyến Nhận Gom Đơn (Chọn nhiều cụm khi ít đơn):'}
           </span>
 
           <select
@@ -231,7 +242,8 @@ export const ShipperZonePage: React.FC = () => {
             <Layers className="w-4 h-4 text-cyan-400" />
             <span className="text-xs font-bold text-cyan-200">
               Đã chọn <strong className="text-white font-black">{selectedZones.length}</strong> cụm tuyến •{' '}
-              <strong className="text-emerald-400 font-black">~{totalWaitingOrders}</strong> đơn chờ gom
+              <strong className="text-emerald-400 font-black">~{totalWaitingOrders}</strong>{' '}
+              {isDeliveryOnly ? 'đơn chờ giao' : 'đơn chờ gom'}
             </span>
           </div>
           <button
@@ -301,13 +313,19 @@ export const ShipperZonePage: React.FC = () => {
         <button
           onClick={() => {
             localStorage.setItem('shipper_selected_zones', JSON.stringify(selectedZones));
-            navigate(`/shipper/pickup?zones=${selectedZones.join(',')}`);
+            if (isDeliveryOnly) {
+              navigate(`/shipper/delivery?zones=${selectedZones.join(',')}`);
+            } else {
+              navigate(`/shipper/pickup?zones=${selectedZones.join(',')}`);
+            }
           }}
           disabled={selectedZones.length === 0}
           className="w-full py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 disabled:opacity-50 text-white font-bold text-xs shadow-lg shadow-cyan-500/20 transition mt-3 cursor-pointer flex items-center justify-center gap-2"
         >
           <Layers className="w-4 h-4" />
-          Bắt Đầu Nhận Đơn Lấy Hàng ({selectedZones.length} Cụm Tuyến)
+          {isDeliveryOnly
+            ? `Bắt Đầu Ca Giao Hàng (${selectedZones.length} Cụm Tuyến)`
+            : `Bắt Đầu Nhận Đơn Lấy Hàng (${selectedZones.length} Cụm Tuyến)`}
         </button>
       </div>
     </div>

@@ -20,37 +20,32 @@ export const TrackingModal: React.FC<TrackingModalProps> = ({ order, onClose, on
 
   // CHỈ cho phép sửa khi chưa chốt đóng gói hoặc còn trong thời hạn đếm ngược 5 phút
   const isCancelled = order.status === 'CANCELLED';
+  const isUnprepared = ['CREATED', 'PENDING_VERIFICATION', 'PENDING', 'DRAFT'].includes(order.status);
+  const createdTime = order.createdAt;
 
-  // Đếm ngược 5 phút cho phép Hủy đơn & Sửa đơn ở trạng thái READY_TO_PICK
-  const readyToPickTime = (order as any).readyToPickAt || order.updatedAt;
+  // Đếm ngược 5 phút cho phép Hủy đơn & Sửa đơn ở trạng thái chưa chuẩn bị xong
   const [secondsRemaining, setSecondsRemaining] = useState<number>(() => {
-    if (order.status !== 'READY_TO_PICK' || !readyToPickTime) return 300;
-    const elapsed = Math.floor((Date.now() - new Date(readyToPickTime).getTime()) / 1000);
+    if (!isUnprepared || !createdTime) return 0;
+    const elapsed = Math.floor((Date.now() - new Date(createdTime).getTime()) / 1000);
     return Math.max(0, 300 - elapsed);
   });
 
   useEffect(() => {
-    if (order.status !== 'READY_TO_PICK' || !readyToPickTime) return;
+    if (!isUnprepared || !createdTime) return;
     const interval = setInterval(() => {
-      const elapsed = Math.floor((Date.now() - new Date(readyToPickTime).getTime()) / 1000);
+      const elapsed = Math.floor((Date.now() - new Date(createdTime).getTime()) / 1000);
       const remaining = Math.max(0, 300 - elapsed);
       setSecondsRemaining(remaining);
     }, 1000);
     return () => clearInterval(interval);
-  }, [order.status, readyToPickTime]);
+  }, [isUnprepared, createdTime]);
 
-  const isWithin5MinWindow = order.status === 'READY_TO_PICK' && secondsRemaining > 0;
+  const isWithin5MinWindow = isUnprepared && secondsRemaining > 0;
 
-  const isEditable = !isCancelled && (
-    ['CREATED', 'PENDING_VERIFICATION', 'PENDING'].includes(order.status) ||
-    isWithin5MinWindow
-  );
-  const canReadyToPick = !isCancelled && ['CREATED', 'PENDING_VERIFICATION', 'PENDING'].includes(order.status);
+  const isEditable = !isCancelled && isWithin5MinWindow;
+  const canReadyToPick = !isCancelled && isUnprepared;
 
-  const canCancel = !isCancelled && (
-    ['CREATED', 'PENDING_VERIFICATION', 'PENDING'].includes(order.status) ||
-    isWithin5MinWindow
-  );
+  const canCancel = !isCancelled && isWithin5MinWindow;
 
   const formatCountdown = (secs: number) => {
     const m = Math.floor(secs / 60);
@@ -172,8 +167,8 @@ export const TrackingModal: React.FC<TrackingModalProps> = ({ order, onClose, on
           </div>
         )}
 
-        {/* READY_TO_PICK Countdown Banner (Đã đóng gói xong - Đếm ngược 5p cho phép Hủy) */}
-        {order.status === 'READY_TO_PICK' && (
+        {/* UNPREPARED Countdown Banner (Đang đếm ngược 5p cho phép Sửa & Hủy) */}
+        {isUnprepared && (
           <div className={`p-4 rounded-2xl border text-xs font-semibold flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg ${secondsRemaining > 0
               ? 'bg-amber-500/10 border-amber-500/30 text-amber-300'
               : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
@@ -184,17 +179,17 @@ export const TrackingModal: React.FC<TrackingModalProps> = ({ order, onClose, on
                 <Clock className="w-5 h-5" />
               </div>
               <div>
-                <p className="font-bold text-white">Đơn hàng ở trạng thái Sẵn Sàng Lấy Hàng (Đang đếm ngược 5 phút)</p>
+                <p className="font-bold text-white">Đơn hàng mới tạo (Đang đếm ngược 5 phút để sửa/hủy)</p>
                 <p className="text-[11px] text-slate-300">
                   {secondsRemaining > 0 ? (
                     <span className="flex items-center gap-1">
                       <Hourglass className="w-3.5 h-3.5 text-amber-400 shrink-0 inline" />
-                      <span>Bạn có <strong className="text-amber-400 font-mono font-bold text-sm px-1.5 py-0.5 rounded bg-amber-950/60 border border-amber-500/30">{formatCountdown(secondsRemaining)}</strong> để chỉnh sửa thông tin hoặc hủy đơn nếu đổi ý trước khi khóa tuyến thu gom.</span>
+                      <span>Bạn có <strong className="text-amber-400 font-mono font-bold text-sm px-1.5 py-0.5 rounded bg-amber-950/60 border border-amber-500/30">{formatCountdown(secondsRemaining)}</strong> để chỉnh sửa thông tin hoặc hủy đơn nếu đổi ý trước khi bấm "Chuẩn Bị Xong" hoặc hết giờ.</span>
                     </span>
                   ) : (
                     <span className="text-rose-400 font-bold flex items-center gap-1">
                       <Lock className="w-3.5 h-3.5 text-rose-400 shrink-0 inline" />
-                      <span>Đã HẾT thời hạn 5 phút. Thông tin đơn hàng đã khóa hoàn toàn và đưa vào Tuyến Thu Gom.</span>
+                      <span>Đã HẾT thời hạn 5 phút. Thông tin đơn hàng đã khóa sửa và hủy.</span>
                     </span>
                   )}
                 </p>
@@ -475,10 +470,10 @@ export const TrackingModal: React.FC<TrackingModalProps> = ({ order, onClose, on
               <button
                 onClick={() => onCancelOrder(order)}
                 className="px-3.5 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-bold border border-rose-500/30 flex items-center gap-1.5 transition cursor-pointer"
-                title={order.status === 'READY_TO_PICK' ? `Hủy đơn trong thời hạn 5 phút (Còn ${formatCountdown(secondsRemaining)})` : "Hủy đơn hàng này"}
+                title={`Hủy đơn trong thời hạn 5 phút (Còn ${formatCountdown(secondsRemaining)})`}
               >
                 <Trash2 className="w-3.5 h-3.5" />
-                Hủy Đơn Hàng {order.status === 'READY_TO_PICK' && secondsRemaining > 0 && `(${formatCountdown(secondsRemaining)})`}
+                Hủy Đơn Hàng {secondsRemaining > 0 && `(${formatCountdown(secondsRemaining)})`}
               </button>
             )}
 
@@ -486,10 +481,10 @@ export const TrackingModal: React.FC<TrackingModalProps> = ({ order, onClose, on
               <button
                 onClick={() => onEditOrder(order)}
                 className="px-3.5 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 text-xs font-bold border border-amber-500/30 flex items-center gap-1.5 transition cursor-pointer"
-                title="Chỉnh sửa thông tin đơn hàng"
+                title={`Chỉnh sửa thông tin đơn hàng (Còn ${formatCountdown(secondsRemaining)})`}
               >
                 <Edit3 className="w-3.5 h-3.5" />
-                Chỉnh Sửa Thông Tin
+                Chỉnh Sửa Thông Tin {secondsRemaining > 0 && `(${formatCountdown(secondsRemaining)})`}
               </button>
             )}
           </div>

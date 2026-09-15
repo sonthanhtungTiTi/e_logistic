@@ -333,7 +333,9 @@ export const HeroTracking: React.FC<HeroTrackingProps> = ({
                         const actualWeight = ord.actualWeight || ord.weightKg || 0;
                         const chargeableWeightVal = ord.chargeableWeight || ord.chargeableWeightKg || actualWeight;
                         const fee = ord.shippingFee || ord.cost || 0;
-                        const isEditable = ['CREATED', 'PENDING_VERIFICATION', 'READY_TO_PICK', 'PENDING'].includes(ord.status);
+                        const isUnprepared = ['CREATED', 'PENDING_VERIFICATION', 'PENDING', 'DRAFT'].includes(ord.status);
+                        const elapsed = ord.createdAt ? Math.floor((Date.now() - new Date(ord.createdAt).getTime()) / 1000) : 0;
+                        const isEditable = isUnprepared && elapsed < 300;
 
                         return (
                           <tr key={ord._id || ord.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
@@ -424,7 +426,9 @@ export const HeroTracking: React.FC<HeroTrackingProps> = ({
                   const recipientName = ord.deliveryAddress?.fullName || ord.recipientName || 'Người nhận';
                   const weight = ord.chargeableWeight || ord.chargeableWeightKg || ord.actualWeight || 0;
                   const fee = ord.shippingFee || ord.cost || 0;
-                  const isEditable = ['CREATED', 'PENDING_VERIFICATION', 'READY_TO_PICK', 'PENDING'].includes(ord.status);
+                  const isUnprepared = ['CREATED', 'PENDING_VERIFICATION', 'PENDING', 'DRAFT'].includes(ord.status);
+                  const elapsed = ord.createdAt ? Math.floor((Date.now() - new Date(ord.createdAt).getTime()) / 1000) : 0;
+                  const isEditable = isUnprepared && elapsed < 300;
 
                   return (
                     <div

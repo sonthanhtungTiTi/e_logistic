@@ -244,11 +244,11 @@ const driverManagerController = {
             continue;
           }
 
-          if (order.status !== 'APPROVED') {
+          if (!['APPROVED', 'READY_TO_PICK'].includes(order.status)) {
             skippedOrders.push({
               orderId,
               trackingCode: order.trackingCode,
-              reason: `Đơn hàng ở trạng thái "${order.status}", không thể phân tài xế gom hàng (Cần ở trạng thái APPROVED)`,
+              reason: `Đơn hàng ở trạng thái "${order.status}", không thể phân tài xế gom hàng (Cần ở trạng thái APPROVED hoặc READY_TO_PICK)`,
             });
             continue;
           }
