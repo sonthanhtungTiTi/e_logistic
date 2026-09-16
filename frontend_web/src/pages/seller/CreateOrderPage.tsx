@@ -163,7 +163,7 @@ export const CreateOrderPage: React.FC = () => {
       if (isMounted && Array.isArray(data) && data.length > 0) {
         setProvincesList(data);
       }
-    }).catch(() => {});
+    }).catch(() => { });
     return () => { isMounted = false; };
   }, []);
 
@@ -183,7 +183,7 @@ export const CreateOrderPage: React.FC = () => {
             setDeliveryDistrict(dists[0].name);
           }
         }
-      }).catch(() => {});
+      }).catch(() => { });
     }
     return () => { isMounted = false; };
   }, [deliveryProvince, provincesList]);
@@ -204,7 +204,7 @@ export const CreateOrderPage: React.FC = () => {
             setDeliveryWard(wards[0].name);
           }
         }
-      }).catch(() => {});
+      }).catch(() => { });
     }
     return () => { isMounted = false; };
   }, [deliveryDistrict, deliveryDistrictsList]);
@@ -225,7 +225,7 @@ export const CreateOrderPage: React.FC = () => {
             setPickupDistrict(dists[0].name);
           }
         }
-      }).catch(() => {});
+      }).catch(() => { });
     }
     return () => { isMounted = false; };
   }, [pickupProvince, provincesList]);
@@ -246,7 +246,7 @@ export const CreateOrderPage: React.FC = () => {
             setPickupWard(wards[0].name);
           }
         }
-      }).catch(() => {});
+      }).catch(() => { });
     }
     return () => { isMounted = false; };
   }, [pickupDistrict, pickupDistrictsList]);
@@ -269,7 +269,7 @@ export const CreateOrderPage: React.FC = () => {
           }
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   const handleSelectSavedPickupAddress = (addrId: string) => {
@@ -327,7 +327,7 @@ export const CreateOrderPage: React.FC = () => {
       if (Array.isArray(list)) {
         setCatalogProducts(list);
       }
-    }).catch(() => {});
+    }).catch(() => { });
   }, []);
 
   const handleSelectCatalogProduct = (catalogId: string, itemIndex: number) => {
@@ -1054,13 +1054,12 @@ export const CreateOrderPage: React.FC = () => {
                     onChange={(e) => setReceiverPhone(e.target.value)}
                     onBlur={() => handleFieldBlur('phone')}
                     placeholder="VD: 0912345678"
-                    className={`w-full glass-input rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-900/90 border outline-none transition ${
-                      touchedFields.phone &&
-                      (!receiverPhone.trim() ||
-                        !/^(\+?84|0)[0-9]{9,10}$/.test(receiverPhone.trim().replace(/[^0-9+]/g, '')))
+                    className={`w-full glass-input rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-900/90 border outline-none transition ${touchedFields.phone &&
+                        (!receiverPhone.trim() ||
+                          !/^(\+?84|0)[0-9]{9,10}$/.test(receiverPhone.trim().replace(/[^0-9+]/g, '')))
                         ? 'border-rose-500/80 bg-rose-50 dark:bg-rose-950/20'
                         : 'border-slate-200 dark:border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
-                    }`}
+                      }`}
                   />
                 </div>
                 {touchedFields.phone &&
@@ -1087,11 +1086,10 @@ export const CreateOrderPage: React.FC = () => {
                     onBlur={() => handleFieldBlur('name')}
                     placeholder="VD: Nguyễn Văn A"
                     maxLength={255}
-                    className={`w-full glass-input rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-900/90 border outline-none transition ${
-                      touchedFields.name && !receiverName.trim()
+                    className={`w-full glass-input rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-900/90 border outline-none transition ${touchedFields.name && !receiverName.trim()
                         ? 'border-rose-500/80 bg-rose-50 dark:bg-rose-950/20'
                         : 'border-slate-200 dark:border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
-                    }`}
+                      }`}
                   />
                 </div>
                 {touchedFields.name && !receiverName.trim() && (
@@ -1120,15 +1118,15 @@ export const CreateOrderPage: React.FC = () => {
                     >
                       {provincesList.length > 0
                         ? provincesList.map((p) => (
-                            <option key={p.code} value={p.name} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
-                              {p.name}
-                            </option>
-                          ))
+                          <option key={p.code} value={p.name} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                            {p.name}
+                          </option>
+                        ))
                         : Object.keys(VIETNAM_ADMIN_UNITS).map((p) => (
-                            <option key={p} value={p} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
-                              {p}
-                            </option>
-                          ))}
+                          <option key={p} value={p} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                            {p}
+                          </option>
+                        ))}
                     </select>
                   </div>
 
@@ -1143,15 +1141,15 @@ export const CreateOrderPage: React.FC = () => {
                     >
                       {deliveryDistrictsList.length > 0
                         ? deliveryDistrictsList.map((d) => (
-                            <option key={d.code} value={d.name} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
-                              {d.name}
-                            </option>
-                          ))
+                          <option key={d.code} value={d.name} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                            {d.name}
+                          </option>
+                        ))
                         : Object.keys(VIETNAM_ADMIN_UNITS[deliveryProvince] || {}).map((d) => (
-                            <option key={d} value={d} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
-                              {d}
-                            </option>
-                          ))}
+                          <option key={d} value={d} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                            {d}
+                          </option>
+                        ))}
                     </select>
                   </div>
                 </div>
@@ -1167,15 +1165,15 @@ export const CreateOrderPage: React.FC = () => {
                     >
                       {deliveryWardsList.length > 0
                         ? deliveryWardsList.map((w) => (
-                            <option key={w.code} value={w.name} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
-                              {w.name}
-                            </option>
-                          ))
+                          <option key={w.code} value={w.name} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                            {w.name}
+                          </option>
+                        ))
                         : (VIETNAM_ADMIN_UNITS[deliveryProvince]?.[deliveryDistrict] || []).map((w) => (
-                            <option key={w} value={w} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
-                              {w}
-                            </option>
-                          ))}
+                          <option key={w} value={w} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                            {w}
+                          </option>
+                        ))}
                     </select>
                   </div>
 
@@ -1207,11 +1205,10 @@ export const CreateOrderPage: React.FC = () => {
                       onChange={(e) => setDetailAddress(e.target.value)}
                       onBlur={() => handleFieldBlur('address')}
                       placeholder="Số 123/45 đường..."
-                      className={`w-full glass-input rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-900/90 border outline-none transition ${
-                        touchedFields.address && !detailAddress.trim()
+                      className={`w-full glass-input rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-900/90 border outline-none transition ${touchedFields.address && !detailAddress.trim()
                           ? 'border-rose-500/80 bg-rose-50 dark:bg-rose-950/20'
                           : 'border-slate-200 dark:border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
-                      }`}
+                        }`}
                     />
                   </div>
                   {touchedFields.address && !detailAddress.trim() && (
@@ -1240,11 +1237,10 @@ export const CreateOrderPage: React.FC = () => {
             <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <div
-                  className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                    isBulky
+                  className={`w-10 h-10 rounded-xl flex items-center justify-center ${isBulky
                       ? 'bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30'
                       : 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30'
-                  }`}
+                    }`}
                 >
                   {isBulky ? <Package className="w-5 h-5" /> : <Truck className="w-5 h-5" />}
                 </div>
@@ -1390,15 +1386,15 @@ export const CreateOrderPage: React.FC = () => {
                         >
                           {provincesList.length > 0
                             ? provincesList.map((p) => (
-                                <option key={p.code} value={p.name} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
-                                  {p.name}
-                                </option>
-                              ))
+                              <option key={p.code} value={p.name} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                                {p.name}
+                              </option>
+                            ))
                             : Object.keys(VIETNAM_ADMIN_UNITS).map((p) => (
-                                <option key={p} value={p} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
-                                  {p}
-                                </option>
-                              ))}
+                              <option key={p} value={p} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                                {p}
+                              </option>
+                            ))}
                         </select>
                       </div>
 
@@ -1413,15 +1409,15 @@ export const CreateOrderPage: React.FC = () => {
                         >
                           {pickupDistrictsList.length > 0
                             ? pickupDistrictsList.map((d) => (
-                                <option key={d.code} value={d.name} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
-                                  {d.name}
-                                </option>
-                              ))
+                              <option key={d.code} value={d.name} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                                {d.name}
+                              </option>
+                            ))
                             : Object.keys(VIETNAM_ADMIN_UNITS[pickupProvince] || {}).map((d) => (
-                                <option key={d} value={d} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
-                                  {d}
-                                </option>
-                              ))}
+                              <option key={d} value={d} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                                {d}
+                              </option>
+                            ))}
                         </select>
                       </div>
                     </div>
@@ -1436,15 +1432,15 @@ export const CreateOrderPage: React.FC = () => {
                         >
                           {pickupWardsList.length > 0
                             ? pickupWardsList.map((w) => (
-                                <option key={w.code} value={w.name} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
-                                  {w.name}
-                                </option>
-                              ))
+                              <option key={w.code} value={w.name} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                                {w.name}
+                              </option>
+                            ))
                             : (VIETNAM_ADMIN_UNITS[pickupProvince]?.[pickupDistrict] || []).map((w) => (
-                                <option key={w} value={w} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
-                                  {w}
-                                </option>
-                              ))}
+                              <option key={w} value={w} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                                {w}
+                              </option>
+                            ))}
                         </select>
                       </div>
 
@@ -1555,11 +1551,10 @@ export const CreateOrderPage: React.FC = () => {
                         onChange={(e) => handleProductChange(product.id, 'name', e.target.value)}
                         onBlur={() => handleProductBlur(product.id, 'name')}
                         placeholder="Nhập tên sản phẩm..."
-                        className={`w-full glass-input rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-950 border outline-none transition ${
-                          touchedProducts[product.id]?.name && !product.name.trim()
+                        className={`w-full glass-input rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-950 border outline-none transition ${touchedProducts[product.id]?.name && !product.name.trim()
                             ? 'border-rose-500/80 bg-rose-50 dark:bg-rose-950/20'
                             : 'border-slate-200 dark:border-slate-800 focus:border-emerald-500'
-                        }`}
+                          }`}
                       />
                       {touchedProducts[product.id]?.name && !product.name.trim() && (
                         <p className="text-[10px] text-rose-500 font-medium mt-1 animate-in fade-in duration-200">
@@ -1598,12 +1593,11 @@ export const CreateOrderPage: React.FC = () => {
                         }}
                         onBlur={() => handleProductBlur(product.id, 'weight')}
                         placeholder="VD: 0.5"
-                        className={`w-full glass-input rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white font-mono placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-950 border outline-none transition ${
-                          touchedProducts[product.id]?.weight &&
-                          (product.weight === '' || Number(product.weight) <= 0 || isNaN(Number(product.weight)))
+                        className={`w-full glass-input rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white font-mono placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-950 border outline-none transition ${touchedProducts[product.id]?.weight &&
+                            (product.weight === '' || Number(product.weight) <= 0 || isNaN(Number(product.weight)))
                             ? 'border-rose-500/80 bg-rose-50 dark:bg-rose-950/20'
                             : 'border-slate-200 dark:border-slate-800 focus:border-emerald-500'
-                        }`}
+                          }`}
                       />
                       {touchedProducts[product.id]?.weight &&
                         (product.weight === '' || Number(product.weight) <= 0 || isNaN(Number(product.weight))) && (
@@ -1628,12 +1622,11 @@ export const CreateOrderPage: React.FC = () => {
                         }}
                         onBlur={() => handleProductBlur(product.id, 'quantity')}
                         placeholder="VD: 1"
-                        className={`w-full glass-input rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white font-mono placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-950 border outline-none transition ${
-                          touchedProducts[product.id]?.quantity &&
-                          (product.quantity === '' || Number(product.quantity) < 1 || isNaN(Number(product.quantity)))
+                        className={`w-full glass-input rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white font-mono placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-950 border outline-none transition ${touchedProducts[product.id]?.quantity &&
+                            (product.quantity === '' || Number(product.quantity) < 1 || isNaN(Number(product.quantity)))
                             ? 'border-rose-500/80 bg-rose-50 dark:bg-rose-950/20'
                             : 'border-slate-200 dark:border-slate-800 focus:border-emerald-500'
-                        }`}
+                          }`}
                       />
                       {touchedProducts[product.id]?.quantity &&
                         (product.quantity === '' || Number(product.quantity) < 1 || isNaN(Number(product.quantity))) && (
@@ -1666,11 +1659,10 @@ export const CreateOrderPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => handlePresetChange('standard')}
-                  className={`px-3 py-2 rounded-xl border text-left flex flex-col gap-0.5 cursor-pointer transition ${
-                    packagePreset === 'standard'
+                  className={`px-3 py-2 rounded-xl border text-left flex flex-col gap-0.5 cursor-pointer transition ${packagePreset === 'standard'
                       ? 'bg-blue-50 dark:bg-blue-600/20 border-blue-500 text-blue-700 dark:text-white shadow-sm'
                       : 'bg-slate-50 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-700'
-                  }`}
+                    }`}
                 >
                   <span className="font-bold text-[11px] flex items-center gap-1">
                     📦 Tiêu chuẩn
@@ -1681,11 +1673,10 @@ export const CreateOrderPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => handlePresetChange('long')}
-                  className={`px-3 py-2 rounded-xl border text-left flex flex-col gap-0.5 cursor-pointer transition ${
-                    packagePreset === 'long'
+                  className={`px-3 py-2 rounded-xl border text-left flex flex-col gap-0.5 cursor-pointer transition ${packagePreset === 'long'
                       ? 'bg-blue-50 dark:bg-blue-600/20 border-blue-500 text-blue-700 dark:text-white shadow-sm'
                       : 'bg-slate-50 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-700'
-                  }`}
+                    }`}
                 >
                   <span className="font-bold text-[11px] flex items-center gap-1">
                     📏 Cây / Ống dài
@@ -1696,11 +1687,10 @@ export const CreateOrderPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => handlePresetChange('bulky')}
-                  className={`px-3 py-2 rounded-xl border text-left flex flex-col gap-0.5 cursor-pointer transition ${
-                    packagePreset === 'bulky'
+                  className={`px-3 py-2 rounded-xl border text-left flex flex-col gap-0.5 cursor-pointer transition ${packagePreset === 'bulky'
                       ? 'bg-blue-50 dark:bg-blue-600/20 border-blue-500 text-blue-700 dark:text-white shadow-sm'
                       : 'bg-slate-50 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-700'
-                  }`}
+                    }`}
                 >
                   <span className="font-bold text-[11px] flex items-center gap-1">
                     🗃️ Thùng to / Gia dụng
@@ -1711,11 +1701,10 @@ export const CreateOrderPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setPackagePreset('custom')}
-                  className={`px-3 py-2 rounded-xl border text-left flex flex-col gap-0.5 cursor-pointer transition ${
-                    packagePreset === 'custom'
+                  className={`px-3 py-2 rounded-xl border text-left flex flex-col gap-0.5 cursor-pointer transition ${packagePreset === 'custom'
                       ? 'bg-blue-50 dark:bg-blue-600/20 border-blue-500 text-blue-700 dark:text-white shadow-sm'
                       : 'bg-slate-50 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-700'
-                  }`}
+                    }`}
                 >
                   <span className="font-bold text-[11px] flex items-center gap-1">
                     ⚙️ Tùy chỉnh
@@ -2084,7 +2073,7 @@ export const CreateOrderPage: React.FC = () => {
                 type="button"
                 onClick={() => handleSubmitOrder(false)}
                 disabled={submitting || quoting}
-                className="flex-1 sm:flex-initial px-7 py-3 rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-extrabold text-sm flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-blue-600/30 transition"
+                className="flex-1 sm:flex-initial px-7 py-3 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-sm flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-blue-600/30 transition"
               >
                 {submitting ? (
                   <>

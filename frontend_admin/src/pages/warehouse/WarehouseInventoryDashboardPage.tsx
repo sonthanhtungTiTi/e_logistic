@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { io as socketIO, Socket } from 'socket.io-client';
+import React, { useState, useEffect, useCallback } from 'react';
+import { socket } from '@/api/socket';
 import { inventoryApi } from '@/api/inventory.api';
 import type {
   AgingItem,
@@ -245,15 +245,14 @@ export const WarehouseInventoryDashboardPage: React.FC = () => {
 
   // Socket.IO Real-time setup
   useEffect(() => {
-    const socket = socketIO('http://localhost:5000', { transports: ['websocket'] });
-    socketRef.current = socket;
-
-    socket.on('INVENTORY_UPDATE', () => {
+    const handleInventoryUpdate = () => {
       loadData();
-    });
+    };
+
+    socket.on('INVENTORY_UPDATE', handleInventoryUpdate);
 
     return () => {
-      socket.disconnect();
+      socket.off('INVENTORY_UPDATE', handleInventoryUpdate);
     };
   }, [loadData]);
 

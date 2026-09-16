@@ -320,7 +320,7 @@ export const ShipperZonePage: React.FC = () => {
             }
           }}
           disabled={selectedZones.length === 0}
-          className="w-full py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 disabled:opacity-50 text-white font-bold text-xs shadow-lg shadow-cyan-500/20 transition mt-3 cursor-pointer flex items-center justify-center gap-2"
+          className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-bold text-xs shadow-md shadow-blue-600/20 transition mt-3 cursor-pointer flex items-center justify-center gap-2"
         >
           <Layers className="w-4 h-4" />
           {isDeliveryOnly

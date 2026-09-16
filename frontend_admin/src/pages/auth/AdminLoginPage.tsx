@@ -44,6 +44,7 @@ export const AdminLoginPage: React.FC = () => {
       role === UserRole.WAREHOUSE_STAFF ||
       role === UserRole.HUB_STAFF ||
       role === UserRole.HUB_COORDINATOR ||
+      role === UserRole.WAREHOUSE_MANAGER ||
       role === 'HUB_STAFF' ||
       role === 'WAREHOUSE_STAFF' ||
       role === 'HUB_COORDINATOR' ||
@@ -166,7 +167,7 @@ export const AdminLoginPage: React.FC = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/25 transition cursor-pointer disabled:opacity-50"
+            className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-blue-600/25 transition cursor-pointer disabled:opacity-50"
           >
             {loading ? (
               <>

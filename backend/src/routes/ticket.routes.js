@@ -8,6 +8,7 @@ const {
   addTicketMessage,
   listAdminTickets,
   updateTicketStatus,
+  claimTicket,
 } = require('../controllers/ticket.controller');
 
 // ==========================================
@@ -24,8 +25,14 @@ router.post('/:id/messages', protect, addTicketMessage);
 router.get(
   '/admin/list',
   protect,
-  authorize('ADMIN', 'ORDER_VENDOR_MANAGER', 'CS', 'CUSTOMER_SERVICE', 'OPERATIONS'),
+  authorize('ADMIN', 'ORDER_VENDOR_MANAGER', 'CS', 'CUSTOMER_SERVICE', 'OPERATIONS', 'ACCOUNTANT'),
   listAdminTickets
+);
+router.post(
+  '/admin/:id/claim',
+  protect,
+  authorize('ADMIN', 'CS', 'CUSTOMER_SERVICE'),
+  claimTicket
 );
 router.put(
   '/admin/:id',

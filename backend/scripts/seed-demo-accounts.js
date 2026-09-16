@@ -1,12 +1,14 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const User = require('../src/models/user.model');
 const Geozone = require('../src/models/geozone.model');
 const Hub = require('../src/models/hub.model');
 
 async function seed() {
-  await mongoose.connect(process.env.MONGODB_URI);
+  const mongoURI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/e_logistic';
+  await mongoose.connect(mongoURI);
   console.log('MongoDB connected.');
 
   let hub = await Hub.findOne({ code: 'HUB_TEST_V26' });
@@ -164,10 +166,31 @@ async function seed() {
       password: hashedPassword,
     },
     {
-      fullName: 'Nguyễn Chăm Sóc (CSKH & Khiếu Nại)',
+      fullName: 'Nguyễn Chăm Sóc L1 (CSKH Tầng 1)',
       email: 'cs.demo@elogistic.vn',
       phoneNumber: '0900000041',
       role: 'CS',
+      csLevel: 'L1',
+      kycStatus: 'VERIFIED_KYC',
+      isActive: true,
+      password: hashedPassword,
+    },
+    {
+      fullName: 'Tran Chăm Sóc L2 (CSKH Tầng 2)',
+      email: 'cs.l2.demo@elogistic.vn',
+      phoneNumber: '0900000042',
+      role: 'CS',
+      csLevel: 'L2',
+      kycStatus: 'VERIFIED_KYC',
+      isActive: true,
+      password: hashedPassword,
+    },
+    {
+      fullName: 'Hoàng CS Lead (Trưởng Nhóm CSKH)',
+      email: 'cs.lead.demo@elogistic.vn',
+      phoneNumber: '0900000043',
+      role: 'CS',
+      csLevel: 'LEAD',
       kycStatus: 'VERIFIED_KYC',
       isActive: true,
       password: hashedPassword,

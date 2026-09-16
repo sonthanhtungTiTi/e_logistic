@@ -213,19 +213,19 @@ export const TicketManagementPage: React.FC = () => {
       )}
 
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
         <div>
-          <h2 className="text-2xl font-black text-white flex items-center gap-2">
-            <Ticket className="w-7 h-7 text-indigo-400" /> Quản Lý Khiếu Nại & Hỗ Trợ Khách Hàng (CSKH Helpdesk)
+          <h2 className="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+            <Ticket className="w-7 h-7 text-blue-600 dark:text-blue-400" /> Quản Lý Khiếu Nại &amp; Hỗ Trợ Khách Hàng (CSKH Helpdesk)
           </h2>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
             Trung tâm tiếp nhận, phân loại và trao đổi 2 chiều giải quyết thắc mắc, bồi thường và sự cố giao hàng của Seller
           </p>
         </div>
 
         <button
           onClick={loadTickets}
-          className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition"
+          className="p-2.5 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition cursor-pointer shadow-sm"
           title="Tải lại danh sách"
         >
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
@@ -236,69 +236,69 @@ export const TicketManagementPage: React.FC = () => {
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         <button
           onClick={() => setStatusFilter('ALL')}
-          className={`p-3.5 rounded-2xl border transition text-left ${
+          className={`p-3.5 rounded-2xl border transition text-left cursor-pointer shadow-sm ${
             statusFilter === 'ALL'
-              ? 'bg-indigo-600/20 border-indigo-500/40 text-white'
-              : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+              ? 'bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-600/20'
+              : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
           }`}
         >
           <div className="text-[10px] font-bold uppercase tracking-wider">Tất Cả Ticket</div>
-          <div className="text-2xl font-black text-white mt-1">
-            {statusCounts.OPEN + statusCounts.IN_PROGRESS + statusCounts.WAITING_SELLER + statusCounts.RESOLVED + statusCounts.CLOSED}
+          <div className={`text-2xl font-black mt-1 font-mono ${statusFilter === 'ALL' ? 'text-white' : 'text-slate-900 dark:text-white'}`}>
+            {(statusCounts.OPEN || 0) + (statusCounts.IN_PROGRESS || 0) + (statusCounts.WAITING_SELLER || 0) + (statusCounts.RESOLVED || 0) + (statusCounts.CLOSED || 0)}
           </div>
         </button>
 
         <button
           onClick={() => setStatusFilter('OPEN')}
-          className={`p-3.5 rounded-2xl border transition text-left ${
+          className={`p-3.5 rounded-2xl border transition text-left cursor-pointer shadow-sm ${
             statusFilter === 'OPEN'
-              ? 'bg-blue-600/20 border-blue-500/40 text-white'
-              : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+              ? 'bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-600/20'
+              : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
           }`}
         >
-          <div className="text-[10px] font-bold uppercase tracking-wider text-blue-400">Mới Tạo (Chờ Tiếp Nhận)</div>
-          <div className="text-2xl font-black text-blue-300 mt-1">{statusCounts.OPEN}</div>
+          <div className={`text-[10px] font-bold uppercase tracking-wider ${statusFilter === 'OPEN' ? 'text-blue-100' : 'text-blue-600 dark:text-blue-400'}`}>Mới Tạo (Chờ Tiếp Nhận)</div>
+          <div className={`text-2xl font-black mt-1 font-mono ${statusFilter === 'OPEN' ? 'text-white' : 'text-blue-600 dark:text-blue-400'}`}>{statusCounts.OPEN || 0}</div>
         </button>
 
         <button
           onClick={() => setStatusFilter('IN_PROGRESS')}
-          className={`p-3.5 rounded-2xl border transition text-left ${
+          className={`p-3.5 rounded-2xl border transition text-left cursor-pointer shadow-sm ${
             statusFilter === 'IN_PROGRESS'
-              ? 'bg-amber-600/20 border-amber-500/40 text-white'
-              : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+              ? 'bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-600/20'
+              : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
           }`}
         >
-          <div className="text-[10px] font-bold uppercase tracking-wider text-amber-400">Đang Xử Lý</div>
-          <div className="text-2xl font-black text-amber-300 mt-1">{statusCounts.IN_PROGRESS}</div>
+          <div className={`text-[10px] font-bold uppercase tracking-wider ${statusFilter === 'IN_PROGRESS' ? 'text-blue-100' : 'text-slate-600 dark:text-slate-300'}`}>Đang Xử Lý</div>
+          <div className={`text-2xl font-black mt-1 font-mono ${statusFilter === 'IN_PROGRESS' ? 'text-white' : 'text-slate-900 dark:text-slate-200'}`}>{statusCounts.IN_PROGRESS || 0}</div>
         </button>
 
         <button
           onClick={() => setStatusFilter('WAITING_SELLER')}
-          className={`p-3.5 rounded-2xl border transition text-left ${
+          className={`p-3.5 rounded-2xl border transition text-left cursor-pointer shadow-sm ${
             statusFilter === 'WAITING_SELLER'
-              ? 'bg-rose-600/20 border-rose-500/40 text-white'
-              : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+              ? 'bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-600/20'
+              : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
           }`}
         >
-          <div className="text-[10px] font-bold uppercase tracking-wider text-rose-400">Chờ Shop Phản Hồi</div>
-          <div className="text-2xl font-black text-rose-300 mt-1">{statusCounts.WAITING_SELLER}</div>
+          <div className={`text-[10px] font-bold uppercase tracking-wider ${statusFilter === 'WAITING_SELLER' ? 'text-blue-100' : 'text-slate-600 dark:text-slate-300'}`}>Chờ Shop Phản Hồi</div>
+          <div className={`text-2xl font-black mt-1 font-mono ${statusFilter === 'WAITING_SELLER' ? 'text-white' : 'text-slate-900 dark:text-slate-200'}`}>{statusCounts.WAITING_SELLER || 0}</div>
         </button>
 
         <button
           onClick={() => setStatusFilter('RESOLVED')}
-          className={`p-3.5 rounded-2xl border transition text-left ${
+          className={`p-3.5 rounded-2xl border transition text-left cursor-pointer shadow-sm ${
             statusFilter === 'RESOLVED'
-              ? 'bg-emerald-600/20 border-emerald-500/40 text-white'
-              : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+              ? 'bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-600/20'
+              : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
           }`}
         >
-          <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">Đã Giải Quyết</div>
-          <div className="text-2xl font-black text-emerald-300 mt-1">{statusCounts.RESOLVED}</div>
+          <div className={`text-[10px] font-bold uppercase tracking-wider ${statusFilter === 'RESOLVED' ? 'text-blue-100' : 'text-blue-600 dark:text-blue-400'}`}>Đã Giải Quyết</div>
+          <div className={`text-2xl font-black mt-1 font-mono ${statusFilter === 'RESOLVED' ? 'text-white' : 'text-blue-600 dark:text-blue-400'}`}>{statusCounts.RESOLVED || 0}</div>
         </button>
       </div>
 
       {/* Filter Controls */}
-      <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl flex flex-wrap items-center justify-between gap-3">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-sm">
         <div className="flex flex-wrap items-center gap-3 flex-1 min-w-[300px]">
           <div className="relative flex-1 min-w-[200px]">
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -307,14 +307,14 @@ export const TicketManagementPage: React.FC = () => {
               placeholder="Tìm theo mã ticket, vận đơn, tiêu đề..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-9 pr-3.5 py-2 text-white text-xs"
+              className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl pl-9 pr-3.5 py-2 text-slate-800 dark:text-white text-xs outline-none focus:border-blue-500 transition"
             />
           </div>
 
           <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
-            className="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs"
+            className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-800 dark:text-white text-xs outline-none focus:border-blue-500 cursor-pointer"
           >
             <option value="ALL">Tất cả phân loại</option>
             <option value="DELIVERY_DELAY">Giao chậm trễ</option>
@@ -328,7 +328,7 @@ export const TicketManagementPage: React.FC = () => {
           <select
             value={priorityFilter}
             onChange={(e) => setPriorityFilter(e.target.value)}
-            className="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs"
+            className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-800 dark:text-white text-xs outline-none focus:border-blue-500 cursor-pointer"
           >
             <option value="ALL">Mọi độ ưu tiên</option>
             <option value="URGENT">Khẩn cấp</option>
@@ -340,23 +340,23 @@ export const TicketManagementPage: React.FC = () => {
       </div>
 
       {/* Tickets Table */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm">
         {loading ? (
           <div className="p-16 text-center text-slate-400 text-sm">
-            <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-indigo-400" />
+            <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-blue-600" />
             Đang tải dữ liệu khiếu nại...
           </div>
         ) : tickets.length === 0 ? (
           <div className="p-16 text-center text-slate-400">
-            <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto mb-2" />
-            <p className="text-sm font-bold text-white">Không có ticket nào cần xử lý trong mục này</p>
+            <CheckCircle2 className="w-10 h-10 text-blue-600 mx-auto mb-2" />
+            <p className="text-sm font-bold text-slate-800 dark:text-white">Không có ticket nào cần xử lý trong mục này</p>
             <p className="text-xs text-slate-500 mt-1">Tất cả khiếu nại của đối tác bán hàng đã được phản hồi kịp thời.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="bg-slate-950 border-b border-slate-800 text-slate-400 uppercase text-[10px] font-bold">
+                <tr className="bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 uppercase text-[10px] font-bold">
                   <th className="p-3.5">Mã Ticket</th>
                   <th className="p-3.5">Shop Bán Hàng</th>
                   <th className="p-3.5">Vận Đơn</th>
@@ -368,7 +368,7 @@ export const TicketManagementPage: React.FC = () => {
                   <th className="p-3.5 text-right">Hành Động</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
                 {tickets.map((t) => {
                   const sellerName =
                     typeof t.sellerId === 'object'
@@ -381,26 +381,26 @@ export const TicketManagementPage: React.FC = () => {
                     <tr
                       key={t._id}
                       onClick={() => handleOpenDetail(t)}
-                      className="hover:bg-slate-800/40 cursor-pointer transition"
+                      className="hover:bg-slate-50 dark:hover:bg-slate-800/40 cursor-pointer transition"
                     >
-                      <td className="p-3.5 font-mono font-bold text-indigo-400">{t.ticketCode}</td>
+                      <td className="p-3.5 font-mono font-bold text-blue-600 dark:text-blue-400">{t.ticketCode}</td>
                       <td className="p-3.5">
-                        <div className="font-bold text-white">{sellerName}</div>
+                        <div className="font-bold text-slate-900 dark:text-white">{sellerName}</div>
                         {sellerPhone && <div className="text-[10px] font-mono text-slate-400">{sellerPhone}</div>}
                       </td>
-                      <td className="p-3.5 font-mono text-cyan-400 font-semibold">
-                        {t.trackingCode || <span className="text-slate-600 italic">Không có</span>}
+                      <td className="p-3.5 font-mono text-blue-600 dark:text-blue-400 font-semibold">
+                        {t.trackingCode || <span className="text-slate-400 italic">Không có</span>}
                       </td>
-                      <td className="p-3.5 text-slate-300 font-medium">{getCategoryLabel(t.category)}</td>
+                      <td className="p-3.5 text-slate-700 dark:text-slate-300 font-medium">{getCategoryLabel(t.category)}</td>
                       <td className="p-3.5 max-w-xs">
-                        <div className="text-white font-bold truncate">{t.subject}</div>
-                        <div className="text-[11px] text-slate-400 truncate">
+                        <div className="text-slate-900 dark:text-white font-bold truncate">{t.subject}</div>
+                        <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
                           {t.messages?.[t.messages.length - 1]?.message || ''}
                         </div>
                       </td>
                       <td className="p-3.5">{getPriorityBadge(t.priority)}</td>
                       <td className="p-3.5">{getStatusBadge(t.status)}</td>
-                      <td className="p-3.5 font-mono text-slate-400 text-[11px]">
+                      <td className="p-3.5 font-mono text-slate-500 dark:text-slate-400 text-[11px]">
                         {new Date(t.createdAt).toLocaleString('vi-VN')}
                       </td>
                       <td className="p-3.5 text-right">
@@ -409,7 +409,7 @@ export const TicketManagementPage: React.FC = () => {
                             e.stopPropagation();
                             handleOpenDetail(t);
                           }}
-                          className="px-3 py-1.5 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300 border border-indigo-500/30 text-xs font-bold transition inline-flex items-center gap-1.5"
+                          className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition shadow-md shadow-blue-600/20 inline-flex items-center gap-1.5 cursor-pointer"
                         >
                           <MessageSquare className="w-3.5 h-3.5" /> Xử Lý ({t.messages?.length || 1})
                         </button>

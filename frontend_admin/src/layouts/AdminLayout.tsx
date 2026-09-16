@@ -16,9 +16,6 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
           {children || <Outlet />}
         </main>
-        <footer className="w-full glass-panel border-t border-slate-800/80 py-4 text-center text-xs text-slate-500">
-          <p>© 2026 GIAO HÀNG - Trung Tâm Quản Trị & Điều Hành Vận Hành. Tất cả quyền được bảo lưu.</p>
-        </footer>
       </div>
     </div>
   );

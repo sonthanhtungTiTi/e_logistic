@@ -124,10 +124,10 @@ export const AdminNavbar: React.FC = () => {
                     <Link
                       key={item.to}
                       to={item.to}
-                      className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs transition ${
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs transition group ${
                         isActive
                           ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-600/25'
-                          : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-900 font-medium'
+                          : 'text-slate-700 dark:text-slate-300 hover:text-white dark:hover:text-white hover:bg-blue-600 dark:hover:bg-blue-600 font-medium'
                       }`}
                     >
                       <Icon className="w-4 h-4 shrink-0" />

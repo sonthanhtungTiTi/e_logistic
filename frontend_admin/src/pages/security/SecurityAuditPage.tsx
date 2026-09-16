@@ -27,14 +27,14 @@ export const SecurityAuditPage: React.FC = () => {
     <div className="space-y-6 pb-12">
       {/* TẦNG 1: Page Header & KPI Summary Grid */}
       <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800/80 pb-4">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400">
+            <div className="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 text-rose-600 dark:text-rose-400">
               <ShieldAlert className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-2xl font-black text-white tracking-tight">Bảo Mật &amp; Audit Log 2-Lớp</h1>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Bảo Mật &amp; Audit Log 2-Lớp</h1>
+              <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
                 Nhật ký truy vết thao tác hệ thống Realtime, giám sát đăng nhập &amp; phát hiện hành vi bất thường
               </p>
             </div>
@@ -43,51 +43,51 @@ export const SecurityAuditPage: React.FC = () => {
           <div className="flex items-center gap-2">
             <button
               onClick={() => window.location.reload()}
-              className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 text-xs font-semibold flex items-center gap-2 transition cursor-pointer"
+              className="px-3.5 py-2 rounded-xl bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 text-xs font-semibold flex items-center gap-2 transition cursor-pointer shadow-sm"
             >
-              <RefreshCw className="w-4 h-4 text-cyan-400" /> Tải Lại Nhật Ký
+              <RefreshCw className="w-4 h-4 text-blue-600 dark:text-cyan-400" /> Tải Lại Nhật Ký
             </button>
           </div>
         </div>
 
         {/* 4 Thẻ KPI Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800/80 shadow-lg flex items-center justify-between">
+          <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
             <div>
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Tổng Audit Logs</span>
-              <span className="text-2xl font-black text-white mt-1 block font-mono">{totalLogs}</span>
+              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Tổng Audit Logs</span>
+              <span className="text-2xl font-black text-slate-900 dark:text-white mt-1 block font-mono">{totalLogs}</span>
             </div>
-            <div className="p-3 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
+            <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20">
               <Activity className="w-5 h-5" />
             </div>
           </div>
 
-          <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800/80 shadow-lg flex items-center justify-between">
+          <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
             <div>
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Thao Tác Đăng Nhập</span>
-              <span className="text-2xl font-black text-emerald-400 mt-1 block font-mono">{loginCount}</span>
+              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Thao Tác Đăng Nhập</span>
+              <span className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1 block font-mono">{loginCount}</span>
             </div>
-            <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+            <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20">
               <CheckCircle2 className="w-5 h-5" />
             </div>
           </div>
 
-          <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800/80 shadow-lg flex items-center justify-between">
+          <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
             <div>
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Thao Tác Cảnh Báo</span>
-              <span className="text-2xl font-black text-amber-400 mt-1 block font-mono">{warningCount}</span>
+              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Thao Tác Cảnh Báo</span>
+              <span className="text-2xl font-black text-amber-600 dark:text-amber-400 mt-1 block font-mono">{warningCount}</span>
             </div>
-            <div className="p-3 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+            <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20">
               <AlertOctagon className="w-5 h-5" />
             </div>
           </div>
 
-          <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800/80 shadow-lg flex items-center justify-between">
+          <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
             <div>
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">IP Đang Giám Sát</span>
-              <span className="text-2xl font-black text-cyan-400 mt-1 block font-mono">{uniqueIps}</span>
+              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">IP Đang Giám Sát</span>
+              <span className="text-2xl font-black text-blue-600 dark:text-cyan-400 mt-1 block font-mono">{uniqueIps}</span>
             </div>
-            <div className="p-3 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+            <div className="p-3 rounded-xl bg-blue-50 dark:bg-cyan-500/10 text-blue-600 dark:text-cyan-400 border border-blue-200 dark:border-cyan-500/20">
               <Lock className="w-5 h-5" />
             </div>
           </div>

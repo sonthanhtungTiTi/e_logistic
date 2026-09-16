@@ -28,7 +28,7 @@ import {
   Check,
 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router';
-import { io as socketIO } from 'socket.io-client';
+import { socket } from '../../api/socket';
 import { useAuth } from '../../hooks/useAuth';
 import { authApi } from '../../api/auth.api';
 import { sellerApi } from '../../api/seller.api';
@@ -386,12 +386,11 @@ export const ProfilePage: React.FC = () => {
       } catch {}
     }
 
-    const socket = socketIO('http://localhost:5000', { transports: ['websocket'] });
     if (userId) {
       socket.emit('join_seller_room', userId);
     }
 
-    socket.on('kyc:status_updated', (data: any) => {
+    const handleKycUpdated = (data: any) => {
       console.log('Realtime KYC status update received:', data);
       if (data?.type === 'APPROVED' || data?.status === 'APPROVED') {
         showFeedback('🎉 Chúc mừng! Hồ sơ KYC của bạn đã được Admin phê duyệt thành công! Bạn đã có thể tạo đơn hàng.');
@@ -400,10 +399,12 @@ export const ProfilePage: React.FC = () => {
       }
       fetchKyc();
       fetchProfileData();
-    });
+    };
+
+    socket.on('kyc:status_updated', handleKycUpdated);
 
     return () => {
-      socket.disconnect();
+      socket.off('kyc:status_updated', handleKycUpdated);
     };
   }, []);
 
@@ -888,7 +889,7 @@ export const ProfilePage: React.FC = () => {
                   <button
                     type="button"
                     onClick={startCamera}
-                    className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold text-xs flex items-center justify-center gap-2.5 shadow-lg transition cursor-pointer"
+                    className="w-full py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-2.5 shadow-lg shadow-blue-600/25 transition cursor-pointer"
                   >
                     <Camera className="w-4 h-4" /> Bật Camera & Chụp Ảnh Trực Tiếp
                   </button>
@@ -1409,7 +1410,7 @@ export const ProfilePage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setIsEditingKycAfterReject(true)}
-                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold text-xs flex items-center gap-2 shadow-md cursor-pointer transition"
+                      className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-2 shadow-md shadow-blue-600/25 cursor-pointer transition"
                     >
                       <RefreshCw className="w-4 h-4" /> Nộp Lại Hồ Sơ Mới
                     </button>
@@ -1686,7 +1687,7 @@ export const ProfilePage: React.FC = () => {
                     <button
                       type="submit"
                       disabled={isSubmittingKyc || kycStatus === 'PENDING' || kycStatus === 'PENDING_KYC'}
-                      className="px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition"
+                      className="px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-blue-600/25 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition"
                     >
                       {isSubmittingKyc ? (
                         <>

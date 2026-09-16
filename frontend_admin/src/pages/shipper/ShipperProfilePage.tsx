@@ -198,20 +198,20 @@ export const ShipperProfilePage: React.FC = () => {
   return (
     <div className="space-y-4 max-w-lg mx-auto">
       {/* Header Profile Summary */}
-      <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl space-y-3">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl space-y-3 shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white font-black text-lg shadow-md shadow-cyan-500/20">
+          <div className="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center text-white font-black text-lg shadow-md shadow-blue-600/20">
             {profile?.fullName?.charAt(0) || 'S'}
           </div>
           <div className="flex-1">
-            <h2 className="text-sm font-bold text-white">{profile?.fullName}</h2>
-            <p className="text-xs text-slate-400 font-mono">{profile?.email}</p>
+            <h2 className="text-sm font-bold text-slate-900 dark:text-white">{profile?.fullName}</h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-mono">{profile?.email}</p>
             <span className={`inline-block mt-0.5 text-[10px] font-bold px-2 py-0.5 rounded border font-mono ${
               profile?.role === 'PICKUP_SHIPPER'
-                ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+                ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-500/30'
                 : profile?.role === 'DELIVERY_SHIPPER'
-                ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30'
-                : 'bg-slate-500/10 text-slate-300 border-slate-500/20'
+                ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-500/30'
+                : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
             }`}>
               VAI TRÒ: {
                 profile?.role === 'PICKUP_SHIPPER'
