@@ -1,6 +1,6 @@
-import React, { createContext, useState, useEffect } from 'react';
-import { io as socketIO } from 'socket.io-client';
+import React, { createContext, useState, useEffect, useCallback, useMemo } from 'react';
 import axiosClient from '../api/axiosClient';
+import { socket } from '../api/socket';
 import type { AuthUser, UserRole } from '../types';
 
 interface AuthContextType {
@@ -45,38 +45,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   });
 
-  const login = (newToken: string, newUser: AuthUser) => {
+  const login = useCallback((newToken: string, newUser: AuthUser) => {
     if (!newToken || newToken === 'undefined' || newToken === 'null') return;
     setToken(newToken);
     setUser(newUser);
     localStorage.setItem('token', newToken);
     localStorage.setItem('user', JSON.stringify(newUser));
-  };
+  }, []);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     setToken(null);
     setUser(null);
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-  };
+  }, []);
 
-  const updateUser = (updatedFields: Partial<AuthUser>) => {
+  const updateUser = useCallback((updatedFields: Partial<AuthUser>) => {
     setUser((prev) => {
       if (!prev) return null;
       const updated = { ...prev, ...updatedFields };
       localStorage.setItem('user', JSON.stringify(updated));
       return updated;
     });
-  };
+  }, []);
 
   useEffect(() => {
     if (token && token !== 'undefined' && token !== 'null') {
       localStorage.setItem('token', token);
-      // Skip remote API check for mock tokens to prevent 401 logout on refresh
       if (token === 'mock-jwt-token-seller') {
         return;
       }
-      // Kiểm tra tính hiệu lực của Token với Backend và đồng bộ thông tin tài khoản
+      // Đồng bộ thông tin tài khoản một lần khi token thay đổi
       axiosClient
         .get('/auth/profile')
         .then((res) => {
@@ -102,18 +101,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } else if (!token) {
       localStorage.removeItem('token');
     }
-  }, [token]);
+  }, [token, logout, updateUser]);
 
-  // Realtime Socket listener cho KYC status update từ Admin/Server
+  // Realtime Socket listener cho KYC status update từ Admin/Server qua Socket Singleton
   useEffect(() => {
     if (!user) return;
     const userId = user._id || (user as any).id;
     if (!userId) return;
 
-    const socket = socketIO('http://localhost:5000', { transports: ['websocket'] });
     socket.emit('join_seller_room', userId);
 
-    socket.on('kyc:status_updated', (data: any) => {
+    const handleKycStatusUpdated = (data: any) => {
       console.log('⚡ [AuthContext] Realtime KYC status updated event:', data);
       const isApproved = data?.status === 'APPROVED' || data?.type === 'APPROVED' || data?.kycVerified === true;
       const newStatus = data?.status || (isApproved ? 'APPROVED' : 'REJECTED');
@@ -121,17 +119,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         kycStatus: newStatus,
         kycVerified: isApproved,
       });
-    });
+    };
+
+    socket.on('kyc:status_updated', handleKycStatusUpdated);
 
     return () => {
-      socket.disconnect();
+      socket.off('kyc:status_updated', handleKycStatusUpdated);
     };
-  }, [user?._id || (user as any)?.id]);
+  }, [user?._id, (user as any)?.id, updateUser]);
+
+  const contextValue = useMemo(
+    () => ({
+      user,
+      role: user?.role || null,
+      token,
+      login,
+      logout,
+      updateUser,
+    }),
+    [user, token, login, logout, updateUser]
+  );
 
   return (
-    <AuthContext.Provider value={{ user, role: user?.role || null, token, login, logout, updateUser }}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );
 };
+
 

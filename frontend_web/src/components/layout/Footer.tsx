@@ -1,7 +1,19 @@
 import React from 'react';
+import { useLocation } from 'react-router';
 import { Shield, Phone, Mail, MapPin } from 'lucide-react';
+import { useAuth } from '../../hooks/useAuth';
 
 export const Footer: React.FC = () => {
+  const { user } = useAuth();
+  const location = useLocation();
+
+  // Chỉ hiển thị Footer ở ngoài trang chính / tra cứu công khai khi chưa đăng nhập
+  const isSellerRoute = location.pathname.startsWith('/seller');
+  const isAuthRoute = location.pathname.startsWith('/auth');
+  if (user || isSellerRoute || isAuthRoute) {
+    return null;
+  }
+
   return (
     <footer className="w-full glass-panel border-t border-slate-800/80 pt-12 pb-8 mt-auto">
       <div className="w-full px-4 sm:px-6 lg:px-8 space-y-8">

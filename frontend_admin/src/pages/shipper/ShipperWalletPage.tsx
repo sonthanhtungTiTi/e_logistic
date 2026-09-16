@@ -21,50 +21,50 @@ export const ShipperWalletPage: React.FC = () => {
   return (
     <div className="space-y-4">
       {/* Wallet Card */}
-      <div className="bg-gradient-to-tr from-slate-900 to-slate-850 border border-slate-800 p-5 rounded-3xl space-y-4 shadow-xl">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-3xl space-y-4 shadow-sm">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
+            <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold border border-blue-200 dark:border-blue-500/30">
               <DollarSign className="w-5 h-5" />
             </div>
             <div>
-              <span className="text-[10px] text-slate-400 font-semibold block">Tiền Mặt COD Thu Hộ Hôm Nay</span>
-              <h2 className="text-xl font-black text-white">{totalCodCollected.toLocaleString('vi-VN')} đ</h2>
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold block">Tiền Mặt COD Thu Hộ Hôm Nay</span>
+              <h2 className="text-xl font-black text-slate-900 dark:text-white">{totalCodCollected.toLocaleString('vi-VN')} đ</h2>
             </div>
           </div>
 
           <span
             className={`text-[10px] px-2.5 py-1 rounded-full font-bold border ${
               isHandedOver
-                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
-                : 'bg-blue-500/20 text-blue-300 border-blue-500/30'
+                ? 'bg-blue-50 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-500/30'
+                : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
             }`}
           >
             {isHandedOver ? 'Đã Nộp Quầy' : 'Chưa Nộp Bưu Cục'}
           </span>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 pt-3 border-t border-slate-800 text-xs">
+        <div className="grid grid-cols-2 gap-2 pt-3 border-t border-slate-200 dark:border-slate-800 text-xs">
           <div>
             <span className="text-[10px] text-slate-500 block">Số đơn đã thu tiền</span>
-            <span className="font-bold text-slate-200">{collectedOrders.length} đơn</span>
+            <span className="font-bold text-slate-800 dark:text-slate-200">{collectedOrders.length} đơn</span>
           </div>
           <div>
             <span className="text-[10px] text-slate-500 block">Bưu cục đối soát</span>
-            <span className="font-bold text-cyan-400">HUB_TB (Tân Bình)</span>
+            <span className="font-bold text-blue-600 dark:text-blue-400">HUB_TB (Tân Bình)</span>
           </div>
         </div>
 
         {!isHandedOver ? (
           <button
             onClick={handleHandoverToCashier}
-            className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-slate-950 font-black text-xs shadow-lg shadow-emerald-500/20 transition cursor-pointer flex items-center justify-center gap-1.5"
+            className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-md shadow-blue-600/20 transition cursor-pointer flex items-center justify-center gap-1.5"
           >
             <Building2 className="w-4 h-4" /> Bàn Giao Tiền COD Tại Quầy Bưu Cục
           </button>
         ) : (
-          <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-center">
-            <span className="text-xs font-bold text-emerald-400 flex items-center justify-center gap-1">
+          <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 text-center">
+            <span className="text-xs font-bold text-blue-600 dark:text-blue-400 flex items-center justify-center gap-1">
               <CheckCircle2 className="w-4 h-4" /> Mã Phiếu Bàn Giao: COD-TB-{Math.floor(1000 + Math.random() * 9000)}
             </span>
           </div>
@@ -72,7 +72,7 @@ export const ShipperWalletPage: React.FC = () => {
       </div>
 
       {msg && (
-        <div className="p-3 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-xl text-xs font-bold">
+        <div className="p-3 bg-blue-50 dark:bg-blue-950/40 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-500/30 rounded-xl text-xs font-bold">
           {msg}
         </div>
       )}

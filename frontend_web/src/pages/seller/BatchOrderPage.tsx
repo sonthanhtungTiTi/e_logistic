@@ -1281,7 +1281,7 @@ export const BatchOrderPage: React.FC = () => {
                 onClick={handleConfirmCreateBatch}
                 disabled={validCount === 0 || creatingBatch}
                 className={`w-full sm:w-auto px-8 py-3.5 rounded-2xl font-black text-sm flex items-center justify-center gap-2 cursor-pointer shadow-xl transition ${validCount > 0
-                    ? 'bg-gradient-to-r from-cyan-600 via-blue-600 to-emerald-600 hover:from-cyan-500 hover:to-emerald-500 text-white shadow-cyan-600/30'
+                    ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-600/30'
                     : 'bg-slate-800 text-slate-500 cursor-not-allowed'
                   }`}
               >
@@ -1800,7 +1800,7 @@ export const BatchOrderPage: React.FC = () => {
                   setBatchItems([]);
                   setFileName(null);
                 }}
-                className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-600 text-white text-xs font-bold shadow-lg shadow-blue-600/30 cursor-pointer"
+                className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-lg shadow-blue-600/30 cursor-pointer transition"
               >
                 Tải Thêm File Đơn Khác
               </button>

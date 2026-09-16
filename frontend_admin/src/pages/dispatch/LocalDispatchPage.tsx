@@ -254,14 +254,14 @@ export const LocalDispatchPage: React.FC = () => {
     <div className="space-y-6 pb-12">
       {/* TẦNG 1: Page Header & KPI Summary Grid */}
       <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800/80 pb-4">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
+            <div className="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 text-blue-600 dark:text-blue-400">
               <Compass className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-2xl font-black text-white tracking-tight">Điều Phối Shipper (QL 2)</h1>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Điều Phối Shipper (QL 2)</h1>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                 Quản trị phân tuyến theo Phường/Khu phố, duyệt đổi địa bàn Shipper &amp; giải tỏa điểm nghẽn First/Last-mile
               </p>
             </div>
@@ -271,71 +271,71 @@ export const LocalDispatchPage: React.FC = () => {
             <button
               onClick={handleOvernightSweep}
               disabled={sweeping}
-              className="px-3.5 py-2 rounded-xl bg-purple-950/80 hover:bg-purple-900 text-purple-300 border border-purple-800 text-xs font-bold flex items-center gap-2 transition cursor-pointer shadow-lg shadow-purple-950/40"
+              className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white border border-blue-600 text-xs font-bold flex items-center gap-2 transition cursor-pointer shadow-md shadow-blue-600/20"
               title="Quét dọn đơn tồn ca & đơn qua ngày, nâng Aging Boost (+25/+40 điểm) và reset quota ngày mới cho Shipper"
             >
-              <Clock className={`w-4 h-4 text-purple-400 ${sweeping ? 'animate-spin' : ''}`} />
+              <Clock className={`w-4 h-4 text-white ${sweeping ? 'animate-spin' : ''}`} />
               <span>{sweeping ? 'Đang Quét Dọn...' : 'Quét Dọn Đơn Tồn Ca'}</span>
             </button>
             <button
               onClick={activeTab === 'DISPATCH' ? loadDashboardData : loadZoneRequests}
-              className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 text-xs font-semibold flex items-center gap-2 transition cursor-pointer"
+              className="px-3.5 py-2 rounded-xl bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 text-xs font-semibold flex items-center gap-2 transition cursor-pointer shadow-sm"
             >
-              <RefreshCw className={`w-4 h-4 text-cyan-400 ${loading ? 'animate-spin' : ''}`} /> Tải Lại Dữ Liệu
+              <RefreshCw className={`w-4 h-4 text-blue-600 dark:text-blue-400 ${loading ? 'animate-spin' : ''}`} /> Tải Lại Dữ Liệu
             </button>
           </div>
         </div>
 
         {/* 5 Thẻ KPI Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-          <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800/80 shadow-lg flex items-center justify-between">
+          <div className="p-4 rounded-2xl bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800/80 shadow-sm flex items-center justify-between">
             <div>
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Khu Vực Tuyến (Geozone)</span>
-              <span className="text-2xl font-black text-white mt-1 block font-mono">{totalGeozones}</span>
+              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Khu Vực Tuyến (Geozone)</span>
+              <span className="text-2xl font-black text-slate-900 dark:text-white mt-1 block font-mono">{totalGeozones}</span>
             </div>
-            <div className="p-3 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
+            <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20">
               <Compass className="w-5 h-5" />
             </div>
           </div>
 
-          <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800/80 shadow-lg flex items-center justify-between">
+          <div className="p-4 rounded-2xl bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800/80 shadow-sm flex items-center justify-between">
             <div>
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Shipper Đang Trực</span>
-              <span className="text-2xl font-black text-emerald-400 mt-1 block font-mono">{totalActiveShippers}</span>
+              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Shipper Đang Trực</span>
+              <span className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1 block font-mono">{totalActiveShippers}</span>
             </div>
-            <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+            <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20">
               <Users className="w-5 h-5" />
             </div>
           </div>
 
-          <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800/80 shadow-lg flex items-center justify-between">
+          <div className="p-4 rounded-2xl bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800/80 shadow-sm flex items-center justify-between">
             <div>
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Đơn Cần Can Thiệp</span>
-              <span className="text-2xl font-black text-rose-400 mt-1 block font-mono">{totalEscalated}</span>
+              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Đơn Cần Can Thiệp</span>
+              <span className="text-2xl font-black text-rose-600 dark:text-rose-400 mt-1 block font-mono">{totalEscalated}</span>
             </div>
-            <div className="p-3 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20">
+            <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-500/20">
               <AlertTriangle className="w-5 h-5" />
             </div>
           </div>
 
-          <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800/80 shadow-lg flex items-center justify-between">
+          <div className="p-4 rounded-2xl bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800/80 shadow-sm flex items-center justify-between">
             <div>
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Đơn Tồn Ca / Aging Boost</span>
-              <span className="text-2xl font-black text-purple-400 mt-1 block font-mono">
+              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Đơn Tồn Ca / Aging Boost</span>
+              <span className="text-2xl font-black text-blue-600 dark:text-blue-400 mt-1 block font-mono">
                 {escalatedOrders.filter(o => o.isRolloverOrder || o.agingPriority === 'HIGH' || o.agingPriority === 'CRITICAL').length}
               </span>
             </div>
-            <div className="p-3 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20">
+            <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20">
               <Clock className="w-5 h-5" />
             </div>
           </div>
 
-          <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800/80 shadow-lg flex items-center justify-between col-span-2 lg:col-span-1">
+          <div className="p-4 rounded-2xl bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800/80 shadow-sm flex items-center justify-between col-span-2 lg:col-span-1">
             <div>
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Đổi Khu Vực Chờ Duyệt</span>
-              <span className="text-2xl font-black text-amber-400 mt-1 block font-mono">{pendingRequestsCount}</span>
+              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Đổi Khu Vực Chờ Duyệt</span>
+              <span className="text-2xl font-black text-amber-600 dark:text-amber-400 mt-1 block font-mono">{pendingRequestsCount}</span>
             </div>
-            <div className="p-3 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+            <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20">
               <Send className="w-5 h-5" />
             </div>
           </div>
@@ -343,14 +343,14 @@ export const LocalDispatchPage: React.FC = () => {
       </div>
 
       {/* Top Controls & Navigation Tabs */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900/90 border border-slate-800 p-4 rounded-2xl shadow-xl backdrop-blur-md">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm backdrop-blur-md">
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => setActiveTab('DISPATCH')}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
               activeTab === 'DISPATCH'
-                ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20 font-black'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/25 font-bold'
+                : 'text-slate-700 dark:text-slate-400 hover:text-blue-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50'
             }`}
           >
             <Compass className="w-4 h-4" />
@@ -361,8 +361,8 @@ export const LocalDispatchPage: React.FC = () => {
             onClick={() => setActiveTab('ZONE_REQUESTS')}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
               activeTab === 'ZONE_REQUESTS'
-                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20 font-black'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/25 font-bold'
+                : 'text-slate-700 dark:text-slate-400 hover:text-blue-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50'
             }`}
           >
             <Send className="w-4 h-4" />
@@ -380,12 +380,12 @@ export const LocalDispatchPage: React.FC = () => {
         <div
           className={`p-4 rounded-xl text-xs font-bold flex items-center justify-between ${
             msg.type === 'success'
-              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-              : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+              ? 'bg-emerald-50 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30'
+              : 'bg-rose-50 dark:bg-rose-500/20 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-500/30'
           }`}
         >
           <span>{msg.text}</span>
-          <button onClick={() => setMsg(null)} className="text-slate-400 hover:text-white px-2">
+          <button onClick={() => setMsg(null)} className="text-slate-400 hover:text-slate-700 dark:hover:text-white px-2">
             ✕
           </button>
         </div>
@@ -395,12 +395,12 @@ export const LocalDispatchPage: React.FC = () => {
       {activeTab === 'DISPATCH' && (
         <div className="space-y-6">
           {/* Spillover Routing Toggle */}
-          <div className="flex items-center justify-between bg-slate-900 border border-slate-800 p-4 rounded-2xl">
+          <div className="flex items-center justify-between bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
             <div className="flex items-center gap-2.5">
-              <Zap className="w-4 h-4 text-blue-400" />
+              <Zap className="w-4 h-4 text-blue-600 dark:text-blue-400" />
               <div>
-                <h3 className="text-xs font-bold text-white">Cơ Chế Phân Luồng Tràn Cụm Tuyến (Spillover Routing)</h3>
-                <p className="text-[11px] text-slate-400">
+                <h3 className="text-xs font-bold text-slate-900 dark:text-white">Cơ Chế Phân Luồng Tràn Cụm Tuyến (Spillover Routing)</h3>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
                   Khi bật, đơn hàng tại khu vực quá tải sẽ tự động tràn sang các Shipper trực lân cận trong cùng thành phố
                 </p>
               </div>
@@ -410,8 +410,8 @@ export const LocalDispatchPage: React.FC = () => {
               onClick={() => setIsSpilloverActive(!isSpilloverActive)}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
                 isSpilloverActive
-                  ? 'bg-cyan-500 text-slate-950 shadow-lg shadow-cyan-500/20'
-                  : 'bg-slate-800 text-slate-400 hover:text-white'
+                  ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20 font-bold'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-400 hover:bg-slate-200 dark:hover:text-white'
               }`}
             >
               <Zap className="w-3.5 h-3.5" />
@@ -420,20 +420,20 @@ export const LocalDispatchPage: React.FC = () => {
           </div>
 
           {/* Surge Quota Mega Sale Control Card */}
-          <div className="bg-gradient-to-r from-amber-950/40 via-slate-900 to-rose-950/30 border border-amber-500/30 p-4 rounded-2xl space-y-3">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl space-y-3 shadow-sm">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-2.5">
-                <div className="p-2 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-400">
-                  <Flame className="w-5 h-5 text-amber-400 animate-pulse" />
+                <div className="p-2 bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded-xl text-blue-600 dark:text-blue-400">
+                  <Flame className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
-                  <h3 className="text-xs font-bold text-white flex items-center gap-2">
+                  <h3 className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-2">
                     Điều Chỉnh Quota Cao Điểm / Mega Sale
-                    <span className="text-[10px] bg-amber-500/20 text-amber-300 font-mono px-2 py-0.5 rounded border border-amber-500/30 font-bold">
+                    <span className="text-[10px] bg-blue-50 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 font-mono px-2 py-0.5 rounded border border-blue-200 dark:border-blue-500/30 font-bold">
                       Dynamic Surge
                     </span>
                   </h3>
-                  <p className="text-[11px] text-slate-400 mt-0.5">
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
                     Linh hoạt nâng hạn mức nhận đơn của đội ngũ tài xế hiện có mà không cần tăng chi phí thuê xe ngoài.
                   </p>
                 </div>
@@ -441,11 +441,11 @@ export const LocalDispatchPage: React.FC = () => {
 
               <div className="flex flex-wrap items-center gap-3">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-[11px] text-slate-400">Đối tượng:</span>
+                  <span className="text-[11px] text-slate-600 dark:text-slate-400">Đối tượng:</span>
                   <select
                     value={surgeTargetRole}
                     onChange={(e) => setSurgeTargetRole(e.target.value as any)}
-                    className="bg-slate-950 border border-slate-700 text-amber-400 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none"
+                    className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-blue-500 font-medium"
                   >
                     <option value="ALL">Toàn Bộ Shipper</option>
                     <option value="PICKUP_SHIPPER">Đội Gom (PICKUP_SHIPPER)</option>
@@ -454,11 +454,11 @@ export const LocalDispatchPage: React.FC = () => {
                 </div>
 
                 <div className="flex items-center gap-1.5">
-                  <span className="text-[11px] text-slate-400">Phạm vi:</span>
+                  <span className="text-[11px] text-slate-600 dark:text-slate-400">Phạm vi:</span>
                   <select
                     value={surgeScope}
                     onChange={(e) => setSurgeScope(e.target.value as any)}
-                    className="bg-slate-950 border border-slate-700 text-cyan-400 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none"
+                    className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-blue-500 font-medium"
                   >
                     <option value="ALL">Toàn Tuyến</option>
                     <option value="ZONE">Theo Cụm Tuyến Đang Chọn</option>
@@ -467,14 +467,14 @@ export const LocalDispatchPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-800/80">
-              <span className="text-[11px] font-bold text-slate-400">Chọn hạn mức:</span>
+            <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-200 dark:border-slate-800/80">
+              <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400">Chọn hạn mức:</span>
               {surgeTargetRole === 'PICKUP_SHIPPER' ? (
                 <>
                   <button
                     onClick={() => handleApplySurgeQuota(80)}
                     disabled={updatingSurge}
-                    className="px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 bg-slate-950 text-slate-300 hover:text-white border border-slate-800"
+                    className="px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-950 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800"
                   >
                     <span>80 đơn</span>
                     <span className="text-[9px] text-slate-500">(Chuẩn Gom 2 chuyến)</span>
@@ -482,7 +482,7 @@ export const LocalDispatchPage: React.FC = () => {
                   <button
                     onClick={() => handleApplySurgeQuota(120)}
                     disabled={updatingSurge}
-                    className="px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20 font-black"
+                    className="px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white shadow-md shadow-blue-600/20"
                   >
                     <TrendingUp className="w-3.5 h-3.5" />
                     <span>120 đơn</span>
@@ -491,7 +491,7 @@ export const LocalDispatchPage: React.FC = () => {
                   <button
                     onClick={() => handleApplySurgeQuota(150)}
                     disabled={updatingSurge}
-                    className="px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 bg-rose-500 text-white shadow-lg shadow-rose-500/20 font-black"
+                    className="px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 bg-blue-700 hover:bg-blue-600 text-white shadow-md shadow-blue-700/20"
                   >
                     <Flame className="w-3.5 h-3.5" />
                     <span>150 đơn</span>
@@ -503,7 +503,7 @@ export const LocalDispatchPage: React.FC = () => {
                   <button
                     onClick={() => handleApplySurgeQuota(40)}
                     disabled={updatingSurge}
-                    className="px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 bg-slate-950 text-slate-300 hover:text-white border border-slate-800"
+                    className="px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-950 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800"
                   >
                     <span>40 đơn</span>
                     <span className="text-[9px] text-slate-500">(Chuẩn Giao 2 chuyến)</span>
@@ -511,7 +511,7 @@ export const LocalDispatchPage: React.FC = () => {
                   <button
                     onClick={() => handleApplySurgeQuota(55)}
                     disabled={updatingSurge}
-                    className="px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 bg-cyan-500 text-slate-950 shadow-lg shadow-cyan-500/20 font-black"
+                    className="px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white shadow-md shadow-blue-600/20"
                   >
                     <TrendingUp className="w-3.5 h-3.5" />
                     <span>55 đơn</span>
@@ -520,7 +520,7 @@ export const LocalDispatchPage: React.FC = () => {
                   <button
                     onClick={() => handleApplySurgeQuota(65)}
                     disabled={updatingSurge}
-                    className="px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 bg-rose-500 text-white shadow-lg shadow-rose-500/20 font-black"
+                    className="px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 bg-blue-700 hover:bg-blue-600 text-white shadow-md shadow-blue-700/20"
                   >
                     <Flame className="w-3.5 h-3.5" />
                     <span>65 đơn</span>
@@ -534,23 +534,23 @@ export const LocalDispatchPage: React.FC = () => {
                     disabled={updatingSurge}
                     className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
                       surgeQuotaValue === 25
-                        ? 'bg-slate-700 text-white ring-1 ring-slate-500'
-                        : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
+                        ? 'bg-blue-600 text-white shadow-md shadow-blue-600/25'
+                        : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-950 text-slate-700 dark:text-slate-400 border border-slate-200 dark:border-slate-800'
                     }`}
                   >
                     <span>25 đơn</span>
-                    <span className="text-[9px] text-slate-500 font-normal">(Mặc định)</span>
+                    <span className="text-[9px] opacity-80 font-normal">(Mặc định)</span>
                   </button>
                   <button
                     onClick={() => handleApplySurgeQuota(35)}
                     disabled={updatingSurge}
                     className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
                       surgeQuotaValue === 35
-                        ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20 font-black'
-                        : 'bg-slate-950 text-amber-400 hover:text-amber-300 border border-amber-500/30'
+                        ? 'bg-blue-600 text-white shadow-md shadow-blue-600/25'
+                        : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-950 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800'
                     }`}
                   >
-                    <TrendingUp className="w-3.5 h-3.5" />
+                    <TrendingUp className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                     <span>35 đơn</span>
                     <span className="text-[9px] opacity-80 font-normal">(Chiến Dịch)</span>
                   </button>
@@ -559,18 +559,18 @@ export const LocalDispatchPage: React.FC = () => {
                     disabled={updatingSurge}
                     className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
                       surgeQuotaValue === 40
-                        ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/20 font-black'
-                        : 'bg-slate-950 text-rose-400 hover:text-rose-300 border border-rose-500/30'
+                        ? 'bg-blue-600 text-white shadow-md shadow-blue-600/25'
+                        : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-950 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800'
                     }`}
                   >
-                    <Flame className="w-3.5 h-3.5" />
+                    <Flame className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                     <span>40 đơn</span>
                     <span className="text-[9px] opacity-80 font-normal">(Mega Sale Giao)</span>
                   </button>
                   <button
                     onClick={() => handleApplySurgeQuota(80)}
                     disabled={updatingSurge}
-                    className="px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 bg-slate-950 text-amber-400 hover:text-amber-300 border border-amber-500/30"
+                    className="px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-950 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800"
                   >
                     <span>80 đơn</span>
                     <span className="text-[9px] opacity-80 font-normal">(Chuẩn Gom)</span>
@@ -582,61 +582,64 @@ export const LocalDispatchPage: React.FC = () => {
 
           {/* Escalated Orders Alert Banner */}
           {escalatedOrders.length > 0 && (
-            <div className="bg-rose-500/10 border border-rose-500/30 p-4 rounded-2xl space-y-3">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl space-y-3 shadow-sm">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-rose-400 font-bold text-xs">
-                  <AlertTriangle className="w-4 h-4" />
+                <div className="flex items-center gap-2 text-slate-900 dark:text-white font-bold text-xs">
+                  <AlertTriangle className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                   <span>CẢNH BÁO ĐIỀU PHỐI: Có {escalatedOrders.length} đơn hàng bị tắc nghẽn cần can thiệp thủ công</span>
                 </div>
-                <span className="text-[10px] bg-rose-500/20 text-rose-300 px-2 py-0.5 rounded font-mono font-bold">
+                <span className="text-[10px] bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/30 px-2 py-0.5 rounded font-mono font-bold">
                   DISPATCH_ESCALATED
                 </span>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {/* Danh sách xếp ngang 3 cột */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {escalatedOrders.map((ord) => (
                   <div
                     key={ord._id}
-                    className="bg-slate-900/90 border border-rose-500/20 p-3 rounded-xl flex items-center justify-between text-xs"
+                    className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-3 rounded-xl flex flex-col justify-between space-y-2.5 text-xs hover:border-blue-500/30 transition shadow-sm"
                   >
                     <div>
-                      <div className="font-mono font-bold text-white flex items-center gap-1.5 flex-wrap">
-                        <span>{ord.trackingCode}</span>
+                      <div className="font-mono font-bold text-slate-900 dark:text-white flex items-center justify-between gap-1.5 flex-wrap">
+                        <span className="text-blue-600 dark:text-blue-400 font-black">{ord.trackingCode}</span>
                         {ord.agingPriority === 'CRITICAL' && (
-                          <span className="text-[9px] bg-purple-500/20 text-purple-300 border border-purple-500/30 px-1.5 py-0.2 rounded font-mono font-bold">
+                          <span className="text-[9px] bg-blue-50 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/30 px-1.5 py-0.2 rounded font-mono font-bold">
                             Aging +40
                           </span>
                         )}
                         {(ord.isRolloverOrder || ord.agingPriority === 'HIGH') && ord.agingPriority !== 'CRITICAL' && (
-                          <span className="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-1.5 py-0.2 rounded font-mono font-bold">
+                          <span className="text-[9px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 px-1.5 py-0.2 rounded font-mono font-bold">
                             Tồn Ca +25
                           </span>
                         )}
                       </div>
-                      <div className="text-[11px] text-slate-400 mt-0.5">
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 line-clamp-1">
                         Lấy: {ord.pickupAddress?.address} ({ord.pickupAddress?.ward})
                       </div>
-                      <div className="text-[10px] text-rose-300 italic mt-0.5">{ord.riskViolationReason}</div>
+                      {ord.riskViolationReason && (
+                        <div className="text-[10px] text-slate-500 dark:text-slate-400 italic mt-0.5">{ord.riskViolationReason}</div>
+                      )}
                     </div>
 
-                    <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                    <div className="flex items-center gap-1.5 justify-end pt-1 border-t border-slate-200 dark:border-slate-800">
                       <button
                         onClick={() => handleApproveCancel(ord._id, ord.trackingCode)}
-                        className="px-2.5 py-1.5 rounded-lg bg-rose-600/20 hover:bg-rose-600/40 text-rose-300 border border-rose-500/30 font-bold text-[10px] transition shadow cursor-pointer"
+                        className="px-2 py-1 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 font-bold text-[10px] transition cursor-pointer"
                         title="Duyệt HỦY đơn theo báo cáo thất bại của Shipper"
                       >
                         Duyệt Hủy
                       </button>
                       <button
                         onClick={() => handleRetryPickup(ord._id, ord.trackingCode)}
-                        className="px-2.5 py-1.5 rounded-lg bg-amber-600/20 hover:bg-amber-600/40 text-amber-300 border border-amber-500/30 font-bold text-[10px] transition shadow cursor-pointer"
+                        className="px-2 py-1 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 font-bold text-[10px] transition cursor-pointer"
                         title="Trả đơn về hàng đợi READY_TO_PICK với ưu tiên cao"
                       >
                         Lấy Lại
                       </button>
                       <button
                         onClick={() => handleAutoDispatch(ord._id)}
-                        className="px-2.5 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-[10px] transition shadow cursor-pointer"
+                        className="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-[10px] transition shadow-md shadow-blue-600/20 cursor-pointer"
                         title="Tự động gán ngay cho Shipper lân cận"
                       >
                         Gán Lại

@@ -3,6 +3,7 @@ export const UserRole = {
   HUB_STAFF: 'HUB_STAFF',
   WAREHOUSE_STAFF: 'WAREHOUSE_STAFF',
   HUB_COORDINATOR: 'HUB_COORDINATOR',
+  WAREHOUSE_MANAGER: 'WAREHOUSE_MANAGER',
   SHIPPER: 'SHIPPER', // Shipper giao nhận nội thành
   LOCAL_SHIPPER: 'LOCAL_SHIPPER', // Shipper giao nhận nội thành (alias)
   PICKUP_SHIPPER: 'PICKUP_SHIPPER', // Shipper Gom hàng (First-Mile / Seller -> Hub)

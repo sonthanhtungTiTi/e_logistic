@@ -171,14 +171,14 @@ export const UserManagementPage: React.FC = () => {
     <div className="space-y-6 pb-12">
       {/* TẦNG 1: Page Header & KPI Summary Grid */}
       <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800/80 pb-4">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400">
+            <div className="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 text-blue-600 dark:text-blue-400">
               <Shield className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-2xl font-black text-white tracking-tight">Quản Lý Người Dùng &amp; Khóa</h1>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Quản Lý Người Dùng &amp; Khóa</h1>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                 Phân quyền tài khoản hệ thống, tạo tài khoản vận hành &amp; kiểm soát trạng thái khóa 2 lớp
               </p>
             </div>
@@ -187,58 +187,58 @@ export const UserManagementPage: React.FC = () => {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowCreateModal(true)}
-              className="px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-cyan-600/20 transition cursor-pointer"
+              className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-2 shadow-md shadow-blue-600/20 transition cursor-pointer"
             >
               <UserPlus className="w-4 h-4" /> Tạo Tài Khoản Mới
             </button>
             <button
               onClick={loadUsers}
               disabled={loading}
-              className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 text-xs font-semibold flex items-center gap-2 transition cursor-pointer"
+              className="px-3.5 py-2 rounded-xl bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 text-xs font-semibold flex items-center gap-2 transition cursor-pointer shadow-sm"
             >
-              <RefreshCw className={`w-4 h-4 text-cyan-400 ${loading ? 'animate-spin' : ''}`} /> Tải Lại Dữ Liệu
+              <RefreshCw className={`w-4 h-4 text-blue-600 dark:text-blue-400 ${loading ? 'animate-spin' : ''}`} /> Tải Lại Dữ Liệu
             </button>
           </div>
         </div>
 
         {/* 4 Thẻ KPI Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800/80 shadow-lg flex items-center justify-between">
+          <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
             <div>
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Tổng Tài Khoản</span>
-              <span className="text-2xl font-black text-white mt-1 block font-mono">{totalUserCount}</span>
+              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Tổng Tài Khoản</span>
+              <span className="text-2xl font-black text-slate-900 dark:text-white mt-1 block font-mono">{totalUserCount}</span>
             </div>
-            <div className="p-3 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
+            <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20">
               <Shield className="w-5 h-5" />
             </div>
           </div>
 
-          <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800/80 shadow-lg flex items-center justify-between">
+          <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
             <div>
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Shipper Nội Thành</span>
-              <span className="text-2xl font-black text-cyan-400 mt-1 block font-mono">{shipperCount}</span>
+              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Shipper Nội Thành</span>
+              <span className="text-2xl font-black text-blue-600 dark:text-blue-400 mt-1 block font-mono">{shipperCount}</span>
             </div>
-            <div className="p-3 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+            <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20">
               <Navigation className="w-5 h-5" />
             </div>
           </div>
 
-          <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800/80 shadow-lg flex items-center justify-between">
+          <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
             <div>
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Tài Xế Line-Haul</span>
-              <span className="text-2xl font-black text-emerald-400 mt-1 block font-mono">{driverCount}</span>
+              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Tài Xế Line-Haul</span>
+              <span className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1 block font-mono">{driverCount}</span>
             </div>
-            <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+            <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20">
               <Truck className="w-5 h-5" />
             </div>
           </div>
 
-          <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800/80 shadow-lg flex items-center justify-between">
+          <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
             <div>
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Tài Khoản Bị Khóa</span>
-              <span className="text-2xl font-black text-rose-400 mt-1 block font-mono">{lockedCount}</span>
+              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Tài Khoản Bị Khóa</span>
+              <span className="text-2xl font-black text-rose-600 dark:text-rose-400 mt-1 block font-mono">{lockedCount}</span>
             </div>
-            <div className="p-3 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20">
+            <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-500/20">
               <Building2 className="w-5 h-5" />
             </div>
           </div>
@@ -246,15 +246,15 @@ export const UserManagementPage: React.FC = () => {
       </div>
 
       {error && (
-        <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-semibold">
+        <div className="p-4 rounded-xl bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/30 text-rose-800 dark:text-rose-400 text-xs font-semibold">
           ⚠️ {error}
         </div>
       )}
 
       {loading ? (
-        <div className="p-12 text-center space-y-3 glass-panel rounded-2xl border border-slate-800">
-          <RefreshCw className="w-8 h-8 text-cyan-400 animate-spin mx-auto" />
-          <p className="text-xs text-slate-400 font-mono">Đang đồng bộ dữ liệu người dùng từ API Backend...</p>
+        <div className="p-12 text-center space-y-3 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+          <RefreshCw className="w-8 h-8 text-blue-600 dark:text-blue-400 animate-spin mx-auto" />
+          <p className="text-xs text-slate-500 dark:text-slate-400 font-mono">Đang đồng bộ dữ liệu người dùng từ API Backend...</p>
         </div>
       ) : (
         <UserSecurityControl users={users} onToggleUserStatus={handleToggleStatus} />
@@ -262,19 +262,19 @@ export const UserManagementPage: React.FC = () => {
 
       {/* Modal Tạo Tài Khoản */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md overflow-y-auto">
-          <div className="w-full max-w-lg glass-panel p-6 rounded-3xl border border-slate-800 space-y-4 shadow-2xl my-8">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <UserPlus className="w-5 h-5 text-cyan-400" /> Tạo Tài Khoản Người Dùng Mới
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xs overflow-y-auto">
+          <div className="w-full max-w-lg bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-4 shadow-2xl my-8">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+              <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <UserPlus className="w-5 h-5 text-blue-600 dark:text-blue-400" /> Tạo Tài Khoản Người Dùng Mới
               </h3>
-              <button onClick={() => setShowCreateModal(false)} className="text-slate-400 hover:text-white p-1">
+              <button onClick={() => setShowCreateModal(false)} className="text-slate-400 hover:text-slate-700 dark:hover:text-white p-1">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {createMsg && (
-              <div className="p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-xs font-semibold">
+              <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/30 text-blue-800 dark:text-blue-300 text-xs font-semibold">
                 {createMsg}
               </div>
             )}
@@ -283,8 +283,8 @@ export const UserManagementPage: React.FC = () => {
               {/* Basic Info */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-slate-300 mb-1">
-                    Họ và Tên <span className="text-rose-400">*</span>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Họ và Tên <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -292,13 +292,13 @@ export const UserManagementPage: React.FC = () => {
                     placeholder="Ví dụ: Nguyễn Văn An"
                     value={formData.fullName}
                     onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                    className="w-full glass-input rounded-xl px-3 py-2 text-xs"
+                    className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-bold text-slate-300 mb-1">
-                    Số Điện Thoại <span className="text-rose-400">*</span>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Số Điện Thoại <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -306,14 +306,14 @@ export const UserManagementPage: React.FC = () => {
                     placeholder="0912345678"
                     value={formData.phoneNumber}
                     onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
-                    className="w-full glass-input rounded-xl px-3 py-2 text-xs font-mono"
+                    className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block font-bold text-slate-300 mb-1">
-                  Email Đăng Nhập <span className="text-rose-400">*</span>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Email Đăng Nhập <span className="text-rose-500">*</span>
                 </label>
                 <input
                   type="email"
@@ -321,36 +321,36 @@ export const UserManagementPage: React.FC = () => {
                   placeholder="user@elogistic.vn"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full glass-input rounded-xl px-3 py-2 text-xs"
+                  className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
                 />
               </div>
 
               {/* Role Selection with Clear Visual Labels */}
               <div>
-                <label className="block font-bold text-slate-300 mb-1 flex items-center gap-1.5">
-                  <Shield className="w-3.5 h-3.5 text-cyan-400" /> Vai Trò Hệ Thống (Role) <span className="text-rose-400">*</span>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1.5">
+                  <Shield className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" /> Vai Trò Hệ Thống (Role) <span className="text-rose-500">*</span>
                 </label>
                 <select
                   value={formData.role}
                   onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                  className="w-full glass-input rounded-xl px-3 py-2.5 text-xs bg-slate-900 border border-slate-700 text-white font-bold"
+                  className="w-full rounded-xl px-3 py-2.5 text-xs bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white font-bold focus:outline-none focus:border-blue-500"
                 >
-                  <option value="SHIPPER" className="bg-slate-900 text-cyan-300">
+                  <option value="SHIPPER">
                     🚚 SHIPPER (Tài Xế Giao Nhận Nội Thành - Lấy &amp; Giao Đơn)
                   </option>
-                  <option value="DRIVER" className="bg-slate-900 text-indigo-300">
+                  <option value="DRIVER">
                     🚛 DRIVER (Tài Xế Xe Tải Liên Tỉnh - Trung Chuyển Tuyến Đường Trục)
                   </option>
-                  <option value="HUB_STAFF" className="bg-slate-900 text-sky-300">
+                  <option value="HUB_STAFF">
                     🏢 HUB_STAFF (Nhân Viên Kho Vận)
                   </option>
-                  <option value="HUB_COORDINATOR" className="bg-slate-900 text-blue-300">
+                  <option value="HUB_COORDINATOR">
                     📋 HUB_COORDINATOR (Điều Phối Viên Bưu Cục)
                   </option>
-                  <option value="ADMIN" className="bg-slate-900 text-purple-300">
+                  <option value="ADMIN">
                     🛡️ ADMIN (Quản Trị Viên)
                   </option>
-                  <option value="SELLER" className="bg-slate-900 text-emerald-300">
+                  <option value="SELLER">
                     📦 SELLER (Chủ Hàng / Đối Tác)
                   </option>
                 </select>
@@ -359,16 +359,16 @@ export const UserManagementPage: React.FC = () => {
               {/* Hub Assignment */}
               {(formData.role === 'SHIPPER' || formData.role === 'DRIVER' || formData.role === 'HUB_STAFF' || formData.role === 'HUB_COORDINATOR') && (
                 <div>
-                  <label className="block font-bold text-slate-300 mb-1 flex items-center gap-1.5">
-                    <Building2 className="w-3.5 h-3.5 text-blue-400" /> Bưu Cục / Hub Trực Thuộc
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1.5">
+                    <Building2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" /> Bưu Cục / Hub Trực Thuộc
                   </label>
                   <select
                     value={formData.hubId}
                     onChange={(e) => setFormData({ ...formData, hubId: e.target.value })}
-                    className="w-full glass-input rounded-xl px-3 py-2 text-xs bg-slate-900"
+                    className="w-full rounded-xl px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
                   >
                     {HUBS_LIST.map((h) => (
-                      <option key={h.code} value={h.code} className="bg-slate-900">
+                      <option key={h.code} value={h.code}>
                         {h.name} ({h.code})
                       </option>
                     ))}
@@ -378,14 +378,14 @@ export const UserManagementPage: React.FC = () => {
 
               {/* Specific Config for Local SHIPPER */}
               {formData.role === 'SHIPPER' && (
-                <div className="p-3.5 rounded-2xl bg-cyan-950/30 border border-cyan-800/40 space-y-3">
-                  <div className="font-bold text-cyan-300 flex items-center gap-1.5 text-xs">
+                <div className="p-3.5 rounded-2xl bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/40 space-y-3">
+                  <div className="font-bold text-blue-700 dark:text-blue-300 flex items-center gap-1.5 text-xs">
                     <Navigation className="w-3.5 h-3.5" /> Phân Vùng Địa Bàn Phụ Trách (Cấp phép cho Shipper)
                   </div>
 
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <div>
-                      <label className="block text-[10px] text-slate-400 mb-1">Tỉnh / Thành phố</label>
+                      <label className="block text-[10px] text-slate-500 dark:text-slate-400 mb-1">Tỉnh / Thành phố</label>
                       <select
                         value={formData.province}
                         onChange={(e) => {
@@ -399,7 +399,7 @@ export const UserManagementPage: React.FC = () => {
                             ward: firstWard,
                           });
                         }}
-                        className="w-full glass-input rounded-xl px-2.5 py-1.5 text-xs bg-slate-900"
+                        className="w-full rounded-xl px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
                       >
                         {Object.keys(VIETNAM_ADMIN_UNITS).map((p) => (
                           <option key={p} value={p}>
@@ -410,7 +410,7 @@ export const UserManagementPage: React.FC = () => {
                     </div>
 
                     <div>
-                      <label className="block text-[10px] text-slate-400 mb-1">Quận / Huyện</label>
+                      <label className="block text-[10px] text-slate-500 dark:text-slate-400 mb-1">Quận / Huyện</label>
                       <select
                         value={formData.district}
                         onChange={(e) => {
@@ -418,7 +418,7 @@ export const UserManagementPage: React.FC = () => {
                           const firstWard = (VIETNAM_ADMIN_UNITS[formData.province]?.[d] || [])[0] || '';
                           setFormData({ ...formData, district: d, ward: firstWard });
                         }}
-                        className="w-full glass-input rounded-xl px-2.5 py-1.5 text-xs bg-slate-900"
+                        className="w-full rounded-xl px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
                       >
                         {Object.keys(VIETNAM_ADMIN_UNITS[formData.province] || {}).map((d) => (
                           <option key={d} value={d}>
@@ -431,11 +431,11 @@ export const UserManagementPage: React.FC = () => {
 
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <div>
-                      <label className="block text-[10px] text-slate-400 mb-1">Phường / Xã</label>
+                      <label className="block text-[10px] text-slate-500 dark:text-slate-400 mb-1">Phường / Xã</label>
                       <select
                         value={formData.ward}
                         onChange={(e) => setFormData({ ...formData, ward: e.target.value })}
-                        className="w-full glass-input rounded-xl px-2.5 py-1.5 text-xs bg-slate-900"
+                        className="w-full rounded-xl px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
                       >
                         {(VIETNAM_ADMIN_UNITS[formData.province]?.[formData.district] || []).map((w) => (
                           <option key={w} value={w}>
@@ -446,36 +446,36 @@ export const UserManagementPage: React.FC = () => {
                     </div>
 
                     <div>
-                      <label className="block text-[10px] text-slate-400 mb-1">Cụm tuyến / Khu phố</label>
+                      <label className="block text-[10px] text-slate-500 dark:text-slate-400 mb-1">Cụm tuyến / Khu phố</label>
                       <input
                         type="text"
                         placeholder="VD: Khu phố 5"
                         value={formData.subZone}
                         onChange={(e) => setFormData({ ...formData, subZone: e.target.value })}
-                        className="w-full glass-input rounded-xl px-2.5 py-1.5 text-xs"
+                        className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-slate-900 dark:text-white"
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-2 text-xs pt-1">
                     <div>
-                      <label className="block text-[10px] text-slate-400 mb-1">Biển số xe máy</label>
+                      <label className="block text-[10px] text-slate-500 dark:text-slate-400 mb-1">Biển số xe máy</label>
                       <input
                         type="text"
                         placeholder="VD: 59C2-123.45"
                         value={formData.licensePlate}
                         onChange={(e) => setFormData({ ...formData, licensePlate: e.target.value })}
-                        className="w-full glass-input rounded-xl px-2.5 py-1.5 text-xs font-mono"
+                        className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-2.5 py-1.5 text-xs font-mono text-slate-900 dark:text-white"
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] text-slate-400 mb-1">Loại phương tiện</label>
+                      <label className="block text-[10px] text-slate-500 dark:text-slate-400 mb-1">Loại phương tiện</label>
                       <input
                         type="text"
                         placeholder="VD: Xe máy Honda Wave"
                         value={formData.vehicleType}
                         onChange={(e) => setFormData({ ...formData, vehicleType: e.target.value })}
-                        className="w-full glass-input rounded-xl px-2.5 py-1.5 text-xs"
+                        className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-slate-900 dark:text-white"
                       />
                     </div>
                   </div>
@@ -484,48 +484,48 @@ export const UserManagementPage: React.FC = () => {
 
               {/* Specific Config for Long-haul DRIVER */}
               {formData.role === 'DRIVER' && (
-                <div className="p-3.5 rounded-2xl bg-indigo-950/30 border border-indigo-800/40 space-y-3">
-                  <div className="font-bold text-indigo-300 flex items-center gap-1.5 text-xs">
+                <div className="p-3.5 rounded-2xl bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/40 space-y-3">
+                  <div className="font-bold text-blue-700 dark:text-blue-300 flex items-center gap-1.5 text-xs">
                     <Truck className="w-3.5 h-3.5" /> Thông Tin Phương Tiện Xe Tải Đường Trục (Line-haul)
                   </div>
 
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <div>
-                      <label className="block text-[10px] text-slate-400 mb-1">Biển số xe tải</label>
+                      <label className="block text-[10px] text-slate-500 dark:text-slate-400 mb-1">Biển số xe tải</label>
                       <input
                         type="text"
                         placeholder="VD: 51C-889.99"
                         value={formData.licensePlate}
                         onChange={(e) => setFormData({ ...formData, licensePlate: e.target.value })}
-                        className="w-full glass-input rounded-xl px-2.5 py-1.5 text-xs font-mono"
+                        className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-2.5 py-1.5 text-xs font-mono text-slate-900 dark:text-white"
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] text-slate-400 mb-1">Loại xe tải / Trọng tải</label>
+                      <label className="block text-[10px] text-slate-500 dark:text-slate-400 mb-1">Loại xe tải / Trọng tải</label>
                       <input
                         type="text"
                         placeholder="VD: Xe tải 8 tấn (Thùng kín)"
                         value={formData.vehicleType}
                         onChange={(e) => setFormData({ ...formData, vehicleType: e.target.value })}
-                        className="w-full glass-input rounded-xl px-2.5 py-1.5 text-xs"
+                        className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-slate-900 dark:text-white"
                       />
                     </div>
                   </div>
                 </div>
               )}
 
-              <div className="pt-3 flex items-center justify-end gap-2 border-t border-slate-800">
+              <div className="pt-3 flex items-center justify-end gap-2 border-t border-slate-200 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2 rounded-xl glass-panel hover:bg-slate-800 text-slate-300 text-xs font-semibold"
+                  className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold transition"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
                   disabled={createLoading}
-                  className="px-5 py-2.5 rounded-xl shimmer-btn text-white text-xs font-bold shadow-lg shadow-cyan-600/20 disabled:opacity-50"
+                  className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md shadow-blue-600/20 disabled:opacity-50 transition cursor-pointer"
                 >
                   {createLoading ? 'Đang tạo...' : 'Tạo Tài Khoản Người Dùng'}
                 </button>

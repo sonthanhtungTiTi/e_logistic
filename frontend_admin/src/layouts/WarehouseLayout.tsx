@@ -117,10 +117,10 @@ export const WarehouseLayout: React.FC = () => {
                       <Link
                         key={item.to}
                         to={item.to}
-                        className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs transition ${
+                        className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs transition group ${
                           isActive
                             ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-600/25'
-                            : 'text-slate-400 hover:text-white hover:bg-slate-900 font-medium'
+                            : 'text-slate-400 hover:text-white hover:bg-blue-600 font-medium'
                         }`}
                       >
                         <Icon className="w-4 h-4 shrink-0" />
@@ -146,10 +146,6 @@ export const WarehouseLayout: React.FC = () => {
         <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <Outlet />
         </main>
-
-        <footer className="w-full glass-panel border-t border-slate-800/80 py-4 text-center text-xs text-slate-500">
-          <p>© 2026 Giao hàng siêu tốc Warehouse Operations. Bộ phận Kho Vận & Tác Nghiệp Hub.</p>
-        </footer>
       </div>
     </div>
   );

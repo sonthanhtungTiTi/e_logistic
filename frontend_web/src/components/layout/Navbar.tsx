@@ -170,9 +170,9 @@ export const Navbar: React.FC = () => {
                         setDropdownOpen(false);
                         navigate('/seller/profile');
                       }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer font-medium"
+                      className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-700 dark:text-slate-200 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white transition cursor-pointer font-medium group"
                     >
-                      <User className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                      <User className="w-4 h-4 text-blue-600 dark:text-blue-400 group-hover:text-white transition-colors" />
                       <span>Hồ Sơ Cá Nhân & Cài Đặt</span>
                     </button>
 
@@ -181,9 +181,9 @@ export const Navbar: React.FC = () => {
                         setDropdownOpen(false);
                         navigate('/seller/dashboard');
                       }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer font-medium"
+                      className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-700 dark:text-slate-200 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white transition cursor-pointer font-medium group"
                     >
-                      <Package className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                      <Package className="w-4 h-4 text-blue-600 dark:text-blue-400 group-hover:text-white transition-colors" />
                       <span>Kênh Quản Lý Đơn Hàng</span>
                     </button>
 
@@ -192,9 +192,9 @@ export const Navbar: React.FC = () => {
                         setDropdownOpen(false);
                         navigate('/seller/wallet');
                       }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer font-medium"
+                      className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-700 dark:text-slate-200 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white transition cursor-pointer font-medium group"
                     >
-                      <CreditCard className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                      <CreditCard className="w-4 h-4 text-blue-600 dark:text-blue-400 group-hover:text-white transition-colors" />
                       <span>Ví COD & Doanh Thu</span>
                     </button>
 
@@ -203,9 +203,9 @@ export const Navbar: React.FC = () => {
                         setDropdownOpen(false);
                         navigate('/seller/profile', { state: { tab: 'SECURITY' } });
                       }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer font-medium"
+                      className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-700 dark:text-slate-200 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white transition cursor-pointer font-medium group"
                     >
-                      <Settings className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                      <Settings className="w-4 h-4 text-blue-600 dark:text-blue-400 group-hover:text-white transition-colors" />
                       <span>Đổi Mật Khẩu & Bảo Mật</span>
                     </button>
                   </div>
@@ -289,49 +289,49 @@ export const Navbar: React.FC = () => {
                 </div>
                 <Link
                   to="/seller/orders/create"
-                  className={`flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs font-bold transition ${
+                  className={`flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs font-bold transition group ${
                     isLinkActive('/seller/orders/create')
                       ? 'bg-blue-600 text-white shadow-md shadow-blue-600/25'
-                      : 'bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20'
+                      : 'text-slate-700 dark:text-slate-300 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white font-medium'
                   }`}
                 >
-                  <PlusCircle className="w-4 h-4" />
+                  <PlusCircle className={`w-4 h-4 transition-colors ${isLinkActive('/seller/orders/create') ? 'text-white' : 'text-blue-600 dark:text-blue-400 group-hover:text-white'}`} />
                   <span>Tạo Đơn Vận Chuyển Mới</span>
                 </Link>
 
                 <Link
                   to="/seller/orders/batch"
-                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition ${
+                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition group ${
                     isLinkActive('/seller/orders/batch')
                       ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-600/25'
-                      : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium'
+                      : 'text-slate-700 dark:text-slate-300 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white font-medium'
                   }`}
                 >
-                  <FileSpreadsheet className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                  <FileSpreadsheet className={`w-4 h-4 transition-colors ${isLinkActive('/seller/orders/batch') ? 'text-white' : 'text-blue-600 dark:text-blue-400 group-hover:text-white'}`} />
                   <span>Đăng Đơn Excel Loạt</span>
                 </Link>
 
                 <Link
                   to="/seller/orders"
-                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition ${
+                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition group ${
                     isLinkActive('/seller/orders')
                       ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-600/25'
-                      : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium'
+                      : 'text-slate-700 dark:text-slate-300 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white font-medium'
                   }`}
                 >
-                  <ListFilter className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                  <ListFilter className={`w-4 h-4 transition-colors ${isLinkActive('/seller/orders') ? 'text-white' : 'text-blue-600 dark:text-blue-400 group-hover:text-white'}`} />
                   <span>Quản Lý Danh Sách Đơn</span>
                 </Link>
 
                 <Link
                   to="/seller/products"
-                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition ${
+                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition group ${
                     isLinkActive('/seller/products')
                       ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-600/25'
-                      : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium'
+                      : 'text-slate-700 dark:text-slate-300 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white font-medium'
                   }`}
                 >
-                  <Boxes className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                  <Boxes className={`w-4 h-4 transition-colors ${isLinkActive('/seller/products') ? 'text-white' : 'text-blue-600 dark:text-blue-400 group-hover:text-white'}`} />
                   <span>Sản Phẩm Mẫu (Catalog)</span>
                 </Link>
               </div>
@@ -343,49 +343,49 @@ export const Navbar: React.FC = () => {
                 </div>
                 <Link
                   to="/seller/dashboard"
-                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition ${
+                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition group ${
                     isLinkActive('/seller/dashboard')
                       ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-600/25'
-                      : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium'
+                      : 'text-slate-700 dark:text-slate-300 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white font-medium'
                   }`}
                 >
-                  <LayoutDashboard className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                  <LayoutDashboard className={`w-4 h-4 transition-colors ${isLinkActive('/seller/dashboard') ? 'text-white' : 'text-blue-600 dark:text-blue-400 group-hover:text-white'}`} />
                   <span>Dashboard Kênh Seller</span>
                 </Link>
 
                 <Link
                   to="/seller/wallet"
-                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition ${
+                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition group ${
                     isLinkActive('/seller/wallet')
                       ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-600/25'
-                      : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium'
+                      : 'text-slate-700 dark:text-slate-300 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white font-medium'
                   }`}
                 >
-                  <CreditCard className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                  <CreditCard className={`w-4 h-4 transition-colors ${isLinkActive('/seller/wallet') ? 'text-white' : 'text-blue-600 dark:text-blue-400 group-hover:text-white'}`} />
                   <span>Ví COD & Doanh Thu</span>
                 </Link>
 
                 <Link
                   to="/seller/tickets"
-                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition ${
+                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition group ${
                     isLinkActive('/seller/tickets')
                       ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-600/25'
-                      : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium'
+                      : 'text-slate-700 dark:text-slate-300 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white font-medium'
                   }`}
                 >
-                  <Ticket className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                  <Ticket className={`w-4 h-4 transition-colors ${isLinkActive('/seller/tickets') ? 'text-white' : 'text-blue-600 dark:text-blue-400 group-hover:text-white'}`} />
                   <span>Khiếu Nại & Hỗ Trợ Ticket</span>
                 </Link>
 
                 <Link
                   to="/seller/profile"
-                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition ${
+                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition group ${
                     isLinkActive('/seller/profile')
                       ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-600/25'
-                      : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium'
+                      : 'text-slate-700 dark:text-slate-300 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white font-medium'
                   }`}
                 >
-                  <User className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                  <User className={`w-4 h-4 transition-colors ${isLinkActive('/seller/profile') ? 'text-white' : 'text-blue-600 dark:text-blue-400 group-hover:text-white'}`} />
                   <span>Hồ Sơ Cá Nhân & Cài Đặt</span>
                 </Link>
               </div>

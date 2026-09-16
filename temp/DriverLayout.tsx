@@ -43,8 +43,7 @@ export const DriverLayout: React.FC<DriverLayoutProps> = ({ children }) => {
         <NavLink
           to="/driver/pickup"
           className={({ isActive }) =>
-            `flex flex-col items-center gap-1 text-[11px] font-bold transition ${
-              isActive ? 'text-cyan-400' : 'text-slate-500 hover:text-slate-300'
+            `flex flex-col items-center gap-1 text-[11px] font-bold transition ${isActive ? 'text-cyan-400' : 'text-slate-500 hover:text-slate-300'
             }`
           }
         >
@@ -55,8 +54,7 @@ export const DriverLayout: React.FC<DriverLayoutProps> = ({ children }) => {
         <NavLink
           to="/warehouse/inbound"
           className={({ isActive }) =>
-            `flex flex-col items-center gap-1 text-[11px] font-bold transition ${
-              isActive ? 'text-cyan-400' : 'text-slate-500 hover:text-slate-300'
+            `flex flex-col items-center gap-1 text-[11px] font-bold transition ${isActive ? 'text-cyan-400' : 'text-slate-500 hover:text-slate-300'
             }`
           }
         >

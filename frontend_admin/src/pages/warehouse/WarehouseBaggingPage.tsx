@@ -452,27 +452,27 @@ export const WarehouseBaggingPage: React.FC = () => {
             <>
               {/* TRƯỜNG HỢP 1: BAO ĐÃ KHÓA NIÊM PHONG (FIX LỖI MẤT MÃ SEAL) */}
               {isBagSealed ? (
-                <div className="bg-gradient-to-br from-slate-900 via-emerald-950/40 to-slate-900 border-2 border-emerald-500/60 p-6 rounded-3xl shadow-2xl space-y-6 animate-in fade-in zoom-in-95 duration-200">
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-emerald-500/30 pb-4">
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-3xl shadow-sm space-y-6 animate-in fade-in zoom-in-95 duration-200">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
                     <div>
-                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-black uppercase tracking-wider">
-                        <Lock className="w-3.5 h-3.5 text-emerald-400" />
+                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/30 text-xs font-black uppercase tracking-wider">
+                        <Lock className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                         Đã Khóa Niêm Phong An Toàn (SEALED)
                       </div>
-                      <h2 className="text-3xl font-mono font-black text-white mt-2 tracking-tight">
+                      <h2 className="text-3xl font-mono font-black text-slate-900 dark:text-white mt-2 tracking-tight">
                         {currentSeal}
                       </h2>
-                      <p className="text-xs text-slate-300 mt-1 flex items-center gap-1.5">
-                        <Truck className="w-4 h-4 text-emerald-400" />
+                      <p className="text-xs text-slate-500 dark:text-slate-300 mt-1 flex items-center gap-1.5">
+                        <Truck className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                         Tuyến vận chuyển đến:{' '}
-                        <strong className="text-emerald-300">
+                        <strong className="text-blue-600 dark:text-blue-300">
                           {activeBag.destinationHubId?.name || activeBag.destination_hub_name || 'Kho Tổng Đích'}
                         </strong>
                       </p>
                     </div>
 
                     {/* Barcode Display Box */}
-                    <div className="bg-white text-slate-950 p-3.5 rounded-2xl flex flex-col items-center justify-center shadow-lg border border-slate-200">
+                    <div className="bg-white text-slate-950 p-3.5 rounded-2xl flex flex-col items-center justify-center shadow-sm border border-slate-200">
                       <div className="flex items-center gap-1 h-8 px-2">
                         {/* Visual Barcode pattern */}
                         <div className="w-1.5 h-8 bg-black" />
@@ -494,34 +494,34 @@ export const WarehouseBaggingPage: React.FC = () => {
 
                   {/* Thông số bao đã niêm phong */}
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                    <div className="bg-slate-950/80 border border-slate-800 rounded-2xl p-3.5 text-center">
-                      <span className="text-[10px] text-slate-400 font-bold uppercase block">TỔNG SỐ KIỆN</span>
-                      <span className="text-2xl font-black text-emerald-400 font-mono mt-0.5 block">
+                    <div className="bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 rounded-2xl p-3.5 text-center">
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase block">TỔNG SỐ KIỆN</span>
+                      <span className="text-2xl font-black text-blue-600 dark:text-blue-400 font-mono mt-0.5 block">
                         {totalItems} kiện
                       </span>
                     </div>
 
-                    <div className="bg-slate-950/80 border border-slate-800 rounded-2xl p-3.5 text-center">
-                      <span className="text-[10px] text-slate-400 font-bold uppercase block">TỔNG TRỌNG LƯỢNG</span>
-                      <span className="text-2xl font-black text-blue-400 font-mono mt-0.5 block">
+                    <div className="bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 rounded-2xl p-3.5 text-center">
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase block">TỔNG TRỌNG LƯỢNG</span>
+                      <span className="text-2xl font-black text-blue-600 dark:text-blue-400 font-mono mt-0.5 block">
                         {Number(totalWeight).toFixed(1)} kg
                       </span>
                     </div>
 
-                    <div className="bg-slate-950/80 border border-slate-800 rounded-2xl p-3.5 text-center col-span-2 md:col-span-1">
-                      <span className="text-[10px] text-slate-400 font-bold uppercase block">BẢO MẬT &amp; CHỨNG TỪ</span>
-                      <span className="text-xs font-bold text-emerald-300 mt-1.5 inline-flex items-center gap-1">
-                        <ShieldCheck className="w-4 h-4" /> Đạt chuẩn xuất kho
+                    <div className="bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 rounded-2xl p-3.5 text-center col-span-2 md:col-span-1">
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase block">BẢO MẬT &amp; CHỨNG TỪ</span>
+                      <span className="text-xs font-bold text-blue-700 dark:text-blue-300 mt-1.5 inline-flex items-center gap-1">
+                        <ShieldCheck className="w-4 h-4 text-blue-600 dark:text-blue-400" /> Đạt chuẩn xuất kho
                       </span>
                     </div>
                   </div>
 
                   {/* Nút hành động nổi bật: Chuyển Sang Xuất Kho Ngay & In Nhãn */}
-                  <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-slate-800">
+                  <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => toast.success(`🖨️ Đang in nhãn dán Seal: [${currentSeal}]...`)}
-                        className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl flex items-center gap-2 border border-slate-700 transition cursor-pointer"
+                        className="px-4 py-2.5 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl flex items-center gap-2 border border-slate-200 dark:border-slate-700 transition cursor-pointer shadow-sm"
                       >
                         <Printer className="w-4 h-4 text-slate-400" />
                         In Nhãn Dán Seal
@@ -532,7 +532,7 @@ export const WarehouseBaggingPage: React.FC = () => {
                           setActiveBag(null);
                           setSidebarTab('OPEN');
                         }}
-                        className="px-4 py-2.5 bg-slate-950 hover:bg-slate-800 text-slate-300 text-xs font-semibold rounded-xl border border-slate-800 transition cursor-pointer"
+                        className="px-4 py-2.5 bg-white dark:bg-slate-950 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-800 transition cursor-pointer shadow-sm"
                       >
                         ➕ Mở Bao Tải Tiếp Theo
                       </button>
@@ -542,7 +542,7 @@ export const WarehouseBaggingPage: React.FC = () => {
                     <button
                       id="btn-goto-outbound"
                       onClick={() => navigate(`/warehouse/outbound?sealCode=${currentSeal}`)}
-                      className="px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-xs rounded-xl shadow-xl shadow-orange-500/20 transition flex items-center gap-2 cursor-pointer"
+                      className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-black text-xs rounded-xl shadow-md shadow-blue-600/20 transition flex items-center gap-2 cursor-pointer"
                     >
                       <Zap className="w-4 h-4 fill-current" />
                       ⚡ Chuyển Sang Xuất Kho Ngay
@@ -554,19 +554,19 @@ export const WarehouseBaggingPage: React.FC = () => {
                 /* TRƯỜNG HỢP 2: BAO ĐANG MỞ (OPEN) */
                 <>
                   {/* Active Bag Status Banner */}
-                  <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border border-blue-500/40 p-5 rounded-2xl shadow-xl space-y-4">
-                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
+                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-blue-500/30 p-5 rounded-2xl shadow-sm space-y-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
                       <div>
-                        <span className="text-[10px] uppercase font-bold tracking-widest text-blue-400 bg-blue-950/60 px-2.5 py-0.5 rounded-full border border-blue-800/60">
+                        <span className="text-[10px] uppercase font-bold tracking-widest text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-2.5 py-0.5 rounded-full border border-blue-200 dark:border-blue-800/60">
                           BAO ĐANG GOM HÀNG
                         </span>
-                        <h2 className="text-2xl font-mono font-black text-white mt-1">
+                        <h2 className="text-2xl font-mono font-black text-slate-900 dark:text-white mt-1">
                           {currentSeal}
                         </h2>
-                        <p className="text-xs text-slate-300 flex items-center gap-1.5 mt-0.5">
-                          <Truck className="w-3.5 h-3.5 text-blue-400" />
+                        <p className="text-xs text-slate-500 dark:text-slate-300 flex items-center gap-1.5 mt-0.5">
+                          <Truck className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                           Điểm đến:{' '}
-                          <span className="font-bold text-blue-300">
+                          <span className="font-bold text-blue-600 dark:text-blue-300">
                             {activeBag.destinationHubId?.name || activeBag.destination_hub_name || 'Kho đích'}
                           </span>
                         </p>

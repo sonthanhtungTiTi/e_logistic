@@ -183,7 +183,7 @@ export const ProductListPage: React.FC = () => {
         <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={openCreateModal}
-            className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg transition"
+            className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-blue-600/25 transition cursor-pointer"
           >
             <Plus className="w-4 h-4" /> Thêm Sản Phẩm Mới
           </button>

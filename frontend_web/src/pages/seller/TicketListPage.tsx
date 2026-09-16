@@ -160,9 +160,9 @@ export const TicketListPage: React.FC = () => {
         <div className="flex items-center gap-2 shrink-0">
           <Link
             to="/seller/orders/create"
-            className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-lg transition cursor-pointer"
+            className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-blue-600/25 transition cursor-pointer"
           >
-            <Package className="w-4 h-4 text-emerald-300" /> Tạo Đơn Hàng
+            <Package className="w-4 h-4 text-white" /> Tạo Đơn Hàng
           </Link>
           <Link
             to="/seller/tickets/create"

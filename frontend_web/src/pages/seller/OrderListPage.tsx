@@ -391,7 +391,7 @@ export const OrderListPage: React.FC = () => {
             <button
               onClick={handleBulkReadyToPick}
               disabled={isBulkUpdating}
-              className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-600 to-emerald-600 hover:from-cyan-500 hover:to-emerald-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg transition cursor-pointer disabled:opacity-50"
+              className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-blue-600/25 transition cursor-pointer disabled:opacity-50"
             >
               {isBulkUpdating ? (
                 <Loader2 className="w-4 h-4 animate-spin text-white" />

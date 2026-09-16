@@ -1,13 +1,12 @@
 import React from 'react';
 import { NavLink } from 'react-router';
-import { LayoutDashboard, Package, Truck, Users, ShieldAlert, BarChart3, LogOut, ShieldCheck, Compass, Building2, DollarSign, Ticket } from 'lucide-react';
+import { LayoutDashboard, Package, Truck, Users, ShieldAlert, BarChart3, ShieldCheck, Compass, Building2, DollarSign, Ticket } from 'lucide-react';
 import { useAdminAuth } from '../../hooks/useAdminAuth';
 import { usePendingKycCount } from '../../hooks/usePendingKycCount';
 import { UserRole } from '@/types/auth.types';
-import { ThemeToggleButton } from '../common/ThemeToggleButton';
 
 export const AdminSidebar: React.FC = () => {
-  const { user, logout } = useAdminAuth();
+  const { user } = useAdminAuth();
   const { pendingCount } = usePendingKycCount();
   const userRole = (user?.role || '').toString();
 
@@ -94,7 +93,7 @@ export const AdminSidebar: React.FC = () => {
   );
 
   return (
-    <aside className="w-64 bg-white/90 dark:bg-slate-950/90 border-r border-slate-200 dark:border-slate-800 p-4 flex flex-col justify-between hidden md:flex shrink-0">
+    <aside className="w-64 bg-white/90 dark:bg-slate-950/90 border-r border-slate-200 dark:border-slate-800 p-4 flex flex-col hidden md:flex shrink-0 sticky top-0 h-screen overflow-y-auto self-start z-30">
       <div className="space-y-6">
         <div className="flex items-center gap-3 px-2">
           <img src="/logo.png" alt="Giao hàng siêu tốc Logo" className="h-11 w-auto object-contain shrink-0 drop-shadow-sm" />
@@ -115,9 +114,9 @@ export const AdminSidebar: React.FC = () => {
                 key={item.to}
                 to={item.to}
                 className={({ isActive }) =>
-                  `flex items-center justify-between px-3 py-2.5 rounded-xl text-xs transition ${isActive
+                  `flex items-center justify-between px-3 py-2.5 rounded-xl text-xs transition group ${isActive
                     ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-600/25'
-                    : 'text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-900/60 font-medium'
+                    : 'text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-800/80 font-medium'
                   }`
                 }
               >
@@ -145,35 +144,7 @@ export const AdminSidebar: React.FC = () => {
           })}
         </nav>
       </div>
-
-      <div className="pt-4 border-t border-slate-200 dark:border-slate-800 space-y-3">
-        {/* Nút chuyển đổi Theme nổi bật trong Sidebar */}
-        <div className="p-1 rounded-xl bg-slate-100/80 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 flex items-center justify-between gap-2 px-2.5 py-1.5">
-          <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-400">Giao diện:</span>
-          <ThemeToggleButton showLabel className="py-1 px-2.5 text-[11px]" />
-        </div>
-
-        {user && (
-          <div className="p-3 rounded-xl bg-slate-100 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 space-y-1">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-slate-900 dark:text-white flex items-center gap-1">
-                {user.fullName}
-                <ShieldCheck className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-              </span>
-            </div>
-            <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-mono">
-              {user.role} • {user.department || 'Bộ phận vận hành'}
-            </span>
-          </div>
-        )}
-
-        <button
-          onClick={logout}
-          className="w-full px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-900 hover:bg-rose-500/15 text-slate-700 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-300 border border-slate-200 dark:border-slate-800 text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer"
-        >
-          <LogOut className="w-4 h-4" /> Đăng Xuất Hệ Thống
-        </button>
-      </div>
     </aside>
   );
 };
+

@@ -81,8 +81,8 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, onClo
         {/* UNPREPARED Countdown Banner */}
         {isUnprepared && (
           <div className={`p-4 rounded-2xl border text-xs font-semibold flex items-center justify-between gap-3 shadow-lg ${secondsRemaining > 0
-              ? 'bg-amber-500/10 border-amber-500/30 text-amber-300'
-              : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
+            ? 'bg-amber-500/10 border-amber-500/30 text-amber-300'
+            : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
             }`}>
             <div className="flex items-center gap-2.5">
               <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${secondsRemaining > 0 ? 'bg-amber-500/20 text-amber-400' : 'bg-rose-500/20 text-rose-400'
@@ -114,12 +114,12 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, onClo
           <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-1">
             <span className="text-[11px] text-slate-400 block font-semibold">Trạng Thái Hiện Tại</span>
             <span className={`px-3 py-1 rounded-full text-xs font-black uppercase inline-block border ${order.status === 'CANCELLED'
-                ? 'bg-rose-500/20 text-rose-400 border-rose-500/30'
-                : order.status === 'DELIVERED'
-                  ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
-                  : order.status === 'CREATED'
-                    ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
-                    : 'bg-blue-500/20 text-blue-300 border-blue-500/30'
+              ? 'bg-rose-500/20 text-rose-400 border-rose-500/30'
+              : order.status === 'DELIVERED'
+                ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                : order.status === 'CREATED'
+                  ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+                  : 'bg-blue-500/20 text-blue-300 border-blue-500/30'
               }`}>
               {order.status}
             </span>
@@ -245,10 +245,10 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, onClo
                   onClose();
                   onReadyToPick(order);
                 }}
-                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-lg shadow-cyan-600/30 transition"
+                className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-lg shadow-blue-600/25 transition"
                 title="Xác nhận đóng gói xong để hệ thống đưa vào tuyến thu gom"
               >
-                <CheckCircle2 className="w-4 h-4 text-cyan-200" /> Chuẩn Bị Xong
+                <CheckCircle2 className="w-4 h-4 text-white" /> Chuẩn Bị Xong
               </button>
             )}
             <button

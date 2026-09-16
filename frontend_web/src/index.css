@@ -130,45 +130,72 @@ body.light-theme [class*="border-slate-"] {
 }
 
 /* Sidebar Links & Buttons Specific Protection */
-body.light-theme aside a,
-body.light-theme aside button {
-  color: #1e293b !important;
+body.light-theme aside a:not(.active):not(.bg-blue-600),
+body.light-theme aside button:not(.bg-blue-600):not(.bg-rose-500\/10) {
+  color: #334155 !important;
   border-color: transparent !important;
 }
 
-body.light-theme aside a .truncate,
-body.light-theme aside button .truncate,
-body.light-theme aside a span,
-body.light-theme aside button span {
-  color: #1e293b !important;
+body.light-theme aside a:not(.active):not(.bg-blue-600) .truncate,
+body.light-theme aside button:not(.bg-blue-600) .truncate,
+body.light-theme aside a:not(.active):not(.bg-blue-600) span,
+body.light-theme aside button:not(.bg-blue-600) span {
+  color: #334155 !important;
 }
 
-body.light-theme aside a:hover,
-body.light-theme aside button:hover {
+body.light-theme aside a:not(.active):not(.bg-blue-600):hover,
+body.light-theme aside button:not(.bg-blue-600):not(.bg-rose-500\/10):hover {
   background-color: #f1f5f9 !important;
-  color: #0f172a !important;
+  color: #2563eb !important;
   border-color: transparent !important;
 }
 
-body.light-theme aside a:hover .truncate,
-body.light-theme aside button:hover .truncate,
-body.light-theme aside a:hover span,
-body.light-theme aside button:hover span {
+body.light-theme aside a:not(.active):not(.bg-blue-600):hover .truncate,
+body.light-theme aside button:not(.bg-blue-600):hover .truncate,
+body.light-theme aside a:not(.active):not(.bg-blue-600):hover span,
+body.light-theme aside button:not(.bg-blue-600):hover span,
+body.light-theme aside a:not(.active):not(.bg-blue-600):hover svg,
+body.light-theme aside button:not(.bg-blue-600):hover svg {
+  color: #2563eb !important;
+  stroke: #2563eb !important;
+}
+
+/* Specific button overrides inside aside (like logout and toggle) */
+body.light-theme aside button[title*="menu"]:hover {
+  background-color: #e2e8f0 !important;
   color: #0f172a !important;
 }
-
-/* Active Gradient Links in Sidebar */
-body.light-theme aside a.from-blue-600,
-body.light-theme aside a.from-cyan-600,
-body.light-theme aside a.bg-gradient-to-r {
-  color: #ffffff !important;
-  border-color: transparent !important;
+body.light-theme aside button[title*="menu"]:hover svg {
+  color: #0f172a !important;
+  stroke: #0f172a !important;
 }
 
-body.light-theme aside a.from-blue-600 *,
-body.light-theme aside a.from-cyan-600 *,
-body.light-theme aside a.bg-gradient-to-r * {
+body.light-theme aside button[title*="Đăng Xuất"]:hover,
+body.light-theme aside button[title*="Logout"]:hover {
+  background-color: #e11d48 !important;
   color: #ffffff !important;
+}
+body.light-theme aside button[title*="Đăng Xuất"]:hover svg,
+body.light-theme aside button[title*="Logout"]:hover svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+/* Active Links in Sidebar (ONLY active link is solid blue) */
+body.light-theme aside a.active,
+body.light-theme aside a.bg-blue-600,
+body.light-theme aside a[aria-current="page"] {
+  background-color: #2563eb !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25) !important;
+}
+
+body.light-theme aside a.active *,
+body.light-theme aside a.bg-blue-600 *,
+body.light-theme aside a[aria-current="page"] * {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
 }
 
 /* Sidebar User Info Card */

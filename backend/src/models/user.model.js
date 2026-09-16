@@ -52,6 +52,12 @@ const userSchema = new mongoose.Schema(
       ],
       default: 'BUYER',
     },
+    // Cấp độ nhân viên CSKH (dành cho role CS / CUSTOMER_SERVICE)
+    csLevel: {
+      type: String,
+      enum: ['L1', 'L2', 'LEAD'],
+      default: 'L1',
+    },
     // Dành riêng cho WAREHOUSE_MANAGER - Gắn với 1 kho/bưu cục cụ thể
     assignedHubId: {
       type: mongoose.Schema.Types.ObjectId,

@@ -57,6 +57,7 @@ const WAREHOUSE_ROLES = [
   UserRole.HUB_STAFF,
   UserRole.WAREHOUSE_STAFF,
   UserRole.HUB_COORDINATOR,
+  UserRole.WAREHOUSE_MANAGER,
 ] as const;
 
 const DISPATCH_ROLES_LOCAL = [
