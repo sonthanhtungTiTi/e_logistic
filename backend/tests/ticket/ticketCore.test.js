@@ -15,8 +15,10 @@ describe('ticketCore Service Integration Tests', () => {
   let testTicket;
 
   beforeAll(async () => {
-    const mongoURI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/e_logistic';
-    await mongoose.connect(mongoURI);
+    if (mongoose.connection.readyState === 0) {
+      const mongoURI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/e_logistic';
+      await mongoose.connect(mongoURI);
+    }
 
     try {
       await mongoose.connection.db.collection('ticketmessages').dropIndex('ticketId_1_clientMsgId_1');
@@ -45,7 +47,7 @@ describe('ticketCore Service Integration Tests', () => {
   }, 30000);
 
   afterAll(async () => {
-    await mongoose.disconnect();
+    // Teardown handled by setup.js
   });
 
   it('Tạo ticketCode thành công dạng TK-YYYYMMDD-NNNN', async () => {

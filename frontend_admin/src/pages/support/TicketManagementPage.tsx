@@ -149,37 +149,63 @@ export const TicketManagementPage: React.FC = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'OPEN':
+      case 'NEW':
         return (
-          <span className="px-2.5 py-0.5 rounded-md bg-blue-500/15 text-blue-400 font-bold border border-blue-500/30 text-[10px]">
-            MỚI TẠO
+          <span className="px-2.5 py-0.5 rounded-md bg-blue-500/15 text-blue-500 dark:text-blue-400 font-bold border border-blue-500/30 text-[10px]">
+            Mới tạo
+          </span>
+        );
+      case 'ASSIGNED':
+        return (
+          <span className="px-2.5 py-0.5 rounded-md bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 font-bold border border-cyan-500/30 text-[10px]">
+            Đã gán CSKH
           </span>
         );
       case 'IN_PROGRESS':
         return (
-          <span className="px-2.5 py-0.5 rounded-md bg-amber-500/15 text-amber-400 font-bold border border-amber-500/30 text-[10px]">
-            ĐANG XỬ LÝ
+          <span className="px-2.5 py-0.5 rounded-md bg-amber-500/15 text-amber-600 dark:text-amber-400 font-bold border border-amber-500/30 text-[10px]">
+            Đang xử lý
           </span>
         );
+      case 'WAITING_USER':
       case 'WAITING_SELLER':
         return (
-          <span className="px-2.5 py-0.5 rounded-md bg-rose-500/15 text-rose-400 font-bold border border-rose-500/30 text-[10px]">
-            CHỜ SHOP PHẢN HỒI
+          <span className="px-2.5 py-0.5 rounded-md bg-purple-500/15 text-purple-600 dark:text-purple-400 font-bold border border-purple-500/30 text-[10px]">
+            Chờ Shop phản hồi
+          </span>
+        );
+      case 'ESCALATED':
+        return (
+          <span className="px-2.5 py-0.5 rounded-md bg-rose-500/15 text-rose-600 dark:text-rose-400 font-bold border border-rose-500/30 text-[10px]">
+            Chuyển cấp trên
+          </span>
+        );
+      case 'PENDING_REFUND':
+        return (
+          <span className="px-2.5 py-0.5 rounded-md bg-orange-500/15 text-orange-600 dark:text-orange-400 font-bold border border-orange-500/30 text-[10px]">
+            Chờ duyệt đền bù
           </span>
         );
       case 'RESOLVED':
         return (
-          <span className="px-2.5 py-0.5 rounded-md bg-emerald-500/15 text-emerald-400 font-bold border border-emerald-500/30 text-[10px]">
-            ĐÃ GIẢI QUYẾT
+          <span className="px-2.5 py-0.5 rounded-md bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-500/30 text-[10px]">
+            Đã giải quyết
           </span>
         );
       case 'CLOSED':
         return (
-          <span className="px-2.5 py-0.5 rounded-md bg-slate-800 text-slate-400 font-bold border border-slate-700 text-[10px]">
-            ĐÃ ĐÓNG
+          <span className="px-2.5 py-0.5 rounded-md bg-slate-500/15 text-slate-600 dark:text-slate-400 font-bold border border-slate-500/30 text-[10px]">
+            Đã đóng
+          </span>
+        );
+      case 'REOPENED':
+        return (
+          <span className="px-2.5 py-0.5 rounded-md bg-pink-500/15 text-pink-600 dark:text-pink-400 font-bold border border-pink-500/30 text-[10px]">
+            Mở lại khiếu nại
           </span>
         );
       default:
-        return <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-400 text-[10px]">{status}</span>;
+        return <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-[10px] font-medium">{status}</span>;
     }
   };
 
@@ -511,11 +537,15 @@ export const TicketManagementPage: React.FC = () => {
                     onChange={(e) => setNewStatus(e.target.value)}
                     className="bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white"
                   >
-                    <option value="OPEN">Mới Tạo</option>
-                    <option value="IN_PROGRESS">Đang Xử Lý</option>
-                    <option value="WAITING_SELLER">Chờ Shop Phản Hồi</option>
-                    <option value="RESOLVED">Đã Giải Quyết (Xong)</option>
-                    <option value="CLOSED">Đã Đóng</option>
+                    <option value="NEW">Mới tạo (NEW)</option>
+                    <option value="ASSIGNED">Đã gán CSKH (ASSIGNED)</option>
+                    <option value="IN_PROGRESS">Đang xử lý (IN_PROGRESS)</option>
+                    <option value="WAITING_USER">Chờ Shop phản hồi (WAITING_USER)</option>
+                    <option value="ESCALATED">Chuyển cấp trên (ESCALATED)</option>
+                    <option value="PENDING_REFUND">Chờ duyệt đền bù (PENDING_REFUND)</option>
+                    <option value="RESOLVED">Đã giải quyết (RESOLVED)</option>
+                    <option value="CLOSED">Đã đóng (CLOSED)</option>
+                    <option value="REOPENED">Mở lại (REOPENED)</option>
                   </select>
                 </div>
 

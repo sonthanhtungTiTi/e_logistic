@@ -98,37 +98,63 @@ export const TicketListPage: React.FC = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'OPEN':
+      case 'NEW':
         return (
-          <span className="px-2.5 py-0.5 rounded-md bg-blue-500/15 text-blue-400 font-bold border border-blue-500/30 text-[10px]">
-            Mới Tạo
+          <span className="px-2.5 py-0.5 rounded-md bg-blue-500/15 text-blue-500 dark:text-blue-400 font-bold border border-blue-500/30 text-[10px]">
+            Mới tạo
+          </span>
+        );
+      case 'ASSIGNED':
+        return (
+          <span className="px-2.5 py-0.5 rounded-md bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 font-bold border border-cyan-500/30 text-[10px]">
+            Đã gán CSKH
           </span>
         );
       case 'IN_PROGRESS':
         return (
-          <span className="px-2.5 py-0.5 rounded-md bg-amber-500/15 text-amber-400 font-bold border border-amber-500/30 text-[10px]">
-            Đang Xử Lý
+          <span className="px-2.5 py-0.5 rounded-md bg-amber-500/15 text-amber-600 dark:text-amber-400 font-bold border border-amber-500/30 text-[10px]">
+            Đang xử lý
           </span>
         );
+      case 'WAITING_USER':
       case 'WAITING_SELLER':
         return (
-          <span className="px-2.5 py-0.5 rounded-md bg-rose-500/15 text-rose-400 font-bold border border-rose-500/30 text-[10px]">
-            Chờ Shop Phản Hồi
+          <span className="px-2.5 py-0.5 rounded-md bg-purple-500/15 text-purple-600 dark:text-purple-400 font-bold border border-purple-500/30 text-[10px]">
+            Chờ Shop phản hồi
+          </span>
+        );
+      case 'ESCALATED':
+        return (
+          <span className="px-2.5 py-0.5 rounded-md bg-rose-500/15 text-rose-600 dark:text-rose-400 font-bold border border-rose-500/30 text-[10px]">
+            Chuyển cấp trên
+          </span>
+        );
+      case 'PENDING_REFUND':
+        return (
+          <span className="px-2.5 py-0.5 rounded-md bg-orange-500/15 text-orange-600 dark:text-orange-400 font-bold border border-orange-500/30 text-[10px]">
+            Chờ duyệt đền bù
           </span>
         );
       case 'RESOLVED':
         return (
-          <span className="px-2.5 py-0.5 rounded-md bg-emerald-500/15 text-emerald-400 font-bold border border-emerald-500/30 text-[10px]">
-            Đã Xử Lý Xong
+          <span className="px-2.5 py-0.5 rounded-md bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-500/30 text-[10px]">
+            Đã giải quyết
           </span>
         );
       case 'CLOSED':
         return (
-          <span className="px-2.5 py-0.5 rounded-md bg-slate-800 text-slate-400 font-bold border border-slate-700 text-[10px]">
-            Đã Đóng
+          <span className="px-2.5 py-0.5 rounded-md bg-slate-500/15 text-slate-600 dark:text-slate-400 font-bold border border-slate-500/30 text-[10px]">
+            Đã đóng
+          </span>
+        );
+      case 'REOPENED':
+        return (
+          <span className="px-2.5 py-0.5 rounded-md bg-pink-500/15 text-pink-600 dark:text-pink-400 font-bold border border-pink-500/30 text-[10px]">
+            Mở lại khiếu nại
           </span>
         );
       default:
-        return <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-400 text-[10px]">{status}</span>;
+        return <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-[10px] font-medium">{status}</span>;
     }
   };
 

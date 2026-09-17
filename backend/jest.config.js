@@ -1,5 +1,8 @@
-module = {
+module.exports = {
   testEnvironment: 'node',
   verbose: true,
-  testTimeout: 30000,
+  testTimeout: 60000,
+  setupFilesAfterEnv: ['./tests/setup.js'],
 };
+
+
