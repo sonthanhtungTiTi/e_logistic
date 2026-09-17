@@ -214,8 +214,6 @@ export const WarehouseInventoryDashboardPage: React.FC = () => {
   const [historyCode, setHistoryCode] = useState<string | null>(null);
   const [actionItem, setActionItem] = useState<AgingItem | null>(null);
 
-  const socketRef = useRef<Socket | null>(null);
-
   const loadData = useCallback(async () => {
     try {
       const [sumRes, agingRes, tripRes] = await Promise.all([

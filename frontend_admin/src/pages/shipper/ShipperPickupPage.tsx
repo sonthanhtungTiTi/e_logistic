@@ -15,6 +15,8 @@ import {
   ShieldAlert,
   Calendar,
   Barcode,
+  Lock,
+  Compass,
 } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router';
 import { axiosClient } from '@/api/axiosClient';
@@ -68,6 +70,11 @@ export const ShipperPickupPage: React.FC = () => {
   const [fetchingTasks, setFetchingTasks] = useState<boolean>(true);
   const [fetchingHistory, setFetchingHistory] = useState<boolean>(false);
   const [msg, setMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const [isWorking, setIsWorking] = useState<boolean>(() => {
+    const saved = localStorage.getItem('shipper_is_working');
+    return saved !== 'false';
+  });
 
   const [pickupTasks, setPickupTasks] = useState<PickupTask[]>([]);
   const [pickupHistory, setPickupHistory] = useState<PickedUpTask[]>([]);
@@ -139,6 +146,16 @@ export const ShipperPickupPage: React.FC = () => {
   const loadPickupTasks = async () => {
     setFetchingTasks(true);
     try {
+      // Check online/offline status
+      try {
+        const profRes = await axiosClient.get('/auth/shipper/profile');
+        if (profRes.data?.data) {
+          const workingState = profRes.data.data.isWorking !== false;
+          setIsWorking(workingState);
+          localStorage.setItem('shipper_is_working', workingState ? 'true' : 'false');
+        }
+      } catch {}
+
       let zonesParam = searchParams.get('zones');
       if (!zonesParam) {
         try {
@@ -160,7 +177,24 @@ export const ShipperPickupPage: React.FC = () => {
         params: zonesParam ? { zones: zonesParam } : {},
       });
       if (res.data?.data) {
-        setPickupTasks(res.data.data);
+        let tasksList: PickupTask[] = res.data.data;
+        // Áp dụng sắp xếp lộ trình tối ưu đã lưu từ trang Tuyến
+        try {
+          const savedSeq = localStorage.getItem('shipper_optimized_route_order');
+          if (savedSeq) {
+            const seqIds: string[] = JSON.parse(savedSeq);
+            tasksList.sort((a, b) => {
+              const idxA = seqIds.indexOf(a.id || a._id);
+              const idxB = seqIds.indexOf(b.id || b._id);
+              if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+              if (idxA !== -1) return -1;
+              if (idxB !== -1) return 1;
+              return 0;
+            });
+          }
+        } catch {}
+
+        setPickupTasks(tasksList);
         if (res.data.currentTripId) setCurrentTripId(res.data.currentTripId);
         if (res.data.shipperArea) setShipperArea(res.data.shipperArea);
         if (res.data.pickupQuota) setPickupQuota(res.data.pickupQuota);
@@ -397,15 +431,37 @@ export const ShipperPickupPage: React.FC = () => {
       {/* TAB 1: DANH SÁCH CẦN ĐI LẤY */}
       {activeTab === 'PENDING' && (
         <div className="space-y-4">
+          {/* Offline Guard Banner */}
+          {!isWorking && (
+            <div className="bg-rose-950/60 border border-rose-500/50 p-4.5 rounded-2xl text-center space-y-2.5 shadow-xl">
+              <div className="w-10 h-10 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center mx-auto">
+                <Lock className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-xs font-bold text-white">Ca Làm Việc Đang Tắt (Offline)</h3>
+                <p className="text-[11px] text-rose-200 mt-0.5">
+                  Chức năng lấy hàng đang tạm khóa. Vui lòng vào trang <strong>Lộ Trình Tuyến</strong> để <strong>Bật Ca Trực</strong> trước khi bắt đầu tác nghiệp!
+                </p>
+              </div>
+              <button
+                onClick={() => navigate('/shipper/zone')}
+                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-md transition cursor-pointer flex items-center gap-1.5 mx-auto"
+              >
+                <Compass className="w-3.5 h-3.5" />
+                Vào Trang Tuyến & Bật Ca Ngay
+              </button>
+            </div>
+          )}
+
           {/* Camera QR Scanner */}
           <CameraScanner
-            onScanSuccess={(code) => handleConfirmPickup(code)}
-            isScanning={isCameraActive}
+            onScanSuccess={(code) => isWorking && handleConfirmPickup(code)}
+            isScanning={isCameraActive && isWorking}
             onToggleScan={setIsCameraActive}
           />
 
           {/* Manual Barcode Input & Weight Form */}
-          <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl space-y-2.5 shadow-md">
+          <div className={`bg-slate-900 border border-slate-800 p-4 rounded-2xl space-y-2.5 shadow-md ${!isWorking ? 'opacity-50 pointer-events-none' : ''}`}>
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
                 <Barcode className="w-4 h-4 text-blue-400" />
@@ -417,6 +473,7 @@ export const ShipperPickupPage: React.FC = () => {
               <input
                 id="input-pickup-manual-code"
                 type="text"
+                disabled={!isWorking}
                 value={manualCode}
                 onChange={(e) => setManualCode(e.target.value.toUpperCase())}
                 placeholder="VD: ELG-VN-71247720..."
@@ -425,6 +482,7 @@ export const ShipperPickupPage: React.FC = () => {
               <input
                 id="input-pickup-weight"
                 type="number"
+                disabled={!isWorking}
                 step="0.1"
                 value={measuredWeight}
                 onChange={(e) => setMeasuredWeight(e.target.value)}
@@ -435,7 +493,7 @@ export const ShipperPickupPage: React.FC = () => {
               <button
                 id="btn-pickup-manual"
                 onClick={() => handleConfirmPickup(manualCode)}
-                disabled={loading || !manualCode.trim()}
+                disabled={loading || !manualCode.trim() || !isWorking}
                 className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition disabled:opacity-50 cursor-pointer shadow flex items-center gap-1.5"
               >
                 {loading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : 'Xác Nhận Lấy'}
@@ -448,9 +506,15 @@ export const ShipperPickupPage: React.FC = () => {
 
           {/* Task List */}
           <div className="space-y-3">
-            <span className="text-xs font-bold text-slate-300 block px-1">
-              Danh Sách Điểm Cần Đến Lấy Tại Khu Vực ({pickupTasks.length} đơn):
-            </span>
+            <div className="flex items-center justify-between px-1">
+              <span className="text-xs font-bold text-slate-300 block">
+                Danh Sách Điểm Cần Đến Lấy Tại Khu Vực ({pickupTasks.length} đơn):
+              </span>
+              <span className="text-[11px] text-cyan-400 font-mono font-bold flex items-center gap-1">
+                <Compass className="w-3 h-3" /> Lộ trình tối ưu #1 ➔ #{pickupTasks.length}
+              </span>
+            </div>
+
             {fetchingTasks ? (
               <div className="p-8 text-center text-slate-500 text-xs space-y-2">
                 <RefreshCw className="w-6 h-6 animate-spin mx-auto text-blue-400" />
@@ -463,13 +527,16 @@ export const ShipperPickupPage: React.FC = () => {
                 <p className="text-[11px] text-slate-500">Tất cả đơn đã được gom hoặc đang chờ Shop đóng gói.</p>
               </div>
             ) : (
-              pickupTasks.map((task) => (
+              pickupTasks.map((task, index) => (
                 <div
                   key={task.id || task._id}
-                  className="bg-slate-900 border border-slate-800 hover:border-slate-700 p-4 rounded-2xl space-y-3 transition shadow-sm"
+                  className={`bg-slate-900 border border-slate-800 hover:border-slate-700 p-4 rounded-2xl space-y-3 transition shadow-sm ${!isWorking ? 'opacity-70' : ''}`}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
+                      <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-[10px] font-mono">
+                        {index + 1}
+                      </span>
                       <span className="font-mono text-xs font-bold text-blue-400">{task.trackingCode}</span>
                       <span className="text-[9px] bg-blue-500/20 text-blue-300 border border-blue-500/30 px-2 py-0.5 rounded font-mono font-semibold">
                         READY_TO_PICK

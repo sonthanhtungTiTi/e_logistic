@@ -166,9 +166,15 @@ export const DispatchControlPage: React.FC = () => {
       toast.success(res.message || `Đã phân công tự động thành công ${res.successCount} đơn hàng!`);
       setIsPreviewOpen(false);
       setSelectedOrderIds([]);
-      fetchData();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Lỗi khi    <div className="space-y-6 pb-12 animate-fade-in">
+      toast.error(err.response?.data?.message || 'Lỗi khi phân công tự động');
+    } finally {
+      setIsCommitting(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6 pb-12 animate-fade-in">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
         <div>

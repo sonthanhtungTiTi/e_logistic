@@ -353,7 +353,7 @@ export const ProfilePage: React.FC = () => {
         if (d.idFullName) setKycIdFullName(d.idFullName);
         if (d.maskedIdNumber) setKycIdNumber(d.maskedIdNumber);
 
-        const isApproved = d.status === 'APPROVED' || d.status === 'VERIFIED_KYC' || d.kycVerified === true;
+        const isApproved = d.status === 'APPROVED' || (d.status as string) === 'VERIFIED_KYC' || (d as any).kycVerified === true;
         updateUser({
           kycStatus: d.status,
           kycVerified: isApproved,
@@ -920,9 +920,9 @@ export const ProfilePage: React.FC = () => {
               <div className="flex items-center justify-center sm:justify-start gap-2">
                 <h2 className="text-2xl font-black text-white">{companyName || 'Chưa cập nhật tên Shop'}</h2>
                 {kycStatus === 'APPROVED' || kycStatus === 'VERIFIED_KYC' || user?.kycVerified ? (
-                  <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0" title="Shop đã xác minh KYC" />
+                  <span title="Shop đã xác minh KYC"><ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0" /></span>
                 ) : (
-                  <ShieldAlert className="w-5 h-5 text-amber-400 shrink-0" title="Shop chưa xác minh KYC" />
+                  <span title="Shop chưa xác minh KYC"><ShieldAlert className="w-5 h-5 text-amber-400 shrink-0" /></span>
                 )}
               </div>
               <p className="text-xs text-slate-400 flex items-center justify-center sm:justify-start gap-2 font-medium">

@@ -2160,6 +2160,12 @@ export const ExcelImportOrderModal: React.FC<ExcelImportOrderModalProps> = ({
         </div>
 
       </div>
+
+      <KycRequiredModal
+        isOpen={showKycModal}
+        onClose={() => setShowKycModal(false)}
+        customMessage={kycErrorMessage}
+      />
     </div>
   );
 };

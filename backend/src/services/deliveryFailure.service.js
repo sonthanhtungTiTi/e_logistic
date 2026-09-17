@@ -136,6 +136,10 @@ async function processDeliveryFailureReport(params) {
       order.status = 'PENDING_REDELIVERY'; // luồng thay thế 8.1
     }
 
+    if (!order.deliveryShipperId && reportedByUserId) {
+      order.deliveryShipperId = reportedByUserId;
+    }
+
     await order.save({ session });
     await session.commitTransaction();
   } catch (err) {

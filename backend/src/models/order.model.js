@@ -446,6 +446,21 @@ const orderSchema = new mongoose.Schema(
         note: { type: String, default: '' },
       },
     ],
+
+    // Bằng chứng giao hàng điện tử (e-POD Proof) & Quy định lưu trữ 7 ngày, khiếu nại 3 ngày
+    deliveryProof: {
+      photoUrl: { type: String, default: null },
+      capturedAt: { type: Date, default: null },
+      gpsLocation: {
+        lat: { type: Number, default: null },
+        lng: { type: Number, default: null },
+      },
+      handoverType: { type: String, default: null },
+      conditionNote: { type: String, default: null },
+      verifiedBarcode: { type: String, default: null },
+    },
+    complaintDeadline: { type: Date, default: null, index: true }, // Hạn chót gửi khiếu nại (3 ngày sau khi giao)
+    podArchivedUntil: { type: Date, default: null, index: true },  // Hạn chót bảo lưu thông tin & ảnh POD (7 ngày)
   },
   {
     timestamps: true,

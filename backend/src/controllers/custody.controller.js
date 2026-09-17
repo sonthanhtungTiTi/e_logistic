@@ -57,13 +57,28 @@ class CustodyController {
       // Cập nhật trạng thái đơn hàng theo loại chuyển giao
       if (transferType === 'SHIPPER_TO_BUYER' && order.status !== 'SUSPENDED') {
         const preStatus = order.status;
+        const now = new Date();
         order.status = 'DELIVERED';
-        order.deliveredAt = new Date();
+        order.deliveredAt = now;
+        order.complaintDeadline = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000); // 3 ngày khiếu nại
+        order.podArchivedUntil = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);  // 7 ngày bảo lưu thông tin & bằng chứng
+        order.deliveryShipperId = req.user?._id || req.user?.id;
         if (actualCod !== undefined && actualCod !== null) {
           order.collectedCodAmount = Number(actualCod);
         }
+
+        const podPhoto = signatureUrl || (evidencePhotos && evidencePhotos[0]) || null;
+        order.deliveryProof = {
+          photoUrl: podPhoto,
+          capturedAt: now,
+          gpsLocation: gpsLocation || { lat: 10.776889, lng: 106.700806 },
+          handoverType: handoverType || 'DIRECT_CUSTOMER',
+          conditionNote: conditionNote || '',
+          verifiedBarcode: order.trackingCode,
+        };
+
         if (!order.deliveryTripId && (req.user?._id || req.user?.id)) {
-          const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+          const todayStr = now.toISOString().slice(0, 10).replace(/-/g, '');
           const shipperSuffix = String(req.user._id || req.user.id).slice(-4).toUpperCase();
           order.deliveryTripId = `DLV-${todayStr}-${shipperSuffix}`;
         }
@@ -75,7 +90,7 @@ class CustodyController {
           eventType: 'DELIVERED',
           title: 'Giao hàng thành công',
           description: `Đơn hàng đã được phát thành công cho người nhận. Thu COD: ${(Number(actualCod) || order.codAmount || 0).toLocaleString('vi-VN')} đ`,
-          podImageUrl: signatureUrl || (evidencePhotos && evidencePhotos[0]) || null,
+          podImageUrl: podPhoto,
         });
 
         await OrderLog.create({
@@ -85,7 +100,7 @@ class CustodyController {
           postStatus: 'DELIVERED',
           actionType: 'DELIVERY_SUCCESS',
           actionBy: req.user?._id || req.user?.id,
-          note: 'Shipper hoàn tất giao hàng tận tay khách (Chain of Custody)',
+          note: `Shipper hoàn tất giao hàng (e-POD xác nhận hình ảnh & GPS, hạn khiếu nại: 3 ngày, bảo lưu: 7 ngày)`,
         });
       } else if (transferType === 'SELLER_TO_SHIPPER' && (order.status === 'READY_TO_PICK' || order.status === 'CREATED')) {
         const preStatus = order.status;

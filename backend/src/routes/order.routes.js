@@ -25,7 +25,9 @@ const {
   getShipperDeliveryTasks,
   getShipperDeliveryHistory,
   getShipperAvailableZones,
-  flushShipperTripHandler
+  flushShipperTripHandler,
+  confirmDeliveryReceiveHandler,
+  batchDeliveryReceiveHandler
 } = require('../controllers/order.controller');
 const { protect, authorize, resolveSellerContext } = require('../middleware/auth.middleware');
 const { createOrderRateLimiter, trackingRateLimiter } = require('../middleware/rateLimit.middleware');
@@ -82,7 +84,9 @@ router.post('/shipper/:id/verify-scan', protect, authorize('PICKUP_SHIPPER', 'LO
 router.post('/shipper/:id/verify-pickup-scan', protect, authorize('PICKUP_SHIPPER', 'LOCAL_SHIPPER', 'DRIVER', 'SHIPPER', 'SELLER', 'ADMIN'), verifyPickupScanHandler);
 router.post('/shipper/:id/confirm-pickup', protect, authorize('PICKUP_SHIPPER', 'LOCAL_SHIPPER', 'DRIVER', 'SHIPPER', 'SELLER', 'ADMIN'), confirmPickupHandler);
 router.post('/shipper/:id/pickup-failed', protect, authorize('PICKUP_SHIPPER', 'LOCAL_SHIPPER', 'DRIVER', 'SHIPPER', 'SELLER', 'ADMIN'), pickupFailedHandler);
-
+router.post('/shipper/confirm-delivery-receive', protect, authorize('DELIVERY_SHIPPER', 'LOCAL_SHIPPER', 'DRIVER', 'SHIPPER', 'ADMIN'), confirmDeliveryReceiveHandler);
+router.post('/shipper/batch-delivery-receive', protect, authorize('DELIVERY_SHIPPER', 'LOCAL_SHIPPER', 'DRIVER', 'SHIPPER', 'ADMIN'), batchDeliveryReceiveHandler);
+router.post('/shipper/:id/verify-delivery-scan', protect, authorize('DELIVERY_SHIPPER', 'LOCAL_SHIPPER', 'DRIVER', 'SHIPPER', 'ADMIN'), confirmDeliveryReceiveHandler);
 
 // GET /api/orders/:id - Chi tiết đơn hàng (Riêng tư - IDOR Protection)
 router.get('/:id', protect, getOrderById);

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, NavLink } from 'react-router';
-import { Truck, MapPin, PackageCheck, Wallet, LogOut, User } from 'lucide-react';
+import { Truck, PackageCheck, Wallet, LogOut, User, Compass } from 'lucide-react';
 import { useAdminAuth } from '../hooks/useAdminAuth';
 
 export const ShipperLayout: React.FC = () => {
@@ -69,8 +69,8 @@ export const ShipperLayout: React.FC = () => {
             }`
           }
         >
-          <MapPin className="w-4 h-4" />
-          <span>Chọn Zone</span>
+          <Compass className="w-4 h-4" />
+          <span>Lộ Trình Tuyến</span>
         </NavLink>
 
         {isPickupOnly && (
