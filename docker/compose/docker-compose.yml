@@ -1,29 +1,7 @@
 version: '3.8'
 
 services:
-  # ── 1. MongoDB Service (NoSQL Primary Database) ───────────────────────────
-  mongodb:
-    image: mongo:7.0
-    container_name: elogistics-mongo-dev
-    restart: unless-stopped
-    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
-    ports:
-      - "27017:27017"
-    environment:
-      MONGO_INITDB_DATABASE: e_logistic
-    volumes:
-      - mongo_data:/data/db
-      - ../mongo/init.js:/docker-entrypoint-initdb.d/init.js:ro
-    networks:
-      - elogistics_dev_network
-    healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.runCommand({ping: 1})"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-
-  # ── 2. Redis Service (In-Memory Hot Cache Layer) ──────────────────────────
+  # ── 1. Redis Service (In-Memory Hot Cache Layer) ──────────────────────────
   redis:
     image: redis:7.2-alpine
     container_name: elogistics-redis-dev
@@ -42,7 +20,7 @@ services:
       retries: 5
       start_period: 5s
 
-  # ── 3. RabbitMQ Service (Message Broker & Write-Behind Queue) ─────────────
+  # ── 2. RabbitMQ Service (Message Broker & Write-Behind Queue) ─────────────
   rabbitmq:
     image: rabbitmq:3.12-management-alpine
     container_name: elogistics-rabbitmq-dev
@@ -66,8 +44,6 @@ services:
 
 # ── Persistent Storage Volumes ────────────────────────────────────────────────
 volumes:
-  mongo_data:
-    name: elogistics_mongo_dev_data
   redis_data:
     name: elogistics_redis_dev_data
   rabbitmq_data:
@@ -78,3 +54,4 @@ networks:
   elogistics_dev_network:
     name: elogistics_dev_network
     driver: bridge
+

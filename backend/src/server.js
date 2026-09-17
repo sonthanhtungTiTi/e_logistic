@@ -79,6 +79,14 @@ const startServer = async () => {
     const { startResetDriverRejectionQuotaJob } = require('./jobs/resetDriverRejectionQuota.job');
     startResetDriverRejectionQuotaJob();
 
+    // Khởi động SLA Monitor Job (P2: Kiểm tra hạn SLA mỗi 2 phút)
+    const { startSlaMonitorJob } = require('./jobs/slaMonitor.job');
+    startSlaMonitorJob();
+
+    // Khởi động Ticket Auto Close Job (P2: Tự động đóng ticket quá hạn mỗi 1 giờ)
+    const { startTicketAutoCloseJob } = require('./jobs/ticketAutoClose.job');
+    startTicketAutoCloseJob();
+
     server.listen(PORT, () => {
       console.log(`🚀 E-Logistics Server & WebSocket Gateway running on http://localhost:${PORT}`);
     });
