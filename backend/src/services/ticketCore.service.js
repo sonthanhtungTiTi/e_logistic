@@ -1,6 +1,7 @@
 const Ticket = require('../models/ticket.model');
 const TicketMessage = require('../models/ticketMessage.model');
 const Counter = require('../models/counter.model');
+const Order = require('../models/order.model');
 const AppError = require('../utils/AppError');
 const { TICKET_STATUS, canTransition } = require('../constants/ticketState');
 
@@ -36,6 +37,28 @@ async function createTicket(payload, actor) {
   }
   if (!initialText || !initialText.trim()) {
     throw new AppError(400, 'INVALID_MESSAGE', 'Nội dung khiếu nại không được để trống');
+  }
+
+  // Quy tắc thời hạn khiếu nại: Trong vòng 3 ngày kể từ khi đơn giao thành công
+  if (orderId || trackingCode) {
+    const targetOrder = await Order.findOne({
+      $or: [
+        ...(orderId ? [{ _id: orderId }] : []),
+        ...(trackingCode ? [{ trackingCode: trackingCode.trim().toUpperCase() }] : []),
+      ],
+    });
+
+    if (targetOrder && targetOrder.status === 'DELIVERED' && targetOrder.deliveredAt) {
+      const deliveredTime = new Date(targetOrder.deliveredAt).getTime();
+      const threeDaysMs = 3 * 24 * 60 * 60 * 1000;
+      if (Date.now() - deliveredTime > threeDaysMs) {
+        throw new AppError(
+          400,
+          'COMPLAINT_PERIOD_EXPIRED',
+          `Đơn hàng [${targetOrder.trackingCode}] đã giao thành công quá 3 ngày (từ ${new Date(targetOrder.deliveredAt).toLocaleDateString('vi-VN')}). Hệ thống đã hết thời hạn tiếp nhận khiếu nại theo quy định.`
+        );
+      }
+    }
   }
 
   const requesterId = actor._id;

@@ -904,7 +904,7 @@ const getShipperDeliveryTasks = async (req, res, next) => {
       items: o.items || [],
       declaredWeight: o.actualWeight || 1.0,
       codAmount: o.codAmount || 0,
-      isCod: o.isCod || false,
+      isCod: Boolean(o.isCod || (o.codAmount && o.codAmount > 0)),
       status: o.status,
       deliveryTripId: o.deliveryTripId || currentTripId,
       createdAt: o.createdAt,
@@ -948,21 +948,24 @@ const getShipperDeliveryHistory = async (req, res, next) => {
       .sort({ deliveredAt: -1, updatedAt: -1 })
       .limit(Number(limit));
 
-    const historyTasks = orders.map((o) => ({
-      _id: o._id,
-      id: o._id,
-      trackingCode: o.trackingCode,
-      buyerName: o.deliveryAddress?.fullName || 'Khách Nhận',
-      phone: o.deliveryAddress?.phone || '0988000000',
-      address: `${o.deliveryAddress?.address || ''}${o.deliveryAddress?.subZone ? ', ' + o.deliveryAddress.subZone : ''}, ${o.deliveryAddress?.ward || ''}, ${o.deliveryAddress?.district || ''}, ${o.deliveryAddress?.province || ''}`.replace(/^,\s*/, ''),
-      declaredWeight: o.actualWeight || 1.0,
-      codAmount: o.collectedCodAmount || o.codAmount || 0,
-      isCod: o.isCod || false,
-      status: o.status,
-      deliveredAt: o.deliveredAt || o.updatedAt,
-      deliveryTripId: o.deliveryTripId || currentTripId,
-      createdAt: o.createdAt,
-    }));
+    const historyTasks = orders.map((o) => {
+      const finalCod = o.collectedCodAmount !== undefined && o.collectedCodAmount !== null ? o.collectedCodAmount : (o.codAmount || 0);
+      return {
+        _id: o._id,
+        id: o._id,
+        trackingCode: o.trackingCode,
+        buyerName: o.deliveryAddress?.fullName || 'Khách Nhận',
+        phone: o.deliveryAddress?.phone || '0988000000',
+        address: `${o.deliveryAddress?.address || ''}${o.deliveryAddress?.subZone ? ', ' + o.deliveryAddress.subZone : ''}, ${o.deliveryAddress?.ward || ''}, ${o.deliveryAddress?.district || ''}, ${o.deliveryAddress?.province || ''}`.replace(/^,\s*/, ''),
+        declaredWeight: o.actualWeight || 1.0,
+        codAmount: finalCod,
+        isCod: Boolean(o.isCod || finalCod > 0),
+        status: o.status,
+        deliveredAt: o.deliveredAt || o.updatedAt,
+        deliveryTripId: o.deliveryTripId || currentTripId,
+        createdAt: o.createdAt,
+      };
+    });
 
     return res.status(200).json({
       success: true,
@@ -1065,6 +1068,48 @@ const getShipperAvailableZones = async (req, res, next) => {
   }
 };
 
+const confirmDeliveryReceiveHandler = async (req, res, next) => {
+  try {
+    const code = req.params.id || req.body.trackingCode || req.body.scannedCode;
+    const result = await orderService.confirmDeliveryReceiveFromHub(req.user, code);
+    return res.status(200).json({
+      success: true,
+      message: result.message,
+      data: result.order,
+    });
+  } catch (err) {
+    if (err.statusCode) {
+      return res.status(err.statusCode).json({
+        success: false,
+        message: err.message,
+        code: err.code || 'BAD_REQUEST',
+      });
+    }
+    next(err);
+  }
+};
+
+const batchDeliveryReceiveHandler = async (req, res, next) => {
+  try {
+    const { orderIds } = req.body;
+    const result = await orderService.confirmBatchDeliveryReceiveFromHub(req.user, orderIds);
+    return res.status(200).json({
+      success: true,
+      message: result.message,
+      data: result,
+    });
+  } catch (err) {
+    if (err.statusCode) {
+      return res.status(err.statusCode).json({
+        success: false,
+        message: err.message,
+        code: err.code || 'BAD_REQUEST',
+      });
+    }
+    next(err);
+  }
+};
+
 module.exports = {
   getQuote,
   createOrder,
@@ -1092,5 +1137,7 @@ module.exports = {
   getShipperDeliveryHistory,
   getShipperAvailableZones,
   flushShipperTripHandler,
+  confirmDeliveryReceiveHandler,
+  batchDeliveryReceiveHandler,
 };
 

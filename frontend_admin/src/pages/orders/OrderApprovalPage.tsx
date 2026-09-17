@@ -8,7 +8,7 @@ import {
   Package,
   Phone,
   Store,
-  ShieldCheck,
+  ClipboardCheck,
   CheckCheck,
   Eye,
   X,

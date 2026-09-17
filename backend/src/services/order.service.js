@@ -1133,6 +1133,94 @@ const orderService = {
       results,
       message: `Đã xử lý lấy hàng hàng loạt ${orderIds.length} đơn (Thành công: ${successCount}, Thất bại: ${failedCount}).`,
     };
+  },
+
+  /**
+   * Xác nhận Shipper nhận kiện hàng tại Hub đích (IN_HUB_DEST -> OUT_FOR_DELIVERY)
+   */
+  async confirmDeliveryReceiveFromHub(user, trackingCodeOrId) {
+    const code = String(trackingCodeOrId || '').trim().toUpperCase();
+    let order = await Order.findOne({
+      $or: [
+        { trackingCode: code },
+        ...(mongoose.Types.ObjectId.isValid(trackingCodeOrId) ? [{ _id: trackingCodeOrId }] : [])
+      ]
+    });
+
+    if (!order) {
+      const err = new Error(`Không tìm thấy đơn hàng với mã "${code}"`);
+      err.statusCode = 404;
+      throw err;
+    }
+
+    if (order.status === 'OUT_FOR_DELIVERY') {
+      return {
+        order,
+        message: `Đơn hàng [${order.trackingCode}] đã ở trạng thái Đang Giao Hàng (Đã nhận trước đó).`,
+      };
+    }
+
+    const allowedStatuses = ['IN_HUB_DEST', 'ARRIVED_AT_DEST_HUB', 'SORTED', 'DISPATCHED_TO_DESTINATION'];
+    if (!allowedStatuses.includes(order.status)) {
+      const err = new Error(`Đơn hàng [${order.trackingCode}] đang ở trạng thái "${order.status}", không thể nhận xuất phát từ Hub đích.`);
+      err.statusCode = 400;
+      throw err;
+    }
+
+    const preStatus = order.status;
+    order.status = 'OUT_FOR_DELIVERY';
+    order.deliveryShipperId = user._id;
+    order.currentDriverId = user._id;
+    order.assignedShipperId = user._id;
+    await order.save();
+
+    await OrderLog.create({
+      orderId: order._id,
+      trackingCode: order.trackingCode,
+      actionBy: user._id,
+      preStatus,
+      postStatus: 'OUT_FOR_DELIVERY',
+      actionType: 'STATUS_UPDATED',
+      note: `Shipper [${user.fullName || user.email}] đã quét nhận kiện tại Hub đích và xuất bãi đi giao.`,
+    });
+
+    ioSingleton.emitOrderUpdate(order.sellerId, order);
+
+    return {
+      order,
+      message: `Đã nhận kiện [${order.trackingCode}] thành công. Đơn hàng chuyển sang Đang Giao Hàng!`,
+    };
+  },
+
+  async confirmBatchDeliveryReceiveFromHub(user, orderIds = []) {
+    if (!Array.isArray(orderIds) || orderIds.length === 0) {
+      const err = new Error('Danh sách đơn hàng không được rỗng');
+      err.statusCode = 400;
+      throw err;
+    }
+
+    const results = [];
+    let successCount = 0;
+    let failedCount = 0;
+
+    for (const id of orderIds) {
+      try {
+        const res = await this.confirmDeliveryReceiveFromHub(user, id);
+        results.push({ id, success: true, order: res.order });
+        successCount++;
+      } catch (err) {
+        results.push({ id, success: false, error: err.message });
+        failedCount++;
+      }
+    }
+
+    return {
+      total: orderIds.length,
+      successCount,
+      failedCount,
+      results,
+      message: `Đã nhận tại Hub ${orderIds.length} kiện (Thành công: ${successCount}, Thất bại: ${failedCount}).`,
+    };
   }
 };
 
