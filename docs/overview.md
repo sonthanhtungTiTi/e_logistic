@@ -1,8 +1,8 @@
 #  E-LOGISTICS — PHÂN TÍCH KIẾN TRÚC & LUỒNG SOURCE CODE TOÀN DIỆN
 
-> **Ngày phân tích:** 15/09/2026  
-> **Phạm vi:** Toàn bộ hệ thống — Backend API, Frontend Web (Seller/Buyer), Frontend Admin (Operations/Driver/Warehouse)  
-> **Trạng thái:** Production-ready · 92/92 Test Cases PASS · E2E Web UI & Socket Realtime Validated · Full RBAC Route Guard & CS/Accountant/Warehouse Demo Accounts Synchronized · v2.6
+> **Ngày phân tích:** 17/09/2026  
+> **Phạm vi:** Toàn bộ hệ thống — Backend API, Frontend Web (Seller/Buyer), Frontend Admin (Operations/Driver/Warehouse/CSKH)  
+> **Trạng thái:** Production-ready · 15/15 Jest Tests PASS (MongoMemoryReplSet with Transaction Support, SLA Engine, Ticket Core) · 92/92 API & E2E Scenarios Validated · Full RBAC Route Guard & CS/Accountant/Warehouse Demo Accounts Synchronized · v2.7
 
 ---
 
@@ -103,6 +103,8 @@ Hải Phòng (Satellite)               Bình Dương   Đồng Nai    Cần Thơ
 | **Icons** | Lucide React | 1.30.0 | Icon set thống nhất |
 | **Notifications** | Sonner | 2.0.7 | Toast notification |
 | **Excel** | xlsx | 0.18.5 | Import/Export Excel |
+| **Date & Timezone** | Luxon | 3.5.0 | Cố định Timezone 'Asia/Ho_Chi_Minh' & SLA Engine |
+| **Testing Engine** | Jest + mongodb-memory-server | 29.7.0 + 10.1.4 | MongoMemoryReplSet hỗ trợ Multi-Document Transactions |
 
 ---
 
@@ -472,14 +474,20 @@ Hệ thống E-Logistics áp dụng mô hình **Event-Driven Push-based Realtime
 3. **`shipper:${shipperId}` (Dispatch Notification)**: Phát âm thanh / thông báo đẩy ngay khi Dispatch Engine hoặc Điều phối viên phân công ca lấy/giao mới.
 4. **`warehouse-dashboard:${hubId}` (Live Inventory Metrics)**: Bảng điều khiển tồn kho tại Hub tự động nhảy con số đơn nhập/xuất/tồn mà không cần F5/reload trang.
 
-### 4.8 Background Jobs (Cron Workers)
+### 4.8 Background Jobs (Cron Workers & Distributed Schedulers)
 
-| Job | Tần suất | Chức năng |
-|---|---|---|
-| `auditLostTimeout.job.js` | Mỗi giờ | SEARCH_ZONE quá hạn → SUSPECTED_LOST → LOST |
-| `resetDriverRejectionQuota.job.js` | 00:00 hàng ngày | Reset `rejectionQuota.remainingToday = 3` |
-| `driverConfirmTimeout.job.js` | Interval | Hết timeout xác nhận tài xế → rollback Trip |
-| `staleRedeliveryMonitor.job.js` | Interval | Monitor đơn giao lại tồn đọng |
+| Job | Tần suất | Chức năng | Cơ chế & Distributed Lock |
+|---|---|---|---|
+| `slaMonitor.job.js` | Mỗi 2 phút | Quét vi phạm SLA (First Response / Resolution), nâng priority tự động, cảnh báo 20% thời hạn, cảnh báo ticket NEW > 10m | `lock:job:slaMonitor` (EX 110s, NX) |
+| `ticketAutoClose.job.js` | Mỗi 1 giờ | Tự động đóng ticket `WAITING_USER` > 7 ngày không phản hồi hoặc `RESOLVED` > 72 giờ qua actor `SYSTEM` | `lock:job:ticketAutoClose` (EX 3500s, NX) |
+| `syncMonitor.job.js` | Mỗi 30 giây | Giám sát hàng đợi Write-Behind Redis → MongoDB | In-memory healthcheck |
+| `auditLostTimeout.job.js` | Mỗi 1 giờ | SEARCH_ZONE quá hạn → SUSPECTED_LOST → LOST | Scheduled interval |
+| `resetDriverRejectionQuota.job.js` | 00:00 hàng ngày | Reset `rejectionQuota.remainingToday = 3` cho tài xế | Daily scheduled reset |
+| `driverConfirmTimeout.job.js` | 5 phút | Hết timeout xác nhận tài xế → rollback Trip | Timeout check |
+| `staleRedeliveryMonitor.job.js` | 30 phút | Monitor đơn giao lại tồn đọng | Redelivery aging |
+
+**Endpoint Giám Sát Background Jobs (Admin RBAC):**
+- `GET /api/system/jobs-status`: Đọc thông tin từ Redis Hash `system:jobs`, trả về trạng thái chi tiết của từng job (`name`, `intervalMs`, `lastRunAt`, `lastDurationMs`, `lastError`, `isRunning`).
 
 ---
 
@@ -762,18 +770,59 @@ DELETE /api/seller/products/:id         → Xóa / Ẩn sản phẩm khỏi danh
 - **Tự động điền khi tạo đơn (Auto-fill Order Creation):**
   - Khi Seller tạo đơn tại `CreateOrderPage.tsx`, chọn sản phẩm từ Kho → Tự động tính tổng trọng lượng `actualWeight` và thể tích `volumetricWeight` chính xác.
 
-### 5.10 Module 10: Ticket & CSKH Support System (Hỗ Trợ & Khiếu Nại)
+### 5.10 Module 10: Ticket & CSKH Support System, SLA Engine & Auto-Priority (P0 - P2)
 
-**Hệ thống Vé Hỗ Trợ Multi-role:**
+**Kiến trúc Helpdesk 2 Chiều Toàn Diện (`ticketCore.service.js`, `slaCalculator.service.js`, `ticketPriority.service.js`):**
+
+#### 1. State Machine 9 Trạng Thái & Phân Quyền Chuyển Trạng Thái:
 ```
-POST /api/tickets                       → Seller tạo Ticket mới (Lý do: Hàng hư hỏng, Chậm giao, Đền bù, Khiếu nại cước)
-GET  /api/tickets                       → Seller xem danh sách Ticket của mình
-GET  /api/tickets/:id                   → Xem tiến trình xử lý & trao đổi tin nhắn
-POST /api/tickets/:id/messages          → Thêm phản hồi / tin nhắn vào Ticket
+NEW / OPEN ➔ ASSIGNED ➔ IN_PROGRESS ⇆ WAITING_USER (hoặc WAITING_SELLER)
+                       ↓          ↳ ESCALATED ➔ PENDING_REFUND
+                       ↳ RESOLVED ➔ CLOSED (Terminal)
+                                  ↳ REOPENED ➔ IN_PROGRESS
+```
+- **Phân quyền State Transition:**
+  - `NEW ➔ ASSIGNED`: CS, Admin.
+  - `IN_PROGRESS ➔ WAITING_USER`: CS, Admin (Tự động kích hoạt `pauseSla`).
+  - `WAITING_USER ➔ IN_PROGRESS`: Seller, Buyer, CS, Admin (Tự động kích hoạt `resumeSla`).
+  - `WAITING_USER ➔ CLOSED`: CS, Admin, `SYSTEM` (Tự động đóng sau 7 ngày không phản hồi).
+  - `RESOLVED ➔ CLOSED`: CS, Admin, `SYSTEM` (Tự động đóng sau 72 giờ).
 
-GET  /api/admin/tickets                 → Admin/CSKH quản lý toàn bộ Ticket hệ thống
-PUT  /api/admin/tickets/:id/status      → Đổi trạng thái Ticket (OPEN, IN_PROGRESS, RESOLVED, CLOSED)
-POST /api/admin/tickets/:id/refund      → Xử lý đền bù / hoàn cước tự động vào Ví COD Seller
+#### 2. SLA Calculator Engine & Lịch Ngày Nghỉ Lễ Việt Nam:
+- **Khung Giờ Làm Việc (Business Hours):** `08:00 – 20:00` (12 giờ làm việc/ngày), áp dụng **TẤT CẢ 7 ngày trong tuần** (T2 – CN), **chỉ trừ các ngày nghỉ lễ có trong collection `Holiday`**.
+- **Ma trận SLA Cam kết:**
+  - **P1 (Khẩn cấp):** Phản hồi đầu 15 phút, Xử lý 4 giờ — Chế độ **24x7** (Cộng thẳng thời gian).
+  - **P2 (Cao):** Phản hồi đầu 1 giờ, Xử lý 24 giờ làm việc hành chính.
+  - **P3 (Trung bình):** Phản hồi đầu 4 giờ, Xử lý 48 giờ làm việc hành chính.
+  - **P4 (Thường):** Phản hồi đầu 8 giờ, Xử lý 72 giờ làm việc hành chính.
+- **Tạm dừng & Dời hạn SLA (Pause / Resume):**
+  - Khi ticket chuyển sang `WAITING_USER`, ghi nhận `pauseStartedAt = now`.
+  - Khi Seller phản hồi (chuyển về `IN_PROGRESS`), tính `pausedDurationMs = now - pauseStartedAt`, cộng dồn vào `pausedMs`, và dời `firstResponseDueAt` / `resolutionDueAt` lùi lại đúng khoảng thời gian đã tạm dừng.
+- **Lịch Nghỉ Lễ Quốc Gia (`seed-holidays.js`):** Tích hợp sẵn 29 ngày nghỉ lễ chính thức 2026-2027 (Tết Dương lịch, Giỗ Tổ Hùng Vương 10/3 Âm lịch chính xác theo lịch thiên văn, 30/4, 1/5, Quốc khánh 2/9, dải nghỉ Tết Nguyên Đán Bính Ngọ 2026 và Đinh Mùi 2027).
+
+#### 3. Auto-Priority Matrix & Nhận Diện Seller VIP:
+- **Quy tắc Phân hạng Tự động:**
+  - **P1:** Danh mục `WRONG_ADDRESS` khi đơn đang giao (`IN_TRANSIT`, `OUT_FOR_DELIVERY`) HOẶC `COD_MISMATCH` / `COD_DISPUTE` có tiền COD > 5.000.000đ.
+  - **P2:** Danh mục `LOST` / `LOST_GOODS`, `DAMAGED` / `DAMAGED_GOODS`, HOẶC Seller là đối tác VIP.
+  - **P3:** Danh mục `LATE` / `DELIVERY_DELAY`, `PICKUP_FAIL`.
+  - **P4:** Các trường hợp hỗ trợ thông thường khác.
+- **Phát hiện VIP Seller (`computeIsVip`):** Đếm số đơn hoàn tất (`DELIVERED`/`COMPLETED`) trong 30 ngày gần nhất > 500 đơn. Cache kết quả vào Redis key `seller:vip:{sellerId}` TTL 1 giờ.
+- **CS Manual Override Priority:** Nhân viên CSKH có quyền ghi đè mức độ ưu tiên bằng tay kèm theo `overrideReason` (bắt buộc >= 10 ký tự), tự động ghi nhận vào `TicketAuditLog`.
+
+#### 4. Phân tầng Tin nhắn 2 Chiều (2-Tier Visibility):
+- `PUBLIC`: Tin nhắn trao đổi công khai giữa Seller và CSKH.
+- `INTERNAL`: Ghi chú nội bộ giữa các CS Agents và Admin. Backend tự động ẩn/filter toàn bộ tin nhắn `INTERNAL` khi người gọi là Seller hoặc Buyer.
+
+#### 5. API Endpoints Quản lý Ticket:
+```
+POST /api/tickets                       → Seller tạo Ticket mới (Auto-calculate Priority & SLA Due Dates)
+GET  /api/tickets                       → Seller xem danh sách Ticket của mình
+GET  /api/tickets/:id                   → Chi tiết Ticket & Tin nhắn trao đổi
+POST /api/tickets/:id/messages          → Gửi tin nhắn phản hồi (Seller: PUBLIC, CS: PUBLIC hoặc INTERNAL)
+GET  /api/admin/tickets                 → CSKH/Admin quản lý toàn bộ Ticket hệ thống (Lọc theo status, category, priority, SLA)
+PUT  /api/admin/tickets/:id/status      → Cập nhật trạng thái Ticket (Tuân thủ State Machine & canTransition)
+POST /api/admin/tickets/:id/claim       → CS Agent nhận xử lý Ticket (Chống Race Condition Atomic Update)
+POST /api/admin/tickets/:id/override-priority → CS Override mức ưu tiên kèm lý do >= 10 ký tự
 ```
 
 ### 5.11 Module 11: Dispatch Low Density Zone Optimization (Mật Độ Thấp)
@@ -1993,6 +2042,6 @@ Sprint 3 (Tháng tới):
 
 ---
 
-> **Cập nhật lần cuối:** 15/09/2026  
-> **Phiên bản tài liệu:** 2.6 — Đồng bộ toàn diện Hệ thống: Seed tài khoản demo chuẩn cho 17 Roles (bổ sung `cs.demo@elogistic.vn`, `accountant.demo@elogistic.vn`, `warehouse.mgr@elogistic.vn`), Khắc phục triệt để lỗi 403 Forbidden do Routing Guard trên Frontend Admin, Đồng bộ luồng Ticket CSKH & Duyệt KYC Real-time.
+> **Cập nhật lần cuối:** 17/09/2026  
+> **Phiên bản tài liệu:** 2.7 — Đồng bộ toàn diện Hệ thống: Khởi tạo SLA Engine & Auto-Priority P0-P2 (Lịch nghỉ lễ VN 2026-2027, Giờ hành chính 08:00–20:00 7 ngày/tuần, Pause/Resume SLA, Background Jobs `slaMonitor` & `ticketAutoClose` có Redis Lock, Endpoint `/api/system/jobs-status`, cấu hình Jest `MongoMemoryReplSet` hỗ trợ Multi-Document Transactions đạt 15/15 Tests PASS 100%).
 
