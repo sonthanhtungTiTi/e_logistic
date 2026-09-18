@@ -1,8 +1,3 @@
-import type { PickupAddressItem } from '../../../api/seller.api';
-import type { Province, District, Ward } from '../../../api/location.api';
-import type { ProductItem as CatalogProductItem } from '../../../api/product.api';
-import type { QuoteResponseData } from '../../../types/order.types';
-
 export interface ProductItem {
   id: number;
   name: string;

@@ -23,6 +23,7 @@ import {
 import { Link, useNavigate, useLocation } from 'react-router';
 import { useAuth } from '../../hooks/useAuth';
 import { ThemeToggleButton } from '../common/ThemeToggleButton';
+import sellerAvatarDefault from '../../assets/seller_avatar_default.jpg';
 
 export const Navbar: React.FC = () => {
   const { user, logout } = useAuth();
@@ -104,17 +105,11 @@ export const Navbar: React.FC = () => {
               >
                 {/* Avatar with Glow */}
                 <div className="relative shrink-0">
-                  {user.avatarUrl ? (
-                    <img
-                      src={user.avatarUrl}
-                      alt={displayName}
-                      className="w-8 h-8 rounded-xl object-cover ring-2 ring-blue-500/40"
-                    />
-                  ) : (
-                    <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white font-black text-sm ring-2 ring-blue-400/40 group-hover:scale-105 transition-transform">
-                      {initialLetter}
-                    </div>
-                  )}
+                  <img
+                    src={user.avatarUrl || sellerAvatarDefault}
+                    alt={displayName}
+                    className="w-8 h-8 rounded-xl object-cover ring-2 ring-blue-500/40 bg-white dark:bg-slate-800"
+                  />
                   <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-blue-500 border-2 border-white dark:border-slate-900 animate-pulse" />
                 </div>
 
@@ -133,9 +128,11 @@ export const Navbar: React.FC = () => {
                   {/* Card Header */}
                   <div className="p-3 rounded-2xl bg-blue-50 dark:bg-slate-800/80 border border-blue-500/20 space-y-2 mb-2">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white font-extrabold text-base shadow-md">
-                        {initialLetter}
-                      </div>
+                      <img
+                        src={user.avatarUrl || sellerAvatarDefault}
+                        alt={displayName}
+                        className="w-10 h-10 rounded-xl object-cover ring-2 ring-blue-500/30 bg-white dark:bg-slate-800 shadow-md"
+                      />
                       <div className="overflow-hidden">
                         <div className="font-bold text-sm text-slate-900 dark:text-white truncate flex items-center gap-1.5">
                           {displayName}

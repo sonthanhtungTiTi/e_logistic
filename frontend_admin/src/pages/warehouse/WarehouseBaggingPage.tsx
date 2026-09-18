@@ -715,11 +715,11 @@ export const WarehouseBaggingPage: React.FC = () => {
                     Bao tải chưa có kiện hàng nào. Hãy quét mã vận đơn để thả hàng vào bao!
                   </div>
                 ) : (
-                  <div className="divide-y divide-slate-800/60 max-h-72 overflow-y-auto">
+                  <div className="divide-y divide-slate-200 dark:divide-slate-800/60 max-h-72 overflow-y-auto">
                     {activeBag.trackingCodes?.map((code: string, idx: number) => (
                       <div
                         key={code}
-                        className="px-5 py-3 flex items-center justify-between hover:bg-slate-800/40 transition text-xs"
+                        className="px-5 py-3 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/40 transition text-xs"
                       >
                         <div className="flex items-center gap-3 font-mono">
                           <span className="text-slate-500 font-bold w-5">{idx + 1}.</span>

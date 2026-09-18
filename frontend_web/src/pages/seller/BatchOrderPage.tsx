@@ -786,32 +786,34 @@ export const BatchOrderPage: React.FC = () => {
 
   return (
     <>
-      <div className="flex flex-col gap-6 animate-in fade-in duration-300">
-        {/* TOP HEADER & ACTION TOOLBAR */}
-        <div className="w-full glass-panel p-5 sm:p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm bg-white/80 dark:bg-slate-900/80 backdrop-blur-md flex flex-col gap-4 sm:gap-5">
-          {/* Header Title Info */}
-          <div className="space-y-1.5 w-full">
-            <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 flex-wrap">
-              <span className="cursor-pointer hover:text-blue-500 transition font-medium" onClick={() => navigate('/seller/dashboard')}>
-                Seller Portal
+      <div className="space-y-6 animate-in fade-in duration-300">
+        {/* Top Header Bar & Navigation */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800/80 pb-4 sm:pb-5">
+          <div>
+            <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mb-1">
+              <span
+                className="cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition font-medium"
+                onClick={() => navigate('/seller/dashboard')}
+              >
+                Seller Dashboard
               </span>
               <ChevronRight className="w-3.5 h-3.5 text-slate-400 dark:text-slate-600 shrink-0" />
-              <span className="text-cyan-600 dark:text-cyan-400 font-semibold">Tạo Đơn Hàng Loạt</span>
+              <span className="text-cyan-600 dark:text-cyan-400 font-semibold">Đăng Đơn Excel Loạt</span>
             </div>
-            <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2.5">
-              <FileSpreadsheet className="w-6 h-6 text-cyan-500 dark:text-cyan-400 shrink-0" /> Nhập Đơn Excel
+            <h2 className="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2.5">
+              <FileSpreadsheet className="w-7 h-7 text-cyan-600 dark:text-cyan-400 shrink-0" /> Nhập Đơn Excel
             </h2>
-            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-              Tải lên file danh sách để khởi tạo tự động hàng trăm vận đơn, phát hiện lỗi cấu trúc và xem chi tiết.
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              Tải lên file danh sách để khởi tạo tự động hàng trăm vận đơn, phát hiện lỗi cấu trúc và xem chi tiết
             </p>
           </div>
 
-          {/* SubNav Tabs */}
-          <div className="w-full">
-            <OrderSubNav activeTab="batch" layout="horizontal" />
-          </div>
+          {/* Quick Action Tabs */}
+          <OrderSubNav activeTab="batch" />
+        </div>
 
-          {/* Action Buttons Row */}
+        {/* Action Buttons Toolbar */}
+        <div className="glass-panel p-3.5 sm:p-4 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 shadow-sm">
           <div className="flex flex-wrap items-center gap-2.5">
             <button
               type="button"
@@ -819,7 +821,7 @@ export const BatchOrderPage: React.FC = () => {
                 setPendingWizardFile(null);
                 setIsImportModalOpen(true);
               }}
-              className="px-4 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2 transition cursor-pointer active:scale-95 shrink-0"
+              className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2 transition cursor-pointer active:scale-95 shrink-0"
             >
               <Upload className="w-4 h-4 text-emerald-100 shrink-0" />
               <span>Tải File Excel (Wizard 4 Bước)</span>
@@ -828,24 +830,24 @@ export const BatchOrderPage: React.FC = () => {
             <button
               type="button"
               onClick={handleDownloadTemplate}
-              className="px-3.5 py-2.5 rounded-2xl bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-cyan-600 dark:text-cyan-400 text-xs font-bold border border-slate-200 dark:border-cyan-500/30 flex items-center justify-center gap-2 shadow-sm transition cursor-pointer active:scale-95 shrink-0"
+              className="px-3.5 py-2 rounded-xl bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-cyan-700 dark:text-cyan-400 text-xs font-bold border border-slate-200 dark:border-cyan-500/30 flex items-center justify-center gap-2 shadow-sm transition cursor-pointer active:scale-95 shrink-0"
             >
-              <Download className="w-4 h-4 text-cyan-500 dark:text-cyan-400 shrink-0" />
+              <Download className="w-4 h-4 text-cyan-600 dark:text-cyan-400 shrink-0" />
               <span>Tải File Mẫu (.CSV)</span>
             </button>
-
-            <button
-              type="button"
-              onClick={() => setIsGuideOpen(true)}
-              className="px-3.5 py-2.5 rounded-2xl bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold border border-slate-200 dark:border-slate-800 flex items-center justify-center gap-2 shadow-sm transition cursor-pointer active:scale-95 shrink-0"
-            >
-              <HelpCircle className="w-4 h-4 text-blue-500 dark:text-blue-400 shrink-0" />
-              <span>Hướng Dẫn</span>
-            </button>
           </div>
+
+          <button
+            type="button"
+            onClick={() => setIsGuideOpen(true)}
+            className="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold border border-slate-200 dark:border-slate-700 flex items-center justify-center gap-2 shadow-sm transition cursor-pointer active:scale-95 shrink-0"
+          >
+            <HelpCircle className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
+            <span>Hướng Dẫn</span>
+          </button>
         </div>
 
-        {/* MAIN WORKSPACE (Full Width & Expanded Space) */}
+        {/* MAIN WORKSPACE */}
         <div className="w-full space-y-6">
 
       {/* Auto-Restored Batch Draft Notification Banner */}
@@ -1130,11 +1132,11 @@ export const BatchOrderPage: React.FC = () => {
           </div>
 
           {/* Interactive Batch Preview Table */}
-          <div className="glass-panel rounded-3xl border border-slate-800 overflow-hidden shadow-xl">
+          <div className="glass-panel rounded-3xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xl">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="bg-slate-900/90 text-slate-400 border-b border-slate-800 font-semibold uppercase text-[11px]">
+                  <tr className="bg-slate-50/80 dark:bg-slate-900/90 text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 font-semibold uppercase text-[11px]">
                     <th className="py-3 px-4 w-12 text-center">STT</th>
                     <th className="py-3 px-4 w-28">Trạng Thái</th>
                     <th className="py-3 px-4">Người Nhận & SĐT</th>
@@ -1144,7 +1146,7 @@ export const BatchOrderPage: React.FC = () => {
                     <th className="py-3 px-4 text-center w-28">Thao Tác</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/60">
+                <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
                   {filteredItems.length === 0 ? (
                     <tr>
                       <td colSpan={7} className="py-12 text-center text-slate-500">
@@ -1155,7 +1157,7 @@ export const BatchOrderPage: React.FC = () => {
                     filteredItems.map((item) => (
                       <tr
                         key={item.id}
-                        className={`hover:bg-slate-800/40 transition ${!item.isValid ? 'bg-rose-950/10' : ''
+                        className={`hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition ${!item.isValid ? 'bg-rose-50/60 dark:bg-rose-950/10' : ''
                           }`}
                       >
                         <td className="py-3 px-4 text-center font-mono text-slate-400 font-bold">

@@ -42,7 +42,12 @@ export function useTicketContext(ticketId: string | null) {
 export function useSendMessage(ticketId: string | null) {
   const queryClient = useQueryClient();
 
-  return useMutation({
+  return useMutation<
+    TicketMessage,
+    Error,
+    { body: string; visibility: 'PUBLIC' | 'INTERNAL'; clientMsgId?: string },
+    { previousContext?: TicketContextData; optimisticId?: string }
+  >({
     mutationFn: async (payload: { body: string; visibility: 'PUBLIC' | 'INTERNAL'; clientMsgId?: string }) => {
       if (!ticketId) throw new Error('Chưa chọn ticket');
       const res = await axiosClient.post<{ success: boolean; message: string; data: TicketMessage }>(
@@ -52,7 +57,7 @@ export function useSendMessage(ticketId: string | null) {
       return res.data.data;
     },
     onMutate: async (newMsg) => {
-      if (!ticketId) return;
+      if (!ticketId) return {};
       await queryClient.cancelQueries({ queryKey: ticketQueryKeys.context(ticketId) });
 
       const previousContext = queryClient.getQueryData<TicketContextData>(ticketQueryKeys.context(ticketId));
@@ -88,9 +93,9 @@ export function useSendMessage(ticketId: string | null) {
     },
     onSuccess: (savedMsg, _variables, context) => {
       if (!ticketId) return;
-      queryClient.setQueryData<TicketContextData | undefined>(ticketQueryKeys.context(ticketId), (old) => {
+      queryClient.setQueryData<TicketContextData | undefined>(ticketQueryKeys.context(ticketId), (old?: TicketContextData) => {
         if (!old) return old;
-        const filtered = old.messages.filter((m) => m._id !== context?.optimisticId);
+        const filtered = old.messages.filter((m: TicketMessage) => m._id !== context?.optimisticId);
         return {
           ...old,
           messages: [...filtered, savedMsg || { ...old.messages[old.messages.length - 1], status: 'sent' }],
@@ -126,7 +131,7 @@ export function useClaimTicket() {
       const res = await axiosClient.post<{ success: boolean; message: string }>(`/tickets/admin/${ticketId}/claim`);
       return res.data;
     },
-    onSuccess: (_, ticketId) => {
+    onSuccess: (_: unknown, ticketId: string) => {
       toast.success('Đã nhận xử lý ticket thành công!');
       queryClient.invalidateQueries({ queryKey: ticketQueryKeys.context(ticketId) });
       queryClient.invalidateQueries({ queryKey: ticketQueryKeys.lists() });
@@ -150,7 +155,7 @@ export function useTransitionTicket() {
       const res = await axiosClient.put<{ success: boolean; message: string }>(`/tickets/admin/${ticketId}`, body);
       return res.data;
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (_: unknown, variables: { ticketId: string; status: string; resolutionNote?: string; closedReason?: string }) => {
       toast.success(`Đã cập nhật trạng thái ticket sang ${variables.status}`);
       queryClient.invalidateQueries({ queryKey: ticketQueryKeys.context(variables.ticketId) });
       queryClient.invalidateQueries({ queryKey: ticketQueryKeys.lists() });

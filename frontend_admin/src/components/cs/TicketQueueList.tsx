@@ -103,7 +103,7 @@ export const TicketQueueList: React.FC = () => {
             <span className="text-xs">Không có ticket nào</span>
           </div>
         ) : (
-          tickets.map((item) => (
+          tickets.map((item: any) => (
             <TicketQueueItem
               key={item._id}
               ticket={item}

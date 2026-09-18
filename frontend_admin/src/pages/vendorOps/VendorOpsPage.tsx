@@ -599,7 +599,7 @@ export const VendorOpsPage: React.FC = () => {
                   <th className="p-3.5 text-right">Thao Tác Duyệt</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60">
+              <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
                 {loading ? (
                   <tr>
                     <td colSpan={5} className="p-8 text-center text-slate-400">

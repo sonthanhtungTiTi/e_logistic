@@ -138,19 +138,22 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-300">
       {/* Top Banner & Title */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800/80 pb-4 sm:pb-5">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-bold uppercase mb-1">
-            <Package className="w-3.5 h-3.5" /> Kênh Thương Mại & Chủ Hàng
+          <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mb-1">
+            <span className="text-blue-600 dark:text-blue-400 font-semibold">Seller Dashboard</span>
           </div>
-          <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white">Quản Lý Vận Đơn & Kho Hàng</h2>
+          <h2 className="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2.5">
+            <Package className="w-7 h-7 text-blue-600 dark:text-blue-400 shrink-0" /> Quản Lý Vận Đơn & Kho Hàng
+          </h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Tổng quan chỉ số hoạt động, quản lý đơn hàng và xử lý vận đơn shop</p>
         </div>
 
         <button
           onClick={() => navigate('/seller/orders/create')}
-          className="px-5 py-3 rounded-2xl shimmer-btn text-white text-xs font-bold shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 cursor-pointer transition"
+          className="px-5 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 cursor-pointer transition self-start sm:self-auto shrink-0"
         >
           <Plus className="w-4 h-4" />
           Tạo Đơn Vận Chuyển Mới
