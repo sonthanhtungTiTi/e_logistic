@@ -11,11 +11,13 @@ import {
   MessageSquare,
   Shield,
   User,
+  ChevronRight,
 } from 'lucide-react';
-import { Link } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { ticketApi, type TicketItem } from '../../api/ticket.api';
 
 export const TicketListPage: React.FC = () => {
+  const navigate = useNavigate();
   const [tickets, setTickets] = useState<TicketItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
@@ -100,99 +102,109 @@ export const TicketListPage: React.FC = () => {
       case 'OPEN':
       case 'NEW':
         return (
-          <span className="px-2.5 py-0.5 rounded-md bg-blue-500/15 text-blue-500 dark:text-blue-400 font-bold border border-blue-500/30 text-[10px]">
+          <span className="px-2.5 py-0.5 rounded-md bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400 font-bold border border-blue-200 dark:border-blue-500/30 text-[10px]">
             Mới tạo
           </span>
         );
       case 'ASSIGNED':
         return (
-          <span className="px-2.5 py-0.5 rounded-md bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 font-bold border border-cyan-500/30 text-[10px]">
+          <span className="px-2.5 py-0.5 rounded-md bg-cyan-50 dark:bg-cyan-500/15 text-cyan-700 dark:text-cyan-400 font-bold border border-cyan-200 dark:border-cyan-500/30 text-[10px]">
             Đã gán CSKH
           </span>
         );
       case 'IN_PROGRESS':
         return (
-          <span className="px-2.5 py-0.5 rounded-md bg-amber-500/15 text-amber-600 dark:text-amber-400 font-bold border border-amber-500/30 text-[10px]">
+          <span className="px-2.5 py-0.5 rounded-md bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 font-bold border border-amber-200 dark:border-amber-500/30 text-[10px]">
             Đang xử lý
           </span>
         );
       case 'WAITING_USER':
       case 'WAITING_SELLER':
         return (
-          <span className="px-2.5 py-0.5 rounded-md bg-purple-500/15 text-purple-600 dark:text-purple-400 font-bold border border-purple-500/30 text-[10px]">
+          <span className="px-2.5 py-0.5 rounded-md bg-purple-50 dark:bg-purple-500/15 text-purple-700 dark:text-purple-400 font-bold border border-purple-200 dark:border-purple-500/30 text-[10px]">
             Chờ Shop phản hồi
           </span>
         );
       case 'ESCALATED':
         return (
-          <span className="px-2.5 py-0.5 rounded-md bg-rose-500/15 text-rose-600 dark:text-rose-400 font-bold border border-rose-500/30 text-[10px]">
+          <span className="px-2.5 py-0.5 rounded-md bg-rose-50 dark:bg-rose-500/15 text-rose-700 dark:text-rose-400 font-bold border border-rose-200 dark:border-rose-500/30 text-[10px]">
             Chuyển cấp trên
           </span>
         );
       case 'PENDING_REFUND':
         return (
-          <span className="px-2.5 py-0.5 rounded-md bg-orange-500/15 text-orange-600 dark:text-orange-400 font-bold border border-orange-500/30 text-[10px]">
+          <span className="px-2.5 py-0.5 rounded-md bg-orange-50 dark:bg-orange-500/15 text-orange-700 dark:text-orange-400 font-bold border border-orange-200 dark:border-orange-500/30 text-[10px]">
             Chờ duyệt đền bù
           </span>
         );
       case 'RESOLVED':
         return (
-          <span className="px-2.5 py-0.5 rounded-md bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-500/30 text-[10px]">
+          <span className="px-2.5 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 font-bold border border-emerald-200 dark:border-emerald-500/30 text-[10px]">
             Đã giải quyết
           </span>
         );
       case 'CLOSED':
         return (
-          <span className="px-2.5 py-0.5 rounded-md bg-slate-500/15 text-slate-600 dark:text-slate-400 font-bold border border-slate-500/30 text-[10px]">
+          <span className="px-2.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-500/15 text-slate-700 dark:text-slate-400 font-bold border border-slate-200 dark:border-slate-500/30 text-[10px]">
             Đã đóng
           </span>
         );
       case 'REOPENED':
         return (
-          <span className="px-2.5 py-0.5 rounded-md bg-pink-500/15 text-pink-600 dark:text-pink-400 font-bold border border-pink-500/30 text-[10px]">
+          <span className="px-2.5 py-0.5 rounded-md bg-pink-50 dark:bg-pink-500/15 text-pink-700 dark:text-pink-400 font-bold border border-pink-200 dark:border-pink-500/30 text-[10px]">
             Mở lại khiếu nại
           </span>
         );
       default:
-        return <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-[10px] font-medium">{status}</span>;
+        return <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-400 text-[10px] font-medium">{status}</span>;
     }
   };
 
   const getPriorityBadge = (p: string) => {
     switch (p) {
       case 'URGENT':
-        return <span className="text-rose-400 font-bold font-mono">🚨 KHẨN CẤP</span>;
+        return <span className="text-rose-600 dark:text-rose-400 font-bold font-mono">🚨 KHẨN CẤP</span>;
       case 'HIGH':
-        return <span className="text-amber-400 font-bold font-mono">Cao</span>;
+        return <span className="text-amber-600 dark:text-amber-400 font-bold font-mono">Cao</span>;
       case 'LOW':
-        return <span className="text-slate-400 font-mono">Thấp</span>;
+        return <span className="text-slate-500 dark:text-slate-400 font-mono">Thấp</span>;
       default:
-        return <span className="text-blue-400 font-mono">Bình thường</span>;
+        return <span className="text-blue-600 dark:text-blue-400 font-mono font-semibold">Bình thường</span>;
     }
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
+    <div className="space-y-6 animate-in fade-in duration-300">
+      {/* Header & Breadcrumb */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800/80 pb-4 sm:pb-5">
         <div>
-          <h3 className="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
-            <HelpCircle className="w-6 h-6 text-indigo-500" /> Danh Sách Ticket Khiếu Nại & Hỗ Trợ
-          </h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
+          <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mb-1">
+            <span
+              className="cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition font-medium"
+              onClick={() => navigate('/seller/dashboard')}
+            >
+              Seller Dashboard
+            </span>
+            <ChevronRight className="w-3.5 h-3.5 text-slate-400 dark:text-slate-600 shrink-0" />
+            <span className="text-indigo-600 dark:text-indigo-400 font-semibold">Khiếu Nại &amp; Hỗ Trợ Ticket</span>
+          </div>
+          <h2 className="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2.5">
+            <HelpCircle className="w-7 h-7 text-indigo-600 dark:text-indigo-400 shrink-0" /> Danh Sách Ticket Khiếu Nại &amp; Hỗ Trợ
+          </h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
             Trao đổi trực tiếp 2 chiều với đội ngũ Chăm sóc khách hàng GIAO HÀNG để giải quyết sự cố đơn hàng
           </p>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2.5 shrink-0 flex-wrap sm:flex-nowrap">
           <Link
             to="/seller/orders/create"
-            className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-blue-600/25 transition cursor-pointer"
+            className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-blue-600/20 transition cursor-pointer"
           >
             <Package className="w-4 h-4 text-white" /> Tạo Đơn Hàng
           </Link>
           <Link
             to="/seller/tickets/create"
-            className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-lg transition cursor-pointer"
+            className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-indigo-600/20 transition cursor-pointer"
           >
             <Plus className="w-4 h-4" /> Tạo Ticket Mới
           </Link>
@@ -275,7 +287,7 @@ export const TicketListPage: React.FC = () => {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="bg-slate-900 border-b border-slate-800 text-slate-400 font-bold uppercase text-[10px]">
+                <tr className="bg-slate-50/80 dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-bold uppercase text-[10px]">
                   <th className="p-3.5">Mã Ticket</th>
                   <th className="p-3.5">Vận Đơn Liên Quan</th>
                   <th className="p-3.5">Phân Loại</th>
@@ -286,27 +298,27 @@ export const TicketListPage: React.FC = () => {
                   <th className="p-3.5 text-right">Chi Tiết</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60">
+              <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
                 {tickets.map((t) => (
                   <tr
                     key={t._id}
                     onClick={() => handleOpenDetail(t)}
-                    className="hover:bg-slate-800/40 cursor-pointer transition"
+                    className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 cursor-pointer transition"
                   >
-                    <td className="p-3.5 font-mono font-bold text-indigo-400">{t.ticketCode}</td>
-                    <td className="p-3.5 font-mono text-cyan-400 font-semibold">
-                      {t.trackingCode || <span className="text-slate-600 italic">Không có</span>}
+                    <td className="p-3.5 font-mono font-bold text-indigo-600 dark:text-indigo-400">{t.ticketCode}</td>
+                    <td className="p-3.5 font-mono text-cyan-600 dark:text-cyan-400 font-semibold">
+                      {t.trackingCode || <span className="text-slate-400 dark:text-slate-600 italic">Không có</span>}
                     </td>
-                    <td className="p-3.5 text-slate-300 font-semibold">{getCategoryLabel(t.category)}</td>
+                    <td className="p-3.5 text-slate-700 dark:text-slate-300 font-semibold">{getCategoryLabel(t.category)}</td>
                     <td className="p-3.5">
-                      <div className="text-white font-bold">{t.subject}</div>
-                      <div className="text-[11px] text-slate-400 truncate max-w-xs">
+                      <div className="text-slate-900 dark:text-white font-bold">{t.subject}</div>
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-xs">
                         {t.messages?.[t.messages.length - 1]?.message || ''}
                       </div>
                     </td>
                     <td className="p-3.5">{getPriorityBadge(t.priority)}</td>
                     <td className="p-3.5">{getStatusBadge(t.status)}</td>
-                    <td className="p-3.5 font-mono text-slate-400 text-[11px]">
+                    <td className="p-3.5 font-mono text-slate-500 dark:text-slate-400 text-[11px]">
                       {new Date(t.createdAt).toLocaleString('vi-VN')}
                     </td>
                     <td className="p-3.5 text-right">
@@ -315,7 +327,7 @@ export const TicketListPage: React.FC = () => {
                           e.stopPropagation();
                           handleOpenDetail(t);
                         }}
-                        className="px-2.5 py-1 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 text-[11px] font-bold inline-flex items-center gap-1"
+                        className="px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-600/20 dark:hover:bg-indigo-600/30 text-indigo-600 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/30 text-[11px] font-bold inline-flex items-center gap-1 cursor-pointer transition"
                       >
                         <MessageSquare className="w-3.5 h-3.5" /> Xem ({t.messages?.length || 1})
                       </button>
@@ -330,28 +342,28 @@ export const TicketListPage: React.FC = () => {
 
       {/* CHAT / TICKET DETAIL MODAL */}
       {selectedTicket && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="bg-slate-900 border border-slate-700 rounded-3xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[88vh] overflow-hidden animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-3xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[88vh] overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Modal Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-950/60">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/60">
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="font-mono font-bold text-indigo-400 text-sm">{selectedTicket.ticketCode}</span>
+                  <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400 text-sm">{selectedTicket.ticketCode}</span>
                   {getStatusBadge(selectedTicket.status)}
-                  <span className="text-[11px] px-2 py-0.5 rounded bg-slate-800 text-slate-300">
+                  <span className="text-[11px] px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium">
                     {getCategoryLabel(selectedTicket.category)}
                   </span>
                 </div>
-                <h4 className="text-sm font-bold text-white mt-1">{selectedTicket.subject}</h4>
+                <h4 className="text-sm font-bold text-slate-900 dark:text-white mt-1">{selectedTicket.subject}</h4>
                 {selectedTicket.trackingCode && (
-                  <p className="text-[11px] text-cyan-400 font-mono mt-0.5">
+                  <p className="text-[11px] text-cyan-600 dark:text-cyan-400 font-mono mt-0.5">
                     Vận đơn liên quan: <b>{selectedTicket.trackingCode}</b>
                   </p>
                 )}
               </div>
               <button
                 onClick={() => setSelectedTicket(null)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800"
+                className="text-slate-400 hover:text-slate-700 dark:hover:text-white p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -359,8 +371,8 @@ export const TicketListPage: React.FC = () => {
 
             {/* Resolution Note if resolved */}
             {selectedTicket.resolutionNote && (
-              <div className="px-6 py-3 bg-emerald-950/40 border-b border-emerald-800/40 text-emerald-300 text-xs flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
+              <div className="px-6 py-3 bg-emerald-50 dark:bg-emerald-950/40 border-b border-emerald-200 dark:border-emerald-800/40 text-emerald-800 dark:text-emerald-300 text-xs flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
                 <div>
                   <span className="font-bold">Kết luận giải quyết từ CSKH:</span> {selectedTicket.resolutionNote}
                 </div>
@@ -376,16 +388,16 @@ export const TicketListPage: React.FC = () => {
                     key={idx}
                     className={`flex flex-col ${isSeller ? 'items-end' : 'items-start'}`}
                   >
-                    <div className="flex items-center gap-1.5 mb-1 text-[11px] text-slate-400">
+                    <div className="flex items-center gap-1.5 mb-1 text-[11px] text-slate-500 dark:text-slate-400">
                       {isSeller ? (
                         <>
-                          <span className="font-bold text-indigo-300">{m.senderName} (Shop)</span>
-                          <User className="w-3.5 h-3.5 text-indigo-400" />
+                          <span className="font-bold text-indigo-600 dark:text-indigo-300">{m.senderName} (Shop)</span>
+                          <User className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
                         </>
                       ) : (
                         <>
-                          <Shield className="w-3.5 h-3.5 text-emerald-400" />
-                          <span className="font-bold text-emerald-300">{m.senderName}</span>
+                          <Shield className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                          <span className="font-bold text-emerald-600 dark:text-emerald-300">{m.senderName}</span>
                         </>
                       )}
                       <span>· {new Date(m.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</span>
@@ -394,8 +406,8 @@ export const TicketListPage: React.FC = () => {
                     <div
                       className={`p-3.5 rounded-2xl max-w-[80%] leading-relaxed ${
                         isSeller
-                          ? 'bg-indigo-600 text-white rounded-tr-none'
-                          : 'bg-slate-800 text-slate-100 border border-slate-700 rounded-tl-none'
+                          ? 'bg-indigo-600 text-white rounded-tr-none shadow-md shadow-indigo-600/20'
+                          : 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 rounded-tl-none'
                       }`}
                     >
                       {m.message}
@@ -407,26 +419,26 @@ export const TicketListPage: React.FC = () => {
 
             {/* Reply Input Form */}
             {selectedTicket.status !== 'CLOSED' ? (
-              <form onSubmit={handleSendReply} className="p-4 border-t border-slate-800 bg-slate-950/80 flex gap-2">
+              <form onSubmit={handleSendReply} className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/80 flex gap-2">
                 <input
                   type="text"
                   required
                   placeholder="Nhập nội dung phản hồi cho bộ phận CSKH..."
                   value={replyMessage}
                   onChange={(e) => setReplyMessage(e.target.value)}
-                  className="flex-1 glass-input rounded-xl px-4 py-2.5 text-xs text-white"
+                  className="flex-1 glass-input rounded-xl px-4 py-2.5 text-xs text-slate-900 dark:text-white bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700"
                 />
                 <button
                   type="submit"
                   disabled={replying}
-                  className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow transition shrink-0"
+                  className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-md shadow-indigo-600/20 transition shrink-0 cursor-pointer"
                 >
                   {replying ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                   Gửi Phản Hồi
                 </button>
               </form>
             ) : (
-              <div className="p-3 bg-slate-950 border-t border-slate-800 text-center text-xs text-slate-500">
+              <div className="p-3 bg-slate-100 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 text-center text-xs text-slate-500">
                 Ticket này đã được giải quyết và đóng. Nếu có vấn đề mới, vui lòng mở ticket khác.
               </div>
             )}

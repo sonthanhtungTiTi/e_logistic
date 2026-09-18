@@ -194,7 +194,7 @@ export const WarehouseStaffPage: React.FC = () => {
                 <th className="py-3.5 px-4 text-center">Điều Chuyển Vai Trò</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60">
+            <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
               {loading ? (
                 <tr>
                   <td colSpan={7} className="py-12 text-center text-slate-400">

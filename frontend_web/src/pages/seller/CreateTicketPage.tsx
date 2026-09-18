@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { HelpCircle, Send, ArrowLeft, RefreshCw, AlertCircle } from 'lucide-react';
+import { HelpCircle, Send, ArrowLeft, RefreshCw, AlertCircle, ChevronRight } from 'lucide-react';
 import { useNavigate, Link } from 'react-router';
 import { ticketApi } from '../../api/ticket.api';
 
@@ -42,19 +42,30 @@ export const CreateTicketPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-xl mx-auto space-y-6">
-      <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
+    <div className="max-w-2xl mx-auto space-y-6 animate-in fade-in duration-300">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800/80 pb-4 sm:pb-5">
         <div>
-          <h3 className="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
-            <HelpCircle className="w-6 h-6 text-indigo-500" /> Gửi Yêu Cầu Hỗ Trợ / Khiếu Nại
-          </h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Đội ngũ CSKH GIAO HÀNG sẽ tiếp nhận và phản hồi nhanh chóng</p>
+          <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mb-1">
+            <span className="cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400 transition font-medium" onClick={() => navigate('/seller/dashboard')}>
+              Seller Dashboard
+            </span>
+            <ChevronRight className="w-3.5 h-3.5 text-slate-400 dark:text-slate-600 shrink-0" />
+            <span className="cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400 transition font-medium" onClick={() => navigate('/seller/tickets')}>
+              Khiếu Nại & Hỗ Trợ Ticket
+            </span>
+            <ChevronRight className="w-3.5 h-3.5 text-slate-400 dark:text-slate-600 shrink-0" />
+            <span className="text-indigo-600 dark:text-indigo-400 font-semibold">Tạo Yêu Cầu Mới</span>
+          </div>
+          <h2 className="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2.5">
+            <HelpCircle className="w-7 h-7 text-indigo-600 dark:text-indigo-400 shrink-0" /> Gửi Yêu Cầu Hỗ Trợ / Khiếu Nại
+          </h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Đội ngũ CSKH GIAO HÀNG sẽ tiếp nhận và xử lý nhanh chóng trong vòng 24h</p>
         </div>
         <Link
           to="/seller/tickets"
-          className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold flex items-center gap-1 transition cursor-pointer"
+          className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer self-start sm:self-auto shrink-0 border border-slate-200/80 dark:border-slate-700/60"
         >
-          <ArrowLeft className="w-3.5 h-3.5" /> Quay lại
+          <ArrowLeft className="w-3.5 h-3.5" /> Quay lại danh sách
         </Link>
       </div>
 

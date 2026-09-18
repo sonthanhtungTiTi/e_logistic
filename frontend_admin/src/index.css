@@ -547,15 +547,23 @@ body.light-theme table {
   border-color: #e2e8f0 !important;
 }
 
-body.light-theme thead,
-body.light-theme tr.bg-slate-900,
-body.light-theme tr.bg-slate-900\/60 {
-  background-color: #f1f5f9 !important;
+body.light-theme thead {
+  background-color: #f8fafc !important;
+  border-bottom: 1px solid #e2e8f0 !important;
 }
 
-body.light-theme th {
-  background-color: #f1f5f9 !important;
-  color: #334155 !important;
+body.light-theme thead tr,
+body.light-theme tr.bg-slate-900,
+body.light-theme tr.bg-slate-900\/60,
+body.light-theme tr.bg-slate-900\/80 {
+  background-color: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+
+body.light-theme th,
+body.light-theme thead th {
+  background-color: #f8fafc !important;
+  color: #475569 !important;
   border-color: #e2e8f0 !important;
   font-weight: 700 !important;
 }
@@ -567,6 +575,36 @@ body.light-theme td {
 
 body.light-theme tr:hover {
   background-color: #f8fafc !important;
+}
+
+body.light-theme [class*="divide-slate-"] > * + *,
+body.light-theme .divide-y > * + *,
+body.light-theme [class*="divide-slate-"] > tr + tr,
+body.light-theme .divide-y > tr + tr,
+body.light-theme tbody.divide-y > tr {
+  border-color: #e2e8f0 !important;
+}
+
+/* Light Mode Soft Tint Indigo & Purple Buttons */
+body.light-theme .bg-indigo-500\/10,
+body.light-theme .bg-indigo-500\/15,
+body.light-theme .bg-indigo-500\/20,
+body.light-theme .bg-indigo-600\/10,
+body.light-theme .bg-indigo-600\/20,
+body.light-theme .bg-indigo-600\/30 {
+  background-color: rgba(99, 102, 241, 0.12) !important;
+  color: #4338ca !important;
+  border-color: rgba(99, 102, 241, 0.25) !important;
+}
+
+body.light-theme .bg-purple-500\/10,
+body.light-theme .bg-purple-500\/15,
+body.light-theme .bg-purple-500\/20,
+body.light-theme .bg-purple-600\/10,
+body.light-theme .bg-purple-600\/20 {
+  background-color: rgba(168, 85, 247, 0.12) !important;
+  color: #7e22ce !important;
+  border-color: rgba(168, 85, 247, 0.25) !important;
 }
 
 /* General Text Overrides for Light Theme */
@@ -619,6 +657,11 @@ body.light-theme .text-rose-400 {
 body.light-theme .text-purple-300,
 body.light-theme .text-purple-400 {
   color: #6b21a8 !important;
+}
+
+body.light-theme .text-indigo-300,
+body.light-theme .text-indigo-400 {
+  color: #4338ca !important;
 }
 
 /* Glassmorphism Panels & Cards (Flat design, no box-shadow, no 3D transform) */

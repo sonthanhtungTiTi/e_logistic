@@ -262,17 +262,29 @@ export const OrderListPage: React.FC = () => {
       )}
 
       {/* Header Bar */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800/80 pb-4 sm:pb-5">
         <div>
-          <h3 className="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
-            <Package className="w-6 h-6 text-blue-500" /> Tra Cứu & Quản Lý Đơn Hàng
+          <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mb-1">
+            <span
+              className="cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition font-medium"
+              onClick={() => navigate('/seller/dashboard')}
+            >
+              Seller Dashboard
+            </span>
+            <ChevronRight className="w-3.5 h-3.5 text-slate-400 dark:text-slate-600 shrink-0" />
+            <span className="text-blue-600 dark:text-blue-400 font-semibold">Danh Sách Đơn Hàng</span>
+          </div>
+          <h2 className="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2.5">
+            <Package className="w-7 h-7 text-blue-600 dark:text-blue-400 shrink-0" /> Tra Cứu &amp; Quản Lý Đơn Hàng
             {isRealtimeActive && (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 animate-pulse ml-2">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30 animate-pulse ml-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400"></span> Realtime Active
               </span>
             )}
-          </h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400">Tìm kiếm, lọc chi tiết theo mã vận đơn, người nhận, chỉnh sửa & quản lý bưu gửi từ MongoDB</p>
+          </h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            Tìm kiếm, lọc chi tiết theo mã vận đơn, người nhận, chỉnh sửa &amp; quản lý bưu gửi từ MongoDB
+          </p>
         </div>
 
         <OrderSubNav activeTab="list" />

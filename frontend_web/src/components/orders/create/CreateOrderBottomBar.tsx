@@ -6,7 +6,7 @@ interface CreateOrderBottomBarProps {
   setShowInfoModal: (val: boolean) => void;
   chargeableWeight: number;
   totalActualWeight: number;
-  productsLength: number;
+  productsLength?: number;
   volumetricWeight: number;
   handleGetQuote: () => void;
   quoting: boolean;
@@ -19,7 +19,6 @@ export const CreateOrderBottomBar: React.FC<CreateOrderBottomBarProps> = ({
   setShowInfoModal,
   chargeableWeight,
   totalActualWeight,
-  productsLength,
   volumetricWeight,
   handleGetQuote,
   quoting,

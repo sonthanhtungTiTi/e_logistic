@@ -1,7 +1,7 @@
 import React from 'react';
 import { Package, Plus, Trash2, CheckCircle2, AlertTriangle } from 'lucide-react';
 import type { ProductItem as CatalogProductItem } from '../../../api/product.api';
-import { formatNumberWithDots, parseDotsToNumber } from '../../../lib/formatters';
+import { formatNumberWithDots } from '../../../lib/formatters';
 import type { ProductItem, Dimensions, TouchedProducts } from './types';
 
 interface PackageItemsSectionProps {

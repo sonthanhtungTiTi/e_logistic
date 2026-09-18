@@ -20,6 +20,12 @@ require('../models/pickupConfirmation.model');
 
 const connectDB = async () => {
   try {
+    const dns = require('dns');
+    try {
+      dns.setServers(['8.8.8.8', '8.8.4.4', '1.1.1.1']);
+    } catch (dnsErr) {
+      // ignore
+    }
     const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/e_logistic';
     const conn = await mongoose.connect(mongoURI);
     console.log(`✅ MongoDB Connected: ${conn.connection.host}`);

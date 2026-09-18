@@ -73,7 +73,7 @@ export const InboundLogTable: React.FC<InboundLogTableProps> = ({ logs }) => {
 
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm">
-          <thead className="bg-slate-950 text-slate-400 text-xs uppercase font-semibold border-b border-slate-800">
+          <thead className="bg-slate-100 dark:bg-slate-950 text-slate-700 dark:text-slate-400 text-xs uppercase font-semibold border-b border-slate-200 dark:border-slate-800">
             <tr>
               <th className="py-3.5 px-4">Thời gian</th>
               <th className="py-3.5 px-4">Mã vận đơn</th>
@@ -83,10 +83,10 @@ export const InboundLogTable: React.FC<InboundLogTableProps> = ({ logs }) => {
               <th className="py-3.5 px-4">Kết quả</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-800/60 font-normal">
+          <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60 font-normal">
             {logs.length === 0 ? (
               <tr>
-                <td colSpan={5} className="py-12 text-center text-slate-500 text-xs italic">
+                <td colSpan={6} className="py-12 text-center text-slate-500 text-xs italic">
                   Chưa có dữ liệu. Hãy đặt con trỏ vào ô nhập và dùng súng quét mã vạch để bắt đầu nhập kho.
                 </td>
               </tr>
@@ -96,18 +96,18 @@ export const InboundLogTable: React.FC<InboundLogTableProps> = ({ logs }) => {
                   key={log.id}
                   className={`transition ${
                     log.isDuplicate
-                      ? 'hover:bg-slate-800/40 text-amber-200/90'
+                      ? 'hover:bg-slate-50 dark:hover:bg-slate-800/40 text-amber-700 dark:text-amber-200/90'
                       : log.isSuccess
-                      ? 'hover:bg-slate-800/40 text-slate-200'
-                      : 'bg-rose-950/20 hover:bg-rose-950/30 text-rose-200'
+                      ? 'hover:bg-slate-50 dark:hover:bg-slate-800/40 text-slate-800 dark:text-slate-200'
+                      : 'bg-rose-50 dark:bg-rose-950/20 hover:bg-rose-100 dark:hover:bg-rose-950/30 text-rose-700 dark:text-rose-200'
                   }`}
                 >
-                  <td className="py-3.5 px-4 text-xs font-mono text-slate-400">{log.time}</td>
-                  <td className="py-3.5 px-4 font-mono font-bold text-cyan-400 text-sm tracking-wide">
+                  <td className="py-3.5 px-4 text-xs font-mono text-slate-500 dark:text-slate-400">{log.time}</td>
+                  <td className="py-3.5 px-4 font-mono font-bold text-cyan-600 dark:text-cyan-400 text-sm tracking-wide">
                     {log.tracking_code}
                   </td>
-                  <td className="py-3.5 px-4 font-mono text-xs text-slate-300">
-                    <span className="bg-slate-950 px-2 py-1 rounded border border-slate-800">
+                  <td className="py-3.5 px-4 font-mono text-xs text-slate-700 dark:text-slate-300">
+                    <span className="bg-slate-100 dark:bg-slate-950 px-2 py-1 rounded border border-slate-200 dark:border-slate-800">
                       {log.status}
                     </span>
                   </td>

@@ -726,7 +726,7 @@ export const LocalDispatchPage: React.FC = () => {
             </div>
 
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-950/60 text-slate-400 font-bold border-b border-slate-800">
+              <thead className="bg-slate-100 dark:bg-slate-950/60 text-slate-700 dark:text-slate-400 font-bold border-b border-slate-200 dark:border-slate-800">
                 <tr>
                   <th className="p-3.5">Shipper &amp; Vai Trò</th>
                   <th className="p-3.5">Cụm Tuyến / Địa Bàn</th>
@@ -736,30 +736,30 @@ export const LocalDispatchPage: React.FC = () => {
                   <th className="p-3.5 text-right">Trạng Thái Ca</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60">
+              <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
                 {shippers
                   .filter((s) => (roleFilter === 'ALL' ? true : s.role === roleFilter))
                   .map((s) => (
-                  <tr key={s.id} className="hover:bg-slate-800/30 transition">
+                  <tr key={s.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition">
                     <td className="p-3.5">
-                      <div className="font-bold text-white flex items-center gap-1.5">
+                      <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
                         {s.fullName}
                         {s.role === 'PICKUP_SHIPPER' && (
-                          <span className="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-1.5 py-0.2 rounded font-mono font-bold">
+                          <span className="text-[9px] bg-amber-500/20 text-amber-600 dark:text-amber-300 border border-amber-500/30 px-1.5 py-0.2 rounded font-mono font-bold">
                             Đội Gom
                           </span>
                         )}
                         {s.role === 'DELIVERY_SHIPPER' && (
-                          <span className="text-[9px] bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 px-1.5 py-0.2 rounded font-mono font-bold">
+                          <span className="text-[9px] bg-cyan-500/20 text-cyan-600 dark:text-cyan-300 border border-cyan-500/30 px-1.5 py-0.2 rounded font-mono font-bold">
                             Đội Giao
                           </span>
                         )}
                       </div>
-                      <div className="text-slate-400 text-[11px] font-mono">{s.phoneNumber}</div>
+                      <div className="text-slate-500 dark:text-slate-400 text-[11px] font-mono">{s.phoneNumber}</div>
                     </td>
 
                     <td className="p-3.5">
-                      <div className="text-slate-200 font-semibold">
+                      <div className="text-slate-800 dark:text-slate-200 font-semibold">
                         {s.operatingArea?.subZone || s.activeGeozone?.name || 'Chưa gán zone'}
                       </div>
                       <div className="text-[10px] text-cyan-400 font-mono">
@@ -856,7 +856,7 @@ export const LocalDispatchPage: React.FC = () => {
             </div>
 
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-950/70 text-slate-400 font-bold border-b border-slate-800">
+              <thead className="bg-slate-100 dark:bg-slate-950/70 text-slate-700 dark:text-slate-400 font-bold border-b border-slate-200 dark:border-slate-800">
                 <tr>
                   <th className="p-3.5">Shipper</th>
                   <th className="p-3.5">Khu Vực Hiện Tại</th>
@@ -866,7 +866,7 @@ export const LocalDispatchPage: React.FC = () => {
                   <th className="p-3.5 text-right">Thao Tác Duyệt</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60">
+              <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
                 {zoneRequests.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="p-8 text-center text-slate-500">
@@ -880,16 +880,16 @@ export const LocalDispatchPage: React.FC = () => {
                     const reqArea = req.zoneChangeRequest?.requestedArea;
 
                     return (
-                      <tr key={req._id} className="hover:bg-slate-800/30 transition">
+                      <tr key={req._id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition">
                         <td className="p-3.5">
-                          <div className="font-bold text-white">{req.fullName}</div>
-                          <div className="text-[11px] text-slate-400 font-mono">{req.phoneNumber}</div>
-                          <span className="text-[10px] text-cyan-400 font-mono">
+                          <div className="font-bold text-slate-900 dark:text-white">{req.fullName}</div>
+                          <div className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">{req.phoneNumber}</div>
+                          <span className="text-[10px] text-cyan-600 dark:text-cyan-400 font-mono">
                             {req.vehicleInfo?.licensePlate || req.vehicleInfo?.vehicleType || 'Xe máy'}
                           </span>
                         </td>
 
-                        <td className="p-3.5 text-slate-300">
+                        <td className="p-3.5 text-slate-700 dark:text-slate-300">
                           <div>{curArea?.subZone || 'Chưa gán'}</div>
                           <div className="text-[11px] text-slate-400">
                             {curArea?.ward ? `${curArea.ward}, ` : ''}{curArea?.district || ''}, {curArea?.province || ''}

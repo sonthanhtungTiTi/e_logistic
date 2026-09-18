@@ -26,6 +26,7 @@ import {
   RefreshCw,
   FileText,
   Check,
+  ChevronRight,
 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router';
 import { socket } from '../../api/socket';
@@ -36,6 +37,8 @@ import type { PickupAddressItem, KycStatusResponse, SubAccountItem } from '../..
 import { VietnamAddressSelector } from '../../components/shared/VietnamAddressSelector';
 import type { VietnamAddressData } from '../../components/shared/VietnamAddressSelector';
 import { WarehouseMapPicker } from '../../components/shared/WarehouseMapPicker';
+import sellerCoverDefault from '../../assets/seller_cover_default.jpg';
+import sellerAvatarDefault from '../../assets/seller_avatar_default.jpg';
 
 const getSellerKycImageUrl = (filenameOrPath: string | undefined | null) => {
   if (!filenameOrPath) return '';
@@ -740,10 +743,17 @@ export const ProfilePage: React.FC = () => {
     }
   };
 
-  const initialLetter = (companyName || fullName || 'S').charAt(0).toUpperCase();
-
   return (
-    <div className="w-full space-y-8 animate-in fade-in duration-300 pb-16">
+    <div className="w-full space-y-6 sm:space-y-8 animate-in fade-in duration-300 pb-16">
+      {/* Breadcrumb Navigation */}
+      <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+        <span className="cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition font-medium" onClick={() => navigate('/seller/dashboard')}>
+          Seller Dashboard
+        </span>
+        <ChevronRight className="w-3.5 h-3.5 text-slate-400 dark:text-slate-600 shrink-0" />
+        <span className="text-blue-600 dark:text-blue-400 font-semibold">Hồ Sơ Cá Nhân & Cài Đặt Shop</span>
+      </div>
+
       {/* Sticky Floating Toast Feedback */}
       {(successMsg || errorMsg) && (
         <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] max-w-md w-full px-4 animate-in slide-in-from-top-5 duration-300">
@@ -774,51 +784,101 @@ export const ProfilePage: React.FC = () => {
       )}
 
       {/* Top Banner Header Profile Card */}
-      <div className="glass-panel rounded-3xl border border-slate-800 overflow-hidden relative shadow-xl">
-        <div className="h-40 bg-gradient-to-r from-blue-900 via-indigo-900 to-cyan-900 relative">
-          <div className="absolute right-6 top-6 flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/60 backdrop-blur-md border border-slate-700/80 text-xs font-semibold text-cyan-300">
-            <Sparkles className="w-3.5 h-3.5 text-cyan-400" /> Đối tác Bạch Kim (Platinum)
+      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 overflow-hidden relative shadow-lg">
+        {/* Banner with high-tech default cover image and overlay */}
+        <div className="h-48 sm:h-56 relative overflow-hidden bg-slate-950">
+          <img
+            src={sellerCoverDefault}
+            alt="Shop Cover Banner"
+            className="w-full h-full object-cover opacity-90 transition-transform duration-700 hover:scale-105"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent pointer-events-none" />
+          
+          {/* Badge at top right */}
+          <div className="absolute right-6 top-6 flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-900/80 backdrop-blur-md border border-white/20 text-xs font-bold text-white shadow-lg">
+            <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse" /> Đối tác Bạch Kim (Platinum)
           </div>
         </div>
 
-        <div className="px-6 pb-6 pt-0 relative flex flex-col sm:flex-row sm:items-end justify-between gap-6 -mt-14">
-          <div className="flex flex-col sm:flex-row items-center sm:items-end gap-5 text-center sm:text-left">
-            <div className="relative group">
-              {avatarUrl ? (
-                <img
-                  src={avatarUrl}
-                  alt={fullName}
-                  className="w-28 h-28 rounded-3xl object-cover ring-4 ring-[#090d16] shadow-2xl bg-slate-800"
-                />
-              ) : (
-                <div className="w-28 h-28 rounded-3xl bg-gradient-to-tr from-blue-600 via-cyan-500 to-emerald-400 ring-4 ring-[#090d16] shadow-2xl flex items-center justify-center text-white text-4xl font-black">
-                  {initialLetter}
-                </div>
-              )}
+        {/* Content area below banner */}
+        <div className="px-6 pb-6 pt-4 relative flex flex-col sm:flex-row sm:items-center justify-between gap-6 bg-white dark:bg-slate-900">
+          <div className="flex flex-col sm:flex-row items-center sm:items-center gap-5 text-center sm:text-left">
+            {/* Avatar - exclusively overlaps the banner border */}
+            <div className="relative group shrink-0 -mt-16 sm:-mt-20">
+              <img
+                src={avatarUrl || sellerAvatarDefault}
+                alt={fullName || companyName}
+                className="w-28 h-28 sm:w-32 sm:h-32 rounded-3xl object-cover ring-4 ring-white dark:ring-slate-900 shadow-2xl bg-white dark:bg-slate-800"
+              />
               <button
                 type="button"
                 onClick={() => setIsAvatarModalOpen(true)}
-                className="absolute bottom-1 right-1 p-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:text-white shadow-md transition group-hover:scale-110 cursor-pointer"
+                className="absolute bottom-1 right-1 p-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/30 transition group-hover:scale-110 cursor-pointer"
                 title="Thay đổi ảnh đại diện (Chụp Camera / Upload ảnh)"
               >
-                <Camera className="w-4 h-4 text-cyan-400" />
+                <Camera className="w-4 h-4 text-white" />
               </button>
             </div>
+
+            {/* Shop text & badges: cleanly positioned in the card area below the banner */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-center sm:justify-start gap-2.5 flex-wrap">
+                <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                  {companyName || 'Chưa cập nhật tên Shop'}
+                </h2>
+                {kycStatus === 'APPROVED' || kycStatus === 'VERIFIED_KYC' || user?.kycVerified ? (
+                  <span title="Shop đã xác minh KYC" className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold text-xs bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 px-2.5 py-0.5 rounded-full">
+                    <ShieldCheck className="w-4 h-4" /> Đã Xác Minh
+                  </span>
+                ) : (
+                  <span title="Shop chưa xác minh KYC" className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400 font-bold text-xs bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 px-2.5 py-0.5 rounded-full">
+                    <ShieldAlert className="w-4 h-4" /> Chưa KYC
+                  </span>
+                )}
+              </div>
+
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 flex items-center justify-center sm:justify-start gap-2 font-medium">
+                <span>Đại diện: <strong className="text-slate-900 dark:text-slate-200 font-semibold">{fullName || 'Chưa cập nhật'}</strong></span>
+                <span>•</span>
+                <span>Hotline: <strong className="text-blue-600 dark:text-cyan-400 font-mono font-bold">{phone || 'Chưa cập nhật'}</strong></span>
+              </p>
+
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 pt-1">
+                <span className="px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20 text-xs font-bold uppercase flex items-center gap-1.5 shadow-sm">
+                  <span className="w-2 h-2 rounded-full bg-blue-500 animate-ping" />
+                  {user?.role || 'SELLER'}
+                </span>
+                <span className={`px-3 py-1 rounded-full text-xs font-bold border shadow-sm ${
+                  kycStatus === 'APPROVED' || kycStatus === 'VERIFIED_KYC' || user?.kycVerified
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/30'
+                    : kycStatus === 'PENDING' || kycStatus === 'PENDING_KYC'
+                    ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30'
+                    : kycStatus === 'REJECTED' || kycStatus === 'REJECTED_KYC'
+                    ? 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/10 dark:text-rose-300 dark:border-rose-500/30'
+                    : 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700'
+                }`}>
+                  KYC: {kycStatus === 'APPROVED' || kycStatus === 'VERIFIED_KYC' || user?.kycVerified ? 'Đã Xác Minh ✅' : kycStatus === 'PENDING' || kycStatus === 'PENDING_KYC' ? 'Đang Chờ Duyệt ⏳' : kycStatus === 'REJECTED' || kycStatus === 'REJECTED_KYC' ? 'Bị Từ Chối ❌' : 'Chưa Nộp'}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Avatar Capture & Upload Modal */}
       {isAvatarModalOpen && (
         <div className="fixed inset-0 z-[120] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="glass-panel p-6 rounded-3xl border border-slate-700 max-w-md w-full space-y-5 shadow-2xl relative animate-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <Camera className="w-5 h-5 text-cyan-400" /> Cập Nhật Ảnh Đại Diện Shop
+          <div className="glass-panel p-6 rounded-3xl border border-slate-200 dark:border-slate-700 max-w-md w-full space-y-5 shadow-2xl relative animate-in zoom-in-95 duration-200 bg-white dark:bg-slate-900">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+              <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Camera className="w-5 h-5 text-blue-600 dark:text-cyan-400" /> Cập Nhật Ảnh Đại Diện Shop
               </h3>
               <button
                 onClick={() => {
                   stopCamera();
                   setIsAvatarModalOpen(false);
                 }}
-                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -847,20 +907,20 @@ export const ProfilePage: React.FC = () => {
                   <button
                     type="button"
                     onClick={captureCameraPhoto}
-                    className="px-5 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg cursor-pointer"
+                    className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg cursor-pointer"
                   >
                     <Camera className="w-4 h-4" /> Chụp Ảnh Ngay
                   </button>
                   <button
                     type="button"
                     onClick={stopCamera}
-                    className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs border border-slate-700 cursor-pointer"
+                    className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 font-semibold text-xs border border-slate-200 dark:border-slate-700 cursor-pointer"
                   >
                     Hủy Camera
                   </button>
                 </div>
-                <p className="text-[11px] text-cyan-300 font-medium flex items-center justify-center gap-1.5">
-                  <Camera className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                <p className="text-[11px] text-blue-600 dark:text-cyan-300 font-medium flex items-center justify-center gap-1.5">
+                  <Camera className="w-3.5 h-3.5 text-blue-600 dark:text-cyan-400 shrink-0" />
                   <span>Đang bật Webcam. Căn chỉnh góc nhìn và bấm "Chụp Ảnh Ngay"</span>
                 </p>
               </div>
@@ -868,22 +928,20 @@ export const ProfilePage: React.FC = () => {
               <div className="space-y-4">
                 {/* Current Avatar Preview */}
                 <div className="flex flex-col items-center justify-center py-2">
-                  {avatarUrl ? (
-                    <img src={avatarUrl} alt="Avatar Preview" className="w-24 h-24 rounded-2xl object-cover ring-2 ring-cyan-500/50 shadow-lg" />
-                  ) : (
-                    <div className="w-24 h-24 rounded-2xl bg-gradient-to-tr from-blue-600 to-cyan-500 flex items-center justify-center text-white text-3xl font-black shadow-lg">
-                      {initialLetter}
-                    </div>
-                  )}
+                  <img
+                    src={avatarUrl || sellerAvatarDefault}
+                    alt="Avatar Preview"
+                    className="w-24 h-24 rounded-2xl object-cover ring-4 ring-blue-500/30 shadow-xl bg-white dark:bg-slate-800"
+                  />
                 </div>
 
                 <div className="grid grid-cols-1 gap-2.5 pt-1">
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="w-full py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs flex items-center justify-center gap-2.5 border border-slate-700 transition cursor-pointer"
+                    className="w-full py-3 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-white font-bold text-xs flex items-center justify-center gap-2.5 border border-slate-200 dark:border-slate-700 transition cursor-pointer"
                   >
-                    <UploadCloud className="w-4 h-4 text-cyan-400" /> Tải Ảnh Từ Máy Tính / Thiết Bị
+                    <UploadCloud className="w-4 h-4 text-blue-600 dark:text-cyan-400" /> Tải Ảnh Từ Máy Tính / Thiết Bị
                   </button>
 
                   <button
@@ -904,7 +962,7 @@ export const ProfilePage: React.FC = () => {
                         setIsAvatarModalOpen(false);
                       }
                     }}
-                    className="w-full py-2.5 px-4 rounded-xl bg-slate-900/60 hover:bg-slate-800 text-slate-400 hover:text-white font-medium text-xs flex items-center justify-center gap-2 border border-slate-800 transition cursor-pointer"
+                    className="w-full py-2.5 px-4 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-900/60 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium text-xs flex items-center justify-center gap-2 border border-slate-200 dark:border-slate-800 transition cursor-pointer"
                   >
                     <Link2 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                     <span>Nhập URL Ảnh Online</span>
@@ -916,81 +974,53 @@ export const ProfilePage: React.FC = () => {
         </div>
       )}
 
-            <div className="space-y-1">
-              <div className="flex items-center justify-center sm:justify-start gap-2">
-                <h2 className="text-2xl font-black text-white">{companyName || 'Chưa cập nhật tên Shop'}</h2>
-                {kycStatus === 'APPROVED' || kycStatus === 'VERIFIED_KYC' || user?.kycVerified ? (
-                  <span title="Shop đã xác minh KYC"><ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0" /></span>
-                ) : (
-                  <span title="Shop chưa xác minh KYC"><ShieldAlert className="w-5 h-5 text-amber-400 shrink-0" /></span>
-                )}
-              </div>
-              <p className="text-xs text-slate-400 flex items-center justify-center sm:justify-start gap-2 font-medium">
-                <span>Đại diện: <strong className="text-slate-200">{fullName}</strong></span>
-                <span>•</span>
-                <span className="text-cyan-400 font-mono">{phone}</span>
-              </p>
-              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 pt-1">
-                <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[11px] font-bold uppercase flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                  {user?.role || 'SELLER'}
-                </span>
-                <span className={`px-3 py-1 rounded-full text-[11px] font-bold border ${kycStatus === 'APPROVED' || kycStatus === 'VERIFIED_KYC' || user?.kycVerified ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : kycStatus === 'PENDING' || kycStatus === 'PENDING_KYC' ? 'bg-blue-500/15 text-blue-300 border-blue-500/30' : kycStatus === 'REJECTED' || kycStatus === 'REJECTED_KYC' ? 'bg-rose-500/10 text-rose-300 border-rose-500/30' : 'bg-slate-800 text-slate-400 border-slate-700'}`}>
-                  KYC: {kycStatus === 'APPROVED' || kycStatus === 'VERIFIED_KYC' || user?.kycVerified ? 'Đã Xác Minh ✅' : kycStatus === 'PENDING' || kycStatus === 'PENDING_KYC' ? 'Đang Chờ Duyệt ⏳' : kycStatus === 'REJECTED' || kycStatus === 'REJECTED_KYC' ? 'Bị Từ Chối ❌' : 'Chưa Nộp'}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Tabs Navigation */}
-      <div className="flex items-center gap-2 border-b border-slate-800 pb-1 overflow-x-auto">
+      <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-1 overflow-x-auto">
         <button
           onClick={() => handleTabChange('PROFILE')}
-          className={`flex items-center gap-2 px-4 py-3 rounded-2xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${activeTab === 'PROFILE' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'}`}
+          className={`flex items-center gap-2 px-4 py-3 rounded-2xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${activeTab === 'PROFILE' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60'}`}
         >
           <User className="w-4 h-4" /> Hồ Sơ Shop
         </button>
 
         <button
           onClick={() => handleTabChange('ADDRESS')}
-          className={`flex items-center gap-2 px-4 py-3 rounded-2xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${activeTab === 'ADDRESS' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'}`}
+          className={`flex items-center gap-2 px-4 py-3 rounded-2xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${activeTab === 'ADDRESS' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60'}`}
         >
           <MapPin className="w-4 h-4" /> Kho Lấy Hàng
         </button>
 
         <button
           onClick={() => handleTabChange('BANK')}
-          className={`flex items-center gap-2 px-4 py-3 rounded-2xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${activeTab === 'BANK' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'}`}
+          className={`flex items-center gap-2 px-4 py-3 rounded-2xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${activeTab === 'BANK' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60'}`}
         >
           <CreditCard className="w-4 h-4" /> Ngân Hàng COD
         </button>
 
         <button
           onClick={() => handleTabChange('KYC')}
-          className={`flex items-center gap-2 px-4 py-3 rounded-2xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${activeTab === 'KYC' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'}`}
+          className={`flex items-center gap-2 px-4 py-3 rounded-2xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${activeTab === 'KYC' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60'}`}
         >
           <FileCheck className="w-4 h-4" /> Xác Minh KYC
         </button>
 
         <button
           onClick={() => handleTabChange('NOTIFICATIONS')}
-          className={`flex items-center gap-2 px-4 py-3 rounded-2xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${activeTab === 'NOTIFICATIONS' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'}`}
+          className={`flex items-center gap-2 px-4 py-3 rounded-2xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${activeTab === 'NOTIFICATIONS' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60'}`}
         >
           <Bell className="w-4 h-4" /> Thông Báo
         </button>
 
         <button
           onClick={() => handleTabChange('SECURITY')}
-          className={`flex items-center gap-2 px-4 py-3 rounded-2xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${activeTab === 'SECURITY' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'}`}
+          className={`flex items-center gap-2 px-4 py-3 rounded-2xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${activeTab === 'SECURITY' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60'}`}
         >
           <Lock className="w-4 h-4" /> Bảo Mật & 2FA
         </button>
 
         <button
           onClick={() => handleTabChange('SUB_ACCOUNTS')}
-          className={`flex items-center gap-2 px-4 py-3 rounded-2xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${activeTab === 'SUB_ACCOUNTS' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'}`}
+          className={`flex items-center gap-2 px-4 py-3 rounded-2xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${activeTab === 'SUB_ACCOUNTS' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60'}`}
         >
           <Users className="w-4 h-4" /> Nhân Viên Phụ
         </button>
@@ -998,72 +1028,72 @@ export const ProfilePage: React.FC = () => {
 
       {/* TAB 1: PROFILE */}
       {activeTab === 'PROFILE' && (
-        <form onSubmit={handleSaveProfile} className="glass-panel p-6 sm:p-8 rounded-3xl border border-slate-800 space-y-6">
-          <h3 className="text-lg font-bold text-white flex items-center gap-2 border-b border-slate-800 pb-4">
-            <Building2 className="w-5 h-5 text-blue-400" /> Thông Tin Doanh Nghiệp & Hồ Sơ
+        <form onSubmit={handleSaveProfile} className="bg-white dark:bg-slate-900/90 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 sm:p-8 space-y-6 shadow-sm dark:shadow-xl">
+          <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-4">
+            <Building2 className="w-5 h-5 text-blue-600 dark:text-blue-400" /> Thông Tin Doanh Nghiệp & Hồ Sơ
           </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 text-xs">
             <div>
-              <label className="block text-slate-300 font-semibold mb-1.5">Tên Cửa Hàng / Công Ty *</label>
+              <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">Tên Cửa Hàng / Công Ty *</label>
               <input
                 type="text"
                 required
                 value={companyName}
                 onChange={(e) => setCompanyName(e.target.value)}
-                className="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-white"
+                className="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80"
               />
             </div>
 
             <div>
-              <label className="block text-slate-300 font-semibold mb-1.5">Họ Và Tên Đại Diện *</label>
+              <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">Họ Và Tên Đại Diện *</label>
               <input
                 type="text"
                 required
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                className="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-white"
+                className="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80"
               />
             </div>
 
             <div>
-              <label className="block text-slate-300 font-semibold mb-1.5">Số Điện Thoại Liên Hệ *</label>
+              <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">Số Điện Thoại Liên Hệ *</label>
               <input
                 type="text"
                 required
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                className="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-white font-mono"
+                className="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 font-mono"
               />
             </div>
 
             <div>
-              <label className="block text-slate-300 font-semibold mb-1.5">Email Đăng Ký / Nhận Đối Soát *</label>
+              <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">Email Đăng Ký / Nhận Đối Soát *</label>
               <input
                 type="email"
                 disabled
                 value={email}
-                className="w-full glass-input opacity-70 cursor-not-allowed rounded-xl px-3.5 py-2.5 text-xs text-slate-300 font-mono"
+                className="w-full glass-input opacity-80 cursor-not-allowed rounded-xl px-3.5 py-2.5 text-xs bg-slate-100 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 font-mono"
               />
             </div>
 
             <div>
-              <label className="block text-slate-300 font-semibold mb-1.5">Mã Số Thuế / ĐKKD *</label>
+              <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">Mã Số Thuế / ĐKKD *</label>
               <input
                 type="text"
                 required
                 value={taxCode}
                 onChange={(e) => setTaxCode(e.target.value)}
-                className="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-white font-mono"
+                className="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 font-mono"
               />
             </div>
 
             <div>
-              <label className="block text-slate-300 font-semibold mb-1.5">Loại Hình Doanh Nghiệp</label>
+              <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">Loại Hình Doanh Nghiệp</label>
               <select
                 value={businessType}
                 onChange={(e) => setBusinessType(e.target.value)}
-                className="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-white bg-slate-900 border border-slate-700"
+                className="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700"
               >
                 <option value="COMPANY">Công Ty TNHH / Cổ Phần</option>
                 <option value="HOUSEHOLD">Hộ Kinh Doanh Cá Thể</option>
@@ -1072,22 +1102,22 @@ export const ProfilePage: React.FC = () => {
             </div>
 
             <div className="sm:col-span-2">
-              <label className="block text-slate-300 font-semibold mb-1.5">Địa Chỉ Trụ Sở / Đăng Ký Kinh Doanh</label>
+              <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">Địa Chỉ Trụ Sở / Đăng Ký Kinh Doanh</label>
               <input
                 type="text"
                 placeholder="VD: Số 123 Đường Nguyễn Trãi, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh"
                 value={businessAddress}
                 onChange={(e) => setBusinessAddress(e.target.value)}
-                className="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-white"
+                className="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80"
               />
             </div>
 
             <div>
-              <label className="block text-slate-300 font-semibold mb-1.5">Lĩnh Vực Kinh Doanh Chính</label>
+              <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">Lĩnh Vực Kinh Doanh Chính</label>
               <select
                 value={industryCategory}
                 onChange={(e) => setIndustryCategory(e.target.value)}
-                className="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-white bg-slate-900 border border-slate-700"
+                className="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700"
               >
                 <option value="PHARMA">Dược Phẩm / Y Tế / Mỹ Phẩm</option>
                 <option value="FASHION">Thời Trang / Phụ Kiện</option>
@@ -1098,11 +1128,11 @@ export const ProfilePage: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-slate-300 font-semibold mb-1.5">Sản Lượng Đơn Dự Kiến / Ngày</label>
+              <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">Sản Lượng Đơn Dự Kiến / Ngày</label>
               <select
                 value={estimatedDailyOrders}
                 onChange={(e) => setEstimatedDailyOrders(e.target.value)}
-                className="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-white bg-slate-900 border border-slate-700"
+                className="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700"
               >
                 <option value="UNDER_50">&lt; 50 đơn / ngày (Cơ bản)</option>
                 <option value="50_200">50 - 200 đơn / ngày (Tiềm năng)</option>
@@ -1112,22 +1142,22 @@ export const ProfilePage: React.FC = () => {
             </div>
 
             <div className="sm:col-span-2">
-              <label className="block text-slate-300 font-semibold mb-1.5">Website / Kênh Bán Hàng (Shopee / TikTok Shop / Fanpage)</label>
+              <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">Website / Kênh Bán Hàng (Shopee / TikTok Shop / Fanpage)</label>
               <input
                 type="text"
                 placeholder="https://anbinhpharma.vn hoặc link gian hàng Shopee/TikTok"
                 value={websiteUrl}
                 onChange={(e) => setWebsiteUrl(e.target.value)}
-                className="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-white font-mono"
+                className="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 font-mono"
               />
             </div>
           </div>
 
-          <div className="flex justify-end pt-4 border-t border-slate-800">
+          <div className="flex justify-end pt-4 border-t border-slate-200 dark:border-slate-800">
             <button
               type="submit"
               disabled={isLoading}
-              className="px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg cursor-pointer disabled:opacity-50 transition-all"
+              className="px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-blue-600/25 cursor-pointer disabled:opacity-50 transition-all"
             >
               {isLoading ? (
                 <>
@@ -1147,17 +1177,17 @@ export const ProfilePage: React.FC = () => {
       {/* TAB 2: MULTIPLE PICKUP POINTS */}
       {activeTab === 'ADDRESS' && (
         <div className="space-y-6">
-          <div className="glass-panel p-6 rounded-3xl border border-slate-800 space-y-6">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+          <div className="bg-white dark:bg-slate-900/90 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 sm:p-8 space-y-6 shadow-sm dark:shadow-xl">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
               <div>
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                  <MapPin className="w-5 h-5 text-cyan-400" /> Quản Lý Nhiều Địa Chỉ Kho Lấy Hàng
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <MapPin className="w-5 h-5 text-blue-600 dark:text-cyan-400" /> Quản Lý Nhiều Địa Chỉ Kho Lấy Hàng
                 </h3>
-                <p className="text-xs text-slate-400">Thiết lập danh sách các kho lấy hàng và chọn kho mặc định khi tạo đơn</p>
+                <p className="text-xs text-slate-600 dark:text-slate-400">Thiết lập danh sách các kho lấy hàng và chọn kho mặc định khi tạo đơn</p>
               </div>
               <button
                 onClick={() => setIsAddAddressOpen(true)}
-                className="px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg cursor-pointer"
+                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-blue-600/25 cursor-pointer self-start sm:self-auto"
               >
                 <Plus className="w-4 h-4" /> Thêm Kho Mới
               </button>
@@ -1166,12 +1196,12 @@ export const ProfilePage: React.FC = () => {
             {/* Address List */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {pickupAddresses.map((addr) => (
-                <div key={addr._id} className={`p-5 rounded-2xl border transition-all ${addr.isDefault ? 'bg-cyan-500/10 border-cyan-500/40 shadow-lg shadow-cyan-500/10' : 'bg-slate-900/60 border-slate-800'}`}>
+                <div key={addr._id} className={`p-5 rounded-2xl border transition-all ${addr.isDefault ? 'bg-blue-50/80 dark:bg-cyan-500/10 border-blue-300 dark:border-cyan-500/40 shadow-sm dark:shadow-lg dark:shadow-cyan-500/10' : 'bg-slate-50 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800'}`}>
                   <div className="flex items-start justify-between gap-3 mb-2">
                     <div className="flex items-center gap-2">
-                      <h4 className="font-bold text-white text-sm">{addr.label}</h4>
+                      <h4 className="font-bold text-slate-900 dark:text-white text-sm">{addr.label}</h4>
                       {addr.isDefault && (
-                        <span className="px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 text-[10px] font-bold">
+                        <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-cyan-500/20 dark:text-cyan-300 text-[10px] font-bold">
                           Mặc định
                         </span>
                       )}
@@ -1179,7 +1209,7 @@ export const ProfilePage: React.FC = () => {
                     {!addr.isDefault && (
                       <button
                         onClick={() => handleDeleteAddress(addr._id)}
-                        className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-slate-800 transition"
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
                         title="Xóa địa chỉ"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -1187,15 +1217,15 @@ export const ProfilePage: React.FC = () => {
                     )}
                   </div>
 
-                  <p className="text-xs text-slate-300 mb-1">{addr.addressDetail}, {addr.ward}, {addr.district}, {addr.province}</p>
-                  <p className="text-[11px] text-slate-400 mb-3 font-mono">
+                  <p className="text-xs text-slate-700 dark:text-slate-300 mb-1">{addr.addressDetail}, {addr.ward}, {addr.district}, {addr.province}</p>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-3 font-mono">
                     GPS: {addr.latitude}, {addr.longitude} • Liên hệ: {addr.contactName || fullName} ({addr.contactPhone || phone})
                   </p>
 
                   {!addr.isDefault && (
                     <button
                       onClick={() => handleSetDefaultAddress(addr._id)}
-                      className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-400 border border-slate-700 text-xs font-semibold cursor-pointer transition"
+                      className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-blue-600 dark:text-cyan-400 border border-slate-200 dark:border-slate-700 text-xs font-semibold cursor-pointer transition"
                     >
                       Đặt Làm Mặc Định
                     </button>
@@ -1208,57 +1238,56 @@ export const ProfilePage: React.FC = () => {
           {/* Add Address Modal */}
           {isAddAddressOpen && (
             <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-              <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-slate-700 max-w-2xl w-full max-h-[90vh] overflow-y-auto space-y-5">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                  <h3 className="text-base font-bold text-white flex items-center gap-2">
-                    <Plus className="w-5 h-5 text-cyan-400" /> Thêm Địa Chỉ Kho Lấy Hàng Mới
+              <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-slate-200 dark:border-slate-700 max-w-2xl w-full max-h-[90vh] overflow-y-auto space-y-5 bg-white dark:bg-slate-900 shadow-2xl">
+                <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <Plus className="w-5 h-5 text-blue-600 dark:text-cyan-400" /> Thêm Địa Chỉ Kho Lấy Hàng Mới
                   </h3>
-                  <button onClick={() => setIsAddAddressOpen(false)} className="text-slate-400 hover:text-white">
+                  <button onClick={() => setIsAddAddressOpen(false)} className="text-slate-400 hover:text-slate-700 dark:hover:text-white">
                     <X className="w-5 h-5" />
                   </button>
                 </div>
 
                 <form onSubmit={handleCreatePickupAddress} className="space-y-4 text-xs">
                   <div>
-                    <label className="block text-slate-300 font-semibold mb-1">Tên Kho Gợi Nhớ (VD: Kho Hóc Môn) *</label>
+                    <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Tên Kho Gợi Nhớ (VD: Kho Hóc Môn) *</label>
                     <input
                       type="text"
                       required
                       value={newAddressLabel}
                       onChange={(e) => setNewAddressLabel(e.target.value)}
-                      className="w-full glass-input rounded-xl px-3 py-2 text-white"
+                      className="w-full glass-input rounded-xl px-3 py-2 text-slate-900 dark:text-white bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700"
                     />
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-slate-300 font-semibold mb-1">Người Phụ Trách Kho</label>
+                      <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Người Phụ Trách Kho</label>
                       <input
                         type="text"
                         value={newAddressContactName}
                         onChange={(e) => setNewAddressContactName(e.target.value)}
                         placeholder={fullName}
-                        className="w-full glass-input rounded-xl px-3 py-2 text-white"
+                        className="w-full glass-input rounded-xl px-3 py-2 text-slate-900 dark:text-white bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700"
                       />
                     </div>
                     <div>
-                      <label className="block text-slate-300 font-semibold mb-1">Số Điện Thoại Kho</label>
+                      <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Số Điện Thoại Kho</label>
                       <input
                         type="text"
                         value={newAddressContactPhone}
                         onChange={(e) => setNewAddressContactPhone(e.target.value)}
                         placeholder={phone}
-                        className="w-full glass-input rounded-xl px-3 py-2 text-white font-mono"
+                        className="w-full glass-input rounded-xl px-3 py-2 text-slate-900 dark:text-white bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-mono"
                       />
                     </div>
                   </div>
 
-                  <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-3">
+                  <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-3">
                     <VietnamAddressSelector
                       value={newAddressData}
                       onChange={setNewAddressData}
                       layout="grid"
-                      darkTheme={true}
                     />
                   </div>
 
@@ -1271,18 +1300,18 @@ export const ProfilePage: React.FC = () => {
                     }}
                   />
 
-                  <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
+                  <div className="flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
                     <button
                       type="button"
                       onClick={() => setIsAddAddressOpen(false)}
-                      className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs"
+                      className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs"
                     >
                       Hủy Bỏ
                     </button>
                     <button
                       type="submit"
                       disabled={isLoading}
-                      className="px-5 py-2 rounded-xl bg-cyan-600 text-white font-bold text-xs flex items-center gap-2"
+                      className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-blue-600/25"
                     >
                       <Save className="w-4 h-4" /> Thêm Địa Chỉ Kho
                     </button>
@@ -1296,55 +1325,55 @@ export const ProfilePage: React.FC = () => {
 
       {/* TAB 3: BANK DETAILS */}
       {activeTab === 'BANK' && (
-        <form onSubmit={handleSaveBank} className="glass-panel p-6 sm:p-8 rounded-3xl border border-slate-800 space-y-6">
-          <h3 className="text-lg font-bold text-white flex items-center gap-2 border-b border-slate-800 pb-4">
-            <CreditCard className="w-5 h-5 text-blue-400" /> Tài Khoản Ngân Hàng Đối Soát COD
+        <form onSubmit={handleSaveBank} className="bg-white dark:bg-slate-900/90 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 sm:p-8 space-y-6 shadow-sm dark:shadow-xl">
+          <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-4">
+            <CreditCard className="w-5 h-5 text-blue-600 dark:text-blue-400" /> Tài Khoản Ngân Hàng Đối Soát COD
           </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 text-xs">
             <div>
-              <label className="block text-slate-300 font-semibold mb-1.5">Ngân Hàng *</label>
+              <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">Ngân Hàng *</label>
               <select
                 value={bankName}
                 onChange={(e) => setBankName(e.target.value)}
-                className="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-white"
+                className="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700"
               >
-                <option value="Vietcombank" className="bg-slate-900">Vietcombank</option>
-                <option value="Techcombank" className="bg-slate-900">Techcombank</option>
-                <option value="MBBank" className="bg-slate-900">MB Bank</option>
-                <option value="VPBank" className="bg-slate-900">VPBank</option>
-                <option value="ACB" className="bg-slate-900">ACB</option>
+                <option value="Vietcombank">Vietcombank</option>
+                <option value="Techcombank">Techcombank</option>
+                <option value="MBBank">MB Bank</option>
+                <option value="VPBank">VPBank</option>
+                <option value="ACB">ACB</option>
               </select>
             </div>
 
             <div>
-              <label className="block text-slate-300 font-semibold mb-1.5">Số Tài Khoản *</label>
+              <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">Số Tài Khoản *</label>
               <input
                 type="text"
                 required
                 value={bankAccount}
                 onChange={(e) => setBankAccount(e.target.value)}
-                className="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-white font-mono"
+                className="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-mono"
               />
             </div>
 
             <div className="sm:col-span-2">
-              <label className="block text-slate-300 font-semibold mb-1.5">Tên Chủ Tài Khoản (Viết hoa không dấu) *</label>
+              <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">Tên Chủ Tài Khoản (Viết hoa không dấu) *</label>
               <input
                 type="text"
                 required
                 value={bankAccountName}
                 onChange={(e) => setBankAccountName(e.target.value.toUpperCase())}
-                className="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-white font-mono uppercase"
+                className="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-mono uppercase"
               />
             </div>
           </div>
 
-          <div className="flex justify-end pt-4 border-t border-slate-800">
+          <div className="flex justify-end pt-4 border-t border-slate-200 dark:border-slate-800">
             <button
               type="submit"
               disabled={isLoading}
-              className="px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg cursor-pointer"
+              className="px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-blue-600/25 cursor-pointer"
             >
               <Save className="w-4 h-4" /> Lưu Ngân Hàng
             </button>
@@ -1355,14 +1384,14 @@ export const ProfilePage: React.FC = () => {
       {/* TAB 4: KYC VERIFICATION */}
       {activeTab === 'KYC' && (
         <div className="space-y-6 animate-in fade-in duration-300">
-          <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-slate-800 space-y-6">
+          <div className="bg-white dark:bg-slate-900/90 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 sm:p-8 space-y-6 shadow-sm dark:shadow-xl">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
               <div>
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                  <FileCheck className="w-5 h-5 text-cyan-400" /> Xác Minh Danh Tính Người Bán (KYC)
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <FileCheck className="w-5 h-5 text-blue-600 dark:text-cyan-400" /> Xác Minh Danh Tính Người Bán (KYC)
                 </h3>
-                <p className="text-xs text-slate-400 mt-1">
+                <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
                   Cung cấp CCCD/CMND 2 mặt để kích hoạt quyền phát hành đơn hàng vào hệ thống bưu cục
                 </p>
               </div>
@@ -1370,20 +1399,20 @@ export const ProfilePage: React.FC = () => {
               {/* Status Badge */}
               <div className="flex items-center gap-2 self-start sm:self-auto">
                 {kycStatus === 'APPROVED' || kycStatus === 'VERIFIED_KYC' ? (
-                  <span className="px-4 py-1.5 rounded-full text-xs font-bold border bg-emerald-500/20 text-emerald-300 border-emerald-500/40 flex items-center gap-1.5 shadow-sm">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400" /> ĐÃ XÁC MINH DANH TÍNH
+                  <span className="px-4 py-1.5 rounded-full text-xs font-bold border bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/40 flex items-center gap-1.5 shadow-sm">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> ĐÃ XÁC MINH DANH TÍNH
                   </span>
                 ) : kycStatus === 'PENDING' || kycStatus === 'PENDING_KYC' ? (
-                  <span className="px-4 py-1.5 rounded-full text-xs font-bold border bg-blue-500/20 text-blue-300 border-blue-500/40 flex items-center gap-1.5 animate-pulse">
-                    <RefreshCw className="w-4 h-4 text-blue-400 animate-spin" /> ĐANG CHỜ ADMIN DUYỆT
+                  <span className="px-4 py-1.5 rounded-full text-xs font-bold border bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/20 dark:text-blue-300 dark:border-blue-500/40 flex items-center gap-1.5 animate-pulse">
+                    <RefreshCw className="w-4 h-4 text-blue-600 dark:text-blue-400 animate-spin" /> ĐANG CHỜ ADMIN DUYỆT
                   </span>
                 ) : kycStatus === 'REJECTED' || kycStatus === 'REJECTED_KYC' ? (
-                  <span className="px-4 py-1.5 rounded-full text-xs font-bold border bg-rose-500/20 text-rose-300 border-rose-500/40 flex items-center gap-1.5">
-                    <AlertCircle className="w-4 h-4 text-rose-400" /> HỒ SƠ BỊ TỪ CHỐI
+                  <span className="px-4 py-1.5 rounded-full text-xs font-bold border bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/20 dark:text-rose-300 dark:border-rose-500/40 flex items-center gap-1.5">
+                    <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400" /> HỒ SƠ BỊ TỪ CHỐI
                   </span>
                 ) : (
-                  <span className="px-4 py-1.5 rounded-full text-xs font-bold border bg-slate-800 text-slate-400 border-slate-700 flex items-center gap-1.5">
-                    <FileText className="w-4 h-4 text-slate-400" /> CHƯA NỘP HỒ SƠ
+                  <span className="px-4 py-1.5 rounded-full text-xs font-bold border bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700 flex items-center gap-1.5">
+                    <FileText className="w-4 h-4 text-slate-500 dark:text-slate-400" /> CHƯA NỘP HỒ SƠ
                   </span>
                 )}
               </div>
@@ -1391,14 +1420,14 @@ export const ProfilePage: React.FC = () => {
 
             {/* Rejection Alert Box */}
             {(kycStatus === 'REJECTED' || kycStatus === 'REJECTED_KYC') && kycInfo?.rejectionReason && (
-              <div className="p-4 sm:p-5 rounded-2xl bg-rose-950/40 border border-rose-500/40 space-y-3 shadow-lg">
+              <div className="p-4 sm:p-5 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-500/40 space-y-3 shadow-sm">
                 <div className="flex items-start gap-3">
-                  <AlertCircle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
+                  <AlertCircle className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
                   <div className="space-y-1">
-                    <h4 className="text-xs sm:text-sm font-bold text-rose-300">Lý Do Admin Từ Chối Hồ Sơ</h4>
-                    <p className="text-xs text-rose-200/90 leading-relaxed font-medium">{kycInfo.rejectionReason}</p>
+                    <h4 className="text-xs sm:text-sm font-bold text-rose-800 dark:text-rose-300">Lý Do Admin Từ Chối Hồ Sơ</h4>
+                    <p className="text-xs text-rose-700 dark:text-rose-200/90 leading-relaxed font-medium">{kycInfo.rejectionReason}</p>
                     {kycInfo.reviewedAt && (
-                      <p className="text-[11px] text-slate-400 pt-1 font-mono">
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 pt-1 font-mono">
                         Thời gian duyệt: {new Date(kycInfo.reviewedAt).toLocaleString('vi-VN')}
                       </p>
                     )}
@@ -1421,64 +1450,64 @@ export const ProfilePage: React.FC = () => {
 
             {/* Approved Summary Box */}
             {(kycStatus === 'APPROVED' || kycStatus === 'VERIFIED_KYC') && (
-              <div className="p-5 rounded-2xl bg-emerald-950/30 border border-emerald-500/30 space-y-3">
-                <div className="flex items-center gap-3 text-emerald-300">
-                  <CheckCircle2 className="w-6 h-6 text-emerald-400 shrink-0" />
+              <div className="p-5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-500/30 space-y-3">
+                <div className="flex items-center gap-3 text-emerald-800 dark:text-emerald-300">
+                  <CheckCircle2 className="w-6 h-6 text-emerald-600 dark:text-emerald-400 shrink-0" />
                   <div>
                     <h4 className="text-sm font-bold">Hồ Sơ Của Bạn Đã Được Xác Thực Hợp Lệ</h4>
-                    <p className="text-xs text-slate-300 mt-0.5">
+                    <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5">
                       Shop đã đủ điều kiện tạo đơn và bàn giao hàng cho tài xế thu gom. Thông tin định danh đã được khóa bảo vệ an toàn.
                     </p>
                   </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-xs">
-                  <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
-                    <span className="text-slate-400 block text-[11px]">Loại giấy tờ</span>
-                    <strong className="text-white">{kycInfo?.idType || 'CCCD'}</strong>
+                  <div className="p-3 rounded-xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <span className="text-slate-500 dark:text-slate-400 block text-[11px]">Loại giấy tờ</span>
+                    <strong className="text-slate-900 dark:text-white font-semibold">{kycInfo?.idType || 'CCCD'}</strong>
                   </div>
-                  <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
-                    <span className="text-slate-400 block text-[11px]">Họ và tên trên giấy tờ</span>
-                    <strong className="text-white">{kycInfo?.idFullName || fullName}</strong>
+                  <div className="p-3 rounded-xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <span className="text-slate-500 dark:text-slate-400 block text-[11px]">Họ và tên trên giấy tờ</span>
+                    <strong className="text-slate-900 dark:text-white font-semibold">{kycInfo?.idFullName || fullName}</strong>
                   </div>
-                  <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
-                    <span className="text-slate-400 block text-[11px]">Số định danh (Đã mã hóa PII)</span>
-                    <strong className="text-cyan-400 font-mono">{kycInfo?.maskedIdNumber || '079099******'}</strong>
+                  <div className="p-3 rounded-xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <span className="text-slate-500 dark:text-slate-400 block text-[11px]">Số định danh (Đã mã hóa PII)</span>
+                    <strong className="text-blue-600 dark:text-cyan-400 font-mono font-bold">{kycInfo?.maskedIdNumber || '079099******'}</strong>
                   </div>
                 </div>
 
                 {/* Approved Images Preview */}
                 {(kycInfo?.idFrontImageUrl || kycInfo?.idBackImageUrl) && (
-                  <div className="pt-3 border-t border-emerald-500/20">
-                    <span className="text-[11px] font-bold text-slate-300 block mb-2">Ảnh Giấy Tờ Đã Được Phê Duyệt:</span>
+                  <div className="pt-3 border-t border-emerald-200 dark:border-emerald-500/20">
+                    <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block mb-2">Ảnh Giấy Tờ Đã Được Phê Duyệt:</span>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                       {kycInfo?.idFrontImageUrl && (
-                        <div className="aspect-[4/3] rounded-xl overflow-hidden border border-emerald-500/30 bg-slate-900/80 p-1 flex flex-col items-center justify-center">
+                        <div className="aspect-[4/3] rounded-xl overflow-hidden border border-emerald-200 dark:border-emerald-500/30 bg-white dark:bg-slate-900/80 p-1 flex flex-col items-center justify-center shadow-sm">
                           <img
                             src={getSellerKycImageUrl(kycInfo.idFrontImageUrl)}
                             alt="Mặt trước"
                             className="w-full h-full object-contain"
                           />
-                          <span className="text-[10px] text-emerald-400 font-semibold mt-1">Mặt trước {kycInfo.idType}</span>
+                          <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold mt-1">Mặt trước {kycInfo.idType}</span>
                         </div>
                       )}
                       {kycInfo?.idBackImageUrl && (
-                        <div className="aspect-[4/3] rounded-xl overflow-hidden border border-emerald-500/30 bg-slate-900/80 p-1 flex flex-col items-center justify-center">
+                        <div className="aspect-[4/3] rounded-xl overflow-hidden border border-emerald-200 dark:border-emerald-500/30 bg-white dark:bg-slate-900/80 p-1 flex flex-col items-center justify-center shadow-sm">
                           <img
                             src={getSellerKycImageUrl(kycInfo.idBackImageUrl)}
                             alt="Mặt sau"
                             className="w-full h-full object-contain"
                           />
-                          <span className="text-[10px] text-emerald-400 font-semibold mt-1">Mặt sau {kycInfo.idType}</span>
+                          <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold mt-1">Mặt sau {kycInfo.idType}</span>
                         </div>
                       )}
                       {kycInfo?.businessLicenseImageUrl && (
-                        <div className="aspect-[4/3] rounded-xl overflow-hidden border border-emerald-500/30 bg-slate-900/80 p-1 flex flex-col items-center justify-center">
+                        <div className="aspect-[4/3] rounded-xl overflow-hidden border border-emerald-200 dark:border-emerald-500/30 bg-white dark:bg-slate-900/80 p-1 flex flex-col items-center justify-center shadow-sm">
                           <img
                             src={getSellerKycImageUrl(kycInfo.businessLicenseImageUrl)}
                             alt="GPKD"
                             className="w-full h-full object-contain"
                           />
-                          <span className="text-[10px] text-emerald-400 font-semibold mt-1">Giấy phép KD</span>
+                          <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold mt-1">Giấy phép KD</span>
                         </div>
                       )}
                     </div>
@@ -1495,8 +1524,8 @@ export const ProfilePage: React.FC = () => {
               <form onSubmit={handleKycSubmit} className="space-y-6 text-xs">
                 {/* Notice for Pending State */}
                 {(kycStatus === 'PENDING' || kycStatus === 'PENDING_KYC') && (
-                  <div className="p-4 rounded-2xl bg-blue-950/40 border border-blue-500/30 flex items-center gap-3 text-blue-300">
-                    <RefreshCw className="w-5 h-5 text-blue-400 shrink-0 animate-spin" />
+                  <div className="p-4 rounded-2xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-500/30 flex items-center gap-3 text-blue-700 dark:text-blue-300">
+                    <RefreshCw className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0 animate-spin" />
                     <span>
                       Hồ sơ của bạn đang được chuyên viên CS/Admin kiểm duyệt. Form tạm thời khóa để tránh xung đột dữ liệu.
                     </span>
@@ -1505,72 +1534,72 @@ export const ProfilePage: React.FC = () => {
 
                 <fieldset disabled={kycStatus === 'PENDING' || kycStatus === 'PENDING_KYC'} className="space-y-6">
                   {/* Step 1: Text Info */}
-                  <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-4">
-                    <h4 className="font-bold text-white text-sm flex items-center gap-2">
-                      <span className="w-6 h-6 rounded-full bg-cyan-600 text-white flex items-center justify-center text-xs">1</span>
+                  <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-4">
+                    <h4 className="font-bold text-slate-900 dark:text-white text-sm flex items-center gap-2">
+                      <span className="w-6 h-6 rounded-full bg-blue-600 dark:bg-cyan-600 text-white flex items-center justify-center text-xs">1</span>
                       Thông Tin Định Danh Người Đại Diện
                     </h4>
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <div>
-                        <label className="block text-slate-300 font-semibold mb-1.5">Loại Giấy Tờ *</label>
+                        <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">Loại Giấy Tờ *</label>
                         <select
                           value={kycIdType}
                           onChange={(e) => setKycIdType(e.target.value as any)}
-                          className="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-white"
+                          className="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700"
                         >
-                          <option value="CCCD" className="bg-slate-900">Căn cước công dân (CCCD 12 số)</option>
-                          <option value="CMND" className="bg-slate-900">Chứng minh nhân dân (CMND 9 số)</option>
-                          <option value="PASSPORT" className="bg-slate-900">Hộ chiếu (Passport)</option>
+                          <option value="CCCD">Căn cước công dân (CCCD 12 số)</option>
+                          <option value="CMND">Chứng minh nhân dân (CMND 9 số)</option>
+                          <option value="PASSPORT">Hộ chiếu (Passport)</option>
                         </select>
                       </div>
 
                       <div>
-                        <label className="block text-slate-300 font-semibold mb-1.5">Số Giấy Tờ Định Danh *</label>
+                        <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">Số Giấy Tờ Định Danh *</label>
                         <input
                           type="text"
                           required
                           value={kycIdNumber}
                           onChange={(e) => setKycIdNumber(e.target.value)}
                           placeholder={kycIdType === 'CCCD' ? 'Nhập 12 số CCCD' : kycIdType === 'CMND' ? 'Nhập 9 số CMND' : 'Nhập số hộ chiếu'}
-                          className="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-white font-mono"
+                          className="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-mono"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-slate-300 font-semibold mb-1.5">Họ Và Tên Trên Giấy Tờ (In hoa) *</label>
+                        <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">Họ Và Tên Trên Giấy Tờ (In hoa) *</label>
                         <input
                           type="text"
                           required
                           value={kycIdFullName}
                           onChange={(e) => setKycIdFullName(e.target.value.toUpperCase())}
                           placeholder="NGUYEN VAN A"
-                          className="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-white font-mono uppercase"
+                          className="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-mono uppercase"
                         />
                       </div>
                     </div>
                   </div>
 
                   {/* Step 2: Photos Upload */}
-                  <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-4">
-                    <h4 className="font-bold text-white text-sm flex items-center gap-2">
-                      <span className="w-6 h-6 rounded-full bg-cyan-600 text-white flex items-center justify-center text-xs">2</span>
+                  <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-4">
+                    <h4 className="font-bold text-slate-900 dark:text-white text-sm flex items-center gap-2">
+                      <span className="w-6 h-6 rounded-full bg-blue-600 dark:bg-cyan-600 text-white flex items-center justify-center text-xs">2</span>
                       Tải Lên Ảnh Giấy Tờ (Tối đa 5MB/ảnh, định dạng .jpg, .png)
                     </h4>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                       {/* Front Image */}
                       <div className="space-y-2">
-                        <label className="block text-slate-300 font-semibold">Mặt Trước CCCD/CMND *</label>
-                        <div className="relative border-2 border-dashed border-slate-700 hover:border-cyan-500 rounded-2xl p-4 text-center aspect-[4/3] flex flex-col items-center justify-center bg-slate-950/50 transition group overflow-hidden">
+                        <label className="block text-slate-700 dark:text-slate-300 font-semibold">Mặt Trước CCCD/CMND *</label>
+                        <div className="relative border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-blue-500 dark:hover:border-cyan-500 rounded-2xl p-4 text-center aspect-[4/3] flex flex-col items-center justify-center bg-white dark:bg-slate-950/50 transition group overflow-hidden shadow-sm">
                           {frontPreview ? (
                             <img src={frontPreview} alt="Mặt trước" className="w-full h-full object-contain rounded-xl" />
                           ) : kycInfo?.idFrontImageUrl && (kycStatus === 'PENDING' || kycStatus === 'PENDING_KYC') ? (
                             <img src={getSellerKycImageUrl(kycInfo.idFrontImageUrl)} alt="Mặt trước đã nộp" className="w-full h-full object-contain rounded-xl" />
                           ) : (
                             <div className="space-y-2 flex flex-col items-center">
-                              <UploadCloud className="w-8 h-8 text-slate-500 group-hover:text-cyan-400 transition" />
-                              <span className="text-[11px] text-slate-400 font-medium">Chọn hoặc kéo thả ảnh mặt trước</span>
+                              <UploadCloud className="w-8 h-8 text-slate-400 group-hover:text-blue-600 dark:group-hover:text-cyan-400 transition" />
+                              <span className="text-[11px] text-slate-600 dark:text-slate-400 font-medium">Chọn hoặc kéo thả ảnh mặt trước</span>
                             </div>
                           )}
                           <input
@@ -1592,7 +1621,7 @@ export const ProfilePage: React.FC = () => {
                           />
                         </div>
                         {frontImageFile && (
-                          <p className="text-[11px] text-emerald-400 flex items-center gap-1 font-mono truncate">
+                          <p className="text-[11px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1 font-mono truncate">
                             <Check className="w-3.5 h-3.5 shrink-0" /> {frontImageFile.name}
                           </p>
                         )}
@@ -1600,16 +1629,16 @@ export const ProfilePage: React.FC = () => {
 
                       {/* Back Image */}
                       <div className="space-y-2">
-                        <label className="block text-slate-300 font-semibold">Mặt Sau CCCD/CMND *</label>
-                        <div className="relative border-2 border-dashed border-slate-700 hover:border-cyan-500 rounded-2xl p-4 text-center aspect-[4/3] flex flex-col items-center justify-center bg-slate-950/50 transition group overflow-hidden">
+                        <label className="block text-slate-700 dark:text-slate-300 font-semibold">Mặt Sau CCCD/CMND *</label>
+                        <div className="relative border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-blue-500 dark:hover:border-cyan-500 rounded-2xl p-4 text-center aspect-[4/3] flex flex-col items-center justify-center bg-white dark:bg-slate-950/50 transition group overflow-hidden shadow-sm">
                           {backPreview ? (
                             <img src={backPreview} alt="Mặt sau" className="w-full h-full object-contain rounded-xl" />
                           ) : kycInfo?.idBackImageUrl && (kycStatus === 'PENDING' || kycStatus === 'PENDING_KYC') ? (
                             <img src={getSellerKycImageUrl(kycInfo.idBackImageUrl)} alt="Mặt sau đã nộp" className="w-full h-full object-contain rounded-xl" />
                           ) : (
                             <div className="space-y-2 flex flex-col items-center">
-                              <UploadCloud className="w-8 h-8 text-slate-500 group-hover:text-cyan-400 transition" />
-                              <span className="text-[11px] text-slate-400 font-medium">Chọn hoặc kéo thả ảnh mặt sau</span>
+                              <UploadCloud className="w-8 h-8 text-slate-400 group-hover:text-blue-600 dark:group-hover:text-cyan-400 transition" />
+                              <span className="text-[11px] text-slate-600 dark:text-slate-400 font-medium">Chọn hoặc kéo thả ảnh mặt sau</span>
                             </div>
                           )}
                           <input
@@ -1631,7 +1660,7 @@ export const ProfilePage: React.FC = () => {
                           />
                         </div>
                         {backImageFile && (
-                          <p className="text-[11px] text-emerald-400 flex items-center gap-1 font-mono truncate">
+                          <p className="text-[11px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1 font-mono truncate">
                             <Check className="w-3.5 h-3.5 shrink-0" /> {backImageFile.name}
                           </p>
                         )}
@@ -1639,18 +1668,18 @@ export const ProfilePage: React.FC = () => {
 
                       {/* Business License (Optional) */}
                       <div className="space-y-2">
-                        <label className="block text-slate-300 font-semibold">
+                        <label className="block text-slate-700 dark:text-slate-300 font-semibold">
                           Giấy Phép ĐKKD <span className="text-slate-500 font-normal">(Doanh nghiệp)</span>
                         </label>
-                        <div className="relative border-2 border-dashed border-slate-700 hover:border-cyan-500 rounded-2xl p-4 text-center aspect-[4/3] flex flex-col items-center justify-center bg-slate-950/50 transition group overflow-hidden">
+                        <div className="relative border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-blue-500 dark:hover:border-cyan-500 rounded-2xl p-4 text-center aspect-[4/3] flex flex-col items-center justify-center bg-white dark:bg-slate-950/50 transition group overflow-hidden shadow-sm">
                           {licensePreview ? (
                             <img src={licensePreview} alt="Giấy phép ĐKKD" className="w-full h-full object-contain rounded-xl" />
                           ) : kycInfo?.businessLicenseImageUrl && (kycStatus === 'PENDING' || kycStatus === 'PENDING_KYC') ? (
                             <img src={getSellerKycImageUrl(kycInfo.businessLicenseImageUrl)} alt="GPKD đã nộp" className="w-full h-full object-contain rounded-xl" />
                           ) : (
                             <div className="space-y-2 flex flex-col items-center">
-                              <UploadCloud className="w-8 h-8 text-slate-500 group-hover:text-cyan-400 transition" />
-                              <span className="text-[11px] text-slate-400 font-medium">Tùy chọn: Tải ảnh GPKD nếu là công ty</span>
+                              <UploadCloud className="w-8 h-8 text-slate-400 group-hover:text-blue-600 dark:group-hover:text-cyan-400 transition" />
+                              <span className="text-[11px] text-slate-600 dark:text-slate-400 font-medium">Tùy chọn: Tải ảnh GPKD nếu là công ty</span>
                             </div>
                           )}
                           <input
@@ -1671,7 +1700,7 @@ export const ProfilePage: React.FC = () => {
                           />
                         </div>
                         {licenseImageFile && (
-                          <p className="text-[11px] text-emerald-400 flex items-center gap-1 font-mono truncate">
+                          <p className="text-[11px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1 font-mono truncate">
                             <Check className="w-3.5 h-3.5 shrink-0" /> {licenseImageFile.name}
                           </p>
                         )}
@@ -1680,8 +1709,8 @@ export const ProfilePage: React.FC = () => {
                   </div>
 
                   {/* Actions */}
-                  <div className="flex items-center justify-between pt-2 border-t border-slate-800">
-                    <p className="text-[11px] text-slate-400">
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-800">
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
                       * Giới hạn tối đa 3 lần nộp trong 24 giờ để ngăn chặn spam
                     </p>
                     <button
@@ -1709,25 +1738,25 @@ export const ProfilePage: React.FC = () => {
 
       {/* TAB 5: NOTIFICATION PREFERENCES */}
       {activeTab === 'NOTIFICATIONS' && (
-        <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-slate-800 space-y-6">
-          <div className="border-b border-slate-800 pb-4">
-            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              <Bell className="w-5 h-5 text-blue-400" /> Tùy Chỉnh Kênh Nhận Thông Báo
+        <div className="bg-white dark:bg-slate-900/90 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 sm:p-8 space-y-6 shadow-sm dark:shadow-xl">
+          <div className="border-b border-slate-200 dark:border-slate-800 pb-4">
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <Bell className="w-5 h-5 text-blue-600 dark:text-blue-400" /> Tùy Chỉnh Kênh Nhận Thông Báo
             </h3>
-            <p className="text-xs text-slate-400">Bật/Tắt các kênh nhận thông báo Email, SMS và Push cho từng loại sự kiện</p>
+            <p className="text-xs text-slate-600 dark:text-slate-400">Bật/Tắt các kênh nhận thông báo Email, SMS và Push cho từng loại sự kiện</p>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="border-b border-slate-800 text-[11px] text-slate-400 uppercase font-bold">
-                  <th className="py-3 px-4">Loại Sự Kiện</th>
+                <tr className="border-b border-slate-200 dark:border-slate-800 text-[11px] text-slate-600 dark:text-slate-400 uppercase font-bold bg-slate-50 dark:bg-slate-800/50">
+                  <th className="py-3 px-4 rounded-l-xl">Loại Sự Kiện</th>
                   <th className="py-3 px-4 text-center">Email</th>
                   <th className="py-3 px-4 text-center">SMS</th>
-                  <th className="py-3 px-4 text-center">Push App</th>
+                  <th className="py-3 px-4 text-center rounded-r-xl">Push App</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60">
+              <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
                 {[
                   { key: 'NEW_ORDER', name: 'Có đơn hàng mới phát sinh' },
                   { key: 'ORDER_FAILED', name: 'Đơn hàng giao thất bại / sự cố' },
@@ -1737,30 +1766,30 @@ export const ProfilePage: React.FC = () => {
                 ].map((item) => {
                   const prefs = notifPreferences[item.key] || { email: true, sms: false, push: true };
                   return (
-                    <tr key={item.key} className="hover:bg-slate-800/40">
-                      <td className="py-3 px-4 font-semibold text-white">{item.name}</td>
-                      <td className="py-3 px-4 text-center">
+                    <tr key={item.key} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
+                      <td className="py-3.5 px-4 font-semibold text-slate-900 dark:text-white">{item.name}</td>
+                      <td className="py-3.5 px-4 text-center">
                         <input
                           type="checkbox"
                           checked={prefs.email}
                           onChange={() => handleToggleNotif(item.key, 'email', prefs.email)}
-                          className="w-4 h-4 rounded border-slate-700 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                          className="w-4 h-4 rounded border-slate-300 dark:border-slate-700 text-blue-600 focus:ring-blue-500 cursor-pointer"
                         />
                       </td>
-                      <td className="py-3 px-4 text-center">
+                      <td className="py-3.5 px-4 text-center">
                         <input
                           type="checkbox"
                           checked={prefs.sms}
                           onChange={() => handleToggleNotif(item.key, 'sms', prefs.sms)}
-                          className="w-4 h-4 rounded border-slate-700 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                          className="w-4 h-4 rounded border-slate-300 dark:border-slate-700 text-blue-600 focus:ring-blue-500 cursor-pointer"
                         />
                       </td>
-                      <td className="py-3 px-4 text-center">
+                      <td className="py-3.5 px-4 text-center">
                         <input
                           type="checkbox"
                           checked={prefs.push}
                           onChange={() => handleToggleNotif(item.key, 'push', prefs.push)}
-                          className="w-4 h-4 rounded border-slate-700 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                          className="w-4 h-4 rounded border-slate-300 dark:border-slate-700 text-blue-600 focus:ring-blue-500 cursor-pointer"
                         />
                       </td>
                     </tr>
@@ -1776,15 +1805,15 @@ export const ProfilePage: React.FC = () => {
       {activeTab === 'SECURITY' && (
         <div className="space-y-6">
           {/* 2FA TOTP Card */}
-          <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-slate-800 space-y-5">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+          <div className="bg-white dark:bg-slate-900/90 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 sm:p-8 space-y-5 shadow-sm dark:shadow-xl">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
               <div>
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                  <QrCode className="w-5 h-5 text-indigo-400" /> Bảo Mật 2 Lớp (2FA TOTP)
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <QrCode className="w-5 h-5 text-indigo-600 dark:text-indigo-400" /> Bảo Mật 2 Lớp (2FA TOTP)
                 </h3>
-                <p className="text-xs text-slate-400">Sử dụng Google Authenticator hoặc Authy để bảo vệ tài khoản</p>
+                <p className="text-xs text-slate-600 dark:text-slate-400">Sử dụng Google Authenticator hoặc Authy để bảo vệ tài khoản</p>
               </div>
-              <span className={`px-3 py-1 rounded-full text-xs font-bold ${twoFactorEnabled ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-800 text-slate-400'}`}>
+              <span className={`px-3 py-1 rounded-full text-xs font-bold self-start sm:self-auto ${twoFactorEnabled ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/40' : 'bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700'}`}>
                 {twoFactorEnabled ? 'ĐÃ BẬT 2FA' : 'CHƯA KÍCH HOẠT'}
               </span>
             </div>
@@ -1800,12 +1829,12 @@ export const ProfilePage: React.FC = () => {
               </div>
             ) : (
               <div className="space-y-3">
-                <p className="text-xs text-emerald-400 font-semibold flex items-center gap-2">
+                <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4" /> Tài khoản đã được bảo vệ với 2FA TOTP
                 </p>
                 <button
                   onClick={() => setIsDisable2FAOpen(true)}
-                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-rose-900/40 text-rose-300 border border-slate-700 text-xs font-bold cursor-pointer"
+                  className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-rose-50 text-rose-600 border border-slate-200 dark:bg-slate-800 dark:hover:bg-rose-900/40 dark:text-rose-300 dark:border-slate-700 text-xs font-bold cursor-pointer transition"
                 >
                   Tắt Bảo Mật 2FA
                 </button>
@@ -1814,43 +1843,43 @@ export const ProfilePage: React.FC = () => {
           </div>
 
           {/* Password Form */}
-          <form onSubmit={handleChangePasswordSubmit} className="glass-panel p-6 sm:p-8 rounded-3xl border border-slate-800 space-y-5">
-            <h3 className="text-lg font-bold text-white flex items-center gap-2 border-b border-slate-800 pb-4">
-              <Key className="w-5 h-5 text-purple-400" /> Đổi Mật Khẩu
+          <form onSubmit={handleChangePasswordSubmit} className="bg-white dark:bg-slate-900/90 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 sm:p-8 space-y-5 shadow-sm dark:shadow-xl">
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-4">
+              <Key className="w-5 h-5 text-purple-600 dark:text-purple-400" /> Đổi Mật Khẩu
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Mật Khẩu Hiện Tại *</label>
+                <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Mật Khẩu Hiện Tại *</label>
                 <input
                   type="password"
                   required
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
-                  className="w-full glass-input rounded-xl px-3 py-2 text-white"
+                  className="w-full glass-input rounded-xl px-3 py-2 text-slate-900 dark:text-white bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700"
                 />
               </div>
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Mật Khẩu Mới *</label>
+                <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Mật Khẩu Mới *</label>
                 <input
                   type="password"
                   required
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full glass-input rounded-xl px-3 py-2 text-white"
+                  className="w-full glass-input rounded-xl px-3 py-2 text-slate-900 dark:text-white bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700"
                 />
               </div>
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Xác Nhận Mật Khẩu Mới *</label>
+                <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Xác Nhận Mật Khẩu Mới *</label>
                 <input
                   type="password"
                   required
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full glass-input rounded-xl px-3 py-2 text-white"
+                  className="w-full glass-input rounded-xl px-3 py-2 text-slate-900 dark:text-white bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700"
                 />
               </div>
             </div>
-            <div className="flex justify-end">
+            <div className="flex justify-end pt-2">
               <button
                 type="submit"
                 disabled={isLoading}
@@ -1862,11 +1891,11 @@ export const ProfilePage: React.FC = () => {
           </form>
 
           {/* Danger Zone: Self Deactivation */}
-          <div className="p-6 rounded-3xl bg-rose-950/20 border border-rose-500/30 space-y-4">
-            <h3 className="text-base font-bold text-rose-300 flex items-center gap-2">
-              <Power className="w-5 h-5 text-rose-400" /> Vùng Nguy Hiểm: Tạm Ngưng Hoạt Động Tài Khoản
+          <div className="p-6 rounded-3xl bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-500/30 space-y-4">
+            <h3 className="text-base font-bold text-rose-700 dark:text-rose-300 flex items-center gap-2">
+              <Power className="w-5 h-5 text-rose-600 dark:text-rose-400" /> Vùng Nguy Hiểm: Tạm Ngưng Hoạt Động Tài Khoản
             </h3>
-            <p className="text-xs text-slate-300">
+            <p className="text-xs text-rose-800 dark:text-slate-300 leading-relaxed">
               Khi tạm ngưng hoạt động Shop, bạn sẽ không thể tạo đơn hàng mới. Điều kiện: Đã xử lý xong toàn bộ đơn hàng hiện có và rút hết số dư ví COD.
             </p>
             <button
@@ -1880,23 +1909,23 @@ export const ProfilePage: React.FC = () => {
           {/* Disable 2FA Modal */}
           {isDisable2FAOpen && (
             <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-              <div className="glass-panel p-6 rounded-3xl border border-slate-700 max-w-md w-full space-y-4 text-xs">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                  <h3 className="font-bold text-white text-base">Xác Nhận Tắt 2FA</h3>
-                  <button onClick={() => setIsDisable2FAOpen(false)} className="text-slate-400 hover:text-white">
+              <div className="p-6 rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 max-w-md w-full space-y-4 text-xs shadow-2xl">
+                <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+                  <h3 className="font-bold text-slate-900 dark:text-white text-base">Xác Nhận Tắt 2FA</h3>
+                  <button onClick={() => setIsDisable2FAOpen(false)} className="text-slate-400 hover:text-slate-700 dark:hover:text-white">
                     <X className="w-5 h-5" />
                   </button>
                 </div>
-                <p className="text-slate-300">Nhập mật khẩu tài khoản để vô hiệu hóa bảo mật 2 lớp:</p>
+                <p className="text-slate-700 dark:text-slate-300">Nhập mật khẩu tài khoản để vô hiệu hóa bảo mật 2 lớp:</p>
                 <input
                   type="password"
                   value={disable2FAPassword}
                   onChange={(e) => setDisable2FAPassword(e.target.value)}
                   placeholder="Mật khẩu hiện tại"
-                  className="w-full glass-input rounded-xl px-3 py-2 text-white"
+                  className="w-full glass-input rounded-xl px-3 py-2 text-slate-900 dark:text-white bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700"
                 />
                 <div className="flex justify-end gap-3 pt-3">
-                  <button onClick={() => setIsDisable2FAOpen(false)} className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 font-bold">Hủy Bỏ</button>
+                  <button onClick={() => setIsDisable2FAOpen(false)} className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold">Hủy Bỏ</button>
                   <button onClick={handleDisable2FA} className="px-5 py-2 rounded-xl bg-rose-600 text-white font-bold">Tắt 2FA</button>
                 </div>
               </div>
@@ -1906,44 +1935,44 @@ export const ProfilePage: React.FC = () => {
           {/* 2FA Setup Modal */}
           {is2FASetupOpen && (
             <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-              <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-slate-700 max-w-md w-full space-y-5 text-xs">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                  <h3 className="font-bold text-white text-base">Quét Mã QR Đổ Vào App Authenticator</h3>
-                  <button onClick={() => setIs2FASetupOpen(false)} className="text-slate-400 hover:text-white">
+              <div className="p-6 sm:p-8 rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 max-w-md w-full space-y-5 text-xs shadow-2xl">
+                <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+                  <h3 className="font-bold text-slate-900 dark:text-white text-base">Quét Mã QR Đổ Vào App Authenticator</h3>
+                  <button onClick={() => setIs2FASetupOpen(false)} className="text-slate-400 hover:text-slate-700 dark:hover:text-white">
                     <X className="w-5 h-5" />
                   </button>
                 </div>
 
                 {qrCodeUrl && (
                   <div className="flex flex-col items-center gap-3">
-                    <img src={qrCodeUrl} alt="2FA QR Code" className="w-44 h-44 rounded-2xl border border-slate-700" />
-                    <p className="text-[11px] text-slate-400 font-mono text-center">Khóa thủ công: {manualKey}</p>
+                    <img src={qrCodeUrl} alt="2FA QR Code" className="w-44 h-44 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white p-2" />
+                    <p className="text-[11px] text-slate-600 dark:text-slate-400 font-mono text-center">Khóa thủ công: {manualKey}</p>
                   </div>
                 )}
 
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Nhập mã 6 chữ số từ App Authenticator *</label>
+                  <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Nhập mã 6 chữ số từ App Authenticator *</label>
                   <input
                     type="text"
                     maxLength={6}
                     value={totpInput}
                     onChange={(e) => setTotpInput(e.target.value)}
                     placeholder="123456"
-                    className="w-full glass-input rounded-xl px-3 py-2 text-center text-lg font-mono text-cyan-400 tracking-widest"
+                    className="w-full glass-input rounded-xl px-3 py-2 text-center text-lg font-mono text-blue-600 dark:text-cyan-400 tracking-widest bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700"
                   />
                 </div>
 
                 {backupCodes.length > 0 && (
-                  <div className="p-4 rounded-xl bg-slate-900 border border-emerald-500/40 space-y-2">
-                    <p className="font-bold text-emerald-400">10 Mã Dự Phòng (Lưu lại ngay):</p>
-                    <div className="grid grid-cols-2 gap-1 font-mono text-[11px] text-slate-300">
+                  <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-emerald-300 dark:border-emerald-500/40 space-y-2">
+                    <p className="font-bold text-emerald-700 dark:text-emerald-400">10 Mã Dự Phòng (Lưu lại ngay):</p>
+                    <div className="grid grid-cols-2 gap-1 font-mono text-[11px] text-slate-700 dark:text-slate-300">
                       {backupCodes.map((c, idx) => <span key={idx}>{c}</span>)}
                     </div>
                   </div>
                 )}
 
-                <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
-                  <button onClick={() => setIs2FASetupOpen(false)} className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 font-bold">Đóng</button>
+                <div className="flex justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+                  <button onClick={() => setIs2FASetupOpen(false)} className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold">Đóng</button>
                   <button onClick={handleVerify2FA} className="px-5 py-2 rounded-xl bg-indigo-600 text-white font-bold">Xác Nhận Kích Hoạt</button>
                 </div>
               </div>
@@ -1953,32 +1982,32 @@ export const ProfilePage: React.FC = () => {
           {/* Confirm Deactivation Modal */}
           {isDeactivateModalOpen && (
             <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-              <div className="glass-panel p-6 rounded-3xl border border-rose-500/40 max-w-md w-full space-y-4 text-xs">
-                <h3 className="font-bold text-rose-400 text-base flex items-center gap-2">
+              <div className="p-6 rounded-3xl border border-rose-200 dark:border-rose-500/40 bg-white dark:bg-slate-900 max-w-md w-full space-y-4 text-xs shadow-2xl">
+                <h3 className="font-bold text-rose-600 dark:text-rose-400 text-base flex items-center gap-2">
                   <ShieldAlert className="w-5 h-5" /> Xác Nhận Tạm Ngưng Tài Khoản
                 </h3>
-                <p className="text-slate-300">Nhập mật khẩu để hoàn tất tạm ngưng hoạt động Shop:</p>
+                <p className="text-slate-700 dark:text-slate-300">Nhập mật khẩu để hoàn tất tạm ngưng hoạt động Shop:</p>
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Mật khẩu của bạn *</label>
+                  <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Mật khẩu của bạn *</label>
                   <input
                     type="password"
                     value={deactivatePassword}
                     onChange={(e) => setDeactivatePassword(e.target.value)}
-                    className="w-full glass-input rounded-xl px-3 py-2 text-white"
+                    className="w-full glass-input rounded-xl px-3 py-2 text-slate-900 dark:text-white bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700"
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Lý do tạm ngưng (Tùy chọn)</label>
+                  <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Lý do tạm ngưng (Tùy chọn)</label>
                   <input
                     type="text"
                     value={deactivateReason}
                     onChange={(e) => setDeactivateReason(e.target.value)}
                     placeholder="VD: Nghỉ lễ / chuyển địa điểm"
-                    className="w-full glass-input rounded-xl px-3 py-2 text-white"
+                    className="w-full glass-input rounded-xl px-3 py-2 text-slate-900 dark:text-white bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700"
                   />
                 </div>
-                <div className="flex justify-end gap-3 pt-3">
-                  <button onClick={() => setIsDeactivateModalOpen(false)} className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 font-bold">Hủy Bỏ</button>
+                <div className="flex justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+                  <button onClick={() => setIsDeactivateModalOpen(false)} className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold">Hủy Bỏ</button>
                   <button onClick={handleConfirmDeactivation} className="px-5 py-2 rounded-xl bg-rose-600 text-white font-bold">Xác Nhận Tạm Ngưng</button>
                 </div>
               </div>
@@ -1989,17 +2018,17 @@ export const ProfilePage: React.FC = () => {
 
       {/* TAB 7: SUB ACCOUNTS */}
       {activeTab === 'SUB_ACCOUNTS' && (
-        <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-slate-800 space-y-6">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+        <div className="bg-white dark:bg-slate-900/90 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 sm:p-8 space-y-6 shadow-sm dark:shadow-xl">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
             <div>
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <Users className="w-5 h-5 text-blue-400" /> Phân Quyền Nhân Viên Phụ (Sub-Account)
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Users className="w-5 h-5 text-blue-600 dark:text-blue-400" /> Phân Quyền Nhân Viên Phụ (Sub-Account)
               </h3>
-              <p className="text-xs text-slate-400">Tạo tài khoản nhân viên phụ và ủy quyền chức năng làm việc riêng biệt</p>
+              <p className="text-xs text-slate-600 dark:text-slate-400">Tạo tài khoản nhân viên phụ và ủy quyền chức năng làm việc riêng biệt</p>
             </div>
             <button
               onClick={() => setIsAddSubAccountOpen(true)}
-              className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg cursor-pointer"
+              className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-blue-600/25 cursor-pointer self-start sm:self-auto"
             >
               <Plus className="w-4 h-4" /> Thêm Nhân Viên Mới
             </button>
@@ -2007,25 +2036,25 @@ export const ProfilePage: React.FC = () => {
 
           <div className="space-y-3">
             {subAccounts.length === 0 ? (
-              <p className="text-xs text-slate-400 italic">Chưa có tài khoản nhân viên phụ nào.</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 italic">Chưa có tài khoản nhân viên phụ nào.</p>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {subAccounts.map((sub) => (
-                  <div key={sub._id} className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-3 text-xs">
+                  <div key={sub._id} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-3 text-xs">
                     <div className="flex items-center justify-between">
-                      <h4 className="font-bold text-white">{sub.fullName}</h4>
+                      <h4 className="font-bold text-slate-900 dark:text-white">{sub.fullName}</h4>
                       <button
                         onClick={() => handleDeleteSubAccount(sub._id)}
-                        className="text-slate-500 hover:text-rose-400 p-1"
+                        className="text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 p-1"
                         title="Vô hiệu hóa"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
-                    <p className="text-slate-400 font-mono">{sub.email} • {sub.phoneNumber}</p>
+                    <p className="text-slate-600 dark:text-slate-400 font-mono">{sub.email} • {sub.phoneNumber}</p>
                     <div className="flex flex-wrap gap-1.5 pt-1">
                       {sub.subAccountPermissions.map((perm) => (
-                        <span key={perm} className="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 text-[10px] font-semibold">
+                        <span key={perm} className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300 text-[10px] font-semibold">
                           {PERMISSION_LABELS[perm] || perm}
                         </span>
                       ))}
@@ -2039,65 +2068,65 @@ export const ProfilePage: React.FC = () => {
           {/* Add Sub Account Modal */}
           {isAddSubAccountOpen && (
             <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-              <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-slate-700 max-w-lg w-full space-y-5 text-xs">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                  <h3 className="font-bold text-white text-base flex items-center gap-2">
-                    <Users className="w-5 h-5 text-blue-400" /> Tạo Tài Khoản Nhân Viên Phụ
+              <div className="p-6 sm:p-8 rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 max-w-lg w-full space-y-5 text-xs shadow-2xl">
+                <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+                  <h3 className="font-bold text-slate-900 dark:text-white text-base flex items-center gap-2">
+                    <Users className="w-5 h-5 text-blue-600 dark:text-blue-400" /> Tạo Tài Khoản Nhân Viên Phụ
                   </h3>
-                  <button onClick={() => setIsAddSubAccountOpen(false)} className="text-slate-400 hover:text-white">
+                  <button onClick={() => setIsAddSubAccountOpen(false)} className="text-slate-400 hover:text-slate-700 dark:hover:text-white">
                     <X className="w-5 h-5" />
                   </button>
                 </div>
 
                 <form onSubmit={handleCreateSubAccount} className="space-y-4">
                   <div>
-                    <label className="block text-slate-300 font-semibold mb-1">Họ Và Tên Nhân Viên *</label>
+                    <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Họ Và Tên Nhân Viên *</label>
                     <input
                       type="text"
                       required
                       value={subFullName}
                       onChange={(e) => setSubFullName(e.target.value)}
-                      className="w-full glass-input rounded-xl px-3 py-2 text-white"
+                      className="w-full glass-input rounded-xl px-3 py-2 text-slate-900 dark:text-white bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700"
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-slate-300 font-semibold mb-1">Email Đăng Nhập *</label>
+                      <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Email Đăng Nhập *</label>
                       <input
                         type="email"
                         required
                         value={subEmail}
                         onChange={(e) => setSubEmail(e.target.value)}
-                        className="w-full glass-input rounded-xl px-3 py-2 text-white font-mono"
+                        className="w-full glass-input rounded-xl px-3 py-2 text-slate-900 dark:text-white bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-mono"
                       />
                     </div>
                     <div>
-                      <label className="block text-slate-300 font-semibold mb-1">Số Điện Thoại *</label>
+                      <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Số Điện Thoại *</label>
                       <input
                         type="text"
                         required
                         value={subPhone}
                         onChange={(e) => setSubPhone(e.target.value)}
-                        className="w-full glass-input rounded-xl px-3 py-2 text-white font-mono"
+                        className="w-full glass-input rounded-xl px-3 py-2 text-slate-900 dark:text-white bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-mono"
                       />
                     </div>
                   </div>
                   <div>
-                    <label className="block text-slate-300 font-semibold mb-1">Mật Khẩu Đăng Nhập *</label>
+                    <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Mật Khẩu Đăng Nhập *</label>
                     <input
                       type="password"
                       required
                       value={subPassword}
                       onChange={(e) => setSubPassword(e.target.value)}
-                      className="w-full glass-input rounded-xl px-3 py-2 text-white"
+                      className="w-full glass-input rounded-xl px-3 py-2 text-slate-900 dark:text-white bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700"
                     />
                   </div>
 
                   <div className="space-y-2 pt-2">
-                    <label className="block text-slate-300 font-semibold">Phân Quyền Sử Dụng System *</label>
-                    <div className="grid grid-cols-1 gap-2 bg-slate-900/60 p-3 rounded-xl border border-slate-800">
+                    <label className="block text-slate-700 dark:text-slate-300 font-semibold">Phân Quyền Sử Dụng System *</label>
+                    <div className="grid grid-cols-1 gap-2 bg-slate-50 dark:bg-slate-900/60 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
                       {Object.entries(PERMISSION_LABELS).map(([key, label]) => (
-                        <label key={key} className="flex items-center gap-2 cursor-pointer text-slate-300">
+                        <label key={key} className="flex items-center gap-2 cursor-pointer text-slate-700 dark:text-slate-300">
                           <input
                             type="checkbox"
                             checked={selectedPermissions.includes(key)}
@@ -2105,7 +2134,7 @@ export const ProfilePage: React.FC = () => {
                               if (e.target.checked) setSelectedPermissions([...selectedPermissions, key]);
                               else setSelectedPermissions(selectedPermissions.filter((p) => p !== key));
                             }}
-                            className="w-4 h-4 rounded border-slate-700 text-blue-600 focus:ring-blue-500"
+                            className="w-4 h-4 rounded border-slate-300 dark:border-slate-700 text-blue-600 focus:ring-blue-500"
                           />
                           <span>{label}</span>
                         </label>
@@ -2113,18 +2142,18 @@ export const ProfilePage: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
+                  <div className="flex justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
                     <button
                       type="button"
                       onClick={() => setIsAddSubAccountOpen(false)}
-                      className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 font-bold"
+                      className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold"
                     >
                       Hủy Bỏ
                     </button>
                     <button
                       type="submit"
                       disabled={isLoading}
-                      className="px-5 py-2 rounded-xl bg-blue-600 text-white font-bold shadow-lg"
+                      className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-lg shadow-blue-600/25"
                     >
                       Tạo Nhân Viên
                     </button>

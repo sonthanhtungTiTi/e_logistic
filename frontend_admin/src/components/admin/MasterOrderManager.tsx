@@ -71,11 +71,11 @@ export const MasterOrderManager: React.FC<MasterOrderManagerProps> = ({
       </div>
 
       {/* Orders Table */}
-      <div className="glass-panel rounded-2xl border border-slate-800 overflow-hidden">
+      <div className="glass-panel rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-slate-800 bg-slate-900/80 text-[11px] font-bold text-slate-400 uppercase">
+              <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900/80 text-[11px] font-bold text-slate-700 dark:text-slate-400 uppercase">
                 <th className="py-3.5 px-4">Mã Vận Đơn</th>
                 <th className="py-3.5 px-4">Nơi Gửi ➔ Nơi Nhận</th>
                 <th className="py-3.5 px-4">Dịch Vụ & Trọng Lượng</th>
@@ -85,18 +85,18 @@ export const MasterOrderManager: React.FC<MasterOrderManagerProps> = ({
                 <th className="py-3.5 px-4 text-right">Điều Phối Staff</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60 text-xs">
+            <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60 text-xs">
               {filteredOrders.map((o) => {
                 const orderId = o.id || o._id;
                 const trackingNum = o.trackingNumber || o.trackingCode;
                 const costVal = o.cost || o.shippingFee || 0;
 
                 return (
-                  <tr key={orderId} className="hover:bg-slate-800/40 transition">
+                  <tr key={orderId} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
                     <td className="py-3.5 px-4">
                       <span 
                         onClick={() => setSelectedOrder(o)}
-                        className="font-mono font-bold text-purple-300 hover:underline cursor-pointer"
+                        className="font-mono font-bold text-purple-600 dark:text-purple-300 hover:underline cursor-pointer"
                       >
                         {trackingNum}
                       </span>
@@ -104,30 +104,30 @@ export const MasterOrderManager: React.FC<MasterOrderManagerProps> = ({
                     </td>
 
                     <td className="py-3.5 px-4">
-                      <div className="font-semibold text-white">{o.originCity || 'Hà Nội'} ➔ {o.destinationCity || 'Hồ Chí Minh'}</div>
-                      <div className="text-[11px] text-slate-400">Nhận: {o.recipientName || o.deliveryAddress?.fullName} ({o.recipientPhone || o.deliveryAddress?.phone})</div>
+                      <div className="font-semibold text-slate-900 dark:text-white">{o.originCity || 'Hà Nội'} ➔ {o.destinationCity || 'Hồ Chí Minh'}</div>
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400">Nhận: {o.recipientName || o.deliveryAddress?.fullName} ({o.recipientPhone || o.deliveryAddress?.phone})</div>
                     </td>
 
                     <td className="py-3.5 px-4 space-y-0.5">
-                      <div className="font-bold text-slate-200 text-[11px]">{o.serviceType || 'TIÊU CHUẨN'}</div>
-                      <div className="text-[10px] text-slate-400 font-mono">
-                        Thực: {o.weightKg || o.actualWeight}kg • Cước: <span className="text-cyan-300 font-bold">{o.chargeableWeightKg || o.chargeableWeight}kg</span>
+                      <div className="font-bold text-slate-800 dark:text-slate-200 text-[11px]">{o.serviceType || 'TIÊU CHUẨN'}</div>
+                      <div className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">
+                        Thực: {o.weightKg || o.actualWeight}kg • Cước: <span className="text-cyan-600 dark:text-cyan-300 font-bold">{o.chargeableWeightKg || o.chargeableWeight}kg</span>
                       </div>
                     </td>
 
-                    <td className="py-3.5 px-4 font-mono font-extrabold text-emerald-400">
+                    <td className="py-3.5 px-4 font-mono font-extrabold text-emerald-600 dark:text-emerald-400">
                       {costVal.toLocaleString('vi-VN')} ₫
                     </td>
 
-                    <td className="py-3.5 px-4 text-slate-300">
-                      {o.driverName || <span className="text-slate-500 italic">Chưa gán tài xế</span>}
+                    <td className="py-3.5 px-4 text-slate-700 dark:text-slate-300">
+                      {o.driverName || <span className="text-slate-400 dark:text-slate-500 italic">Chưa gán tài xế</span>}
                     </td>
 
                     <td className="py-3.5 px-4">
                       <span className={`inline-block text-[10px] font-bold px-2.5 py-0.5 rounded border ${
-                        o.status === 'DELIVERED' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' :
-                        o.status === 'IN_TRANSIT' ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' :
-                        'bg-purple-500/20 text-purple-300 border-purple-500/30'
+                        o.status === 'DELIVERED' ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/30' :
+                        o.status === 'IN_TRANSIT' ? 'bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/30' :
+                        'bg-purple-500/20 text-purple-600 dark:text-purple-300 border-purple-500/30'
                       }`}>
                         {o.status}
                       </span>

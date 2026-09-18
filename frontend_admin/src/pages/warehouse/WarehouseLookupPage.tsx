@@ -254,7 +254,7 @@ export const WarehouseLookupPage: React.FC = () => {
                   <th className="py-3.5 px-4 text-center">Thao Tác</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60">
+              <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
                 {loading ? (
                   <tr>
                     <td colSpan={8} className="py-12 text-center text-slate-400">
@@ -271,39 +271,39 @@ export const WarehouseLookupPage: React.FC = () => {
                   </tr>
                 ) : (
                   ordersData.map((order) => (
-                    <tr key={order._id} className="hover:bg-slate-800/40 transition">
+                    <tr key={order._id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
                       <td className="py-3.5 px-4">
-                        <div className="font-mono font-bold text-white text-xs">{order.trackingCode || order.orderCode}</div>
+                        <div className="font-mono font-bold text-slate-900 dark:text-white text-xs">{order.trackingCode || order.orderCode}</div>
                         <div className="text-[10px] text-slate-500 font-mono mt-0.5">ID: {order._id}</div>
                       </td>
                       <td className="py-3.5 px-4">
-                        <div className="font-semibold text-slate-200">{order.recipient?.name || 'Chưa cập nhật'}</div>
-                        <div className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5">
+                        <div className="font-semibold text-slate-800 dark:text-slate-200">{order.recipient?.name || 'Chưa cập nhật'}</div>
+                        <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5">
                           <span>{order.recipient?.phoneNumber}</span>
                           {order.recipient?.district && (
-                            <span className="text-slate-500">• {order.recipient?.district}</span>
+                            <span className="text-slate-400 dark:text-slate-500">• {order.recipient?.district}</span>
                           )}
                         </div>
                       </td>
                       <td className="py-3.5 px-4">{getStatusBadge(order.status)}</td>
-                      <td className="py-3.5 px-4 font-mono text-[11px] text-blue-300">
+                      <td className="py-3.5 px-4 font-mono text-[11px] text-blue-600 dark:text-blue-300">
                         {order.currentLocation?.zone || order.pickupAddress?.district || 'Khu tổng'}
                       </td>
-                      <td className="py-3.5 px-4 text-right font-mono text-slate-200">
+                      <td className="py-3.5 px-4 text-right font-mono text-slate-700 dark:text-slate-200">
                         {order.packageDetails?.weight || order.weight || 0.5} kg
                       </td>
                       <td className="py-3.5 px-4 text-right font-mono">
-                        <span className="text-emerald-400 font-bold">
+                        <span className="text-emerald-600 dark:text-emerald-400 font-bold">
                           {(order.payment?.codAmount || order.codAmount || 0).toLocaleString('vi-VN')} đ
                         </span>
                       </td>
-                      <td className="py-3.5 px-4 text-slate-400 text-[11px] whitespace-nowrap font-mono">
+                      <td className="py-3.5 px-4 text-slate-500 dark:text-slate-400 text-[11px] whitespace-nowrap font-mono">
                         {new Date(order.updatedAt || order.createdAt).toLocaleString('vi-VN')}
                       </td>
                       <td className="py-3.5 px-4 text-center">
                         <button
                           onClick={() => setSelectedOrder(order)}
-                          className="px-3 py-1.5 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-500/20 rounded-lg text-xs font-bold transition flex items-center gap-1.5 mx-auto cursor-pointer"
+                          className="px-3 py-1.5 bg-blue-600/10 hover:bg-blue-600/20 text-blue-600 dark:text-blue-400 border border-blue-500/20 rounded-lg text-xs font-bold transition flex items-center gap-1.5 mx-auto cursor-pointer"
                         >
                           <Eye className="w-3.5 h-3.5" />
                           Chi Tiết
@@ -319,7 +319,7 @@ export const WarehouseLookupPage: React.FC = () => {
           /* BẢNG BAO TẢI & SEAL */
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-950/80 text-slate-400 border-b border-slate-800 uppercase font-mono text-[10px] tracking-wider">
+              <thead className="bg-slate-100 dark:bg-slate-950/80 text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 uppercase font-mono text-[10px] tracking-wider">
                 <tr>
                   <th className="py-3.5 px-4">Mã Seal / ID Bao</th>
                   <th className="py-3.5 px-4">Hub Xuất Phát &rarr; Hub Đích</th>
@@ -331,7 +331,7 @@ export const WarehouseLookupPage: React.FC = () => {
                   <th className="py-3.5 px-4 text-center">Thao Tác</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60">
+              <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
                 {loading ? (
                   <tr>
                     <td colSpan={8} className="py-12 text-center text-slate-400">
@@ -348,41 +348,41 @@ export const WarehouseLookupPage: React.FC = () => {
                   </tr>
                 ) : (
                   bagsData.map((bag) => (
-                    <tr key={bag._id} className="hover:bg-slate-800/40 transition">
+                    <tr key={bag._id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
                       <td className="py-3.5 px-4">
-                        <div className="font-mono font-black text-amber-400 text-xs">{bag.sealCode}</div>
+                        <div className="font-mono font-black text-amber-600 dark:text-amber-400 text-xs">{bag.sealCode}</div>
                         <div className="text-[10px] text-slate-500 font-mono mt-0.5">ID: {bag._id}</div>
                       </td>
                       <td className="py-3.5 px-4">
-                        <div className="text-slate-200 font-semibold flex items-center gap-1.5">
+                        <div className="text-slate-800 dark:text-slate-200 font-semibold flex items-center gap-1.5">
                           <span>{bag.originHubId?.name || 'Hub gốc'}</span>
-                          <ArrowRight className="w-3 h-3 text-slate-500" />
-                          <span className="text-blue-300 font-bold">{bag.destinationHubId?.name || 'Hub đích'}</span>
+                          <ArrowRight className="w-3 h-3 text-slate-400 dark:text-slate-500" />
+                          <span className="text-blue-600 dark:text-blue-300 font-bold">{bag.destinationHubId?.name || 'Hub đích'}</span>
                         </div>
                         <div className="text-[10px] text-slate-500 font-mono mt-0.5">
                           Đích: {bag.destinationHubId?.code || 'HUB_DEST'}
                         </div>
                       </td>
                       <td className="py-3.5 px-4">{getStatusBadge(bag.status)}</td>
-                      <td className="py-3.5 px-4 text-center font-mono font-bold text-white">
-                        <span className="px-2 py-0.5 bg-slate-950 border border-slate-800 rounded-md">
+                      <td className="py-3.5 px-4 text-center font-mono font-bold text-slate-900 dark:text-white">
+                        <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-md">
                           {bag.trackingCodes?.length || 0} / {bag.maxCapacity || 30}
                         </span>
                       </td>
-                      <td className="py-3.5 px-4 text-right font-mono font-bold text-blue-300">
+                      <td className="py-3.5 px-4 text-right font-mono font-bold text-blue-600 dark:text-blue-300">
                         {bag.totalWeightKg || 0} kg
                       </td>
-                      <td className="py-3.5 px-4 text-slate-300">
+                      <td className="py-3.5 px-4 text-slate-700 dark:text-slate-300">
                         <div>{bag.createdBy?.fullName || 'Nhân viên kho'}</div>
                         <div className="text-[10px] text-slate-500 font-mono">{bag.createdBy?.email}</div>
                       </td>
-                      <td className="py-3.5 px-4 text-slate-400 text-[11px] whitespace-nowrap font-mono">
+                      <td className="py-3.5 px-4 text-slate-500 dark:text-slate-400 text-[11px] whitespace-nowrap font-mono">
                         {bag.sealedAt ? new Date(bag.sealedAt).toLocaleString('vi-VN') : 'Chưa khóa seal'}
                       </td>
                       <td className="py-3.5 px-4 text-center">
                         <button
                           onClick={() => setSelectedBag(bag)}
-                          className="px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/20 rounded-lg text-xs font-bold transition flex items-center gap-1.5 mx-auto cursor-pointer"
+                          className="px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/20 rounded-lg text-xs font-bold transition flex items-center gap-1.5 mx-auto cursor-pointer"
                         >
                           <Boxes className="w-3.5 h-3.5" />
                           Xem Kiện ({bag.trackingCodes?.length || 0})

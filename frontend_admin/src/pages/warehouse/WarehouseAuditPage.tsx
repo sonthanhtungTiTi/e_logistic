@@ -323,19 +323,19 @@ export const WarehouseAuditPage: React.FC = () => {
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-950 text-slate-400 text-xs uppercase font-semibold border-b border-slate-800">
+                  <thead className="bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400 text-xs uppercase font-semibold border-b border-slate-200 dark:border-slate-800">
                     <tr>
                       <th className="py-3 px-4">Giờ</th>
                       <th className="py-3 px-4">Mã vận đơn</th>
                       <th className="py-3 px-4">Kết quả</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800/60">
+                  <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
                     {scanLog.map(log => (
-                      <tr key={log.id} className={`transition ${log.ok ? 'hover:bg-slate-800/30' : 'bg-rose-950/20'}`}>
-                        <td className="py-2.5 px-4 text-xs font-mono text-slate-400">{log.time}</td>
-                        <td className="py-2.5 px-4 font-mono font-bold text-blue-400">{log.code}</td>
-                        <td className={`py-2.5 px-4 text-xs font-bold ${log.ok ? 'text-emerald-400' : 'text-rose-400'}`}>{log.msg}</td>
+                      <tr key={log.id} className={`transition ${log.ok ? 'hover:bg-slate-50 dark:hover:bg-slate-800/30' : 'bg-rose-50 dark:bg-rose-950/20'}`}>
+                        <td className="py-2.5 px-4 text-xs font-mono text-slate-500 dark:text-slate-400">{log.time}</td>
+                        <td className="py-2.5 px-4 font-mono font-bold text-blue-600 dark:text-blue-400">{log.code}</td>
+                        <td className={`py-2.5 px-4 text-xs font-bold ${log.ok ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>{log.msg}</td>
                       </tr>
                     ))}
                   </tbody>

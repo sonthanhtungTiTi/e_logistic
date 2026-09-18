@@ -626,7 +626,7 @@ export const WarehouseInventoryDashboardPage: React.FC = () => {
                 <th className="py-3 px-4 text-right">Thao Tác</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60">
+            <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
               {agingData.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="py-8 text-center text-slate-500 italic">
@@ -639,7 +639,7 @@ export const WarehouseInventoryDashboardPage: React.FC = () => {
                   return (
                     <tr
                       key={item.tracking_code}
-                      className={`transition ${isSelected ? 'bg-blue-950/30' : 'hover:bg-slate-800/40'}`}
+                      className={`transition ${isSelected ? 'bg-blue-50 dark:bg-blue-950/30' : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'}`}
                     >
                       <td className="py-3 px-4">
                         <button onClick={() => toggleSelectOne(item.tracking_code)}>
