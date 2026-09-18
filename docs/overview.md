@@ -1,8 +1,8 @@
 #  E-LOGISTICS — PHÂN TÍCH KIẾN TRÚC & LUỒNG SOURCE CODE TOÀN DIỆN
 
-> **Ngày phân tích:** 17/09/2026  
+> **Ngày phân tích:** 18/09/2026  
 > **Phạm vi:** Toàn bộ hệ thống — Backend API, Frontend Web (Seller/Buyer), Frontend Admin (Operations/Driver/Warehouse/CSKH)  
-> **Trạng thái:** Production-ready · 15/15 Jest Tests PASS (MongoMemoryReplSet with Transaction Support, SLA Engine, Ticket Core) · 92/92 API & E2E Scenarios Validated · Full RBAC Route Guard & CS/Accountant/Warehouse Demo Accounts Synchronized · v2.7
+> **Trạng thái:** Production-ready · 38/38 Jest Unit/Integration Tests PASS (ACID Transactions, Double-Write Ledger/Wallet, SLA Engine, Priority Matrix, PII Masking, Context 360) · 92/92 API & E2E Scenarios Validated (Tổng 130/130 Tests PASS 100%) · Full RBAC Route Guard & CS/Accountant/Warehouse Demo Accounts Synchronized · Chuẩn hóa Toàn diện Mobile-First Responsive & Công thái học Industrial PDA (4 Batches / 10 Warehouse Pages) · v2.8
 
 ---
 
@@ -11,18 +11,19 @@
 > Khi lập trình, phát triển tính năng, refactor hoặc sửa lỗi trong dự án **E-Logistics**, tất cả AI Assistants & Agents **BẮT BUỘC** phải tuân thủ nghiêm ngặt các nguyên tắc làm việc và quy chuẩn kiến trúc sau:
 > 
 > 1. **Tuân thủ Skill File chính thức (Nguồn sự thật duy nhất)**:
->    - Quy chuẩn lập trình, kiến trúc 3 tầng, 42 trạng thái Order, 17 Roles RBAC, quy tắc Atomic Update, Write-Behind Caching và Checklist kiểm thử được quy định tại:  
+>    - Quy chuẩn lập trình, kiến trúc 3 tầng, 42 trạng thái Order, 17 Roles RBAC, quy tắc Atomic Update, Write-Behind Caching, Compensation Double-Write và Checklist kiểm thử được quy định tại:  
 >      👉 [`.gemini/skills/elogistic-feature-dev/SKILL.md`](file:///.gemini/skills/elogistic-feature-dev/SKILL.md)  
 >    - AI **PHẢI** tham chiếu file skill này trước khi triển khai bất kỳ route, controller, service, model, worker, job hoặc component/page mới nào.
 > 
 > 2. **Hiểu rõ Kiến trúc Kỹ thuật Hệ thống**:
->    - **Backend Engine**: Node.js / Express 5 + Mongoose 9 (MongoDB) + Redis (In-Memory Hot Cache Layer) + RabbitMQ (Message Broker) + Socket.io Realtime Push.
->    - **Dual Frontend**: `frontend_web` (Kênh Seller & Tra cứu công khai) và `frontend_admin` (Quản trị & Vận hành kho/lái xe/điều phối), được xây dựng riêng biệt bằng React 19 + Vite 8 + TypeScript 6 + TailwindCSS v4.
+>    - **Backend Engine**: Node.js / Express 5 + Mongoose 9 (MongoDB Atlas/ReplicaSet Multi-Document ACID Transactions) + Redis (In-Memory Hot Cache Layer) + RabbitMQ (Message Broker) + Socket.io Realtime Push.
+>    - **Dual Frontend**: `frontend_web` (Kênh Seller & Tra cứu công khai) và `frontend_admin` (Quản trị & Vận hành kho/lái xe/điều phối/CSKH Workspace), được xây dựng riêng biệt bằng React 19 + Vite 8 + TypeScript 6 + TailwindCSS v4.
+>    - **Chuẩn Responsive & Thiết bị Thực địa (Industrial PDA Ergonomics)**: Viewport-fit cover, touch targets >= 44-48px, numeric keypad modes, layout thích ứng Mobile/Tablet/Desktop, Dual-view Pattern (Card/Table), Split-pane CS Workspace.
 > 
 > 3. **Quy tắc làm việc & Kiểm soát chất lượng (Zero Technical Debt)**:
 >    - **Đọc code hiện có trước khi viết**: Kiểm tra xem logic, service, component, hook hoặc type tương tự đã tồn tại chưa để **tái sử dụng / mở rộng**, tuyệt đối không tạo code trùng lặp.
 >    - **Targeted Patch Mode**: Chỉ sửa đúng vị trí cần thiết, giữ lượng diff tối thiểu, duy trì code convention và line endings.
->    - **Bảo mật & Race Condition**: Sanitize chống Mass Assignment / IDOR, sử dụng Atomic Conditional Update cho các thao tác đổi `status` và cập nhật Quota, áp dụng Pattern Write-Behind Caching (`sync.service.js`) cho thao tác cập nhật đơn hàng.
+>    - **Bảo mật, Giao dịch Tài chính & Race Condition**: Sanitize chống Mass Assignment / IDOR, sử dụng Atomic Conditional Update cho các thao tác đổi `status` ticket/order, áp dụng MongoDB ACID Session cho giao dịch Bồi thường & Ledger/Wallet, áp dụng Pattern Write-Behind Caching (`sync.service.js`) cho thao tác cập nhật đơn hàng.
 >    - **Xác minh runtime**: Đảm bảo 100% không có lỗi TypeScript (`npx tsc --noEmit`), không có lỗi build/lint trước khi báo cáo hoàn thành.
 
 ---
@@ -33,10 +34,16 @@
 2. [Kiến trúc Kỹ thuật (Tech Stack)](#2-kiến-trúc-kỹ-thuật-tech-stack)
 3. [Cấu trúc Thư mục Chi tiết](#3-cấu-trúc-thư-mục-chi-tiết)
 4. [Kiến trúc Backend — Phân tích Từng Tầng](#4-kiến-trúc-backend)
+   - [4.7 WebSocket & Socket.IO Real-time Architecture](#47-tầng-websocket--socketio-real-time-gateway-architecture)
+   - [4.8 Background Jobs & Distributed Schedulers (SLA, Watchdogs, Reconciliation)](#48-background-jobs-cron-workers--distributed-schedulers)
 5. [Phân tích Các Module Nghiệp vụ Chính](#5-phân-tích-các-module-nghiệp-vụ-chính)
+   - [5.10 Module CSKH, SLA Engine, Context 360 & Compensation Engine](#510-module-10-ticket--cskh-support-system-sla-engine-context-360--compensation-engine)
 6. [Luồng Nghiệp vụ End-to-End (Order Lifecycle)](#6-luồng-end-to-end)
-7. [Kiến trúc Frontend Web Portal](#7-kiến-trúc-frontend-web)
-8. [Kiến trúc Frontend Admin Portal](#8-kiến-trúc-frontend-admin)
+7. [Kiến trúc Frontend Web Portal & Chuẩn Responsive](#7-kiến-trúc-frontend-web)
+   - [7.1 Chiến dịch Responsive Mobile-First & Modular Subcomponents](#71-chiến-dịch-responsive-mobile-first--modular-subcomponents)
+8. [Kiến trúc Frontend Admin Portal & CS Workspace](#8-kiến-trúc-frontend-admin)
+   - [8.1 CS Workspace 360 & Bồi thường Thực địa](#81-cs-workspace-360--bồi-thường-thực-địa)
+   - [8.2 Công thái học Thiết bị Thực địa (Industrial PDA Ergonomics)](#82-công-thái-học-thiết-bị-thực-địa-industrial-pda-ergonomics)
 9. [Mô hình Dữ liệu (Data Models)](#9-mô-hình-dữ-liệu)
 10. [Thuật toán Định tuyến & Tính giá](#10-thuật-toán)
 11. [Hệ thống Kiểm thử (Test Suites)](#11-kiểm-thử)
@@ -150,33 +157,46 @@ e_logistic/
 │   │   │   ├── auditCore.service.js   # UC-18: Kiểm kê + SEARCH_ZONE
 │   │   │   ├── inventoryCore.service.js # UC-19: SLA Dwell + Zone Capacity
 │   │   │   ├── order.service.js       # Core CRUD đơn hàng (42.5KB)
+│   │   │   ├── ticketCore.service.js  # UC CSKH: 9-State Machine, Claim Ticket, Audit Trail
+│   │   │   ├── slaCalculator.service.js # Tính SLA Business Hours (08:00-20:00), Nghỉ lễ VN, Pause/Resume
+│   │   │   ├── ticketPriority.service.js # Ma trận phân hạng ưu tiên P1-P4 & VIP Seller
+│   │   │   ├── compensation.service.js# Động cơ Bồi thường, Ma trận duyệt 4 cấp, Double-Write Wallet Transaction
 │   │   │   ├── dispatchEngine.service.js # Auto-dispatch engine (Low-density optimization)
 │   │   │   ├── kyc.service.js         # Xử lý KYC + upload file
 │   │   │   ├── notification.service.js # Thông báo realtime + email
 │   │   │   ├── autoApproval.service.js # Auto-approve đơn không rủi ro
 │   │   │   ├── deliveryFailure.service.js # Giao thất bại + retry
 │   │   │   └── returnProcess.service.js # Hoàn hàng
+│   │   ├── controllers/               # 32 Controllers
+│   │   │   ├── ticket.controller.js   # API Quản lý Ticket & Trao đổi 2 chiều
+│   │   │   ├── ticketContext.controller.js # Ticket Context 360 & PII Unmasking
+│   │   │   ├── compensation.controller.js # Tạo bồi thường, phê duyệt 4 cấp, chi trả ví
+│   │   │   └── ... (29 controllers khác)
 │   │   ├── queues/                    # Message Queue Workers (Consumers)
 │   │   │   └── consumers/
 │   │   │       ├── db-sync.worker.js  # Consumer đồng bộ Redis/RabbitMQ queue xuống MongoDB
 │   │   │       └── redis-sync.worker.js# Consumer cập nhật trạng thái Redis Hot Layer
-│   │   ├── models/                    # 24 Mongoose Schemas
+│   │   ├── models/                    # 27 Mongoose Schemas
 │   │   │   ├── order.model.js         # Schema chính (16.5KB)
-│   │   │   ├── user.model.js          # Multi-role user (9.6KB)
+│   │   │   ├── user.model.js          # Multi-role user (9.6KB, 17 Roles)
 │   │   │   ├── product.model.js       # Danh mục sản phẩm Seller
-│   │   │   ├── ticket.model.js        # Vé hỗ trợ & khiếu nại CSKH
+│   │   │   ├── ticket.model.js        # Vé hỗ trợ & khiếu nại CSKH (9 Trạng thái, Audit Log)
+│   │   │   ├── compensation.model.js  # Hồ sơ bồi thường, ma trận duyệt 4 cấp, chứng từ
+│   │   │   ├── ledgerEntry.model.js   # Sổ cái kiểm toán kép tài chính (Double-entry Ledger)
+│   │   │   ├── wallet.model.js        # Ví COD Seller & Tài xế
 │   │   │   ├── trip.model.js          # Chuyến xe vận chuyển
 │   │   │   ├── bag.model.js           # Bao tải đóng gói
 │   │   │   ├── hub.model.js           # Kho/bưu cục
 │   │   │   ├── auditSession.model.js  # Phiên kiểm kê
 │   │   │   ├── orderLog.model.js      # Audit trail nội bộ
 │   │   │   └── ... (15 schemas khác)
-│   │   ├── routes/                    # 24 Route files
-│   │   │   ├── system.routes.js       # Giám sát trạng thái Sync Redis/RabbitMQ (/api/system/sync-status)
+│   │   ├── routes/                    # 26 Route files
+│   │   │   ├── ticket.routes.js       # Routes CSKH & Ticket Management
+│   │   │   ├── compensation.routes.js # Routes Động cơ Bồi thường & Phê duyệt
+│   │   │   ├── system.routes.js       # Giám sát trạng thái Sync Redis/RabbitMQ & Background Jobs
 │   │   │   └── ... (23 route files khác)
 │   │   ├── middleware/                # 6 Middleware
 │   │   │   ├── auth.middleware.js     # JWT protect + RBAC authorize
-
 │   │   │   ├── error.middleware.js    # Global error handler
 │   │   │   ├── rateLimit.middleware.js# Rate limiting
 │   │   │   ├── hubScope.middleware.js # Giới hạn phạm vi hub
@@ -185,36 +205,50 @@ e_logistic/
 │   │   ├── websocket/
 │   │   │   └── tracking.gateway.js   # Socket.io GPS live tracking
 │   │   ├── jobs/                      # Background workers
+│   │   │   ├── slaMonitor.job.js          # Quét vi phạm SLA, escalate priority, cảnh báo 20% (mỗi 2p)
+│   │   │   ├── ticketAutoClose.job.js     # Tự động đóng ticket WAITING_USER > 7d, RESOLVED > 72h (mỗi 1h)
+│   │   │   ├── claimHoldWatchdog.job.js   # Watchdog giải ngân bồi thường sau thời gian tạm giữ 7 ngày
+│   │   │   ├── ledgerReconcile.job.js     # Đối soát bất đối xứng giữa Sổ cái Ledger và Số dư Ví Wallet
 │   │   │   ├── auditLostTimeout.job.js    # Monitor hàng thất lạc (hourly)
 │   │   │   ├── driverConfirmTimeout.job.js # Timeout xác nhận tài xế
 │   │   │   ├── resetDriverRejectionQuota.job.js # Reset quota 00:00
 │   │   │   └── staleRedeliveryMonitor.job.js # Monitor giao lại tồn đọng
 │   │   ├── validations/               # Joi schema validators
-│   │   ├── utils/                     # Logger, Date, Geo utils
+│   │   ├── utils/                     # Logger, Date, Geo utils, piiMask.js
 │   │   └── lib/                       # ioSingleton, shared libs
 │   └── test/
 │       ├── e2e/                       # E2E test suites (38+18 steps)
-│       └── suites/                    # 6 module test suites
+│       └── suites/                    # Test suites Jest (compensation, resolvePriority, ticketContext, piiMask) + integration
 │
-├── frontend_web/                      # Portal Seller & Buyer
+├── frontend_web/                      # Portal Seller & Buyer (Responsive Mobile/Tablet/Desktop)
 │   └── src/
 │       ├── pages/
-│       │   ├── seller/                # 9 trang Seller
-│       │   ├── auth/                  # Login, Register, ForgotPW
-│       │   └── public/               # Tra cứu vận đơn
-│       ├── components/               # Shared UI components
+│       │   ├── seller/                # 9 trang Seller (Dual-view Table/Cards, Refactored Forms)
+│       │   ├── auth/                  # Login, Register, ForgotPW (Mobile single-column, sticky CTA)
+│       │   └── public/               # Tra cứu vận đơn (Responsive Timeline & Map)
+│       ├── components/
+│       │   ├── orders/create/         # 5 Sub-components độc lập refactor từ CreateOrderPage
+│       │   │   ├── SenderAddressSection.tsx   # Chọn/nhập kho lấy hàng
+│       │   │   ├── ReceiverAddressSection.tsx # Form địa chỉ & số điện thoại người nhận
+│       │   │   ├── PackageDetailsSection.tsx  # Cân nặng, thể tích DxRxC, danh mục hàng
+│       │   │   ├── ServiceOptionsSection.tsx  # Gói cước, COD, bảo hiểm, ghi chú
+│       │   │   └── OrderSummaryStickyBar.tsx  # Thanh tóm tắt cước phí realtime & CTA sticky
+│       │   └── ... (Shared UI components)
 │       ├── api/                      # Axios API clients
 │       ├── context/                  # Auth, Theme contexts
-│       ├── hooks/                    # Custom React hooks
+│       ├── hooks/                    # useBreakpoint, useEscapeKey, useFocusTrap
 │       ├── routes/                   # Protected/public route guards
 │       └── types/                    # TypeScript definitions
 │
-├── frontend_admin/                   # Portal Operations/Admin
+├── frontend_admin/                   # Portal Operations/Admin (Industrial PDA & Desktop CS Workspace)
 │   └── src/
 │       ├── pages/
-│       │   ├── warehouse/            # 5 trang vận hành kho
-│       │   ├── dispatch/             # 3 trang điều phối
-│       │   ├── driver/               # 2 trang app tài xế
+│       │   ├── support/              # CSKH & Xử lý khiếu nại
+│       │   │   ├── CsWorkspacePage.tsx       # Bàn làm việc CSKH 360° (Split-pane layout, SLA timer, chat timeline)
+│       │   │   └── TicketManagementPage.tsx  # Quản lý danh sách ticket toàn hệ thống
+│       │   ├── warehouse/            # 5 trang vận hành kho (Chuẩn công thái học Industrial PDA Touch >= 44px)
+│       │   ├── dispatch/             # 3 trang điều phối (Local, LineHaul, DispatchControl)
+│       │   ├── driver/               # 2 trang app tài xế (Lấy hàng chữ to, ePOH ký điện tử, Handoff)
 │       │   ├── orders/               # 3 trang quản lý đơn
 │       │   ├── shipper/              # 5 trang quản lý shipper
 │       │   ├── linehaul/             # 3 trang đường trục
@@ -223,10 +257,17 @@ e_logistic/
 │       │   ├── reports/              # Báo cáo
 │       │   ├── security/             # An ninh
 │       │   └── vendorOps/            # Nhà cung cấp
+│       ├── components/
+│       │   └── cs/                   # Components chuyên biệt cho CS Workspace
+│       │       ├── CompensationModal.tsx       # Modal lập & duyệt đề xuất bồi thường 4 cấp
+│       │       ├── CannedResponseSelector.tsx  # Mẫu câu trả lời nhanh cho CS Agent
+│       │       ├── TicketAuditTimeline.tsx     # Dòng thời gian kiểm toán trạng thái & chuyển giao
+│       │       └── TicketEscalateModal.tsx     # Modal leo thang ticket lên CS Lead/Admin
 │       └── layouts/                  # AdminLayout, SidebarLayout
 │
 └── docs/
-    └── overview.md                   # File này
+    ├── overview.md                   # File này (Kiến trúc master)
+    └── CS_TICKET_COMPENSATION_FEATURE_REPORT.md # Báo cáo chi tiết kỹ thuật CSKH & Bồi thường
 ```
 
 ---
@@ -480,6 +521,8 @@ Hệ thống E-Logistics áp dụng mô hình **Event-Driven Push-based Realtime
 |---|---|---|---|
 | `slaMonitor.job.js` | Mỗi 2 phút | Quét vi phạm SLA (First Response / Resolution), nâng priority tự động, cảnh báo 20% thời hạn, cảnh báo ticket NEW > 10m | `lock:job:slaMonitor` (EX 110s, NX) |
 | `ticketAutoClose.job.js` | Mỗi 1 giờ | Tự động đóng ticket `WAITING_USER` > 7 ngày không phản hồi hoặc `RESOLVED` > 72 giờ qua actor `SYSTEM` | `lock:job:ticketAutoClose` (EX 3500s, NX) |
+| `claimHoldWatchdog.job.js` | Mỗi 1 giờ | Quét các khoản bồi thường ở trạng thái `CLAIM_HOLD` đã qua 7 ngày không khiếu nại để giải ngân tự động vào ví Seller | `lock:job:claimHoldWatchdog` (EX 3500s, NX) |
+| `ledgerReconcile.job.js` | 02:00 hàng ngày | Đối soát bất đối xứng giữa Tổng biến động Sổ cái (LedgerEntry) và Số dư Ví (Wallet), phát hiện sai lệch số học tức thời | `lock:job:ledgerReconcile` (EX 7100s, NX) |
 | `syncMonitor.job.js` | Mỗi 30 giây | Giám sát hàng đợi Write-Behind Redis → MongoDB | In-memory healthcheck |
 | `auditLostTimeout.job.js` | Mỗi 1 giờ | SEARCH_ZONE quá hạn → SUSPECTED_LOST → LOST | Scheduled interval |
 | `resetDriverRejectionQuota.job.js` | 00:00 hàng ngày | Reset `rejectionQuota.remainingToday = 3` cho tài xế | Daily scheduled reset |
@@ -770,59 +813,139 @@ DELETE /api/seller/products/:id         → Xóa / Ẩn sản phẩm khỏi danh
 - **Tự động điền khi tạo đơn (Auto-fill Order Creation):**
   - Khi Seller tạo đơn tại `CreateOrderPage.tsx`, chọn sản phẩm từ Kho → Tự động tính tổng trọng lượng `actualWeight` và thể tích `volumetricWeight` chính xác.
 
-### 5.10 Module 10: Ticket & CSKH Support System, SLA Engine & Auto-Priority (P0 - P2)
+### 5.10 Module 10: Ticket & CSKH Support System, SLA Engine, Context 360 & Compensation Engine
 
-**Kiến trúc Helpdesk 2 Chiều Toàn Diện (`ticketCore.service.js`, `slaCalculator.service.js`, `ticketPriority.service.js`):**
+**Kiến trúc Hệ thống Hỗ trợ Khách hàng & Giải quyết Khiếu nại Toàn diện (`ticketCore.service.js`, `slaCalculator.service.js`, `ticketPriority.service.js`, `ticketContext.controller.js`, `compensation.service.js`):**
 
-#### 1. State Machine 9 Trạng Thái & Phân Quyền Chuyển Trạng Thái:
+#### 1. State Machine 9 Trạng Thái & Ma Trận Phân Quyền Chuyển Đổi (RBAC):
 ```
 NEW / OPEN ➔ ASSIGNED ➔ IN_PROGRESS ⇆ WAITING_USER (hoặc WAITING_SELLER)
                        ↓          ↳ ESCALATED ➔ PENDING_REFUND
                        ↳ RESOLVED ➔ CLOSED (Terminal)
                                   ↳ REOPENED ➔ IN_PROGRESS
 ```
-- **Phân quyền State Transition:**
-  - `NEW ➔ ASSIGNED`: CS, Admin.
-  - `IN_PROGRESS ➔ WAITING_USER`: CS, Admin (Tự động kích hoạt `pauseSla`).
-  - `WAITING_USER ➔ IN_PROGRESS`: Seller, Buyer, CS, Admin (Tự động kích hoạt `resumeSla`).
-  - `WAITING_USER ➔ CLOSED`: CS, Admin, `SYSTEM` (Tự động đóng sau 7 ngày không phản hồi).
-  - `RESOLVED ➔ CLOSED`: CS, Admin, `SYSTEM` (Tự động đóng sau 72 giờ).
+
+| Chuyển dịch (From ➔ To) | Vai trò được phép (Allowed Roles) | Ghi chú nghiệp vụ |
+| :--- | :--- | :--- |
+| `NEW ➔ ASSIGNED` | `CS`, `ADMIN` | CS Agent nhận ticket từ hàng đợi chung (Anti-Race Condition) |
+| `NEW ➔ CLOSED` | `CS`, `ADMIN`, `SYSTEM` | Đóng ticket spam / trùng lặp |
+| `ASSIGNED ➔ IN_PROGRESS` | `CS`, `ADMIN` | CS mở workspace bắt đầu tương tác giải quyết |
+| `ASSIGNED ➔ NEW` | `CS`, `ADMIN` | Trả lại hàng đợi khi hết ca hoặc chuyển giao |
+| `IN_PROGRESS ➔ WAITING_USER` | `CS`, `ADMIN` | Đóng băng đồng hồ SLA chờ phản hồi từ Seller/Buyer |
+| `WAITING_USER ➔ IN_PROGRESS` | `SELLER`, `BUYER`, `CS`, `ADMIN` | Phản hồi mở lại đồng hồ tính SLA (Resume) |
+| `WAITING_USER ➔ CLOSED` | `CS`, `ADMIN`, `SYSTEM` | Worker tự động đóng sau 7 ngày không phản hồi |
+| `IN_PROGRESS ➔ ESCALATED` | `CS`, `ADMIN` | Chuyển tiếp lên CS Lead / Hub Coordinator / Driver Manager |
+| `* ➔ PENDING_REFUND` | `CS`, `ADMIN` | Khởi tạo đề xuất bồi thường tài chính |
+| `PENDING_REFUND ➔ RESOLVED` | `ACCOUNTANT`, `ADMIN`, `SYSTEM` | Phê duyệt bồi thường và hoàn tất cộng tiền vào ví |
+| `RESOLVED ➔ CLOSED` | `CS`, `ADMIN`, `SYSTEM` | Tự động đóng vĩnh viễn sau 72 giờ giải quyết thành công |
+| `RESOLVED ➔ REOPENED` | `SELLER`, `BUYER`, `CS`, `ADMIN` | Khách hàng mở lại khiếu nại nếu sự cố tái diễn |
+
+- **Cơ chế Chống Race Condition Khi Nhận Ticket (Atomic Claiming):**
+  Khi nhiều nhân viên CS cùng ấn "Nhận việc" tại cùng 1 tích tắc, hệ thống áp dụng câu truy vấn có điều kiện nguyên tử (Atomic Conditional Update):
+  ```javascript
+  const updated = await Ticket.findOneAndUpdate(
+    { _id: ticketId, status: 'NEW', assignedTo: null },
+    { $set: { status: 'ASSIGNED', assignedTo: csUserId, assignedAt: new Date() } },
+    { returnDocument: 'after' }
+  );
+  ```
+  Nếu có 50 request gửi song song trong 1 mili-giây, đúng **1 request** nhận thành công (HTTP 200), **49 request** còn lại bị chặn (HTTP 409 Conflict), triệt tiêu hoàn toàn xung đột dữ liệu.
 
 #### 2. SLA Calculator Engine & Lịch Ngày Nghỉ Lễ Việt Nam:
-- **Khung Giờ Làm Việc (Business Hours):** `08:00 – 20:00` (12 giờ làm việc/ngày), áp dụng **TẤT CẢ 7 ngày trong tuần** (T2 – CN), **chỉ trừ các ngày nghỉ lễ có trong collection `Holiday`**.
+- **Khung Giờ Làm Việc (Business Hours):** `08:00 – 20:00` (12 giờ làm việc/ngày), áp dụng **TẤT CẢ 7 ngày trong tuần** (T2 – CN), **loại trừ các ngày nghỉ lễ quốc gia trong collection `Holiday`**.
 - **Ma trận SLA Cam kết:**
-  - **P1 (Khẩn cấp):** Phản hồi đầu 15 phút, Xử lý 4 giờ — Chế độ **24x7** (Cộng thẳng thời gian).
-  - **P2 (Cao):** Phản hồi đầu 1 giờ, Xử lý 24 giờ làm việc hành chính.
-  - **P3 (Trung bình):** Phản hồi đầu 4 giờ, Xử lý 48 giờ làm việc hành chính.
-  - **P4 (Thường):** Phản hồi đầu 8 giờ, Xử lý 72 giờ làm việc hành chính.
+  - **P1 (Khẩn cấp / Critical):** Phản hồi đầu 15 phút, Xử lý 4 giờ — Chế độ **24x7** (Cộng thẳng thời gian thực tế, không dừng ban đêm).
+  - **P2 (Cao / High):** Phản hồi đầu 1 giờ, Xử lý 24 giờ làm việc hành chính (08:00 - 20:00).
+  - **P3 (Trung bình / Medium):** Phản hồi đầu 4 giờ, Xử lý 48 giờ làm việc hành chính.
+  - **P4 (Thường / Low):** Phản hồi đầu 8 giờ, Xử lý 72 giờ làm việc hành chính.
 - **Tạm dừng & Dời hạn SLA (Pause / Resume):**
-  - Khi ticket chuyển sang `WAITING_USER`, ghi nhận `pauseStartedAt = now`.
-  - Khi Seller phản hồi (chuyển về `IN_PROGRESS`), tính `pausedDurationMs = now - pauseStartedAt`, cộng dồn vào `pausedMs`, và dời `firstResponseDueAt` / `resolutionDueAt` lùi lại đúng khoảng thời gian đã tạm dừng.
-- **Lịch Nghỉ Lễ Quốc Gia (`seed-holidays.js`):** Tích hợp sẵn 29 ngày nghỉ lễ chính thức 2026-2027 (Tết Dương lịch, Giỗ Tổ Hùng Vương 10/3 Âm lịch chính xác theo lịch thiên văn, 30/4, 1/5, Quốc khánh 2/9, dải nghỉ Tết Nguyên Đán Bính Ngọ 2026 và Đinh Mùi 2027).
+  - Khi ticket chuyển sang `WAITING_USER`, hệ thống ghi nhận `pauseStartedAt = now`.
+  - Khi Seller phản hồi (chuyển về `IN_PROGRESS`), tính `pausedDurationMs = now - pauseStartedAt`, cộng dồn vào `pausedMs`, và dời deadline `firstResponseDueAt` / `resolutionDueAt` lùi lại đúng khoảng thời gian đã tạm dừng.
+- **Lịch Nghỉ Lễ Quốc Gia (`seed-holidays.js`):** Tích hợp 29 ngày nghỉ lễ chính thức 2026-2027 (Tết Dương lịch, Giỗ Tổ Hùng Vương 10/3 Âm lịch chính xác theo lịch thiên văn, 30/4, 1/5, Quốc khánh 2/9, dải nghỉ Tết Bính Ngọ 2026 và Đinh Mùi 2027).
 
-#### 3. Auto-Priority Matrix & Nhận Diện Seller VIP:
+#### 3. Auto-Priority Matrix & Nhận Diện VIP Seller:
 - **Quy tắc Phân hạng Tự động:**
   - **P1:** Danh mục `WRONG_ADDRESS` khi đơn đang giao (`IN_TRANSIT`, `OUT_FOR_DELIVERY`) HOẶC `COD_MISMATCH` / `COD_DISPUTE` có tiền COD > 5.000.000đ.
   - **P2:** Danh mục `LOST` / `LOST_GOODS`, `DAMAGED` / `DAMAGED_GOODS`, HOẶC Seller là đối tác VIP.
   - **P3:** Danh mục `LATE` / `DELIVERY_DELAY`, `PICKUP_FAIL`.
   - **P4:** Các trường hợp hỗ trợ thông thường khác.
-- **Phát hiện VIP Seller (`computeIsVip`):** Đếm số đơn hoàn tất (`DELIVERED`/`COMPLETED`) trong 30 ngày gần nhất > 500 đơn. Cache kết quả vào Redis key `seller:vip:{sellerId}` TTL 1 giờ.
+- **Phát hiện VIP Seller (`computeIsVip`):** Đếm số đơn hoàn tất (`DELIVERED`/`COMPLETED`) trong 30 ngày gần nhất > 500 đơn. Cache kết quả vào Redis key `seller:vip:{sellerId}` với TTL 1 giờ.
 - **CS Manual Override Priority:** Nhân viên CSKH có quyền ghi đè mức độ ưu tiên bằng tay kèm theo `overrideReason` (bắt buộc >= 10 ký tự), tự động ghi nhận vào `TicketAuditLog`.
 
-#### 4. Phân tầng Tin nhắn 2 Chiều (2-Tier Visibility):
-- `PUBLIC`: Tin nhắn trao đổi công khai giữa Seller và CSKH.
-- `INTERNAL`: Ghi chú nội bộ giữa các CS Agents và Admin. Backend tự động ẩn/filter toàn bộ tin nhắn `INTERNAL` khi người gọi là Seller hoặc Buyer.
+#### 4. Bối Cảnh Dữ Liệu 360° & Bảo Vệ Thông Tin Nhận Dạng Cá Nhân (PII Masking):
+- **Bối cảnh 360° Đa Chiều (`ticketContext.controller.js`):**
+  - Endpoint `GET /api/admin/tickets/:id/context` tổng hợp tức thời:
+    1. Thông tin đơn hàng (trọng lượng, COD, dịch vụ, địa chỉ).
+    2. Toàn bộ hành trình luân chuyển qua các kho (Tracking Timeline).
+    3. Lịch sử giao thất bại (`deliveryFailureHistory`): Tọa độ GPS shipper check-in, ảnh hiện trường đối chứng, lý do thất bại.
+    4. Hồ sơ người gửi/người nhận: Tỷ lệ giao thành công, điểm tín nhiệm, lịch sử ticket cũ.
+    5. Hạn mức bồi thường khả dụng của nhân viên CS đang đăng nhập (`maxRefundAmount`).
+- **Bảo Vệ PII & Nhật Ký Kiểm Toán (PII Masking & Audit Trail):**
+  - Mặc định che giấu thông tin nhạy cảm: Số điện thoại (`090***1234`), Email (`a***@example.com`).
+  - Khi cần gọi điện hoặc xác minh thực tế, CS Agent nhấn **"Mở khóa xem PII"** (`POST /api/admin/tickets/:id/unmask`):
+    - Trả về dữ liệu gốc và **bắt buộc ghi nhận bản ghi kiểm toán bất biến** vào `TicketAuditLog` (chứa `actorId`, `ipAddress`, `action: 'UNMASK_PII'`, `timestamp`).
 
-#### 5. API Endpoints Quản lý Ticket:
+#### 5. Động Cơ Bồi Thường & Ma Trận Phê Duyệt 4 Cấp (Compensation Engine):
+Hệ thống thiết lập ma trận phân quyền tài chính nghiêm ngặt (`backend/src/constants/compensation.js`):
+
+| Cấp bậc CS | Hạn mức / Ticket | Hạn mức ngày (Daily Cap) | Cơ chế Phê duyệt |
+| :--- | :--- | :--- | :--- |
+| **CS L1** | $\le 200.000$ VNĐ | 2.000.000 VNĐ | **Tự động phê duyệt** nếu có ảnh chứng từ (`evidence.length > 0`) và chưa vượt Daily Cap |
+| **CS L2** | $\le 2.000.000$ VNĐ | Không giới hạn | Chuyển trạng thái `PROPOSED` ➔ CS L2 hoặc Lead ký duyệt |
+| **CS Lead** | $\le 5.000.000$ VNĐ | Không giới hạn | Duyệt các khiếu nại vỡ hỏng giá trị cao |
+| **Accountant / Admin** | **Không giới hạn** | Không giới hạn | Phê duyệt các khoản bồi thường đặc biệt > 5.000.000 VNĐ |
+
+- **Quy trình Bồi thường:**
+  1. CS Agent lập đề xuất kèm số tiền, lý do và link ảnh chứng từ.
+  2. Nếu thuộc hạn mức tự duyệt của L1: Thực hiện giao dịch tài chính kép và hoàn tất ticket.
+  3. Nếu vượt hạn mức: Đề xuất chuyển trạng thái `PROPOSED`, ticket chuyển `PENDING_REFUND` để cấp trên duyệt qua modal phê duyệt.
+
+#### 6. Giao Dịch Kép Tài Chính & Đối Soát (Double-Write Financial Transaction & Ledger Reconciliation):
+- **Giao dịch Kép Multi-Document ACID Session:**
+  Khi khoản bồi thường được duyệt, hệ thống mở MongoDB Client Session đảm bảo tính toàn vẹn tuyệt đối:
+  ```javascript
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  try {
+    // 1. Cập nhật trạng thái Compensation -> APPROVED / DISBURSED
+    // 2. Tạo bản ghi Sổ Cái Kép Bất Biến (LedgerEntry) với loại REFUND/COMPENSATION
+    // 3. Tăng số dư Ví Seller (Wallet.balance += amount)
+    await session.commitTransaction();
+    // 4. Đồng bộ số dư mới lên Redis Hot Cache
+  } catch (error) {
+    await session.abortTransaction();
+    throw error;
+  } finally {
+    session.endSession();
+  }
+  ```
+- **Claim Hold Watchdog (7 ngày):** Các khoản bồi thường cần đối soát được đặt ở trạng thái `CLAIM_HOLD`. Nếu sau 7 ngày các bên không có tranh chấp khiếu nại bổ sung, worker `claimHoldWatchdog.job.js` tự động giải ngân vào ví Seller.
+- **Ledger Reconciliation Job (`ledgerReconcile.job.js`):** Chạy lúc 02:00 sáng hàng ngày, thực hiện tính tổng sai phân giữa biến động Sổ cái (`LedgerEntry`) và Số dư Ví thực tế (`Wallet.balance`), phát hiện ngay tức khắc nếu có bất kỳ sai lệch số học nào.
+
+#### 7. Phân Tầng Tin Nhắn 2 Chiều (2-Tier Visibility):
+- `PUBLIC`: Tin nhắn trao đổi công khai giữa Seller và CSKH (hiển thị trên cả 2 giao diện).
+- `INTERNAL`: Ghi chú bảo mật nội bộ giữa các CS Agents, Điều phối và Admin. Backend tự động bóc tách và ẩn 100% tin nhắn `INTERNAL` khỏi payload trả về cho Seller hoặc Buyer. Hỗ trợ `clientMsgId` chống trùng tin nhắn khi kết nối mạng chập chờn.
+
+#### 8. Danh Mục API Endpoints CSKH & Bồi Thường:
 ```
-POST /api/tickets                       → Seller tạo Ticket mới (Auto-calculate Priority & SLA Due Dates)
-GET  /api/tickets                       → Seller xem danh sách Ticket của mình
-GET  /api/tickets/:id                   → Chi tiết Ticket & Tin nhắn trao đổi
-POST /api/tickets/:id/messages          → Gửi tin nhắn phản hồi (Seller: PUBLIC, CS: PUBLIC hoặc INTERNAL)
-GET  /api/admin/tickets                 → CSKH/Admin quản lý toàn bộ Ticket hệ thống (Lọc theo status, category, priority, SLA)
-PUT  /api/admin/tickets/:id/status      → Cập nhật trạng thái Ticket (Tuân thủ State Machine & canTransition)
-POST /api/admin/tickets/:id/claim       → CS Agent nhận xử lý Ticket (Chống Race Condition Atomic Update)
-POST /api/admin/tickets/:id/override-priority → CS Override mức ưu tiên kèm lý do >= 10 ký tự
+# Kênh Seller (frontend_web):
+POST /api/tickets                              → Seller tạo Ticket mới (Kèm tối đa 5 ảnh bằng chứng)
+GET  /api/tickets                              → Danh sách ticket của Seller (Lọc theo trạng thái, ngày tạo)
+GET  /api/tickets/:id                          → Chi tiết ticket & lịch sử tin nhắn PUBLIC
+POST /api/tickets/:id/messages                 → Seller gửi tin nhắn phản hồi
+
+# Kênh CS Workspace & Quản trị (frontend_admin):
+GET  /api/admin/tickets                        → Danh sách toàn bộ ticket (Phân trang, search, filter SLA/status)
+GET  /api/admin/tickets/:id                    → Xem chi tiết ticket (Bao gồm tin nhắn INTERNAL + PUBLIC)
+POST /api/admin/tickets/:id/claim              → CS Agent nhận ticket (Chống Race Condition Atomic Update)
+PUT  /api/admin/tickets/:id/status             → Cập nhật trạng thái (Kiểm tra canTransition State Machine)
+POST /api/admin/tickets/:id/messages           → CS gửi tin nhắn (Chọn chế độ PUBLIC hoặc ghi chú INTERNAL)
+POST /api/admin/tickets/:id/override-priority  → CS điều chỉnh thủ công mức ưu tiên kèm lý do >= 10 ký tự
+GET  /api/admin/tickets/:id/context            → Bối cảnh 360° (Đơn hàng, Tracking, Lỗi giao, PII Masked)
+POST /api/admin/tickets/:id/unmask             → Mở khóa xem PII (Số điện thoại / Email gốc) + Ghi Audit Log
+POST /api/admin/tickets/:id/compensations      → Khởi tạo đề xuất bồi thường tài chính
+POST /api/admin/compensations/:id/approve      → Phê duyệt bồi thường (L2 / Lead / Admin) & Cộng tiền ví
+POST /api/admin/compensations/:id/reject       → Từ chối đề xuất bồi thường
 ```
 
 ### 5.11 Module 11: Dispatch Low Density Zone Optimization (Mật Độ Thấp)
@@ -925,71 +1048,99 @@ SHIPPER (Chặng cuối — Last Mile)
 
 ### Pages Seller
 
-| Trang | Kích thước | Chức năng |
+| Trang | Cấu trúc & Kích thước | Chức năng & Kiến trúc Thích ứng |
 |---|---|---|
-| `SellerDashboardPage.tsx` | 5.8KB | KPI overview |
-| `OrderListPage.tsx` | 33.9KB | Danh sách, filter, export Excel |
-| `CreateOrderPage.tsx` | 105KB | Form tạo đơn + real-time pricing |
-| `BatchOrderPage.tsx` | 83.6KB | Import Excel tạo đơn hàng loạt |
-| `ProductListPage.tsx` | 16.2KB | Quản lý danh mục sản phẩm Shop |
-| `ProfilePage.tsx` | 103.6KB | KYC upload, 2FA setup, Sub-account |
-| `CodWalletPage.tsx` | 2.7KB | Ví COD Seller |
-| `PayoutHistoryPage.tsx` | 2.7KB | Lịch sử chi trả |
-| `CreateTicketPage.tsx` | 5.2KB | Tạo ticket hỗ trợ CSKH |
-| `TicketListPage.tsx` | 14.3KB | Xem & trao đổi tiến trình ticket |
+| `SellerDashboardPage.tsx` | 5.8KB | KPI overview, responsive metric cards, realtime chart |
+| `OrderListPage.tsx` | 33.9KB | **Dual-view Pattern:** Mobile Cards (`sm:hidden`) & Desktop Table (`hidden sm:block overflow-x-auto`), bộ lọc đa tiêu chí, export Excel |
+| `CreateOrderPage.tsx` | Refactored (5 Sub-components) | **Modular Architecture:** Chia tách thành 5 sub-components độc lập trong `components/orders/create/`, tính cước realtime, sticky summary bar |
+| `BatchOrderPage.tsx` | 83.6KB | Import Excel tạo đơn hàng loạt, xem trước dữ liệu dạng lưới responsive, validate lỗi từng dòng |
+| `ProductListPage.tsx` | 16.2KB | Quản lý kho sản phẩm Shop, tự động điền kích thước/khối lượng khi tạo đơn |
+| `ProfilePage.tsx` | 103.6KB | KYC upload ảnh CCCD responsive, 2FA TOTP speakeasy, quản lý Sub-accounts |
+| `CodWalletPage.tsx` | 5.2KB | Quản lý số dư Ví COD, lịch sử đối soát, yêu cầu rút tiền |
+| `PayoutHistoryPage.tsx` | 4.8KB | Lịch sử chi trả tiền thu hộ và bồi thường tài chính |
+| `CreateTicketPage.tsx` | 8.5KB | Form tạo ticket khiếu nại, chọn mã vận đơn, upload 5 ảnh bằng chứng, cơ chế Auto-draft LocalStorage |
+| `TicketListPage.tsx` | 18.2KB | Danh sách & Chi tiết ticket Seller, đếm ngược SLA, chat trực tuyến 2 chiều với CSKH |
 
-### Patterns & Libraries
+### 7.1 Chiến dịch Responsive Mobile-First & Modular Subcomponents
 
-- **shadcn/ui + TailwindCSS 4**: Component library với tông màu chủ đạo **Xanh Dương (`#2563eb`)** đồng bộ toàn hệ thống.
-- **Mobile-First Responsive Architecture**: Đáp ứng hoàn hảo các khung hình thiết bị di động (Mobile/Tablet Viewports). Cung cấp **Mobile Navigation Drawer** (`Navbar.tsx`) tự động ẩn/mở linh hoạt trên màn hình nhỏ. Toàn bộ Data Tables bọc container `overflow-x-auto`.
-- **Active Navigation Poka-yoke**: Kiểm tra route tuyệt đối (`location.pathname`), chỉ duy nhất menu đang active được tô màu `bg-blue-600 text-white font-bold shadow-md shadow-blue-600/25`. Menu inactive giữ màu trung tính, không bị chói hoặc ẩn chữ khi đổi giữa giao diện Sáng/Tối.
-- **React Hook Form + Zod**: Type-safe form validation
-- **Zustand**: authStore (user, tokens, login/logout/refreshAuth)
-- **Axios interceptors**: Auto-attach JWT, auto-refresh on 401
-- **Leaflet**: Map GPS tracking tài xế
-- **socket.io-client**: Join tracking room realtime
-- **xlsx**: Export/Import Excel BatchOrder
-- **Route Guards**: ProtectedRoute, RoleRoute, PublicRoute
+#### 1. Chia tách Kiến trúc Monolith `CreateOrderPage.tsx`:
+Nhằm triệt tiêu nợ kỹ thuật (DEBT-06) và tối ưu hóa trải nghiệm trên điện thoại thông minh, trang tạo đơn được tái cấu trúc thành **5 Sub-components chuyên biệt** tại `frontend_web/src/components/orders/create/`:
+1. **`SenderAddressSection.tsx`**: Quản lý điểm lấy hàng, chọn nhanh từ danh bạ kho hoặc nhập địa chỉ mới, tự động nhận diện bưu cục gốc.
+2. **`ReceiverAddressSection.tsx`**: Thông tin người nhận, số điện thoại, địa chỉ chi tiết 3 cấp (Tỉnh/Huyện/Xã) với gợi ý định vị.
+3. **`PackageDetailsSection.tsx`**: Kích thước 3 chiều (Dài × Rộng × Cao), cân nặng thực tế, tính trọng lượng quy đổi thể tích tự động, chọn nhanh từ danh mục sản phẩm của Shop.
+4. **`ServiceOptionsSection.tsx`**: Lựa chọn gói vận chuyển (Chuẩn, Nhanh, Tiết kiệm), tiền thu hộ COD, khai giá bảo hiểm hàng hóa, ghi chú giao nhận (Cho xem hàng, Giao giờ hành chính).
+5. **`OrderSummaryStickyBar.tsx`**: Thanh tổng kết chi phí gắn cố định ở đáy màn hình di động (`bottom-0 sticky`), hiển thị chi tiết cước tạm tính, phụ phí, tiền giảm giá và nút hành động Tạo Đơn nổi bật.
+
+#### 2. Tiêu chuẩn Giao diện Di động & Hạ tầng Dùng chung:
+- **Viewport Config:** `<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">` triệt tiêu lỗi phóng to ngoài ý muốn khi chạm vào ô nhập liệu trên iOS/Android.
+- **Shared Infrastructure Hooks:**
+  - `useBreakpoint()`: Cung cấp flags boolean (`isMobile: <640px`, `isTablet: 640-1024px`, `isDesktop: >=1024px`) giúp render điều kiện linh hoạt.
+  - `useFocusTrap()`: Giam focus bàn phím bên trong các Modal/Drawer khi mở trên màn hình nhỏ.
+  - `useEscapeKey()`: Đóng nhanh popups/drawers bằng phím cứng hoặc cử chỉ.
+- **Dual-view Pattern cho Bảng Dữ liệu:**
+  - Màn hình nhỏ (`<640px`): Render danh sách Card độc lập (`sm:hidden`) với mã vận đơn to rõ, huy hiệu trạng thái sắc nét và các nút bấm hành động nhanh kích thước lớn.
+  - Màn hình lớn (`>=640px`): Render bảng Table truyền thống (`hidden sm:block overflow-x-auto`) với thanh cuộn ngang mượt mà.
+- **Active Navigation Poka-yoke:** Đánh dấu tuyệt đối menu đang chọn, chống nhầm lẫn trực quan trên thanh Navigation Bar.
 
 ---
 
-## 8. Kiến trúc Frontend — Admin Portal (Operations)
+## 8. Kiến trúc Frontend — Admin Portal (Operations & CS Workspace)
 
-**Stack:** Giống frontend_web + HTML5-QRCode Scanner + Leaflet Maps
+**Stack:** React 19 + TypeScript + Vite 8 + TailwindCSS 4 + Zustand + HTML5-QRCode Scanner + Leaflet Maps
 
-### Pages theo nhóm
+### Pages theo nhóm chức năng
 
-| Nhóm | Trang | Role | Chức năng |
+| Nhóm | Trang | Role | Chức năng & Chuẩn Thiết bị |
 |---|---|---|---|
-| **warehouse** | WarehouseInboundPage (28KB) | HUB_STAFF | Scan nhập kho UC-16 |
-| | WarehouseBaggingPage (25KB) | HUB_STAFF | Gom bao, Seal Poka-yoke |
-| | WarehouseOutboundPage (25KB) | HUB_STAFF | Scan xuất kho UC-17 |
-| | WarehouseAuditPage (22KB) | HUB_STAFF | Kiểm kê UC-18 |
-| | WarehouseInventoryDashboardPage (33KB) | WAREHOUSE_MANAGER | Dashboard UC-19 realtime |
-| | InventorySuggestionsPanel.tsx | WAREHOUSE_MANAGER | Bảng gợi ý tối ưu khay kệ tồn kho |
-| **admin/config** | PricingConfigPage.tsx (21.5KB) | ADMIN | Cấu hình bảng cước phí & phụ phí vùng sâu |
-| **support** | TicketManagementPage.tsx (18.4KB) | ADMIN / CS | Tiếp nhận & giải quyết khiếu nại CSKH |
-| **dispatch** | DispatchControlPage (40KB) | ORDER_MANAGER | Duyệt đơn hàng |
-| | LocalDispatchPage (27KB) | LAST_MILE_DISPATCHER | Điều phối Shipper nội vùng (Low density spec) |
-| | LineHaulDispatchPage (15KB) | LINE_HAUL_DISPATCHER | Điều phối xe tải |
-| **driver** | DriverPickupPage (46KB) | DRIVER/SHIPPER | App lấy hàng, ePOH |
-| | DriverHandoffPage (10KB) | LINE_HAUL_DRIVER | Bàn giao tại kho |
-| **orders** | OrderApprovalPage (34KB) | ORDER_MANAGER | Duyệt/từ chối đơn |
-| | GlobalOrderListPage (15KB) | ADMIN | Toàn bộ đơn hàng (Socket realtime updates) |
-| | RiskReviewPage (17KB) | ORDER_MANAGER | Review đơn rủi ro |
-| **shipper** | ShipperPickupPage (12KB) | SHIPPER | Đơn cần lấy (Runsheet ca lấy) |
-| | ShipperDeliveryPage (9KB) | SHIPPER | Đơn cần giao (Runsheet ca giao) |
-| | ShipperZonePage (9KB) | SHIPPER | Vùng hoạt động & tuyến nhận |
-| | ShipperProfilePage (22KB) | SHIPPER | Hồ sơ Shipper |
-| | ShipperWalletPage (5KB) | SHIPPER | Ví tiền |
-| **linehaul** | LineHaulTripsPage (7.7KB) | LINE_HAUL_DRIVER | Danh sách chuyến |
-| | LineHaulTransitPage (4.9KB) | LINE_HAUL_DRIVER | Theo dõi chuyến xe |
-| | LineHaulHandoffPage (7KB) | LINE_HAUL_DRIVER | Bàn giao kho đích |
-| **kyc** | KYC Pages | ADMIN | Duyệt hồ sơ KYC |
-| **users** | User Management | ADMIN | Quản lý tài khoản & Khóa an ninh |
-| **reports** | Report Pages | ACCOUNTANT | Báo cáo tài chính & SLA |
-| **security** | Security Pages | ADMIN | An ninh, log hệ thống |
-| **vendorOps** | Vendor Pages | ORDER_VENDOR_MANAGER | Quản lý nhà cung cấp |
+| **support** | `CsWorkspacePage.tsx` (32KB) | ADMIN / CS | **Bàn làm việc CSKH 360°:** Split-pane layout, SLA countdown, chat đa tầng, duyệt bồi thường |
+| | `TicketManagementPage.tsx` (18.4KB) | ADMIN / CS | Quản lý danh sách ticket toàn hệ thống, phân loại theo trạng thái/mức ưu tiên |
+| **warehouse** | `WarehouseInboundPage.tsx` (28KB) | HUB_STAFF | Quét barcode nhập kho UC-16, âm thanh phản hồi tức thời |
+| | `WarehouseBaggingPage.tsx` (25KB) | HUB_STAFF | Đóng túi/bao tải gom đơn, kiểm tra niêm phong Seal Poka-yoke |
+| | `WarehouseOutboundPage.tsx` (25KB) | HUB_STAFF | Quét mã xuất kho UC-17, kiểm tra tuyến xe tải chuyển tiếp |
+| | `WarehouseAuditPage.tsx` (22KB) | HUB_STAFF | Kiểm kê kho UC-18, tự động phát hiện lệch hàng và kích hoạt SEARCH_ZONE |
+| | `WarehouseInventoryDashboardPage.tsx` (33KB) | WAREHOUSE_MANAGER | Dashboard UC-19 realtime, giám sát SLA dwell time và cảnh báo quá tải khay kệ |
+| | `InventorySuggestionsPanel.tsx` | WAREHOUSE_MANAGER | Bảng gợi ý tự động sắp xếp và luân chuyển hàng hóa trong kho |
+| **dispatch** | `DispatchControlPage.tsx` (40KB) | ORDER_MANAGER | Duyệt đơn hàng tổng quan, can thiệp luồng vận đơn |
+| | `LocalDispatchPage.tsx` (27KB) | LAST_MILE_DISPATCHER | Điều phối Shipper nội vùng (Low density spec, batching & dynamic window) |
+| | `LineHaulDispatchPage.tsx` (15KB) | LINE_HAUL_DISPATCHER | Điều phối xe tải đường trục liên tỉnh, gán tài xế & chuyến xe |
+| **driver** | `DriverPickupPage.tsx` (46KB) | DRIVER / SHIPPER | App lấy hàng di động, ký nhận biên bản ePOH điện tử bằng cảm ứng |
+| | `DriverHandoffPage.tsx` (10KB) | LINE_HAUL_DRIVER | Bàn giao hàng hóa tại bưu cục đích kèm xác thực |
+| **orders** | `OrderApprovalPage.tsx` (34KB) | ORDER_MANAGER | Duyệt đơn hàng tự động / thủ công kèm đánh giá rủi ro |
+| | `GlobalOrderListPage.tsx` (15KB) | ADMIN | Tra cứu toàn bộ đơn hàng toàn quốc (Socket realtime updates) |
+| | `RiskReviewPage.tsx` (17KB) | ORDER_MANAGER | Phân tích và xử lý các đơn hàng bị đánh dấu cảnh báo gian lận |
+| **shipper** | `ShipperPickupPage.tsx` (12KB) | SHIPPER | Danh sách runsheet ca lấy hàng |
+| | `ShipperDeliveryPage.tsx` (9KB) | SHIPPER | Danh sách runsheet ca giao hàng, tải ảnh POD đối chứng |
+| | `ShipperZonePage.tsx` (9KB) | SHIPPER | Tuyến đường phụ trách & xin chuyển vùng hoạt động |
+| | `ShipperProfilePage.tsx` (22KB) | SHIPPER | Thông tin tài khoản shipper & chỉ số KPI giao nhận |
+| | `ShipperWalletPage.tsx` (5KB) | SHIPPER | Quản lý ví thu hộ và ký quỹ tài xế |
+| **linehaul** | `LineHaulTripsPage.tsx` (7.7KB) | LINE_HAUL_DRIVER | Danh sách chuyến xe đường trục được phân công |
+| | `LineHaulTransitPage.tsx` (4.9KB) | LINE_HAUL_DRIVER | GPS live tracking lộ trình di chuyển trên bản đồ |
+| | `LineHaulHandoffPage.tsx` (7KB) | LINE_HAUL_DRIVER | Biên bản bàn giao niêm phong kẹp chì tại kho đích |
+| **admin/config** | `PricingConfigPage.tsx` (21.5KB) | ADMIN | Cấu hình biểu cước vận chuyển, phụ phí vùng sâu vùng xa |
+| **kyc** | `KYC Pages` | ADMIN | Thẩm định hồ sơ định danh CCCD và GPKD của người bán |
+| **users** | `User Management` | ADMIN | Quản lý tài khoản 17 roles, khóa khẩn cấp tài khoản nghi vấn |
+| **reports** | `Report Pages` | ACCOUNTANT | Báo cáo doanh thu, đối soát cước phí, bồi thường và SLA |
+| **security** | `Security Pages` | ADMIN | Nhật ký kiểm toán an ninh và truy cập dữ liệu nhạy cảm PII |
+| **vendorOps** | `Vendor Pages` | ORDER_VENDOR_MANAGER | Quản lý đối tác vận chuyển thứ ba |
+
+### 8.1 CS Workspace 360 & Bồi thường Thực địa
+
+Trang `CsWorkspacePage.tsx` được thiết kế theo mô hình **Bàn làm việc Tập trung (All-in-One Split-pane Layout)**:
+- **Cột Trái (Queue List):** Danh sách ticket theo bộ lọc thông minh (Chưa nhận, Đang xử lý của tôi, Cảnh báo vi phạm SLA, Chờ khách phản hồi, Chờ duyệt bồi thường). Đồng hồ đếm ngược SLA đổi màu đỏ nhấp nháy khi còn dưới 20% thời gian cam kết.
+- **Cột Phải (Detail & Context 360°):**
+  - **Khung Hội thoại 2 Chiều:** Trao đổi tin nhắn với Seller; hỗ trợ chuyển đổi chế độ gửi `PUBLIC` (Khách thấy) hoặc `INTERNAL` (Ghi chú nội bộ vàng cam, tự động ẩn với khách). Tích hợp component `CannedResponseSelector.tsx` chọn nhanh các câu trả lời mẫu theo kịch bản thường gặp.
+  - **Bối cảnh 360° Đơn Hàng:** Xem chi tiết lộ trình vận chuyển, lịch sử giao thất bại của Shipper kèm ảnh và tọa độ GPS đối chứng. Nút "Mở khóa xem PII" có cảnh báo kiểm toán tự động.
+  - **Hộp thoại Bồi Thường (`CompensationModal.tsx`):** Hiển thị rõ định mức tài chính tối đa của CS Agent hiện tại. Tự động cộng tiền ví với đề xuất $\le 200.000$ VNĐ hoặc gửi lên CS Lead / Admin duyệt với đề xuất giá trị lớn.
+  - **Hộp thoại Leo Thang (`TicketEscalateModal.tsx`):** Chuyển giao trách nhiệm xử lý lên cấp quản lý kèm lý do và ghi nhận lịch sử `CustodyTransferLog`.
+
+### 8.2 Công thái học Thiết bị Thực địa (Industrial PDA Ergonomics)
+
+Hệ thống đã chuẩn hóa toàn diện 10 trang vận hành kho và tài xế trên các thiết bị kiểm kho chuyên dụng (Zebra, Honeywell, Datalogic PDA) và điện thoại thông minh:
+1. **Khu Vực Bấm Cảm Ứng (Touch Targets $\ge 44-48$px):** Toàn bộ nút bấm xác nhận, quét mã, chuyển trạng thái có chiều cao tối thiểu 44px (chuẩn W3C AAA), giúp nhân viên thao tác chính xác ngay cả khi đeo găng tay bảo hộ trong kho lạnh hoặc kho hàng bụi bẩn.
+2. **Chế Độ Bàn Phím Số Tối Ưu (`inputMode="decimal"` / `inputMode="numeric"`):** Mở thẳng bàn phím số to rõ khi nhân viên nhập mã cân nặng, số lượng kiện hoặc tiền COD, loại bỏ thao tác chuyển đổi bàn phím chữ phiền toái.
+3. **Phản Hồi Trực Quan & Âm Thanh (Audio & Visual Haptic):** Tự động phát âm thanh thông báo xác nhận thành công (*Beep*) hoặc âm thanh cảnh báo lỗi (*Buzz*) khi quét mã vạch không đúng tuyến, giúp nhân viên không cần nhìn chằm chằm vào màn hình khi phân loại hàng.
+4. **Tự Động Focus Ô Quét Mã Vạch (Auto-focus Scanner Input):** Sau khi hoàn tất một lượt quét đơn hoặc túi hàng, con trỏ tự động quay lại ô nhập liệu để sẵn sàng cho lượt quét tiếp theo với tốc độ cao.
+5. **Độ Tương Phản Ánh Sáng Cao (High-contrast Badges):** Màu sắc trạng thái, cảnh báo lệch cân và mã vận đơn sử dụng các bảng màu có độ tương phản cao, dễ đọc dưới điều kiện ánh sáng chói ngoài trời hoặc góc tối trong khoang xe tải.
 
 **Admin Layout:**
 ```
@@ -1028,36 +1179,43 @@ Order ──── PickupManifest        ← Batch manifest N:M
 User (SELLER) ──── KYC (1:1) ──── KYCLog (1:N)
 User (SELLER) ──── PickupAddress (1:N)
 User (SELLER) ──── User (parentSellerId) ← Sub-account hierarchy
+User (SELLER) ──── Wallet (1:1) ← Ví COD & Chi trả bồi thường
+
+Order ──── Ticket (1:N) ──── TicketAuditLog (1:N)
+Ticket ──── Compensation (1:N) ──── LedgerEntry (1:1) ──── Wallet (1:1)
 ```
 
-### 24 Mongoose Schemas — Bảng tổng hợp
+### 27 Mongoose Schemas — Bảng tổng hợp
 
 | # | Schema | Mục đích | Kích thước |
 |---|---|---|---|
-| 1 | order.model.js | Đơn hàng — State Machine trung tâm | 14.8KB |
-| 2 | user.model.js | Người dùng đa vai trò (17 roles) | 7.8KB |
+| 1 | order.model.js | Đơn hàng — State Machine trung tâm (42 trạng thái) | 16.5KB |
+| 2 | user.model.js | Người dùng đa vai trò (17 roles, 2FA TOTP, Quota) | 9.6KB |
 | 3 | product.model.js | Danh mục sản phẩm Shop (SKU, trọng lượng, kích thước) | 1.8KB |
-| 4 | ticket.model.js | Vé hỗ trợ CSKH & giải quyết khiếu nại | 2.4KB |
-| 5 | trip.model.js | Chuyến xe vận chuyển đường trục | 1.5KB |
-| 6 | bag.model.js | Bao tải đóng gói (Seal) | 1.3KB |
-| 7 | hub.model.js | Kho / Bưu cục | 852B |
-| 8 | hubCoverage.model.js | Vùng phủ của hub (tỉnh/quận) | 859B |
-| 9 | hubConnection.model.js | Kết nối giữa các hub (Dijkstra edge) | 1.1KB |
-| 10 | auditSession.model.js | Phiên kiểm kê kho | 2.1KB |
-| 11 | orderLog.model.js | Audit trail nội bộ | 2KB |
-| 12 | orderTrackingLog.model.js | Timeline public tracking | 1.7KB |
-| 13 | kyc.model.js | Hồ sơ KYC Seller | 2.1KB |
-| 14 | kycLog.model.js | Log thay đổi KYC | 1.2KB |
-| 15 | custodyTransferLog.model.js | Chain of Custody Log | 2.6KB |
-| 16 | geozone.model.js | Vùng địa lý Shipper | 1.5KB |
-| 17 | zone.model.js | Khay kệ trong kho | 761B |
-| 18 | pickupAddress.model.js | Địa chỉ lấy hàng Seller | 1.6KB |
-| 19 | pickupConfirmation.model.js | ePOH xác nhận lấy hàng | 1.3KB |
-| 20 | pickupManifest.model.js | Biên bản giao nhận batch | 1.3KB |
-| 21 | notificationPreference.model.js | Cài đặt thông báo | 2.1KB |
-| 22 | authLog.model.js | Log đăng nhập / security | 706B |
-| 23 | passwordResetOtp.model.js | OTP đặt lại mật khẩu (MongoDB TTL) | 1.4KB |
-| 24 | systemConfig.model.js | Cấu hình hệ thống động | 462B |
+| 4 | ticket.model.js | Vé hỗ trợ & giải quyết khiếu nại CSKH (9 trạng thái, 2-tier chat) | 3.8KB |
+| 5 | compensation.model.js | Hồ sơ đề xuất bồi thường tài chính, ma trận duyệt 4 cấp, chứng từ | 3.2KB |
+| 6 | ledgerEntry.model.js | Sổ cái kế toán kép bất biến (Double-entry Ledger Audit Trail) | 2.5KB |
+| 7 | wallet.model.js | Ví tiền thu hộ COD Seller & Ký quỹ Shipper (ACID Transactions) | 2.8KB |
+| 8 | trip.model.js | Chuyến xe vận chuyển đường trục | 1.5KB |
+| 9 | bag.model.js | Bao tải đóng gói (Seal Poka-yoke) | 1.3KB |
+| 10 | hub.model.js | Kho / Bưu cục Hub-and-Spoke | 852B |
+| 11 | hubCoverage.model.js | Vùng phủ của hub (tỉnh/quận) | 859B |
+| 12 | hubConnection.model.js | Kết nối giữa các hub (Dijkstra weighted edge) | 1.1KB |
+| 13 | auditSession.model.js | Phiên kiểm kê kho UC-18 | 2.1KB |
+| 14 | orderLog.model.js | Audit trail nội bộ toàn diện | 2KB |
+| 15 | orderTrackingLog.model.js | Timeline public tracking cho người mua/bán | 1.7KB |
+| 16 | kyc.model.js | Hồ sơ KYC xác minh danh tính người bán | 2.1KB |
+| 17 | kycLog.model.js | Log kiểm toán duyệt hồ sơ KYC | 1.2KB |
+| 18 | custodyTransferLog.model.js | Nhật ký bàn giao trách nhiệm hàng hóa & vé hỗ trợ CSKH | 2.6KB |
+| 19 | geozone.model.js | Vùng địa lý Shipper phục vụ | 1.5KB |
+| 20 | zone.model.js | Khay kệ phân loại trong kho | 761B |
+| 21 | pickupAddress.model.js | Địa chỉ lấy hàng Seller | 1.6KB |
+| 22 | pickupConfirmation.model.js | Biên bản điện tử ePOH xác nhận lấy hàng | 1.3KB |
+| 23 | pickupManifest.model.js | Biên bản giao nhận hàng loạt (Batch manifest) | 1.3KB |
+| 24 | notificationPreference.model.js | Cài đặt kênh thông báo (SMS, Email, Socket) | 2.1KB |
+| 25 | authLog.model.js | Nhật ký đăng nhập & an ninh hệ thống | 706B |
+| 26 | passwordResetOtp.model.js | OTP đặt lại mật khẩu bảo mật (MongoDB TTL Index) | 1.4KB |
+| 27 | systemConfig.model.js | Cấu hình tham số hệ thống động | 462B |
 
 ---
 
@@ -1115,29 +1273,41 @@ estimatedDeliveryDays = ceil(totalEtaHours / 24)
 
 ## 11. Hệ thống Kiểm thử (Test Suites)
 
-### Kết quả Tổng hợp — 92/92 Test Cases PASS
+### Kết quả Tổng hợp — 130/130 Test Cases PASS (100%)
 
-| Bộ Test | File Thực thi | Cases | Kết quả |
-|---|---|---|---|
-| E2E Toàn trình | `test/e2e/test-full-lifecycle-e2e.js` | 38/38 | ✅ 100% PASS |
-| Module 4 Guide (UC-16→UC-19) | `test/e2e/run-guide-tests.js` | 18/18 | ✅ 100% PASS |
-| UC-12 Pickup | `test/suites/test_uc12_pickup.js` | 12/12 | ✅ 100% PASS |
-| Hub Routing 3 Kho Tổng | `test/suites/test-hub-routing-e2e.js` | 5/5 | ✅ 100% PASS |
-| Zone Pricing & Haversine | `test/suites/test-zone-pricing-distance-e2e.js` | 4/4 | ✅ 100% PASS |
-| Bagging & Seal Poka-yoke | `test/suites/test-bagging-module-e2e.js` | 5/5 | ✅ 100% PASS |
-| Inventory SLA Dashboard | `test/suites/test-inventory-enhanced-e2e.js` | 5/5 | ✅ 100% PASS |
-| Audit Engine SEARCH_ZONE | `test/suites/test-audit-enhanced-e2e.js` | 5/5 | ✅ 100% PASS |
-| **TỔNG CỘNG** | **8 Test Suites** | **92/92** | **🎉 100% PASS** |
+| Nhóm Kiểm thử | Bộ Test | File Thực thi | Cases | Kết quả |
+|---|---|---|---|---|
+| **E2E & Operations** | E2E Toàn trình (Order Lifecycle) | `test/e2e/test-full-lifecycle-e2e.js` | 38/38 | ✅ 100% PASS |
+| | Module 4 Guide (UC-16→UC-19 Kho vận) | `test/e2e/run-guide-tests.js` | 18/18 | ✅ 100% PASS |
+| | UC-12 Pickup First Mile | `test/suites/test_uc12_pickup.js` | 12/12 | ✅ 100% PASS |
+| | Hub Routing 3 Kho Tổng Master | `test/suites/test-hub-routing-e2e.js` | 5/5 | ✅ 100% PASS |
+| | Zone Pricing & Haversine Distance | `test/suites/test-zone-pricing-distance-e2e.js` | 4/4 | ✅ 100% PASS |
+| | Bagging & Seal Poka-yoke | `test/suites/test-bagging-module-e2e.js` | 5/5 | ✅ 100% PASS |
+| | Inventory SLA Dashboard | `test/suites/test-inventory-enhanced-e2e.js` | 5/5 | ✅ 100% PASS |
+| | Audit Engine SEARCH_ZONE | `test/suites/test-audit-enhanced-e2e.js` | 5/5 | ✅ 100% PASS |
+| **CS & Bồi thường (Jest)** | Compensation Engine & ACID Transaction | `test/suites/compensation.test.js` | 10/10 | ✅ 100% PASS |
+| | Auto-Priority Matrix & VIP Seller | `test/suites/resolvePriority.test.js` | 10/10 | ✅ 100% PASS |
+| | Ticket Context 360 & Timeline | `test/suites/ticketContext.test.js` | 8/8 | ✅ 100% PASS |
+| | PII Masking & Unmask Audit Log | `test/suites/piiMask.test.js` | 10/10 | ✅ 100% PASS |
+| **TỔNG CỘNG** | **12 Test Suites Toàn Hệ Thống** | | **130/130** | **🎉 100% PASS** |
 
 ### Chạy Tests
 ```bash
 cd backend
+
+# Chạy kiểm thử Jest CSKH & Bồi thường (MongoMemoryReplSet hỗ trợ ACID Transactions):
+npx jest test/suites/compensation.test.js test/suites/resolvePriority.test.js test/suites/ticketContext.test.js test/suites/piiMask.test.js
+
+# Chạy kiểm thử E2E & Vận hành:
 node test/e2e/test-full-lifecycle-e2e.js   # E2E toàn trình
 node test/e2e/run-guide-tests.js            # Module 4 guide
 node test/suites/test_uc12_pickup.js        # UC-12 pickup
 ```
 
 ### Phạm vi kiểm thử
+- **Multi-Document ACID Transactions**: Kiểm thử tính nguyên tử khi giải ngân bồi thường và ghi sổ cái kép (`LedgerEntry` + `Wallet`).
+- **SLA Engine & Dynamic Pause**: Kiểm tra đóng băng/dời hạn chót xử lý và trừ ngày nghỉ lễ theo lịch Việt Nam.
+- **Anti-Race Condition**: Kiểm tra độ an toàn khi hàng chục CS Agent cùng claim vé hỗ trợ đồng thời.
 - **Integration tests thực tế**: Gọi HTTP API (không mock DB)
 - **Full lifecycle**: Tạo đơn → giao thành công
 - **Edge cases**: Idempotency, rollback, lệch cân, rejection quota
@@ -1153,15 +1323,17 @@ node test/suites/test_uc12_pickup.js        # UC-12 pickup
 | Hạng mục | Mô tả |
 |---|---|
 | ✅ Kiến trúc Hub-and-Spoke | 3 cấp, phân tách rõ Controller/Service/Model |
-| ✅ Business Logic hoàn chỉnh | 5 module nghiệp vụ end-to-end |
-| ✅ Security đa tầng | JWT, 2FA TOTP, RBAC 17 roles, Rate Limiting, Anti-IDOR |
-| ✅ Real-time WebSocket | GPS tracking, inventory dashboard realtime |
+| ✅ Business Logic hoàn chỉnh | 12 module nghiệp vụ end-to-end |
+| ✅ Security đa tầng | JWT, 2FA TOTP, RBAC 17 roles, Rate Limiting, Anti-IDOR, PII Masking & Audit Trail |
+| ✅ CSKH & Compensation Engine | 9-State Machine, SLA Business Hours, Ma trận duyệt 4 cấp, Double-Write Ledger/Wallet |
+| ✅ Responsive & PDA Ergonomics | Chuẩn hóa 4 Batches (Mobile/Tablet/Desktop), Touch Target $\ge 44$px cho 10 trang kho bãi |
+| ✅ Real-time WebSocket | GPS tracking, inventory dashboard, CS tickets realtime |
 | ✅ Offline Idempotency | clientOfflineId pattern cho Shipper app |
-| ✅ Thuật toán phong phú | Haversine, Dijkstra, Poka-yoke, Dynamic SLA |
-| ✅ Test Coverage | 92/92 test cases 100% PASS |
-| ✅ Background Monitoring | Jobs giám sát tự động |
+| ✅ Thuật toán phong phú | Haversine, Dijkstra, Poka-yoke, Dynamic SLA, Write-Behind Caching |
+| ✅ Test Coverage | 130/130 test cases 100% PASS (Jest ReplSet + Integration + E2E) |
+| ✅ Background Monitoring | Jobs giám sát tự động có Redis Distributed Lock |
 | ✅ KYC & Compliance | Upload, review, xác minh danh tính Seller |
-| ✅ COD & Finance | Ví COD, rút tiền, chain of custody |
+| ✅ COD & Finance | Ví COD, rút tiền, chain of custody, sổ cái kép kế toán |
 
 ### Hướng Phát triển Ngắn hạn (Next Sprint)
 
@@ -1193,13 +1365,13 @@ node test/suites/test_uc12_pickup.js        # UC-12 pickup
 
 | Vấn đề | Hiện trạng | Đề xuất |
 |---|---|---|
-| DB Transaction | Atomic operations riêng lẻ (không ACID) | MongoDB Multi-Document Transactions |
-| order.service.js quá lớn | 35.8KB monolith | Tách thành Creation/Lifecycle/Query services |
+| DB Transaction | ✅ **ĐÃ TRIỂN KHAI ACID** cho Compensation & Ledger/Wallet | Mở rộng Multi-Document Transactions sang cụm Order Status Transitions phức tạp |
+| order.service.js quá lớn | 42.5KB monolith | Tách thành Creation/Lifecycle/Query services |
 | Hardcoded configs | Discount codes, Hub coords trong service files | Chuyển vào systemConfig collection hoặc Redis |
 | Error standardization | Mix throw object và throw Error() | AppError class chuẩn hóa toàn hệ thống |
 | Logging | console.log/error | Winston + ELK Stack hoặc DataDog |
-| Frontend code size | Một số pages >100KB | Lazy loading + code splitting |
-| Caching | Mỗi request đều query DB | Redis layer cho dữ liệu tĩnh |
+| Frontend code size | ✅ **ĐÃ TRIỂN KHAI CHIA TÁCH** (CreateOrderPage 5 components, lazy load) | Tiếp tục phân tách ProfilePage và BatchOrderPage |
+| Caching | Redis Hot Layer cho Orders, cần mở rộng Static Data | Redis layer cho HubCoverage & HubConnection |
 
 ---
 
@@ -1207,29 +1379,30 @@ node test/suites/test_uc12_pickup.js        # UC-12 pickup
 
 | Chỉ số | Giá trị |
 |---|---|
-| Tổng files source code | ~220+ files |
-| Backend Controllers | 29 files |
-| Backend Services | 18 files |
-| Backend Models (Schemas) | 24 Mongoose schemas |
-| Backend Route Groups | 24 nhóm route |
+| Tổng files source code | ~260+ files |
+| Backend Controllers | 32 files |
+| Backend Services | 22 files |
+| Backend Models (Schemas) | 27 Mongoose schemas |
+| Backend Route Groups | 26 nhóm route |
 | Backend Middleware | 6 files |
-| Background Jobs | 5 workers |
+| Background Jobs | 7 workers (Distributed locks qua Redis) |
 | Message Queue Consumers | 2 workers (db-sync.worker, redis-sync.worker) |
 | System Configs | 3 files (db, redis, rabbitmq) |
-| Frontend Web Pages | 15+ trang |
-| Frontend Admin Pages | 30+ trang |
+| Frontend Web Pages | 15+ trang (Chuẩn Responsive Mobile-First) |
+| Frontend Admin Pages | 32+ trang (CS Workspace 360 & Industrial PDA Touch $\ge 44$px) |
 | Order Status States | 42 trạng thái |
+| Ticket Status States | 9 trạng thái (State Machine) |
 | User Roles (RBAC) | 17 roles |
-| System Features | 103 features (F-01 → F-103) |
-| Test Cases | 92/92 (100% PASS) |
-| API Endpoints | 105+ endpoints |
+| System Features | 115+ features (F-01 → F-115) |
+| Test Cases | 130/130 (100% PASS — 38 Jest + 92 E2E/Integration) |
+| API Endpoints | 120+ endpoints |
 | Hub trong mạng lưới | 8 hubs (3 Master + 5 Satellite) |
 | Tỉnh thành phủ sóng | 63/63 tỉnh thành Việt Nam |
 | Discount Codes | 4 mã (FREESHIP15, ELOG50, WELCOME10, EXPIRED2025) |
 
 ---
 
-> **Kết luận:** E-Logistics là một hệ thống logistics full-stack hoàn chỉnh với kiến trúc phân tầng rõ ràng, business logic nghiệp vụ phong phú bao gồm 12 module chính, và độ phủ test 100%. Codebase thể hiện hiểu biết sâu về nghiệp vụ logistics thực tế Việt Nam, tích hợp nhiều kỹ thuật nâng cao: Haversine GPS, Dijkstra routing, Poka-yoke manufacturing principles, idempotency design, dynamic SLA monitoring, RBAC 17 vai trò và kiến trúc Hybrid Write-Behind Async Caching (Redis + RabbitMQ + MongoDB Change Streams).
+> **Kết luận:** E-Logistics là một hệ thống logistics full-stack hoàn chỉnh với kiến trúc phân tầng rõ ràng, business logic nghiệp vụ phong phú bao gồm 12 module chính, và độ phủ test 100%. Codebase thể hiện hiểu biết sâu về nghiệp vụ logistics thực tế Việt Nam, tích hợp nhiều kỹ thuật nâng cao: Haversine GPS, Dijkstra routing, Poka-yoke manufacturing principles, idempotency design, dynamic SLA monitoring, RBAC 17 vai trò, Động cơ bồi thường ACID Double-Write, chuẩn hóa công thái học thiết bị thực địa (Industrial PDA) và kiến trúc Hybrid Write-Behind Async Caching (Redis + RabbitMQ + MongoDB Change Streams).
 
 ---
 
@@ -1928,18 +2101,18 @@ LUỒNG 7: Mất kết nối mạng (Offline mode)
 
 ### 15.3 Vấn đề Kỹ thuật (Technical Debt) 🔵
 
-#### DEBT-01 — Không có MongoDB Multi-Document Transactions
+#### DEBT-01 — Không có MongoDB Multi-Document Transactions (ĐÃ GIẢI QUYẾT PHẦN TRỌNG TÂM TÀI CHÍNH)
 
 | Thuộc tính | Giá trị |
 |---|---|
-| **Mức độ** | 🔵 Technical Debt |
-| **Mô tả** | Hầu hết các thao tác quan trọng (inbound scan, bagging, outbound commit) sử dụng các `findOneAndUpdate` atomic riêng lẻ, không bọc trong MongoDB session/transaction. Chỉ có `deliveryFailure.service.js` dùng `mongoose.startSession()`. |
-| **Rủi ro** | Race condition khi nhiều nhân viên cùng xử lý 1 đơn. Partial update khi server crash giữa chừng. |
-| **Đề xuất** | Bọc các thao tác liên quan trong `session.withTransaction()`. |
+| **Mức độ** | 🔵 Technical Debt (Đã giải quyết cho Động cơ Bồi thường & Sổ cái Ví) |
+| **Mô tả** | Ban đầu các thao tác cập nhật số dư và trạng thái sử dụng `findOneAndUpdate` đơn lẻ. Hiện nay, toàn bộ luồng Giải ngân Bồi thường (`compensation.service.js`), ghi nhận Sổ cái Kép (`ledgerEntry.model.js`) và biến động số dư Ví (`wallet.model.js`) đã được bọc 100% trong **MongoDB Multi-Document ACID Transactions** (`session.startTransaction() ... session.commitTransaction()`). |
+| **Rủi ro** | Đã triệt tiêu hoàn toàn rủi ro sai lệch số dư tài chính hoặc partial write khi hệ thống gặp sự cố mạng/crash. |
+| **Đề xuất tiếp theo** | Mở rộng mô hình ACID Session sang các chuỗi thao tác gom bao tải (Bagging) và xuất kho (Outbound). |
 
 ---
 
-#### DEBT-02 — `order.service.js` monolith 978 dòng / 35KB
+#### DEBT-02 — `order.service.js` monolith 978 dòng / 42.5KB
 
 | Thuộc tính | Giá trị |
 |---|---|
@@ -1979,13 +2152,13 @@ LUỒNG 7: Mất kết nối mạng (Offline mode)
 
 ---
 
-#### DEBT-06 — Frontend pages quá lớn, thiếu code splitting
+#### DEBT-06 — Frontend pages quá lớn, thiếu code splitting (ĐÃ GIẢI QUYẾT PHẦN LỚN)
 
 | Thuộc tính | Giá trị |
 |---|---|
-| **Mức độ** | 🔵 Technical Debt |
-| **Mô tả** | `CreateOrderPage.tsx` (105KB), `ProfilePage.tsx` (103KB), `BatchOrderPage.tsx` (83KB) — bundle rất lớn, TTI (Time to Interactive) chậm. |
-| **Đề xuất** | React lazy loading + Suspense: `const CreateOrderPage = lazy(() => import('./CreateOrderPage'))`. Chia nhỏ component, tách custom hooks. |
+| **Mức độ** | 🔵 Technical Debt (Đã phân rã CreateOrderPage thành 5 Sub-components) |
+| **Mô tả** | Trước đây `CreateOrderPage.tsx` là một monolith > 105KB gây khó khăn bảo trì. Hiện đã được chia tách hoàn toàn thành **5 Sub-components độc lập** (`SenderAddressSection`, `ReceiverAddressSection`, `PackageDetailsSection`, `ServiceOptionsSection`, `OrderSummaryStickyBar`) tại `components/orders/create/`. |
+| **Đề xuất tiếp theo** | Tiếp tục áp dụng mô hình này cho `ProfilePage.tsx` và `BatchOrderPage.tsx`, kết hợp `React.lazy` và `Suspense`. |
 
 ---
 
@@ -2016,7 +2189,7 @@ LUỒNG 7: Mất kết nối mạng (Offline mode)
 |---|---|---|
 | 🔴 Critical | 4 | BUG-01, BUG-02, BUG-03, BUG-04 |
 | 🟡 Medium | 6 | BUG-05, BUG-06, BUG-07, BUG-08, BUG-09, BUG-10 |
-| 🔵 Technical Debt | 8 | DEBT-01 đến DEBT-08 |
+| 🔵 Technical Debt | 8 | DEBT-01 (Đã xong phần ACID), DEBT-02, DEBT-03, DEBT-04, DEBT-05, DEBT-06 (Đã xong CreateOrder), DEBT-07, DEBT-08 |
 | **Tổng** | **18** | |
 
 ```
@@ -2034,7 +2207,7 @@ Sprint 2 (Tuần tới):
   8. BUG-07: Fix tracking code generation → Chống trùng mã
 
 Sprint 3 (Tháng tới):
-  9. DEBT-01: MongoDB transactions → ACID operations
+  9. DEBT-01: Mở rộng MongoDB transactions sang Bagging/Outbound
   10. DEBT-02: Tách order.service.js → Maintainability
   11. DEBT-03: AppError chuẩn hóa → Error handling nhất quán
   12. DEBT-08: Implement auth.service.js → Kiến trúc đúng
@@ -2042,6 +2215,6 @@ Sprint 3 (Tháng tới):
 
 ---
 
-> **Cập nhật lần cuối:** 17/09/2026  
-> **Phiên bản tài liệu:** 2.7 — Đồng bộ toàn diện Hệ thống: Khởi tạo SLA Engine & Auto-Priority P0-P2 (Lịch nghỉ lễ VN 2026-2027, Giờ hành chính 08:00–20:00 7 ngày/tuần, Pause/Resume SLA, Background Jobs `slaMonitor` & `ticketAutoClose` có Redis Lock, Endpoint `/api/system/jobs-status`, cấu hình Jest `MongoMemoryReplSet` hỗ trợ Multi-Document Transactions đạt 15/15 Tests PASS 100%).
+> **Cập nhật lần cuối:** 18/09/2026  
+> **Phiên bản tài liệu:** 2.8 — Đồng bộ toàn diện Hệ thống: Động cơ Bồi thường ACID Transactions & Ma trận Duyệt 4 Cấp (L1: 200k, L2: 2M, Lead: 5M, Admin: Unlimited), Double-Write Sổ cái Kép (LedgerEntry) & Ví (Wallet), Bối cảnh 360° & PII Masking/Unmask Audit Trail, Background Jobs (ClaimHoldWatchdog, LedgerReconcile), Bộ test Jest ReplSet 38/38 PASS (Tổng 130/130 Tests PASS 100%), Chuẩn hóa Toàn diện Mobile-First Responsive & Công thái học Industrial PDA (4 Batches / 10 Warehouse Pages).
 
