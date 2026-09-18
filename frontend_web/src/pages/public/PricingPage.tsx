@@ -7,7 +7,6 @@ import {
   ThermometerSnowflake,
   Truck,
   Check,
-  Sparkles,
   ArrowRight,
   Percent,
   Award,
@@ -99,41 +98,32 @@ export const PricingPage: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-12 max-w-6xl mx-auto pb-16">
-      {/* Hero Header */}
-      <div className="text-center space-y-4 pt-4">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 text-blue-700 dark:text-blue-400 text-xs font-bold uppercase tracking-wider shadow-sm">
-          <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400 animate-pulse" />
-          Bảng Giá Minh Bạch & Thuật Toán Cước Chuẩn Quốc Tế
-        </div>
-        <h1 className="text-3xl sm:text-5xl font-black text-slate-900 dark:text-white leading-tight">
-          Bảng Giá Cước Vận Chuyển <br className="hidden sm:block" />
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-700 via-indigo-600 to-cyan-600 dark:from-blue-400 dark:via-cyan-300 dark:to-indigo-400">
-            & Công Cụ Tính Cước Dynamic
-          </span>
+    <div className="space-y-8 max-w-5xl mx-auto pb-12">
+      {/* Header */}
+      <div className="text-center space-y-2 pt-2">
+        <h1 className="text-2xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+          Bảng Giá & Ước Tính Cước Phí
         </h1>
-        <p className="text-slate-600 dark:text-slate-300 text-sm sm:text-base max-w-3xl mx-auto leading-relaxed">
-          GIAO HÀNG áp dụng quy đổi trọng lượng thể tích theo chuẩn IATA{' '}
-          <code className="text-blue-700 dark:text-cyan-300 font-mono bg-blue-50 dark:bg-slate-900 px-2.5 py-0.5 rounded border border-blue-200 dark:border-slate-800 font-semibold">(D x R x C) / 5000</code>{' '}
-          kết hợp thuật toán chiết khấu tự động theo sản lượng đơn hàng của Doanh Nghiệp.
+        <p className="text-slate-600 dark:text-slate-400 text-sm max-w-xl mx-auto">
+          Tra cứu bảng cước niêm yết hoặc nhập thông số kiện hàng để tính toán cước phí vận chuyển chính xác tức thì.
         </p>
       </div>
 
       {/* Navigation Tabs */}
-      <div className="flex justify-center border-b border-slate-200 dark:border-slate-800 pb-1">
-        <div className="inline-flex p-1.5 rounded-2xl bg-slate-100 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 gap-2 shadow-sm">
+      <div className="flex justify-center">
+        <div className="inline-flex p-1.5 rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 gap-1.5 shadow-sm">
           {[
-            { id: 'CALCULATOR', label: 'Công Cụ Tính Cước', icon: <CalcIcon className="w-4 h-4" /> },
+            { id: 'CALCULATOR', label: 'Tính Cước Nhanh', icon: <CalcIcon className="w-4 h-4" /> },
             { id: 'RATES', label: 'Bảng Giá Niêm Yết', icon: <Truck className="w-4 h-4" /> },
-            { id: 'TIERS', label: 'Chiết Khấu Đối Tác', icon: <Percent className="w-4 h-4" /> },
-            { id: 'ADDONS', label: 'Phụ Phí & Dịch Vụ', icon: <ShieldCheck className="w-4 h-4" /> },
+            { id: 'TIERS', label: 'Chiết Khấu Đại Lý', icon: <Percent className="w-4 h-4" /> },
+            { id: 'ADDONS', label: 'Chính Sách & Phụ Phí', icon: <ShieldCheck className="w-4 h-4" /> },
           ].map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === tab.id
-                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-800/60'
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === tab.id
+                  ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-800'
                 }`}
             >
               {tab.icon} {tab.label}

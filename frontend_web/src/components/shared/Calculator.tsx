@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Calculator as CalcIcon, Scale, Box, ArrowRight, Info, Sparkles, AlertCircle, Check } from 'lucide-react';
+import { Scale, Box, ArrowRight, Info, Sparkles, AlertCircle, Check } from 'lucide-react';
 import type { CalculatorParams } from '../../types';
 
 interface CalculatorProps {
@@ -63,31 +63,13 @@ export const Calculator: React.FC<CalculatorProps> = ({ onApplyToNewOrder }) => 
   const isVolumetricHigher = volumetricWeightKg > numWeight;
 
   return (
-    <div className="space-y-8 max-w-5xl mx-auto">
-      {/* Header */}
-      <div className="text-center space-y-3">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 text-blue-700 dark:text-blue-400 text-xs font-bold uppercase shadow-sm">
-          <CalcIcon className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-          Thuật Toán Logistics Chính Xác 100%
-        </div>
-        <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white">
-          Công Cụ Tính Cước Phí & Trọng Lượng Quy Đổi
-        </h2>
-        <p className="text-slate-600 dark:text-slate-300 text-sm max-w-2xl mx-auto leading-relaxed">
-          E-Logistic tự động áp dụng công thức quy đổi kích thước thể tích chuẩn IATA{' '}
-          <code className="text-blue-700 dark:text-cyan-400 bg-blue-50 dark:bg-slate-900 border border-blue-200 dark:border-slate-800 px-2.5 py-0.5 rounded font-mono font-bold">
-            (Dài x Rộng x Cao) / 5000
-          </code>{' '}
-          để xác định trọng lượng tính cước chính xác.
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+    <div className="max-w-5xl mx-auto">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left Input Form Panel */}
-        <div className="lg:col-span-7 bg-white dark:bg-slate-900/90 p-6 sm:p-8 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-6 shadow-sm dark:shadow-xl">
-          <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
-            <Box className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-            1. Thông Số Hàng Hóa & Tuyến Vận Chuyển
+        <div className="lg:col-span-7 bg-white dark:bg-slate-900 p-6 sm:p-7 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-5 shadow-sm dark:shadow-xl">
+          <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
+            <Box className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            Thông Tin Kiện Hàng & Tuyến Giao
           </h3>
 
           {/* City Selection */}
@@ -232,12 +214,12 @@ export const Calculator: React.FC<CalculatorProps> = ({ onApplyToNewOrder }) => 
         </div>
 
         {/* Right Output Results Panel */}
-        <div className="lg:col-span-5 bg-gradient-to-br from-blue-50/90 via-white to-indigo-50/70 dark:from-slate-900 dark:via-slate-900/90 dark:to-slate-950 p-6 sm:p-8 rounded-3xl border-2 border-blue-200 dark:border-blue-500/30 space-y-6 relative overflow-hidden shadow-md dark:shadow-xl">
+        <div className="lg:col-span-5 bg-gradient-to-br from-blue-50/90 via-white to-indigo-50/70 dark:from-slate-900 dark:via-slate-900/90 dark:to-slate-950 p-6 sm:p-7 rounded-3xl border-2 border-blue-200 dark:border-blue-500/30 space-y-5 relative overflow-hidden shadow-md dark:shadow-xl">
           <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl pointer-events-none"></div>
 
-          <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
-            <Scale className="w-5 h-5 text-blue-600 dark:text-cyan-400" />
-            2. Kết Quả Tính Cước Phí
+          <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
+            <Scale className="w-4 h-4 text-blue-600 dark:text-cyan-400" />
+            Kết Quả Dự Tính Cước
           </h3>
 
           {!isFormValid ? (
