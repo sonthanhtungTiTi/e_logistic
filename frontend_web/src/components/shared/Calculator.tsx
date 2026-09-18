@@ -63,8 +63,8 @@ export const Calculator: React.FC<CalculatorProps> = ({ onApplyToNewOrder }) => 
   const isVolumetricHigher = volumetricWeightKg > numWeight;
 
   return (
-    <div className="max-w-5xl mx-auto">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+    <div className="w-full">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start w-full">
         {/* Left Input Form Panel */}
         <div className="lg:col-span-7 bg-white dark:bg-slate-900 p-6 sm:p-7 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-5 shadow-sm dark:shadow-xl">
           <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">

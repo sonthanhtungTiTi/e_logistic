@@ -9,7 +9,6 @@ import {
   Check,
   ArrowRight,
   Percent,
-  Award,
   Layers,
 } from 'lucide-react';
 import { useNavigate } from 'react-router';
@@ -98,20 +97,24 @@ export const PricingPage: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-8 max-w-5xl mx-auto pb-12">
-      {/* Header */}
-      <div className="text-center space-y-2 pt-2">
-        <h1 className="text-2xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-          Bảng Giá & Ước Tính Cước Phí
-        </h1>
-        <p className="text-slate-600 dark:text-slate-400 text-sm max-w-xl mx-auto">
-          Tra cứu bảng cước niêm yết hoặc nhập thông số kiện hàng để tính toán cước phí vận chuyển chính xác tức thì.
-        </p>
-      </div>
+    <div className="space-y-6 sm:space-y-8 w-full pb-12 animate-in fade-in duration-300">
+      {/* Top Banner & Header */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800/80 pb-4 sm:pb-5">
+        <div>
+          <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mb-1">
+            <span className="text-blue-600 dark:text-blue-400 font-semibold">Tiện Ích & Bảng Cước</span>
+          </div>
+          <h2 className="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2.5">
+            <CalcIcon className="w-7 h-7 text-blue-600 dark:text-blue-400 shrink-0" />
+            Bảng Giá & Ước Tính Cước Phí
+          </h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            Tra cứu bảng cước niêm yết hoặc nhập thông số kiện hàng để tính toán cước phí vận chuyển chính xác tức thì
+          </p>
+        </div>
 
-      {/* Navigation Tabs */}
-      <div className="flex justify-center">
-        <div className="inline-flex p-1.5 rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 gap-1.5 shadow-sm">
+        {/* Navigation Tabs */}
+        <div className="inline-flex p-1.5 rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 gap-1.5 shadow-sm self-start lg:self-auto flex-wrap sm:flex-nowrap">
           {[
             { id: 'CALCULATOR', label: 'Tính Cước Nhanh', icon: <CalcIcon className="w-4 h-4" /> },
             { id: 'RATES', label: 'Bảng Giá Niêm Yết', icon: <Truck className="w-4 h-4" /> },
@@ -121,7 +124,7 @@ export const PricingPage: React.FC = () => {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === tab.id
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === tab.id
                   ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-800'
                 }`}
@@ -134,7 +137,7 @@ export const PricingPage: React.FC = () => {
 
       {/* TAB 1: CALCULATOR */}
       {activeTab === 'CALCULATOR' && (
-        <div className="animate-in fade-in duration-300">
+        <div className="w-full animate-in fade-in duration-300">
           <Calculator
             onApplyToNewOrder={() => {
               navigate('/seller/orders/create');
@@ -145,8 +148,8 @@ export const PricingPage: React.FC = () => {
 
       {/* TAB 2: RATES LIST */}
       {activeTab === 'RATES' && (
-        <div className="space-y-8 animate-in fade-in duration-300">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="w-full space-y-6 animate-in fade-in duration-300">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
             {rateCards.map((card, idx) => (
               <div
                 key={idx}
@@ -163,7 +166,7 @@ export const PricingPage: React.FC = () => {
                   </div>
 
                   <div>
-                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">{card.name}</h3>
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">{card.name}</h3>
                     <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">{card.desc}</p>
                   </div>
 
@@ -185,7 +188,7 @@ export const PricingPage: React.FC = () => {
                     onClick={() => navigate('/seller/orders/create')}
                     className="text-blue-600 dark:text-cyan-400 font-bold hover:underline flex items-center gap-1 cursor-pointer"
                   >
-                    Tạo đơn ngay <ArrowRight className="w-3.5 h-3.5" />
+                    Tạo đơn <ArrowRight className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>
@@ -196,17 +199,8 @@ export const PricingPage: React.FC = () => {
 
       {/* TAB 3: PARTNER DISCOUNTS */}
       {activeTab === 'TIERS' && (
-        <div className="space-y-8 animate-in fade-in duration-300">
-          <div className="text-center space-y-2 max-w-2xl mx-auto">
-            <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white flex items-center justify-center gap-2">
-              <Award className="w-6 h-6 text-blue-600 dark:text-blue-400" /> Phân Hạng Khách Hàng & Mức Chiết Khấu Cước
-            </h2>
-            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-              Thuật toán hệ thống tự động tổng hợp sản lượng đơn hàng cuối tháng để áp dụng chính sách chiết khấu trực tiếp vào ví COD.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="w-full space-y-6 animate-in fade-in duration-300">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
             {sellerTiers.map((t, idx) => (
               <div
                 key={idx}
@@ -247,12 +241,12 @@ export const PricingPage: React.FC = () => {
 
       {/* TAB 4: ADDONS & SURCHARGES */}
       {activeTab === 'ADDONS' && (
-        <div className="bg-white dark:bg-slate-900/90 p-6 sm:p-8 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-6 shadow-sm dark:shadow-xl animate-in fade-in duration-300">
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-4">
+        <div className="w-full bg-white dark:bg-slate-900/90 p-6 sm:p-8 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-6 shadow-sm dark:shadow-xl animate-in fade-in duration-300">
+          <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-4">
             <ShieldCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400" /> Bảng Phụ Phí Minh Bạch & Bảo Hiểm Hàng Hóa
           </h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 text-xs">
             <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-2">
               <div className="font-bold text-slate-900 dark:text-white text-sm flex items-center justify-between">
                 <span>1. Phí Thu Hộ (COD)</span>
@@ -265,8 +259,8 @@ export const PricingPage: React.FC = () => {
 
             <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-2">
               <div className="font-bold text-slate-900 dark:text-white text-sm flex items-center justify-between">
-                <span>2. Bảo Hiểm & Khai Giá Hàng Hóa</span>
-                <span className="text-blue-600 dark:text-cyan-400 font-mono font-bold">0.5% Hàng Giá Trị</span>
+                <span>2. Bảo Hiểm Khai Giá</span>
+                <span className="text-blue-600 dark:text-cyan-400 font-mono font-bold">0.5% Giá Trị</span>
               </div>
               <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
                 Đơn hàng dưới 1.000.000đ được đền bù mặc định tối đa 4 lần cước phí. Khai giá hàng hóa trên 1tr đền bù 100% khi có sự cố.
@@ -275,8 +269,8 @@ export const PricingPage: React.FC = () => {
 
             <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-2">
               <div className="font-bold text-slate-900 dark:text-white text-sm flex items-center justify-between">
-                <span>3. Phí Hoàn Hàng Về Kho Seller</span>
-                <span className="text-sky-600 dark:text-sky-400 font-mono font-bold">50% Cước Lượt Đi</span>
+                <span>3. Phí Hoàn Hàng</span>
+                <span className="text-sky-600 dark:text-sky-400 font-mono font-bold">50% Cước Đi</span>
               </div>
               <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
                 Hệ thống tự động phát hàng 3 lần trước khi chuyển sang trạng thái Hoàn Hàng. Cước phí hoàn hàng tính 50% cước giao ban đầu.
@@ -285,8 +279,8 @@ export const PricingPage: React.FC = () => {
 
             <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-2">
               <div className="font-bold text-slate-900 dark:text-white text-sm flex items-center justify-between">
-                <span>4. Phí Bảo Quản Mát Dược Phẩm</span>
-                <span className="text-blue-600 dark:text-blue-400 font-mono font-bold">Bao gồm trong Cold-Chain</span>
+                <span>4. Phí Bảo Quản Mát</span>
+                <span className="text-blue-600 dark:text-blue-400 font-mono font-bold">Gói Cold-Chain</span>
               </div>
               <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
                 Miễn phí theo dõi nhiệt độ GPS 24/7 và cảnh báo biến đổi nhiệt độ từ 2°C - 8°C qua SMS/App notification.
